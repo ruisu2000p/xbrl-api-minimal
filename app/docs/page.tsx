@@ -151,7 +151,7 @@ export default function DocsPage() {
 
     // シミュレートされたAPIレスポンス
     setTimeout(() => {
-      const endpoint = endpoints[selectedEndpoint];
+      const endpoint = endpoints[selectedEndpoint as keyof typeof endpoints];
       setTryItResponse(endpoint.response);
       setIsLoading(false);
     }, 1000);
@@ -354,7 +354,7 @@ export default function DocsPage() {
                     {Object.keys(endpoints).map((key) => (
                       <button
                         key={key}
-                        onClick={() => setSelectedEndpoint(key)}
+                        onClick={() => setSelectedEndpoint(key as keyof typeof endpoints)}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                           selectedEndpoint === key 
                             ? 'bg-blue-600 text-white' 
