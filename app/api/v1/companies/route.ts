@@ -1,131 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
-// Supabase初期化（環境変数チェック付き）
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// サンプル企業データ（実際はデータベースやファイルシステムから取得）
+const sampleCompanies = [
+  { id: '7203', name: 'トヨタ自動車株式会社', ticker: '7203', sector: '輸送用機器', market: '東証プライム' },
+  { id: '6758', name: 'ソニーグループ株式会社', ticker: '6758', sector: '電気機器', market: '東証プライム' },
+  { id: '6861', name: '株式会社キーエンス', ticker: '6861', sector: '電気機器', market: '東証プライム' },
+  { id: '9984', name: 'ソフトバンクグループ株式会社', ticker: '9984', sector: '情報・通信業', market: '東証プライム' },
+  { id: '6098', name: '株式会社リクルートホールディングス', ticker: '6098', sector: 'サービス業', market: '東証プライム' },
+  { id: '6501', name: '株式会社日立製作所', ticker: '6501', sector: '電気機器', market: '東証プライム' },
+  { id: '8306', name: '株式会社三菱UFJフィナンシャル・グループ', ticker: '8306', sector: '銀行業', market: '東証プライム' },
+  { id: '9432', name: '日本電信電話株式会社', ticker: '9432', sector: '情報・通信業', market: '東証プライム' },
+  { id: '4519', name: '中外製薬株式会社', ticker: '4519', sector: '医薬品', market: '東証プライム' },
+  { id: '9433', name: 'KDDI株式会社', ticker: '9433', sector: '情報・通信業', market: '東証プライム' }
+];
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase環境変数が設定されていません。モックデータを返します。');
+// APIキーの検証（簡易版）
+function validateApiKey(apiKey: string | null): boolean {
+  if (!apiKey) return false;
+  // 実際の実装では、データベースでAPIキーを確認
+  return apiKey.startsWith('xbrl_');
 }
-
-const supabase = supabaseUrl && supabaseKey 
-  ? createClient(supabaseUrl, supabaseKey)
-  : null;
 
 export async function GET(request: NextRequest) {
   try {
     // APIキー認証
-    const apiKey = request.headers.get('x-api-key');
+    const apiKey = request.headers.get('X-API-Key');
     
-    if (!apiKey) {
+    if (!validateApiKey(apiKey)) {
       return NextResponse.json(
-        { error: 'APIキーが必要です' },
+        { error: 'Invalid API key' },
         { status: 401 }
       );
     }
 
-    // Supabaseが設定されていない場合はモックデータを返す
-    if (!supabase) {
-      return NextResponse.json({
-        companies: [
-          {
-            id: 'S100LO6W',
-            name: 'トヨタ自動車株式会社',
-            ticker: '7203',
-            industry: '輸送用機器'
-          },
-          {
-            id: 'S100L06R',
-            name: 'ソニーグループ株式会社',
-            ticker: '6758',
-            industry: '電気機器'
-          },
-          {
-            id: 'S100LCZD',
-            name: '三菱UFJフィナンシャル・グループ',
-            ticker: '8306',
-            industry: '銀行業'
-          }
-        ],
-        total: 3,
-        page: 1,
-        limit: 20
-      });
-    }
-
-    // クエリパラメータ
+    // クエリパラメータ取得
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const search = searchParams.get('search') || '';
-    const industry = searchParams.get('industry') || '';
+    const perPage = parseInt(searchParams.get('per_page') || '20');
+    const sector = searchParams.get('sector');
+    const search = searchParams.get('search');
 
-    // APIレート制限チェック
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, plan')
-      .eq('api_key', apiKey)
-      .single();
-
-    if (!profile) {
-      return NextResponse.json(
-        { error: '無効なAPIキーです' },
-        { status: 401 }
-      );
+    // フィルタリング
+    let filteredCompanies = [...sampleCompanies];
+    
+    if (sector) {
+      filteredCompanies = filteredCompanies.filter(c => c.sector === sector);
     }
-
-    // レート制限チェック
-    const { data: canCall } = await supabase
-      .rpc('check_api_limit', { p_user_id: profile.id });
-
-    if (!canCall) {
-      return NextResponse.json(
-        { error: 'APIレート制限に達しました' },
-        { status: 429 }
-      );
-    }
-
-    // API使用記録
-    await supabase.from('api_usage').insert({
-      user_id: profile.id,
-      endpoint: '/api/v1/companies',
-      method: 'GET',
-      status_code: 200,
-      response_time_ms: 0
-    });
-
-    // 企業データ取得
-    let query = supabase
-      .from('companies')
-      .select('*', { count: 'exact' });
-
+    
     if (search) {
-      query = query.ilike('name', `%${search}%`);
+      const searchLower = search.toLowerCase();
+      filteredCompanies = filteredCompanies.filter(c => 
+        c.name.toLowerCase().includes(searchLower) ||
+        c.ticker.includes(search)
+      );
     }
 
-    if (industry) {
-      query = query.eq('industry', industry);
-    }
-
-    const { data: companies, count, error } = await query
-      .range((page - 1) * limit, page * limit - 1);
-
-    if (error) {
-      throw error;
-    }
+    // ページネーション
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    const paginatedCompanies = filteredCompanies.slice(startIndex, endIndex);
 
     return NextResponse.json({
-      companies: companies || [],
-      total: count || 0,
+      companies: paginatedCompanies,
+      total: filteredCompanies.length,
       page,
-      limit
+      per_page: perPage,
+      total_pages: Math.ceil(filteredCompanies.length / perPage)
+    }, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600'
+      }
     });
 
   } catch (error) {
-    console.error('Error in companies API:', error);
+    console.error('API Error:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
