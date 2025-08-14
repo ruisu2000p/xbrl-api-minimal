@@ -63,19 +63,50 @@ export default function Dashboard() {
   // ユーザーごとに異なる使用履歴を生成
   const generateUsageData = () => {
     const data = [];
-    const baseUsage = user?.apiCalls || 100;
+    const totalCalls = user?.apiCalls || 0;
+    
+    // 新規ユーザーの場合は全て0
+    if (totalCalls === 0) {
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        data.push({
+          date: date.toISOString().split('T')[0],
+          calls: 0
+        });
+      }
+      return data;
+    }
+    
+    // 既存ユーザーの場合は使用履歴を分散
+    let remaining = totalCalls;
+    const dailyData = [];
+    
+    for (let i = 6; i >= 1; i--) {
+      const dailyCalls = Math.floor(remaining / (i + 1) + Math.random() * 20);
+      dailyData.push(dailyCalls);
+      remaining -= dailyCalls;
+    }
+    dailyData.push(remaining); // 残りを最終日に
+    
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       data.push({
         date: date.toISOString().split('T')[0],
-        calls: Math.floor(baseUsage / 7 + Math.random() * 50)
+        calls: dailyData[6 - i] || 0
       });
     }
+    
     return data;
   };
 
   const generateRecentRequests = () => {
+    // 新規ユーザーの場合は空の配列を返す
+    if (!user?.apiCalls || user.apiCalls === 0) {
+      return [];
+    }
+    
     const endpoints = [
       '/api/v1/companies',
       '/api/v1/companies/7203',
@@ -88,8 +119,11 @@ export default function Dashboard() {
     const requests = [];
     const now = new Date();
     
-    for (let i = 0; i < 5; i++) {
-      const time = new Date(now.getTime() - i * 5 * 60000); // 5分ごと
+    // API呼び出し数に応じて履歴を生成（最大5件）
+    const historyCount = Math.min(5, Math.ceil(user.apiCalls / 10));
+    
+    for (let i = 0; i < historyCount; i++) {
+      const time = new Date(now.getTime() - i * 15 * 60000); // 15分ごと
       requests.push({
         time: time.toTimeString().split(' ')[0],
         endpoint: endpoints[Math.floor(Math.random() * endpoints.length)],
@@ -284,32 +318,52 @@ export default function Dashboard() {
 
               <div>
                 <h3 className="text-lg font-semibold mb-4">最近のAPIリクエスト</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-2 px-4 text-sm font-medium text-gray-600">時刻</th>
-                        <th className="text-left py-2 px-4 text-sm font-medium text-gray-600">エンドポイント</th>
-                        <th className="text-left py-2 px-4 text-sm font-medium text-gray-600">ステータス</th>
-                        <th className="text-left py-2 px-4 text-sm font-medium text-gray-600">応答時間</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentRequests.map((request, index) => (
-                        <tr key={index} className="border-b hover:bg-gray-50">
-                          <td className="py-2 px-4 text-sm">{request.time}</td>
-                          <td className="py-2 px-4 text-sm font-mono">{request.endpoint}</td>
-                          <td className="py-2 px-4">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {request.status}
-                            </span>
-                          </td>
-                          <td className="py-2 px-4 text-sm">{request.duration}</td>
+                {recentRequests.length === 0 ? (
+                  <div className="bg-gray-50 rounded-lg p-8 text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full mb-4">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-600 font-medium mb-2">まだAPIリクエストがありません</p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      APIキーを使用してリクエストを送信すると、ここに履歴が表示されます
+                    </p>
+                    <button
+                      onClick={() => router.push('/docs')}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      APIドキュメントを見る →
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-4 text-sm font-medium text-gray-600">時刻</th>
+                          <th className="text-left py-2 px-4 text-sm font-medium text-gray-600">エンドポイント</th>
+                          <th className="text-left py-2 px-4 text-sm font-medium text-gray-600">ステータス</th>
+                          <th className="text-left py-2 px-4 text-sm font-medium text-gray-600">応答時間</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {recentRequests.map((request, index) => (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="py-2 px-4 text-sm">{request.time}</td>
+                            <td className="py-2 px-4 text-sm font-mono">{request.endpoint}</td>
+                            <td className="py-2 px-4">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {request.status}
+                              </span>
+                            </td>
+                            <td className="py-2 px-4 text-sm">{request.duration}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -461,30 +515,53 @@ export default function Dashboard() {
 
               <div>
                 <h3 className="text-lg font-semibold mb-4">請求履歴</h3>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">日付</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">説明</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">金額</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">ステータス</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-t">
-                        <td className="py-3 px-4 text-sm">2024年1月1日</td>
-                        <td className="py-3 px-4 text-sm">{user.plan === 'beta' ? 'ベータアクセス' : 'Standardプラン'} - 1月分</td>
-                        <td className="py-3 px-4 text-sm">{user.plan === 'beta' ? '¥0' : '¥1,080'}</td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            支払済み
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                {user.plan === 'beta' ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <div className="flex items-center mb-2">
+                      <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-blue-800 font-medium">ベータ版は無料でご利用いただけます</p>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      現在ベータテスト期間中のため、請求は発生しません。<br />
+                      正式版リリース時にプラン選択のご案内をお送りします。
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">日付</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">説明</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">金額</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">ステータス</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {user.apiCalls === 0 ? (
+                          <tr className="border-t">
+                            <td colSpan={4} className="py-8 text-center text-gray-500">
+                              まだ請求履歴はありません
+                            </td>
+                          </tr>
+                        ) : (
+                          <tr className="border-t">
+                            <td className="py-3 px-4 text-sm">{new Date().toLocaleDateString('ja-JP')}</td>
+                            <td className="py-3 px-4 text-sm">Standardプラン - 今月分</td>
+                            <td className="py-3 px-4 text-sm">¥1,080</td>
+                            <td className="py-3 px-4">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                請求予定
+                              </span>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
