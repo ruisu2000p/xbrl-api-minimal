@@ -129,192 +129,150 @@ export default function Home() {
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
             簡単3ステップで財務データ取得
           </h3>
-          <div className="bg-gray-900 rounded-2xl p-8 shadow-2xl">
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-gray-800 rounded-lg p-6">
-                <div className="text-blue-400 font-mono text-sm mb-2">Step 1: APIキー取得</div>
-                <pre className="text-green-400 text-xs overflow-x-auto">
-{`curl -X POST https://api.xbrl.jp/auth/register \\
-  -d "email=you@example.com"`}
-                </pre>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-white font-bold text-2xl">1</span>
               </div>
-              <div className="bg-gray-800 rounded-lg p-6">
-                <div className="text-blue-400 font-mono text-sm mb-2">Step 2: データ取得</div>
-                <pre className="text-green-400 text-xs overflow-x-auto">
-{`curl -H "X-API-Key: your_key" \\
-  https://api.xbrl.jp/v1/companies/7203`}
-                </pre>
+              <h4 className="text-xl font-bold mb-4">APIキー取得</h4>
+              <p className="text-gray-600">
+                メールアドレスでアカウント登録後、ダッシュボードからAPIキーを即座に取得できます。
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-white font-bold text-2xl">2</span>
               </div>
-              <div className="bg-gray-800 rounded-lg p-6">
-                <div className="text-blue-400 font-mono text-sm mb-2">Step 3: 分析開始</div>
-                <pre className="text-green-400 text-xs overflow-x-auto">
-{`{
-  "company": "トヨタ自動車",
-  "revenue": "37,154,298",
-  "profit": "2,850,110"
-}`}
-                </pre>
+              <h4 className="text-xl font-bold mb-4">データ取得</h4>
+              <p className="text-gray-600">
+                企業コードを指定してAPIを呼び出すだけで、20年分の財務データを簡単に取得できます。
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-white font-bold text-2xl">3</span>
               </div>
+              <h4 className="text-xl font-bold mb-4">分析開始</h4>
+              <p className="text-gray-600">
+                取得したJSONデータを使って、財務分析やトレンド予測などの高度な分析を開始できます。
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 料金プラン */}
+      {/* ベータ版アクセス */}
       <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <h3 className="text-3xl font-bold text-center text-gray-900 mb-4">
-          あなたに最適なプランを選択
-        </h3>
-        <p className="text-center text-gray-600 mb-12">
-          いつでもアップグレード・ダウングレード可能です。
-        </p>
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Free */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all transform hover:-translate-y-1">
-            <h4 className="text-2xl font-bold mb-2">Free</h4>
-            <p className="text-gray-600 mb-4">個人の学習・研究用</p>
-            <div className="mb-6">
-              <span className="text-5xl font-bold">¥0</span>
-              <span className="text-gray-600">/月</span>
-            </div>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>直近1年分のデータアクセス</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>100回/月のAPI呼び出し</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>基本的な検索機能</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>コミュニティサポート</span>
-              </li>
-            </ul>
-            <button 
-              onClick={() => handlePlanSelect('free')}
-              className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-all"
-            >
-              無料で始める
-            </button>
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium mb-4">
+            🚀 現在ベータ版公開中
           </div>
+          <h3 className="text-3xl font-bold text-gray-900 mb-4">
+            ベータテスト参加者募集中
+          </h3>
+          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+            現在ベータ版として無料でご利用いただけます。フィードバックをお聞かせください。<br />
+            正式版リリース時は段階的な料金プランを導入予定です。
+          </p>
+        </div>
 
-          {/* Standard */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 text-white relative transform scale-105 hover:shadow-2xl transition-all hover:-translate-y-1">
+        {/* ベータ版プラン */}
+        <div className="max-w-lg mx-auto">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 text-white relative">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-6 py-1 rounded-full text-sm font-bold shadow-lg">
-              🔥 最も人気
+              🎯 ベータ限定
             </div>
-            <h4 className="text-2xl font-bold mb-2">Standard</h4>
-            <p className="text-blue-100 mb-4">個人開発者・スタートアップ向け</p>
-            <div className="mb-6">
-              <span className="text-5xl font-bold">¥1,080</span>
-              <span className="text-blue-100">/月</span>
+            
+            <div className="text-center mb-6">
+              <h4 className="text-2xl font-bold mb-2">ベータアクセス</h4>
+              <p className="text-blue-100 mb-4">フルアクセス・無料</p>
+              <div className="mb-6">
+                <span className="text-5xl font-bold">¥0</span>
+                <span className="text-blue-100">/月</span>
+                <div className="text-sm text-blue-200 mt-2">
+                  正式版まで完全無料
+                </div>
+              </div>
             </div>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>直近5年分のデータアクセス</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>3,000回/月のAPI呼び出し</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>CSV/Excelエクスポート機能</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>メールサポート（24時間以内）</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span>高度な検索・フィルタリング</span>
-              </li>
-            </ul>
-            <button 
-              onClick={() => handlePlanSelect('standard')}
-              className="w-full bg-white text-blue-600 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-all shadow-lg"
-            >
-              今すぐアップグレード
-            </button>
-          </div>
 
-          {/* Pro */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all transform hover:-translate-y-1">
-            <h4 className="text-2xl font-bold mb-2">Pro</h4>
-            <p className="text-gray-600 mb-4">プロフェッショナル向け</p>
-            <div className="mb-6">
-              <span className="text-5xl font-bold">¥2,980</span>
-              <span className="text-gray-600">/月</span>
-            </div>
             <ul className="space-y-4 mb-8">
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
                 <span className="font-semibold">全20年分のデータアクセス</span>
               </li>
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span className="font-semibold">無制限のAPI呼び出し</span>
+                <span>1,000回/月のAPI呼び出し</span>
               </li>
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>優先APIアクセス（低レイテンシ）</span>
+                <span>全機能へのフルアクセス</span>
               </li>
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>専用サポート（Slack/電話）</span>
+                <span>CSV/JSONエクスポート機能</span>
               </li>
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>Webhook・バッチ処理対応</span>
+                <span>コミュニティサポート</span>
               </li>
               <li className="flex items-start">
-                <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>カスタムデータ処理</span>
+                <span>正式版での早期アクセス特典</span>
               </li>
             </ul>
+            
             <button 
-              onClick={() => handlePlanSelect('pro')}
-              className="w-full bg-gray-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all"
+              onClick={() => handlePlanSelect('beta')}
+              className="w-full bg-white text-blue-600 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all shadow-lg text-lg"
             >
-              Proプランで始める
+              ベータテストに参加する
             </button>
+            
+            <div className="mt-6 p-4 bg-blue-500/20 rounded-lg">
+              <p className="text-sm text-blue-100 text-center">
+                📧 正式版リリース時は事前にお知らせします<br />
+                🎁 ベータ参加者は正式版で特別価格を適用予定
+              </p>
+            </div>
           </div>
+        </div>
+
+        {/* 正式版予定 */}
+        <div className="mt-16 text-center">
+          <h4 className="text-xl font-bold text-gray-900 mb-4">正式版で予定されている料金プラン</h4>
+          <div className="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            <div className="bg-white rounded-lg shadow p-4 opacity-75">
+              <h5 className="font-bold text-gray-600">Free</h5>
+              <p className="text-2xl font-bold text-gray-400">¥0/月</p>
+              <p className="text-sm text-gray-500">100API呼び出し/月</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 opacity-75">
+              <h5 className="font-bold text-gray-600">Standard</h5>
+              <p className="text-2xl font-bold text-gray-400">¥1,080/月</p>
+              <p className="text-sm text-gray-500">3,000API呼び出し/月</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 opacity-75">
+              <h5 className="font-bold text-gray-600">Pro</h5>
+              <p className="text-2xl font-bold text-gray-400">¥2,980/月</p>
+              <p className="text-sm text-gray-500">無制限API呼び出し</p>
+            </div>
+          </div>
+          <p className="text-sm text-gray-500 mt-4">
+            ※ 正式版の料金は変更される可能性があります
+          </p>
         </div>
       </section>
 
