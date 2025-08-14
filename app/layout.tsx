@@ -23,7 +23,7 @@ export default function RootLayout({
           {/* フッター */}
           <footer className="bg-gray-900 text-white py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* サービス */}
                 <div>
                   <h3 className="text-lg font-bold mb-4">サービス</h3>
@@ -58,25 +58,6 @@ export default function RootLayout({
                     </Link>
                     <a href="#" className="block text-gray-300 hover:text-white transition-colors">
                       コミュニティ
-                    </a>
-                  </div>
-                </div>
-
-                {/* 会社情報 */}
-                <div>
-                  <h3 className="text-lg font-bold mb-4">会社情報</h3>
-                  <div className="space-y-2">
-                    <a href="#" className="block text-gray-300 hover:text-white transition-colors">
-                      会社概要
-                    </a>
-                    <a href="#" className="block text-gray-300 hover:text-white transition-colors">
-                      採用情報
-                    </a>
-                    <a href="#" className="block text-gray-300 hover:text-white transition-colors">
-                      ニュース
-                    </a>
-                    <a href="#" className="block text-gray-300 hover:text-white transition-colors">
-                      パートナー
                     </a>
                   </div>
                 </div>
