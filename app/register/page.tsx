@@ -87,12 +87,51 @@ export default function Register() {
     
     setIsLoading(true);
     
-    // 実際の登録処理をシミュレート
-    setTimeout(() => {
-      // 登録成功後、ダッシュボードへリダイレクト
-      alert(`登録完了！\n\nプラン: ${formData.plan}\nメール: ${formData.email}\n\nダッシュボードへ移動します。`);
-      router.push('/dashboard');
-    }, 2000);
+    try {
+      // 実際のAPI呼び出し
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          company: formData.company,
+          plan: formData.plan
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '登録に失敗しました');
+      }
+
+      // 登録成功時の処理
+      if (data.success) {
+        // ユーザーデータをLocalStorageに保存（welcomeページで使用）
+        localStorage.setItem('registrationData', JSON.stringify(data.user));
+        
+        // welcomeページへリダイレクト
+        router.push('/welcome');
+      }
+    } catch (error) {
+      setIsLoading(false);
+      
+      // エラーメッセージの表示
+      if (error instanceof Error) {
+        if (error.message.includes('既に登録')) {
+          setErrors({ email: 'このメールアドレスは既に登録されています' });
+          setStep(1); // Step 1に戻る
+        } else {
+          alert(`登録エラー: ${error.message}`);
+        }
+      } else {
+        alert('予期しないエラーが発生しました。もう一度お試しください。');
+      }
+    }
   };
 
   const plans = {
