@@ -12,7 +12,7 @@ export default function Register() {
     confirmPassword: '',
     name: '',
     company: '',
-    plan: 'free',
+    plan: 'beta',
     agreeToTerms: false
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -96,9 +96,7 @@ export default function Register() {
   };
 
   const plans = {
-    free: { name: 'Free', price: '¥0', period: '1年分', api: '100回/月' },
-    standard: { name: 'Standard', price: '¥1,080', period: '5年分', api: '3,000回/月' },
-    pro: { name: 'Pro', price: '¥2,980', period: '20年分', api: '無制限' }
+    beta: { name: 'ベータアクセス', price: '¥0', period: '20年分', api: '1,000回/月', description: '現在ベータ版・完全無料' }
   };
 
   return (
@@ -129,7 +127,7 @@ export default function Register() {
           <div className="flex justify-between mt-2 text-sm text-gray-600">
             <span className={step === 1 ? 'font-bold text-blue-600' : ''}>アカウント情報</span>
             <span className={step === 2 ? 'font-bold text-blue-600' : ''}>プロフィール</span>
-            <span className={step === 3 ? 'font-bold text-blue-600' : ''}>プラン選択</span>
+            <span className={step === 3 ? 'font-bold text-blue-600' : ''}>確認</span>
           </div>
         </div>
 
@@ -281,48 +279,54 @@ export default function Register() {
               </div>
             )}
 
-            {/* Step 3: プラン選択 */}
+            {/* Step 3: ベータ版確認 */}
             {step === 3 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">プランを選択</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">ベータ版へようこそ</h2>
                 
-                <div className="space-y-4">
-                  {Object.entries(plans).map(([key, plan]) => (
-                    <label
-                      key={key}
-                      className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        formData.plan === key
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="plan"
-                        value={key}
-                        checked={formData.plan === key}
-                        onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
-                        className="sr-only"
-                      />
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-bold text-lg">{plan.name}</h3>
-                          <p className="text-gray-600 text-sm">
-                            {plan.period}のデータ • {plan.api}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">{plan.price}</p>
-                          <p className="text-sm text-gray-500">/月</p>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
+                {/* ベータ版の特典表示 */}
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-white/20 rounded-full px-4 py-1 text-sm font-bold">
+                      🚀 ベータ限定
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">ベータアクセス</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>全20年分のデータアクセス</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>1,000回/月のAPI呼び出し</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>全機能へのフルアクセス</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>正式版での特別価格適用</span>
+                    </div>
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-white/20">
+                    <div className="text-3xl font-bold">¥0<span className="text-lg font-normal">/月</span></div>
+                    <p className="text-sm opacity-90 mt-1">正式版まで完全無料</p>
+                  </div>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800">
-                    <span className="font-semibold">🎉 キャンペーン中:</span> 今なら全プラン初月無料！
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold">📧 お知らせ:</span> 正式版リリース時は事前にメールでお知らせし、ベータ参加者限定の特別価格をご案内します。
                   </p>
                 </div>
 
