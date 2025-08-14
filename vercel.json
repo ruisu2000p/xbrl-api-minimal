@@ -3,6 +3,9 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["hnd1"],
+  "git": {
+    "deploymentEnabled": true
+  },
   "functions": {
     "app/api/companies/route.ts": {
       "maxDuration": 30
