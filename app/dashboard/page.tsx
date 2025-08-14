@@ -255,7 +255,7 @@ export default function Dashboard() {
             <div className="bg-white/20 rounded-lg p-4">
               <div className="text-3xl font-bold">{user.dataYears}年分</div>
               <div className="text-sm text-blue-100">アクセス可能データ</div>
-              <div className="text-xs text-blue-200 mt-1">{user.dataYears === 20 ? '2005年〜2024年' : '2019年〜2023年'}</div>
+              <div className="text-xs text-blue-200 mt-1">{user.dataYears === 20 ? '2005年〜2025年' : '2020年〜2024年'}</div>
             </div>
             <div className="bg-white/20 rounded-lg p-4">
               <div className="text-3xl font-bold">99.9%</div>

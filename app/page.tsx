@@ -82,15 +82,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center">
             <h2 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              20年分の財務データに<br />
+              全上場企業4,231社の<br />
               <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                瞬時にアクセス
+                財務データを完全網羅
               </span>
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              日本の上場企業4,231社の有価証券報告書データを<br />
-              高速なAPIで提供。投資分析からデータサイエンスまで、<br />
-              あらゆるニーズに対応します。
+              Supabase Proインフラで実現した超高速レスポンス。<br />
+              2022年度の最新データを含む、過去20年分の<br />
+              有価証券報告書を即座に取得可能。
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
               <button 
@@ -171,7 +171,7 @@ export default function Home() {
             ベータテスト参加者募集中
           </h3>
           <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            現在ベータ版として無料でご利用いただけます。フィードバックをお聞かせください。<br />
+            現在ベータ版として無料でご利用いただけます。Supabase Proインフラで本番環境品質のAPIを提供中。<br />
             正式版リリース時は段階的な料金プランを導入予定です。
           </p>
         </div>
@@ -257,17 +257,17 @@ export default function Home() {
             <div className="bg-white rounded-lg shadow p-4 opacity-75">
               <h5 className="font-bold text-gray-600">Free</h5>
               <p className="text-2xl font-bold text-gray-400">¥0/月</p>
-              <p className="text-sm text-gray-500">100API呼び出し/月</p>
+              <p className="text-sm text-gray-500">直近1年データ呼び出し/月</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 opacity-75">
               <h5 className="font-bold text-gray-600">Standard</h5>
               <p className="text-2xl font-bold text-gray-400">¥1,080/月</p>
-              <p className="text-sm text-gray-500">3,000API呼び出し/月</p>
+              <p className="text-sm text-gray-500">直近3年データ呼び出し/月</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 opacity-75">
               <h5 className="font-bold text-gray-600">Pro</h5>
               <p className="text-2xl font-bold text-gray-400">¥2,980/月</p>
-              <p className="text-sm text-gray-500">無制限API呼び出し</p>
+              <p className="text-sm text-gray-500">無制限呼び出し</p>
             </div>
           </div>
           <p className="text-sm text-gray-500 mt-4">
@@ -498,7 +498,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-gray-800 text-center text-sm">
-            <p>&copy; 2024 XBRL財務データAPI. All rights reserved.</p>
+            <p>&copy; 2025 XBRL財務データAPI. All rights reserved.</p>
           </div>
         </div>
       </footer>

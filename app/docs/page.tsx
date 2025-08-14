@@ -669,7 +669,7 @@ function verifyWebhookSignature(payload, signature, secret) {
                   
                   <div className="space-y-8">
                     <div className="border-l-4 border-blue-400 pl-4">
-                      <h3 className="text-xl font-bold">v1.0.0 - 2024年1月14日</h3>
+                      <h3 className="text-xl font-bold">v1.0.0 - 2025年1月14日</h3>
                       <p className="text-gray-600 mb-2">初回リリース</p>
                       <ul className="list-disc pl-6 space-y-1 text-sm">
                         <li>企業一覧・詳細APIの実装</li>
