@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+// 型定義を先に定義
+type LanguageKey = 'javascript' | 'python';
+
 export default function ExamplesPage() {
   const router = useRouter();
-  const [selectedLanguage, setSelectedLanguage] = useState('javascript');
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageKey>('javascript');
 
   const examples = {
     'financial-analysis': {
@@ -1229,6 +1232,10 @@ if __name__ == '__main__':
   function isExampleKey(x: string): x is ExampleKey {
     return x in examples;
   }
+  
+  function isLanguageKey(x: string): x is LanguageKey {
+    return x === 'javascript' || x === 'python';
+  }
 
   const [selectedExample, setSelectedExample] = useState<ExampleKey>('financial-analysis');
 
@@ -1353,12 +1360,12 @@ if __name__ == '__main__':
                 <div className="bg-gray-900 rounded-lg p-6 overflow-x-auto">
                   <pre className="text-sm">
                     <code className="text-green-400">
-                      {examples[selectedExample].languages[selectedLanguage]}
+                      {(examples[selectedExample].languages as Record<LanguageKey, string>)[selectedLanguage]}
                     </code>
                   </pre>
                 </div>
                 <button
-                  onClick={() => copyToClipboard(examples[selectedExample].languages[selectedLanguage])}
+                  onClick={() => copyToClipboard((examples[selectedExample].languages as Record<LanguageKey, string>)[selectedLanguage])}
                   className="absolute top-4 right-4 bg-gray-800 text-gray-400 px-3 py-1 rounded hover:text-white transition-colors"
                 >
                   コピー
