@@ -11,9 +11,14 @@ function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-// APIキーの生成
+// APIキーの生成（より短く、読みやすい形式）
 function generateApiKey(): string {
-  return 'xbrl_' + crypto.randomBytes(32).toString('hex');
+  const prefix = 'xbrl_live_';
+  const randomPart = crypto.randomBytes(24).toString('base64')
+    .replace(/\+/g, '0')
+    .replace(/\//g, '1')
+    .replace(/=/g, '');
+  return prefix + randomPart;
 }
 
 export async function POST(request: NextRequest) {

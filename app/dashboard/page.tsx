@@ -7,19 +7,30 @@ export default function Dashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [showApiKey, setShowApiKey] = useState(false);
-  const [apiKey] = useState('sk_test_' + Math.random().toString(36).substring(2, 15));
   const [copySuccess, setCopySuccess] = useState(false);
-  
-  // デモ用のユーザー情報
-  const [user] = useState({
-    name: 'デモユーザー',
-    email: 'demo@example.com',
-    plan: 'standard',
-    apiCalls: 1234,
-    apiLimit: 3000,
-    dataYears: 5,
-    joinDate: '2024年1月15日'
-  });
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // LocalStorageからユーザー情報を取得
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      // 使用状況を計算（ランダムな値を生成）
+      const enrichedUser = {
+        ...userData,
+        apiCalls: userData.usage?.apiCalls || Math.floor(Math.random() * 500),
+        apiLimit: userData.usage?.monthlyLimit || 1000,
+        dataYears: userData.plan === 'beta' ? 20 : 5,
+        joinDate: new Date(userData.createdAt || Date.now()).toLocaleDateString('ja-JP')
+      };
+      setUser(enrichedUser);
+      setLoading(false);
+    } else {
+      // ログインしていない場合はログインページへ
+      router.push('/login');
+    }
+  }, [router]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -31,23 +42,67 @@ export default function Dashboard() {
     }
   };
 
-  const usageData = [
-    { date: '2024-01-08', calls: 145 },
-    { date: '2024-01-09', calls: 189 },
-    { date: '2024-01-10', calls: 234 },
-    { date: '2024-01-11', calls: 178 },
-    { date: '2024-01-12', calls: 267 },
-    { date: '2024-01-13', calls: 198 },
-    { date: '2024-01-14', calls: 223 }
-  ];
+  const handleLogout = () => {
+    // ログアウト処理
+    localStorage.removeItem('user');
+    router.push('/');
+  };
 
-  const recentRequests = [
-    { time: '10:23:45', endpoint: '/api/v1/companies/7203', status: 200, duration: '45ms' },
-    { time: '10:22:12', endpoint: '/api/v1/financial?company_id=6758', status: 200, duration: '38ms' },
-    { time: '10:20:55', endpoint: '/api/v1/documents?year=2023', status: 200, duration: '52ms' },
-    { time: '10:18:33', endpoint: '/api/v1/companies', status: 200, duration: '41ms' },
-    { time: '10:15:21', endpoint: '/api/v1/search?q=トヨタ', status: 200, duration: '67ms' }
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  // ユーザーごとに異なる使用履歴を生成
+  const generateUsageData = () => {
+    const data = [];
+    const baseUsage = user?.apiCalls || 100;
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      data.push({
+        date: date.toISOString().split('T')[0],
+        calls: Math.floor(baseUsage / 7 + Math.random() * 50)
+      });
+    }
+    return data;
+  };
+
+  const generateRecentRequests = () => {
+    const endpoints = [
+      '/api/v1/companies',
+      '/api/v1/companies/7203',
+      '/api/v1/companies/6758',
+      '/api/v1/financial',
+      '/api/v1/documents',
+      '/api/v1/search'
+    ];
+    
+    const requests = [];
+    const now = new Date();
+    
+    for (let i = 0; i < 5; i++) {
+      const time = new Date(now.getTime() - i * 5 * 60000); // 5分ごと
+      requests.push({
+        time: time.toTimeString().split(' ')[0],
+        endpoint: endpoints[Math.floor(Math.random() * endpoints.length)],
+        status: 200,
+        duration: `${30 + Math.floor(Math.random() * 40)}ms`
+      });
+    }
+    
+    return requests;
+  };
+
+  const usageData = generateUsageData();
+  const recentRequests = generateRecentRequests();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -70,12 +125,12 @@ export default function Dashboard() {
               </button>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">D</span>
+                  <span className="text-white text-sm font-bold">{user.name ? user.name[0].toUpperCase() : 'U'}</span>
                 </div>
                 <span className="text-sm font-medium">{user.email}</span>
               </div>
               <button
-                onClick={() => router.push('/')}
+                onClick={handleLogout}
                 className="text-sm text-gray-600 hover:text-gray-900"
               >
                 ログアウト
@@ -108,12 +163,12 @@ export default function Dashboard() {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={apiKey}
+                      value={user.apiKey || 'APIキーが設定されていません'}
                       readOnly
                       className="flex-1 px-4 py-2 bg-gray-100 rounded-lg font-mono text-sm"
                     />
                     <button
-                      onClick={() => copyToClipboard(apiKey)}
+                      onClick={() => copyToClipboard(user.apiKey || '')}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       {copySuccess ? '✓ コピー済み' : 'コピー'}
@@ -130,7 +185,7 @@ export default function Dashboard() {
                 <div>
                   <h3 className="font-semibold mb-2">使用例</h3>
                   <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto">
-{`curl -H "X-API-Key: ${apiKey}" \\
+{`curl -H "X-API-Key: ${user.apiKey || 'YOUR_API_KEY'}" \\
   https://api.xbrl.jp/v1/companies`}
                   </pre>
                 </div>
@@ -140,7 +195,7 @@ export default function Dashboard() {
                   <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
 {`{
   "xbrl_api": {
-    "api_key": "${apiKey}"
+    "api_key": "${user.apiKey || 'YOUR_API_KEY'}"
   }
 }`}
                   </pre>
@@ -154,7 +209,7 @@ export default function Dashboard() {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white mb-8">
           <h2 className="text-3xl font-bold mb-2">ようこそ、{user.name}さん！</h2>
           <p className="text-blue-100 mb-4">
-            現在のプラン: <span className="font-semibold text-white">Standardプラン</span> • 
+            現在のプラン: <span className="font-semibold text-white">{user.plan === 'beta' ? 'ベータアクセス' : 'Standardプラン'}</span> • 
             利用開始日: {user.joinDate}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
@@ -166,7 +221,7 @@ export default function Dashboard() {
             <div className="bg-white/20 rounded-lg p-4">
               <div className="text-3xl font-bold">{user.dataYears}年分</div>
               <div className="text-sm text-blue-100">アクセス可能データ</div>
-              <div className="text-xs text-blue-200 mt-1">2019年〜2023年</div>
+              <div className="text-xs text-blue-200 mt-1">{user.dataYears === 20 ? '2005年〜2024年' : '2019年〜2023年'}</div>
             </div>
             <div className="bg-white/20 rounded-lg p-4">
               <div className="text-3xl font-bold">99.9%</div>
@@ -370,11 +425,11 @@ export default function Dashboard() {
                 <div className="border rounded-lg p-6 bg-gradient-to-br from-blue-50 to-indigo-50">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="text-xl font-bold">Standardプラン</h4>
-                      <p className="text-gray-600">個人開発者・スタートアップ向け</p>
+                      <h4 className="text-xl font-bold">{user.plan === 'beta' ? 'ベータアクセス' : 'Standardプラン'}</h4>
+                      <p className="text-gray-600">{user.plan === 'beta' ? '現在ベータ版・無料でご利用いただけます' : '個人開発者・スタートアップ向け'}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-bold">¥1,080</div>
+                      <div className="text-3xl font-bold">{user.plan === 'beta' ? '¥0' : '¥1,080'}</div>
                       <div className="text-sm text-gray-600">/月</div>
                     </div>
                   </div>
@@ -383,13 +438,13 @@ export default function Dashboard() {
                       <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      直近5年分のデータアクセス
+                      {user.dataYears === 20 ? '全20年分' : '直近5年分'}のデータアクセス
                     </li>
                     <li className="flex items-center">
                       <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      3,000回/月のAPI呼び出し
+                      {user.apiLimit.toLocaleString()}回/月のAPI呼び出し
                     </li>
                     <li className="flex items-center">
                       <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -419,8 +474,8 @@ export default function Dashboard() {
                     <tbody>
                       <tr className="border-t">
                         <td className="py-3 px-4 text-sm">2024年1月1日</td>
-                        <td className="py-3 px-4 text-sm">Standardプラン - 1月分</td>
-                        <td className="py-3 px-4 text-sm">¥1,080</td>
+                        <td className="py-3 px-4 text-sm">{user.plan === 'beta' ? 'ベータアクセス' : 'Standardプラン'} - 1月分</td>
+                        <td className="py-3 px-4 text-sm">{user.plan === 'beta' ? '¥0' : '¥1,080'}</td>
                         <td className="py-3 px-4">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             支払済み
