@@ -11,7 +11,18 @@ export default function DocsPage() {
   const [tryItResponse, setTryItResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const endpoints = {
+  const endpoints: Record<string, {
+    method: string;
+    path: string;
+    description: string;
+    parameters: Array<{
+      name: string;
+      type: string;
+      required: boolean;
+      description: string;
+    }>;
+    response: string;
+  }> = {
     companies: {
       method: 'GET',
       path: '/api/v1/companies',
