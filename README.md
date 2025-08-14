@@ -146,8 +146,7 @@ GET /api/v1/financial?company_id=S100LO6W&year=2021
 `app/page.tsx`を編集してランディングページをカスタマイズ
 
 ## 📝 ライセンス
-
-MIT License
+※正式リリース時に更新予定
 
 ## 🤝 サポート
 
