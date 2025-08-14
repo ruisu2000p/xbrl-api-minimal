@@ -2,6 +2,8 @@
 
 20年分の日本企業財務データを提供するAPIサービスの最小構成実装です。
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ruisu2000p/xbrl-api-minimal)
+
 ## 🚀 クイックスタート
 
 ### 1. 環境準備（5分）
