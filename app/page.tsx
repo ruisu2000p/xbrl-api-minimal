@@ -456,49 +456,56 @@ export default function Home() {
       {/* フッター */}
       <footer className="bg-gray-900 text-gray-400 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-5 gap-8">
-            <div className="col-span-2">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xl">X</span>
                 </div>
                 <h5 className="text-white font-bold text-xl">XBRL財務データAPI</h5>
               </div>
-              <p className="text-sm mb-4">
-                日本の上場企業4,231社の財務データを提供する<br />
-                APIサービスです。
+              <p className="text-sm">
+                日本の上場企業4,231社の財務データを<br />
+                Supabase Proインフラから配信
               </p>
             </div>
             <div>
-              <h5 className="text-white font-semibold mb-4">プロダクト</h5>
+              <h5 className="text-white font-semibold mb-4">サービス</h5>
               <ul className="space-y-2 text-sm">
-                <li><a href="#features" className="hover:text-white transition-colors">機能</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">料金</a></li>
-                <li><a href="/docs" className="hover:text-white transition-colors">API仕様</a></li>
-                <li><a href="/sdk" className="hover:text-white transition-colors">SDK</a></li>
+                <li><a href="/docs" className="hover:text-white transition-colors">APIドキュメント</a></li>
+                <li><a href="/sdk" className="hover:text-white transition-colors">SDK & ライブラリ</a></li>
+                <li><a href="/examples" className="hover:text-white transition-colors">サンプルコード</a></li>
+                <li><a href="/dashboard" className="hover:text-white transition-colors">ダッシュボード</a></li>
               </ul>
             </div>
             <div>
               <h5 className="text-white font-semibold mb-4">サポート</h5>
               <ul className="space-y-2 text-sm">
-                <li><a href="/docs" className="hover:text-white transition-colors">ドキュメント</a></li>
-                <li><a href="/tutorials" className="hover:text-white transition-colors">チュートリアル</a></li>
-                <li><a href="/faq" className="hover:text-white transition-colors">FAQ</a></li>
+                <li><a href="/support" className="hover:text-white transition-colors">ヘルプセンター</a></li>
                 <li><a href="/contact" className="hover:text-white transition-colors">お問い合わせ</a></li>
-                <li><a href="/status" className="hover:text-white transition-colors">サービス状態</a></li>
+                <li><a href="/status" className="hover:text-white transition-colors">API ステータス</a></li>
+                <li><a href="/community" className="hover:text-white transition-colors">コミュニティ</a></li>
               </ul>
             </div>
             <div>
-              <h5 className="text-white font-semibold mb-4">会社情報</h5>
+              <h5 className="text-white font-semibold mb-4">法的情報</h5>
               <ul className="space-y-2 text-sm">
                 <li><a href="/terms" className="hover:text-white transition-colors">利用規約</a></li>
-                <li><a href="/privacy" className="hover:text-white transition-colors">プライバシー</a></li>
-                <li><a href="/law" className="hover:text-white transition-colors">特定商取引法</a></li>
+                <li><a href="/privacy" className="hover:text-white transition-colors">プライバシーポリシー</a></li>
+                <li><a href="/security" className="hover:text-white transition-colors">セキュリティ</a></li>
+                <li><a href="/compliance" className="hover:text-white transition-colors">コンプライアンス</a></li>
               </ul>
             </div>
           </div>
-          <div className="mt-12 pt-8 border-t border-gray-800 text-center text-sm">
-            <p>&copy; 2025 XBRL財務データAPI. All rights reserved.</p>
+          
+          <div className="mt-12 pt-8 border-t border-gray-800">
+            <div className="text-center">
+              <p className="text-sm mb-4">&copy; 2025 XBRL Financial Data API. All rights reserved.</p>
+              <p className="text-xs text-gray-500">
+                本サービスは、金融庁のEDINETから取得したXBRLデータを活用しています。<br />
+                データの正確性については一切の保証をいたしません。投資判断は自己責任で行ってください。
+              </p>
+            </div>
           </div>
         </div>
       </footer>
