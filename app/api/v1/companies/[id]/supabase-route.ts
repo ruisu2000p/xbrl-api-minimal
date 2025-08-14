@@ -66,7 +66,7 @@ export async function GET(
     const companyId = params.id;
     
     // 1. 企業情報と最新レポートを取得
-    const { data: company, error: companyError } = await supabase
+    let { data: company, error: companyError } = await supabase
       .from('companies')
       .select(`
         *,
