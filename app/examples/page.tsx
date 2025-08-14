@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 export default function ExamplesPage() {
   const router = useRouter();
-  const [selectedExample, setSelectedExample] = useState('financial-analysis');
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
 
   const examples = {
@@ -1222,7 +1221,16 @@ if __name__ == '__main__':
     server.run(port=3000, debug=True)`
       }
     }
-  };
+  } as const;
+
+  // 型定義とガード関数
+  type ExampleKey = keyof typeof examples;
+  
+  function isExampleKey(x: string): x is ExampleKey {
+    return x in examples;
+  }
+
+  const [selectedExample, setSelectedExample] = useState<ExampleKey>('financial-analysis');
 
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -1268,7 +1276,7 @@ if __name__ == '__main__':
                 {Object.entries(examples).map(([key, example]) => (
                   <button
                     key={key}
-                    onClick={() => setSelectedExample(key)}
+                    onClick={() => setSelectedExample(key as ExampleKey)}
                     className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
                       selectedExample === key
                         ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
