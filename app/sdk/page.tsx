@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 export default function SDKPage() {
   const router = useRouter();
-  const [selectedLanguage, setSelectedLanguage] = useState('javascript');
   const [copiedCode, setCopiedCode] = useState('');
 
   const copyToClipboard = (code: string, language: string) => {
@@ -269,7 +268,11 @@ public class Example {
         'JUnit対応'
       ]
     }
-  };
+  } as const;
+
+  // 型定義
+  type SDKKey = keyof typeof sdks;
+  const [selectedLanguage, setSelectedLanguage] = useState<SDKKey>('javascript');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -331,14 +334,14 @@ public class Example {
             {Object.keys(sdks).map((lang) => (
               <button
                 key={lang}
-                onClick={() => setSelectedLanguage(lang)}
+                onClick={() => setSelectedLanguage(lang as SDKKey)}
                 className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
                   selectedLanguage === lang
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 hover:bg-gray-200'
                 }`}
               >
-                {sdks[lang].name}
+                {sdks[lang as SDKKey].name}
               </button>
             ))}
           </div>
