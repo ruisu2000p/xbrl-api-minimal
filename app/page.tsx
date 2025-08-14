@@ -466,7 +466,7 @@ export default function Home() {
               </div>
               <p className="text-sm">
                 日本の上場企業4,231社の財務データを<br />
-                Supabase Proインフラから配信
+                Supabase Proインフラから高速配信
               </p>
             </div>
             <div>
