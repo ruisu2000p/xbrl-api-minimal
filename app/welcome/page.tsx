@@ -13,12 +13,21 @@ export default function WelcomePage() {
     // LocalStorageから登録データを取得
     const storedData = localStorage.getItem('registrationData');
     if (storedData) {
-      setUserData(JSON.parse(storedData));
-      // 安全のため、データを削除
+      const data = JSON.parse(storedData);
+      setUserData(data);
+      // ダッシュボード用にuserデータも保存
+      localStorage.setItem('user', JSON.stringify(data));
+      // 元のregistrationDataは削除
       localStorage.removeItem('registrationData');
     } else {
-      // データがない場合はホームへリダイレクト
-      router.push('/');
+      // 既にuserデータがある場合はそれを使用
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        setUserData(JSON.parse(userData));
+      } else {
+        // データがない場合はホームへリダイレクト
+        router.push('/');
+      }
     }
   }, [router]);
 
@@ -132,9 +141,9 @@ export default function WelcomePage() {
           <h2 className="text-2xl font-bold mb-6">次のステップ</h2>
           
           <div className="space-y-4">
-            <a
-              href="/docs"
-              className="block p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+            <button
+              onClick={() => router.push('/docs')}
+              className="block w-full text-left p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -145,11 +154,11 @@ export default function WelcomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </a>
+            </button>
 
-            <a
-              href="/examples"
-              className="block p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+            <button
+              onClick={() => router.push('/examples')}
+              className="block w-full text-left p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -160,11 +169,11 @@ export default function WelcomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </a>
+            </button>
 
-            <a
-              href="/dashboard"
-              className="block p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="block w-full text-left p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -175,7 +184,7 @@ export default function WelcomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </a>
+            </button>
           </div>
 
           {/* クイックスタートコード */}
