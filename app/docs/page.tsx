@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 export default function DocsPage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('introduction');
-  const [selectedEndpoint, setSelectedEndpoint] = useState('companies');
   const [tryItApiKey, setTryItApiKey] = useState('');
   const [tryItResponse, setTryItResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -138,6 +137,8 @@ export default function DocsPage() {
 }`
     }
   };
+
+  const [selectedEndpoint, setSelectedEndpoint] = useState<keyof typeof endpoints>('companies');
 
   const handleTryIt = async () => {
     if (!tryItApiKey) {
