@@ -68,13 +68,13 @@ export default function AdminDashboard() {
   }));
 
   // システムログ（リアルタイムに更新される予定）
-  const systemLogs: any[] = [];
+  const systemLogs: Array<{time: string, level: string, message: string, details: string}> = [];
 
   // 収益グラフデータ（実データから生成）
-  const revenueData = [];
+  const revenueData: Array<{month: string, revenue: number, users: number}> = [];
 
   // APIエンドポイント統計（実データから生成）
-  const apiEndpoints: any[] = [];
+  const apiEndpoints: Array<{endpoint: string, calls: number, avgTime: string, errorRate: string}> = [];
 
   const handleUserAction = (userId: string, action: string) => {
     alert(`アクション: ${action} - ユーザーID: ${userId}`);
