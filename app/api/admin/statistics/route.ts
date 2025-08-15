@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
 
     // 稼働率計算
     const uptimeMetrics = systemMetrics?.filter(m => m.metric_type === 'uptime');
-    const systemUptime = uptimeMetrics?.length > 0 
+    const systemUptime = uptimeMetrics && uptimeMetrics.length > 0 
       ? uptimeMetrics[0].metric_value 
       : 99.98;
 
