@@ -165,8 +165,8 @@ async function processMarkdownFiles(companyId, docPath, docType, originalDirName
   // 年度を抽出
   const fiscalYear = extractFiscalYear(content);
   
-  // 2. Markdownファイルをストレージにアップロード（年度/企業ID/ファイル名の構造）
-  // ファイル名も英数字のみに変換
+  // 2. Markdownファイルをストレージにアップロード
+  // Storageのパスは英数字のみ、オリジナル名はデータベースに保存
   const cleanFileName = mainFile.replace(/[^A-Za-z0-9._-]/g, '_');
   const fileName = `${fiscalYear}/${companyId}/${docType}_${cleanFileName}`;
   const { data: uploadData, error: uploadError } = await supabase.storage
@@ -193,7 +193,10 @@ async function processMarkdownFiles(companyId, docPath, docType, originalDirName
       financial_data: financialData,
       doc_type: docType,
       storage_path: fileName,  // 年度付きのパスを保存
-      metadata: { original_dir: originalDirName }  // オリジナルディレクトリ名をメタデータに保存
+      metadata: { 
+        original_dir: originalDirName,  // オリジナルディレクトリ名（日本語含む）をメタデータに保存
+        original_file: mainFile  // オリジナルファイル名も保存
+      }
     }, {
       onConflict: 'company_id,fiscal_year,doc_type'  // doc_typeも含める
     });
