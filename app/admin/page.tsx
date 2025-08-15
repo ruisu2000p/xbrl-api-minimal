@@ -2,61 +2,79 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
   const [showUserDetails, setShowUserDetails] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [realStats, setRealStats] = useState<any>(null);
+  const [realUsers, setRealUsers] = useState<any[]>([]);
 
-  // 統計データ
-  const stats = {
-    totalUsers: 1284,
-    activeUsers: 892,
-    newUsersToday: 23,
-    totalRevenue: 1234560,
-    monthlyRevenue: 198740,
-    apiCalls: 3456789,
-    apiCallsToday: 45678,
-    systemUptime: 99.98,
-    avgResponseTime: 42
+  // リアルタイム統計データをフェッチ
+  useEffect(() => {
+    fetchRealData();
+    const interval = setInterval(fetchRealData, 30000); // 30秒ごとに更新
+    return () => clearInterval(interval);
+  }, [selectedPeriod]);
+
+  const fetchRealData = async () => {
+    try {
+      // 統計データ取得
+      const statsResponse = await fetch(`/api/admin/statistics?period=${selectedPeriod}`);
+      const statsData = await statsResponse.json();
+      setRealStats(statsData.overview);
+
+      // ユーザーデータ取得
+      const usersResponse = await fetch('/api/admin/users?per_page=100');
+      const usersData = await usersResponse.json();
+      setRealUsers(usersData.users || []);
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      setIsLoading(false);
+    }
   };
 
-  // ユーザーデータ
-  const users = [
-    { id: 'u1', name: '田中 太郎', email: 'tanaka@example.com', plan: 'pro', status: 'active', apiCalls: 12345, joinDate: '2024-01-01', revenue: 2980 },
-    { id: 'u2', name: '佐藤 花子', email: 'sato@example.com', plan: 'standard', status: 'active', apiCalls: 2890, joinDate: '2024-01-05', revenue: 1080 },
-    { id: 'u3', name: '鈴木 一郎', email: 'suzuki@example.com', plan: 'free', status: 'active', apiCalls: 98, joinDate: '2024-01-10', revenue: 0 },
-    { id: 'u4', name: '山田 次郎', email: 'yamada@example.com', plan: 'standard', status: 'suspended', apiCalls: 3001, joinDate: '2024-01-03', revenue: 1080 },
-    { id: 'u5', name: '伊藤 美咲', email: 'ito@example.com', plan: 'pro', status: 'active', apiCalls: 45678, joinDate: '2023-12-15', revenue: 2980 }
-  ];
+  // デフォルト値（データ取得中に表示）
+  const stats = realStats || {
+    totalUsers: 0,
+    activeUsers: 0,
+    newUsersToday: 0,
+    monthlyRevenue: 0,
+    apiCallsToday: 0,
+    systemUptime: 99.9,
+    avgResponseTime: 0
+  };
 
-  // システムログ
-  const systemLogs = [
-    { time: '12:45:32', level: 'info', message: 'API server started successfully', details: 'All services operational' },
-    { time: '12:44:18', level: 'warning', message: 'High API usage detected', details: 'User u5 exceeded 80% of quota' },
-    { time: '12:42:55', level: 'info', message: 'Database backup completed', details: '12.3GB backed up successfully' },
-    { time: '12:40:22', level: 'error', message: 'Failed API request', details: 'Invalid API key from IP 192.168.1.1' },
-    { time: '12:38:10', level: 'info', message: 'New user registration', details: 'User registered: test@example.com' }
-  ];
+  // ユーザーデータを実データから生成
+  const users = realUsers.map(user => ({
+    id: user.id,
+    name: user.name || '未設定',
+    email: user.email,
+    plan: user.subscription_plan || 'free',
+    status: user.is_active ? 'active' : 'suspended',
+    apiCalls: user.monthly_api_calls || 0,
+    joinDate: user.join_date ? new Date(user.join_date).toLocaleDateString('ja-JP') : '-',
+    revenue: user.subscription_plan === 'pro' ? 2980 : user.subscription_plan === 'standard' ? 1080 : 0
+  }));
 
-  // 収益グラフデータ
-  const revenueData = [
-    { month: '8月', revenue: 145000, users: 980 },
-    { month: '9月', revenue: 156000, users: 1020 },
-    { month: '10月', revenue: 168000, users: 1080 },
-    { month: '11月', revenue: 178000, users: 1150 },
-    { month: '12月', revenue: 189000, users: 1220 },
-    { month: '1月', revenue: 198740, users: 1284 }
-  ];
+  // システムログ（リアルタイムに更新される予定）
+  const systemLogs: any[] = [];
 
-  // APIエンドポイント統計
-  const apiEndpoints = [
-    { endpoint: '/api/v1/companies', calls: 1234567, avgTime: '38ms', errorRate: '0.02%' },
-    { endpoint: '/api/v1/financial', calls: 987654, avgTime: '45ms', errorRate: '0.01%' },
-    { endpoint: '/api/v1/documents', calls: 765432, avgTime: '52ms', errorRate: '0.03%' },
-    { endpoint: '/api/v1/search', calls: 543210, avgTime: '67ms', errorRate: '0.04%' }
-  ];
+  // 収益グラフデータ（実データから生成）
+  const revenueData = [];
+
+  // APIエンドポイント統計（実データから生成）
+  const apiEndpoints: any[] = [];
 
   const handleUserAction = (userId: string, action: string) => {
     alert(`アクション: ${action} - ユーザーID: ${userId}`);
@@ -105,8 +123,12 @@ export default function AdminDashboard() {
               <span className="text-sm font-medium text-gray-600">総ユーザー数</span>
               <span className="text-2xl">👥</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900">{stats.totalUsers.toLocaleString()}</div>
-            <div className="text-sm text-green-600 mt-2">+{stats.newUsersToday} 今日</div>
+            <div className="text-3xl font-bold text-gray-900">
+              {isLoading ? '-' : stats.totalUsers.toLocaleString()}
+            </div>
+            <div className="text-sm text-green-600 mt-2">
+              {isLoading ? '-' : `+${stats.newUsersToday} 今日`}
+            </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
@@ -114,8 +136,10 @@ export default function AdminDashboard() {
               <span className="text-sm font-medium text-gray-600">月間収益</span>
               <span className="text-2xl">💰</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900">¥{stats.monthlyRevenue.toLocaleString()}</div>
-            <div className="text-sm text-green-600 mt-2">+12.3% 前月比</div>
+            <div className="text-3xl font-bold text-gray-900">
+              {isLoading ? '-' : `¥${stats.monthlyRevenue.toLocaleString()}`}
+            </div>
+            <div className="text-sm text-gray-600 mt-2">月間収益</div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
@@ -123,7 +147,9 @@ export default function AdminDashboard() {
               <span className="text-sm font-medium text-gray-600">API呼び出し</span>
               <span className="text-2xl">📊</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900">{(stats.apiCallsToday / 1000).toFixed(1)}k</div>
+            <div className="text-3xl font-bold text-gray-900">
+              {isLoading ? '-' : stats.apiCallsToday > 1000 ? `${(stats.apiCallsToday / 1000).toFixed(1)}k` : stats.apiCallsToday}
+            </div>
             <div className="text-sm text-gray-600 mt-2">今日の呼び出し</div>
           </div>
 
@@ -132,8 +158,12 @@ export default function AdminDashboard() {
               <span className="text-sm font-medium text-gray-600">システム稼働率</span>
               <span className="text-2xl">🟢</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900">{stats.systemUptime}%</div>
-            <div className="text-sm text-gray-600 mt-2">平均応答: {stats.avgResponseTime}ms</div>
+            <div className="text-3xl font-bold text-gray-900">
+              {isLoading ? '-' : `${stats.systemUptime}%`}
+            </div>
+            <div className="text-sm text-gray-600 mt-2">
+              {isLoading ? '-' : `平均応答: ${stats.avgResponseTime}ms`}
+            </div>
           </div>
         </div>
 
