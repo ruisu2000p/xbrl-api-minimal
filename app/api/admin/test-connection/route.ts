@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
       serviceRoleKey: serviceRoleKey ? '✅ 設定済み' : '❌ 未設定',
       urlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'undefined',
       keyLength: serviceRoleKey ? serviceRoleKey.length : 0,
-      keyPrefix: serviceRoleKey ? serviceRoleKey.substring(0, 20) + '...' : 'undefined'
+      keyPrefix: serviceRoleKey ? serviceRoleKey.substring(0, 40) + '...' : 'undefined',
+      keyActualPrefix: serviceRoleKey ? serviceRoleKey.substring(0, 10) : 'undefined'
     };
 
     // Supabaseクライアント作成（エラーハンドリング付き）
