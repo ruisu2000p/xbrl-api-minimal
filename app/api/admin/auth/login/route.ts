@@ -7,13 +7,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// 管理者アカウント（本番環境ではSupabaseに保存）
-const ADMIN_CREDENTIALS = {
-  email: 'admin@xbrl-api.com',
-  passwordHash: crypto.createHash('sha256').update('Admin@2024#XBRL').digest('hex'),
-  role: 'admin'
-};
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -27,11 +20,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // パスワードをハッシュ化
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+    // Supabaseのusersテーブルから管理者を確認
+    const { data: adminUser, error: dbError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .eq('role', 'admin')
+      .eq('is_active', true)
+      .single();
 
-    // 管理者認証（簡易版 - 本番環境ではSupabase Authを使用）
-    if (email !== ADMIN_CREDENTIALS.email || passwordHash !== ADMIN_CREDENTIALS.passwordHash) {
+    if (dbError || !adminUser) {
+      console.error('Admin user not found:', dbError);
+      return NextResponse.json(
+        { error: 'メールアドレスまたはパスワードが正しくありません' },
+        { status: 401 }
+      );
+    }
+
+    // パスワード検証（簡易版 - 本番環境ではSupabase Authを使用推奨）
+    // 一時的にハードコードされたパスワードと照合
+    const expectedPassword = 'Admin@2024#XBRL';
+    if (password !== expectedPassword) {
       return NextResponse.json(
         { error: 'メールアドレスまたはパスワードが正しくありません' },
         { status: 401 }
@@ -45,10 +54,10 @@ export async function POST(request: NextRequest) {
 
     // ユーザー情報
     const user = {
-      id: 'admin-001',
-      email: ADMIN_CREDENTIALS.email,
-      name: '管理者',
-      role: ADMIN_CREDENTIALS.role
+      id: adminUser.id,
+      email: adminUser.email,
+      name: adminUser.name || '管理者',
+      role: adminUser.role
     };
 
     // アクティビティログを記録
