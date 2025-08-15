@@ -1,18 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function GET(request: NextRequest) {
   try {
+    // 環境変数の詳細確認
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
     // 1. Supabase接続テスト
     const connectionTest = {
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ 設定済み' : '❌ 未設定',
-      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ 設定済み' : '❌ 未設定',
+      supabaseUrl: supabaseUrl ? '✅ 設定済み' : '❌ 未設定',
+      serviceRoleKey: serviceRoleKey ? '✅ 設定済み' : '❌ 未設定',
+      urlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'undefined',
+      keyLength: serviceRoleKey ? serviceRoleKey.length : 0,
+      keyPrefix: serviceRoleKey ? serviceRoleKey.substring(0, 20) + '...' : 'undefined'
     };
+
+    // Supabaseクライアント作成（エラーハンドリング付き）
+    let supabase;
+    let clientError = null;
+    
+    try {
+      if (!supabaseUrl || !serviceRoleKey) {
+        throw new Error('Missing environment variables');
+      }
+      
+      supabase = createClient(supabaseUrl, serviceRoleKey);
+    } catch (err) {
+      clientError = err instanceof Error ? err.message : 'Unknown error';
+    }
+    
+    if (!supabase) {
+      return NextResponse.json({
+        status: 'error',
+        connection: connectionTest,
+        error: 'Failed to create Supabase client',
+        details: clientError
+      }, { status: 500 });
+    }
 
     // 2. usersテーブルの存在確認
     const { data: users, error: usersError } = await supabase
