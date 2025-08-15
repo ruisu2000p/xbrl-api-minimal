@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "xbrl-financial-data": {
+      "command": "node",
+      "args": ["C:\\Users\\pumpk\\Downloads\\xbrl-api-minimal\\mcp-server.js"],
+      "env": {
+        "XBRL_API_URL": "http://localhost:5001"
+      }
+    }
+  }
+}

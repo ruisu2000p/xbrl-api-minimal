@@ -10,11 +10,15 @@
     "migrate": "node scripts/migrate-data.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.3",
     "@supabase/auth-helpers-nextjs": "^0.8.0",
     "@supabase/supabase-js": "^2.55.0",
     "axios": "^1.6.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "next": "14.0.0",
+    "node-fetch": "^2.7.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "stripe": "^14.0.0",
