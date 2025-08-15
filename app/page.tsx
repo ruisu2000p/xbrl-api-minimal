@@ -40,8 +40,8 @@ export default function Home() {
 
   const stats = [
     { number: "4,231", label: "社", description: "対応企業数" },
-    { number: "20", label: "年分", description: "データ期間" },
-    { number: "100%", label: "", description: "データ完全性" }
+    { number: "2021-2022", label: "年度", description: "対象期間" },
+    { number: "即座に", label: "", description: "データ取得" }
   ];
 
   return (
@@ -88,8 +88,8 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              2022年度の最新データを含む、過去20年分の<br />
-              有価証券報告書データベースを提供。
+              2021年4月〜2022年3月期の有価証券報告書を含む<br />
+              4,231社の財務データベースを提供。
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
               <button 
@@ -170,7 +170,7 @@ export default function Home() {
             ベータテスト参加者募集中
           </h3>
           <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            現在ベータ版として無料でご利用いただけます。Supabase Proインフラで本番環境品質のAPIを提供中。<br />
+            現在ベータ版として無料でご利用いただけます。<br />
             正式版リリース時は段階的な料金プランを導入予定です。
           </p>
         </div>
