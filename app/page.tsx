@@ -41,7 +41,7 @@ export default function Home() {
   const stats = [
     { number: "4,231", label: "社", description: "対応企業数" },
     { number: "20", label: "年分", description: "データ期間" },
-    { number: "50ms", label: "未満", description: "平均レスポンス" }
+    { number: "100%", label: "", description: "データ完全性" }
   ];
 
   return (
@@ -88,9 +88,8 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Supabase Proインフラで実現した超高速レスポンス。<br />
               2022年度の最新データを含む、過去20年分の<br />
-              有価証券報告書を即座に取得可能。
+              有価証券報告書データベースを提供。
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
               <button 
@@ -290,9 +289,9 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h4 className="text-xl font-bold mb-3">超高速レスポンス</h4>
+                <h4 className="text-xl font-bold mb-3">高速データアクセス</h4>
                 <p className="text-gray-600">
-                  最適化されたインフラにより、平均50ms未満のレスポンスタイムを実現。大量のデータも瞬時に取得可能です。
+                  最適化されたデータベース構造により、必要なデータを効率的に取得。大量のデータも素早くアクセス可能です。
                 </p>
               </div>
             </div>
@@ -357,12 +356,12 @@ export default function Home() {
               <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl p-8">
                 <div className="w-14 h-14 bg-gradient-to-br from-yellow-600 to-amber-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-all">
                   <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <h4 className="text-xl font-bold mb-3">24時間サポート</h4>
+                <h4 className="text-xl font-bold mb-3">充実のドキュメント</h4>
                 <p className="text-gray-600">
-                  プロプランでは専用のサポートチームが24時間体制で対応。技術的な質問から実装支援まで幅広くサポートします。
+                  詳細なAPIドキュメントとサンプルコードを提供。開発者が迅速に実装できるよう、充実したリソースを用意しています。
                 </p>
               </div>
             </div>
@@ -466,7 +465,7 @@ export default function Home() {
               </div>
               <p className="text-sm">
                 日本の上場企業4,231社の財務データを<br />
-                Supabase Proインフラから高速配信
+                クラウドインフラから配信
               </p>
             </div>
             <div>
