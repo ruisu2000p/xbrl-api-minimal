@@ -115,10 +115,13 @@ export default function Register() {
         throw new Error(data.error || '登録に失敗しました');
       }
 
-      // 登録成功時の処理      if (data.success) {
-        // ユーザーデータをLocalStorageに保存（welcomeページで使用）        localStorage.setItem('registrationData', JSON.stringify(data.user));
+      // 登録成功時の処理
+      if (data.success) {
+        // ユーザーデータをLocalStorageに保存（welcomeページで使用）
+        localStorage.setItem('registrationData', JSON.stringify(data.user));
         
-        // welcomeページへリダイレクト        router.push('/welcome');
+        // welcomeページへリダイレクト
+        router.push('/welcome');
       }
     } catch (error) {
       setIsLoading(false);
@@ -127,7 +130,8 @@ export default function Register() {
       if (error instanceof Error) {
         if (error.message.includes('既に登録')) {
           setErrors({ email: 'このメールアドレスは既に登録されています' });
-          setStep(1); // Step 1に戻る        } else {
+          setStep(1); // Step 1に戻る
+        } else {
           alert(`登録エラー: ${error.message}`);
         }
       } else {
