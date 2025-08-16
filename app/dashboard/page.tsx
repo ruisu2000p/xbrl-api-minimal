@@ -4,15 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
-} from 'recharts';
-import { 
   Copy,
   Key,
   User,
@@ -34,16 +25,6 @@ interface User {
   createdAt?: string;
 }
 
-interface ApiUsage {
-  used: number;
-  limit: number;
-  percentage: number;
-}
-
-interface DailyUsage {
-  date: string;
-  count: number;
-}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -52,14 +33,11 @@ export default function DashboardPage() {
   const [apiKey, setApiKey] = useState<string>('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [usage, setUsage] = useState<ApiUsage>({ used: 342, limit: 1000, percentage: 34.2 });
-  const [dailyUsage, setDailyUsage] = useState<DailyUsage[]>([]);
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     checkAuth();
     fetchApiKey();
-    fetchUsageData();
   }, []);
 
   async function checkAuth() {
@@ -78,19 +56,6 @@ export default function DashboardPage() {
     // 実際のAPIキーを取得（本番環境では実際のAPIエンドポイントを使用）
     const storedKey = localStorage.getItem('apiKey') || 'xbrl_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4';
     setApiKey(storedKey);
-  }
-
-  async function fetchUsageData() {
-    // 過去7日間の使用状況（本番環境では実際のAPIを呼び出す）
-    const data: DailyUsage[] = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (6 - i));
-      return {
-        date: format(date, 'MM/dd', { locale: ja }),
-        count: Math.floor(Math.random() * 50) + 10
-      };
-    });
-    setDailyUsage(data);
   }
 
   async function generateNewApiKey() {
@@ -112,11 +77,11 @@ export default function DashboardPage() {
   }
 
   function getPlanDetails(plan: string) {
-    const plans: Record<string, { name: string; limit: number; price: string; color: string }> = {
-      beta: { name: 'ベータ', limit: 1000, price: '無料', color: 'bg-blue-100 text-blue-800' },
-      free: { name: 'Free', limit: 100, price: '¥0', color: 'bg-gray-100 text-gray-800' },
-      standard: { name: 'Standard', limit: 3000, price: '¥1,080', color: 'bg-green-100 text-green-800' },
-      pro: { name: 'Pro', limit: -1, price: '¥2,980', color: 'bg-purple-100 text-purple-800' }
+    const plans: Record<string, { name: string; price: string; color: string }> = {
+      beta: { name: 'ベータ', price: '無料', color: 'bg-blue-100 text-blue-800' },
+      free: { name: 'Free', price: '¥0', color: 'bg-gray-100 text-gray-800' },
+      standard: { name: 'Standard', price: '¥1,080', color: 'bg-green-100 text-green-800' },
+      pro: { name: 'Pro', price: '¥2,980', color: 'bg-purple-100 text-purple-800' }
     };
     return plans[plan] || plans.beta;
   }
@@ -169,16 +134,10 @@ export default function DashboardPage() {
               {planDetails.name}プラン
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
               <p className="text-sm text-gray-600">プラン料金</p>
               <p className="text-lg font-semibold">{planDetails.price}/月</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">API制限</p>
-              <p className="text-lg font-semibold">
-                {planDetails.limit === -1 ? '無制限' : `${planDetails.limit}回/月`}
-              </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">登録日</p>
@@ -227,40 +186,6 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* 使用状況 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">今月の使用状況</h2>
-          
-          <div className="mb-6">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>{usage.used}回使用</span>
-              <span>{usage.limit}回まで</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                className="bg-blue-600 h-3 rounded-full"
-                style={{ width: `${usage.percentage}%` }}
-              />
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              残り {usage.limit - usage.used} 回
-            </p>
-          </div>
-
-          {/* 日別使用状況グラフ */}
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyUsage}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#2563eb" />
-              </BarChart>
-            </ResponsiveContainer>
           </div>
         </div>
 
