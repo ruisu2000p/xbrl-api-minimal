@@ -106,14 +106,17 @@ export async function authByApiKey(req: NextRequest): Promise<AuthResult | AuthE
     }
 
     // 最終使用時刻を非同期で更新（レスポンスを待たない）
-    admin
+    const updatePromise = admin
       .from('api_keys')
       .update({ last_used_at: new Date().toISOString() })
-      .eq('id', data.id)
+      .eq('id', data.id);
+    
+    // Promiseとして処理
+    Promise.resolve(updatePromise)
       .then(() => {
         // 成功時は何もしない
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error('Failed to update last_used_at:', err);
       });
 
