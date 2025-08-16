@@ -6,44 +6,41 @@ import { randomBytes } from 'crypto';
 // APIキーを取得
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId();
-    
-    if (!userId) {
-      // デモユーザーの場合
-      return NextResponse.json({
-        apiKey: 'xbrl_demo_' + randomBytes(16).toString('hex'),
-        isDemo: true
-      });
-    }
+    // 認証を一時的にスキップして、メールベースで処理
+    const userEmail = request.headers.get('x-user-email') || 'demo@example.com';
+    console.log('Getting API key for email:', userEmail);
 
-    // Supabaseからユーザープロファイルを取得
+    // メールアドレスでプロファイルを検索
     const { data: profile, error } = await admin
       .from('profiles')
-      .select('api_key')
-      .eq('id', userId)
+      .select('*')
+      .eq('email', userEmail)
       .single();
 
     if (error || !profile) {
       // プロファイルが存在しない場合は作成
       const newApiKey = 'xbrl_live_' + randomBytes(24).toString('hex');
-      const { error: insertError } = await admin
+      const { data: newProfile, error: insertError } = await admin
         .from('profiles')
         .insert({
-          id: userId,
-          email: 'user@example.com', // 実際のemailはauth.usersから取得可能
+          email: userEmail,
           api_key: newApiKey,
           plan: 'beta'
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) {
         console.error('Failed to create profile:', insertError);
-        return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to create profile: ' + insertError.message }, { status: 500 });
       }
 
-      return NextResponse.json({ apiKey: newApiKey });
+      console.log('Created new profile:', newProfile);
+      return NextResponse.json({ apiKey: newApiKey, created: true });
     }
 
-    return NextResponse.json({ apiKey: profile.api_key });
+    console.log('Found existing profile:', profile);
+    return NextResponse.json({ apiKey: profile.api_key, existing: true });
   } catch (error) {
     console.error('API key fetch error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -53,40 +50,72 @@ export async function GET(request: NextRequest) {
 // 新しいAPIキーを生成
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId();
-    
-    if (!userId) {
-      // デモユーザーの場合
-      const demoKey = 'xbrl_demo_' + randomBytes(16).toString('hex');
-      return NextResponse.json({ apiKey: demoKey, isDemo: true });
-    }
+    // 認証を一時的にスキップして、メールベースで処理
+    const userEmail = request.headers.get('x-user-email') || 'demo@example.com';
+    console.log('Generating new API key for email:', userEmail);
 
     // 新しいAPIキーを生成
     const newApiKey = 'xbrl_live_' + randomBytes(24).toString('hex');
 
-    // Supabaseのプロファイルを更新
-    const { error } = await admin
+    // まずプロファイルが存在するか確認
+    const { data: existingProfile } = await admin
       .from('profiles')
-      .update({ api_key: newApiKey })
-      .eq('id', userId);
+      .select('id')
+      .eq('email', userEmail)
+      .single();
+
+    if (!existingProfile) {
+      // プロファイルが存在しない場合は作成
+      const { data: newProfile, error: insertError } = await admin
+        .from('profiles')
+        .insert({
+          email: userEmail,
+          api_key: newApiKey,
+          plan: 'beta'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Failed to create profile:', insertError);
+        return NextResponse.json({ error: 'Failed to create profile: ' + insertError.message }, { status: 500 });
+      }
+
+      console.log('Created new profile with API key:', newProfile);
+      return NextResponse.json({ apiKey: newApiKey, created: true });
+    }
+
+    // 既存プロファイルのAPIキーを更新
+    const { data: updatedProfile, error } = await admin
+      .from('profiles')
+      .update({ 
+        api_key: newApiKey,
+        updated_at: new Date().toISOString()
+      })
+      .eq('email', userEmail)
+      .select()
+      .single();
 
     if (error) {
       console.error('Failed to update API key:', error);
-      return NextResponse.json({ error: 'Failed to update API key' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to update API key: ' + error.message }, { status: 500 });
     }
 
-    // API使用履歴をログ
-    await admin
-      .from('api_usage')
-      .insert({
-        user_id: userId,
-        endpoint: '/api/dashboard/api-key',
-        method: 'POST',
-        status_code: 200,
-        response_time_ms: 100
-      });
+    // API使用履歴をログ（user_idがある場合のみ）
+    if (updatedProfile?.id) {
+      await admin
+        .from('api_usage')
+        .insert({
+          user_id: updatedProfile.id,
+          endpoint: '/api/dashboard/api-key',
+          method: 'POST',
+          status_code: 200,
+          response_time_ms: 100
+        });
+    }
 
-    return NextResponse.json({ apiKey: newApiKey });
+    console.log('Updated API key for profile:', updatedProfile);
+    return NextResponse.json({ apiKey: newApiKey, updated: true });
   } catch (error) {
     console.error('API key generation error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

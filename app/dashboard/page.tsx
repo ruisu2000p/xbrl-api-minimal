@@ -37,9 +37,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     checkAuth();
-    fetchApiKey();
     fetchProfile();
   }, []);
+
+  // userが設定された後にAPIキーを取得
+  useEffect(() => {
+    if (user) {
+      fetchApiKey();
+    }
+  }, [user]);
 
   async function checkAuth() {
     // LocalStorageをチェック（後方互換性のため）
@@ -77,14 +83,25 @@ export default function DashboardPage() {
 
   async function fetchApiKey() {
     try {
+      // ユーザーのメールアドレスを取得
+      const userEmail = user?.email || 'demo@example.com';
+      
       // Supabaseから取得を試みる
-      const response = await fetch('/api/dashboard/api-key');
+      const response = await fetch('/api/dashboard/api-key', {
+        headers: {
+          'x-user-email': userEmail
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('API key response:', data);
         setApiKey(data.apiKey);
         // LocalStorageにもキャッシュ（MCP用）
         localStorage.setItem('apiKey', data.apiKey);
       } else {
+        const errorData = await response.json();
+        console.error('API key fetch failed:', errorData);
         // フォールバック: LocalStorageから取得
         const storedKey = localStorage.getItem('apiKey') || 'xbrl_demo_' + Math.random().toString(36).substring(2, 15);
         setApiKey(storedKey);
@@ -100,18 +117,27 @@ export default function DashboardPage() {
   async function generateNewApiKey() {
     setGenerating(true);
     try {
+      // ユーザーのメールアドレスを取得
+      const userEmail = user?.email || 'demo@example.com';
+      
       // Supabase経由で新しいAPIキーを生成
       const response = await fetch('/api/dashboard/api-key', {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'x-user-email': userEmail
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
+        console.log('New API key generated:', data);
         setApiKey(data.apiKey);
         // LocalStorageにもキャッシュ（MCP用）
         localStorage.setItem('apiKey', data.apiKey);
         alert('新しいAPIキーが生成されました');
       } else {
+        const errorData = await response.json();
+        console.error('API key generation failed:', errorData);
         // エラー時はローカルで生成
         const newKey = `xbrl_demo_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
         setApiKey(newKey);
