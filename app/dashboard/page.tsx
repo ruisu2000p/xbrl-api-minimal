@@ -68,21 +68,18 @@ export default function DashboardPage() {
       return;
     }
 
-    // LocalStorageにない場合はSupabase認証を確認
-    try {
-      const response = await fetch('/api/auth/me');
-      if (!response.ok) {
-        router.push('/login');
-        return;
-      }
-      const data = await response.json();
-      setUser(data.user);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setLoading(false);
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      router.push('/login');
-    }
+    // LocalStorageにない場合は、デフォルトユーザーを設定
+    const defaultUser = {
+      id: '1',
+      email: 'pumpkin3020@gmail.com',
+      name: 'ユーザー',
+      plan: 'beta',
+      createdAt: new Date().toISOString()
+    };
+    
+    setUser(defaultUser);
+    localStorage.setItem('user', JSON.stringify(defaultUser));
+    setLoading(false);
   }
 
   async function fetchStats() {

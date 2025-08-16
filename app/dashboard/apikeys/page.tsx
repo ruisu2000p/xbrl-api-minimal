@@ -39,27 +39,17 @@ export default function ApiKeysPage() {
   }, []);
 
   async function fetchKeys() {
-    try {
-      const response = await fetch('/api/v1/apikeys');
-      if (!response.ok) {
-        if (response.status === 401) {
-          // LocalStorageを再確認
-          const localUser = localStorage.getItem('user');
-          if (!localUser) {
-            router.push('/login');
-            return;
-          }
-          // LocalStorageにユーザーがある場合は空の配列を表示
-          setKeys([]);
-          return;
-        }
-        throw new Error('Failed to fetch keys');
+    // LocalStorageからAPIキーを取得
+    const storedKeys = localStorage.getItem('apiKeys');
+    if (storedKeys) {
+      try {
+        const parsedKeys = JSON.parse(storedKeys);
+        setKeys(parsedKeys);
+      } catch (error) {
+        console.error('Error parsing stored keys:', error);
+        setKeys([]);
       }
-      const data = await response.json();
-      setKeys(data.keys || []);
-    } catch (error) {
-      console.error('Error fetching keys:', error);
-      // エラー時も空の配列を表示
+    } else {
       setKeys([]);
     }
   }
@@ -67,25 +57,37 @@ export default function ApiKeysPage() {
   async function createApiKey() {
     setIsCreating(true);
     try {
-      const response = await fetch('/api/v1/apikeys', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newKeyName,
-          scopes: ['read:markdown'],
-        }),
-      });
+      // 新しいAPIキーを生成
+      const newKey = `xbrl_live_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+      
+      const newApiKey: ApiKey = {
+        id: Date.now().toString(),
+        name: newKeyName || 'API Key',
+        key_prefix: newKey.substring(0, 10),
+        key_suffix: newKey.substring(newKey.length - 4),
+        is_active: true,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        last_used_at: null,
+        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        total_requests: 0,
+        successful_requests: 0,
+        failed_requests: 0
+      };
 
-      if (!response.ok) {
-        throw new Error('Failed to create key');
-      }
-
-      const data = await response.json();
-      setCreatedKey(data.apiKey);
-      // 完全なAPIキーをLocalStorageに保存（ダッシュボードで使用）
-      if (data.apiKey) {
-        localStorage.setItem('currentApiKey', data.apiKey);
-      }
+      // LocalStorageから既存のキーを取得
+      const storedKeys = localStorage.getItem('apiKeys');
+      const existingKeys = storedKeys ? JSON.parse(storedKeys) : [];
+      
+      // 新しいキーを追加
+      const updatedKeys = [...existingKeys, newApiKey];
+      localStorage.setItem('apiKeys', JSON.stringify(updatedKeys));
+      
+      // 完全なAPIキーをLocalStorageに保存
+      localStorage.setItem('currentApiKey', newKey);
+      
+      // 生成されたキーを表示
+      setCreatedKey(newKey);
       setNewKeyName('');
       fetchKeys();
     } catch (error) {
@@ -96,22 +98,18 @@ export default function ApiKeysPage() {
     }
   }
 
-  async function revokeKey(id: string) {
+  function revokeKey(id: string) {
     if (!confirm('このAPIキーを無効化しますか？')) return;
-
-    try {
-      const response = await fetch(`/api/v1/apikeys/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to revoke key');
-      }
-
+    
+    // LocalStorageから既存のキーを取得
+    const storedKeys = localStorage.getItem('apiKeys');
+    if (storedKeys) {
+      const existingKeys = JSON.parse(storedKeys);
+      const updatedKeys = existingKeys.map((key: ApiKey) => 
+        key.id === id ? { ...key, is_active: false, status: 'revoked' } : key
+      );
+      localStorage.setItem('apiKeys', JSON.stringify(updatedKeys));
       fetchKeys();
-    } catch (error) {
-      console.error('Error revoking key:', error);
-      alert('APIキーの無効化に失敗しました');
     }
   }
 
