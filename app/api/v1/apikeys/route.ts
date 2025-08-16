@@ -160,7 +160,6 @@ export async function POST(req: NextRequest) {
         apiKey: plainApiKey, // ⚠️ この値は二度と取得できない
         apiKeyMasked: maskApiKey(plainApiKey),
         prefix: data.key_prefix,
-        scopes: data.scopes,
         expiresAt: data.expires_at,
         createdAt: data.created_at,
         message: 'Please save this API key securely. You won\'t be able to see it again.',
