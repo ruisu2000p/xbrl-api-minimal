@@ -27,7 +27,7 @@ function hashApiKey(apiKey: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, name, company, plan } = body;
+    const { email, password, name, company, plan, agreeToTerms, agreeToDisclaimer } = body;
 
     // バリデーション
     if (!email || !password || !name) {
@@ -64,7 +64,10 @@ export async function POST(request: NextRequest) {
       user_metadata: {
         name,
         company: company || null,
-        plan: plan || 'beta'
+        plan: plan || 'beta',
+        agreed_to_terms: true,
+        agreed_to_disclaimer: true,
+        agreed_at: new Date().toISOString()
       }
     });
 

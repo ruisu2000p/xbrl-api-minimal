@@ -13,7 +13,8 @@ export default function Register() {
     name: '',
     company: '',
     plan: 'beta',
-    agreeToTerms: false
+    agreeToTerms: false,
+    agreeToDisclaimer: false
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -64,6 +65,9 @@ export default function Register() {
       if (!formData.agreeToTerms) {
         newErrors.agreeToTerms = '利用規約への同意が必要です';
       }
+      if (!formData.agreeToDisclaimer) {
+        newErrors.agreeToDisclaimer = '免責事項への同意が必要です';
+      }
     }
 
     setErrors(newErrors);
@@ -99,7 +103,9 @@ export default function Register() {
           password: formData.password,
           name: formData.name,
           company: formData.company,
-          plan: formData.plan
+          plan: formData.plan,
+          agreeToTerms: formData.agreeToTerms,
+          agreeToDisclaimer: formData.agreeToDisclaimer
         }),
       });
 
@@ -383,6 +389,33 @@ export default function Register() {
                     </span>
                   </label>
                   {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms}</p>}
+
+                  {/* 投資助言免責事項 */}
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-2">⚠️ 重要な免責事項</h4>
+                    <div className="text-sm text-gray-700 space-y-2 mb-3">
+                      <p>本サービスは以下の点についてご理解いただく必要があります：</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>提供するデータは<strong>情報提供のみ</strong>を目的としています</li>
+                        <li><strong>投資助言・投資勧誘を行うものではありません</strong></li>
+                        <li>投資判断は必ずご自身の責任で行ってください</li>
+                        <li>データ利用による損失について一切責任を負いません</li>
+                        <li>金融商品取引法に基づく投資助言業の登録は行っておりません</li>
+                      </ul>
+                    </div>
+                    <label className="flex items-start">
+                      <input
+                        type="checkbox"
+                        checked={formData.agreeToDisclaimer}
+                        onChange={(e) => setFormData({ ...formData, agreeToDisclaimer: e.target.checked })}
+                        className="mt-1 mr-3"
+                      />
+                      <span className="text-sm font-medium text-gray-800">
+                        上記の免責事項を理解し、本サービスが投資助言ではないことに同意します
+                      </span>
+                    </label>
+                  </div>
+                  {errors.agreeToDisclaimer && <p className="text-sm text-red-500">{errors.agreeToDisclaimer}</p>}
                 </div>
 
                 <div className="flex gap-4">
