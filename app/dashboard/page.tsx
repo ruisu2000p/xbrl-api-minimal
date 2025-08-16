@@ -38,12 +38,21 @@ export default function DashboardPage() {
   useEffect(() => {
     checkAuth();
     fetchApiKey();
+    fetchProfile();
   }, []);
 
   async function checkAuth() {
+    // LocalStorageをチェック（後方互換性のため）
     const localUser = localStorage.getItem('user');
     if (!localUser) {
-      router.push('/login');
+      // デモモードで続行
+      setUser({
+        id: 'demo',
+        email: 'demo@example.com',
+        plan: 'beta',
+        createdAt: new Date().toISOString()
+      });
+      setLoading(false);
       return;
     }
     
@@ -52,22 +61,73 @@ export default function DashboardPage() {
     setLoading(false);
   }
 
+  async function fetchProfile() {
+    try {
+      const response = await fetch('/api/dashboard/profile');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user && !data.isDemo) {
+          setUser(data.user);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    }
+  }
+
   async function fetchApiKey() {
-    // 実際のAPIキーを取得（本番環境では実際のAPIエンドポイントを使用）
-    const storedKey = localStorage.getItem('apiKey') || 'xbrl_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4';
-    setApiKey(storedKey);
+    try {
+      // Supabaseから取得を試みる
+      const response = await fetch('/api/dashboard/api-key');
+      if (response.ok) {
+        const data = await response.json();
+        setApiKey(data.apiKey);
+        // LocalStorageにもキャッシュ（MCP用）
+        localStorage.setItem('apiKey', data.apiKey);
+      } else {
+        // フォールバック: LocalStorageから取得
+        const storedKey = localStorage.getItem('apiKey') || 'xbrl_demo_' + Math.random().toString(36).substring(2, 15);
+        setApiKey(storedKey);
+      }
+    } catch (error) {
+      console.error('Failed to fetch API key:', error);
+      // エラー時はLocalStorageから取得
+      const storedKey = localStorage.getItem('apiKey') || 'xbrl_demo_' + Math.random().toString(36).substring(2, 15);
+      setApiKey(storedKey);
+    }
   }
 
   async function generateNewApiKey() {
     setGenerating(true);
-    // 新しいAPIキーを生成（本番環境では実際のAPIを呼び出す）
-    setTimeout(() => {
-      const newKey = `xbrl_live_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+    try {
+      // Supabase経由で新しいAPIキーを生成
+      const response = await fetch('/api/dashboard/api-key', {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setApiKey(data.apiKey);
+        // LocalStorageにもキャッシュ（MCP用）
+        localStorage.setItem('apiKey', data.apiKey);
+        alert('新しいAPIキーが生成されました');
+      } else {
+        // エラー時はローカルで生成
+        const newKey = `xbrl_demo_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+        setApiKey(newKey);
+        localStorage.setItem('apiKey', newKey);
+        alert('新しいAPIキーが生成されました（デモモード）');
+      }
+    } catch (error) {
+      console.error('Failed to generate API key:', error);
+      // エラー時はローカルで生成
+      const newKey = `xbrl_demo_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
       setApiKey(newKey);
       localStorage.setItem('apiKey', newKey);
+      alert('新しいAPIキーが生成されました（デモモード）');
+    } finally {
       setGenerating(false);
-      alert('新しいAPIキーが生成されました');
-    }, 1000);
+    }
   }
 
   function copyApiKey() {
