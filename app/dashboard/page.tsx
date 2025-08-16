@@ -1094,7 +1094,7 @@ export default function DashboardPage() {
                           {showApiKey ? '隠す' : '表示'}
                         </button>
                         <button
-                          onClick={copyApiKey}
+                          onClick={() => copyApiKey()}
                           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                         >
                           {copied ? '✓ コピー済み' : 'コピー'}
@@ -1137,7 +1137,7 @@ export default function DashboardPage() {
                     </svg>
                     <p className="text-gray-600 mb-4">APIキーがまだ発行されていません</p>
                     <button
-                      onClick={generateNewApiKey}
+                      onClick={() => generateNewApiKey()}
                       disabled={isGeneratingKey}
                       className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                     >
