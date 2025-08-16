@@ -104,11 +104,13 @@ export default function ProfilePage() {
       });
 
       if (response.ok) {
-        const updatedUser = { ...user, ...formData };
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        setEditMode(false);
-        setMessage({ type: 'success', text: 'プロフィールを更新しました' });
+        if (user) {
+          const updatedUser = { ...user, ...formData };
+          setUser(updatedUser);
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          setEditMode(false);
+          setMessage({ type: 'success', text: 'プロフィールを更新しました' });
+        }
       } else {
         throw new Error('更新に失敗しました');
       }
