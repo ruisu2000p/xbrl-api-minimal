@@ -14,12 +14,12 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     
     if (!email) {
-      setError('メールアドレスを�E力してください');
+      setError('メールアドレスを�E力してください');
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('有効なメールアドレスを�E力してください');
+      setError('有効なメールアドレスを�E力してください');
       return;
     }
 
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('予期しなぁE��ラーが発生しました');
+        setError('予期しないエラーが発生しました');
       }
     }
   };
@@ -67,18 +67,19 @@ export default function ForgotPasswordPage() {
                 メールを送信しました
               </h2>
               <p className="text-gray-600 mb-6">
-                パスワードリセチE��用のリンクめEbr />
+                パスワードリセット用のリンクを<br />
                 <strong>{email}</strong><br />
-                に送信しました、E              </p>
+                に送信しました。              </p>
               <div className="bg-blue-50 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
-                  メールが届かなぁE��合�E、迷惑メールフォルダをご確認ください、E                  それでも見つからなぁE��合�E、もぁE��度お試しください、E                </p>
+                  メールが届かない場合は、迷惑メールフォルダをご確認ください。                  それでも見つからない場合は、もう一度お試しください。                </p>
               </div>
               <button
                 onClick={() => router.push('/login')}
                 className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold transition-all"
               >
-                ログインペ�Eジに戻めE              </button>
+                ログインページに戻る
+              </button>
             </div>
           </div>
         </div>
@@ -94,17 +95,17 @@ export default function ForgotPasswordPage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
             XBRL財務データAPI
           </h1>
-          <p className="text-gray-600">パスワードをリセチE��</p>
+          <p className="text-gray-600">パスワードをリセット</p>
         </div>
 
         {/* フォーム */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              パスワードをお忘れですか�E�E            </h2>
+              パスワードをお忘れですか？            </h2>
             <p className="text-gray-600">
-              登録したメールアドレスを�E力してください、Ebr />
-              パスワードリセチE��用のリンクをお送りします、E            </p>
+              登録したメールアドレスを入力してください。<br />
+              パスワードリセット用のリンクをお送りします。            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -143,21 +144,22 @@ export default function ForgotPasswordPage() {
                   送信中...
                 </span>
               ) : (
-                'リセチE��リンクを送信'
+                'リセットリンクを送信'
               )}
             </button>
 
             <div className="text-center">
               <a href="/login" className="text-sm text-blue-600 hover:underline">
-                ログインペ�Eジに戻めE              </a>
+                ログインページに戻る
+              </a>
             </div>
           </form>
         </div>
 
-        {/* ヘルチE*/}
+        {/* ヘルプ */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            お困り�E場合�E
+            お困りの場合は
             <a href="/support" className="text-blue-600 hover:underline mx-1">ヘルプセンター</a>
             をご覧ください
           </p>

@@ -21,7 +21,7 @@ export default function AdminResetPage() {
     }
     
     if (newPassword.length < 8) {
-      setError('パスワード�E8斁E��以上にしてください');
+      setError('パスワードは8文字以上にしてください');
       return;
     }
 
@@ -43,7 +43,7 @@ export default function AdminResetPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'パスワードリセチE��に失敗しました');
+        throw new Error(data.error || 'パスワードリセットに失敗しました');
       }
 
       setSuccess(true);
@@ -56,7 +56,7 @@ export default function AdminResetPage() {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('予期しなぁE��ラーが発生しました');
+        setError('予期しないエラーが発生しました');
       }
     }
   };
@@ -76,9 +76,10 @@ export default function AdminResetPage() {
                 パスワードを更新しました
               </h2>
               <p className="text-gray-600 mb-2">
-                新しいパスワードでログインできまぁE              </p>
+                新しいパスワードでログインできます
+              </p>
               <p className="text-sm text-gray-500">
-                3秒後にログインペ�EジへリダイレクトしまぁE..
+                3秒後にログインページへリダイレクトします...
               </p>
             </div>
           </div>
@@ -94,7 +95,7 @@ export default function AdminResetPage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
             XBRL財務データAPI
           </h1>
-          <p className="text-gray-600">管琁E��E��パスワードリセチE��</p>
+          <p className="text-gray-600">管理者用パスワードリセット</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -114,26 +115,28 @@ export default function AdminResetPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                新しいパスワーチE              </label>
+                新しいパスワード
+              </label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="8斁E��以丁E
+                placeholder="8文字以上"
                 required
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                パスワード（確認！E              </label>
+                パスワード（確認）
+              </label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="パスワードを再�E劁E
+                placeholder="パスワードを再入力"
                 required
               />
             </div>
@@ -155,10 +158,11 @@ export default function AdminResetPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600 text-center">
-              こ�Eペ�Eジは管琁E��E��です、Ebr />
-              通常のパスワードリセチE��は
+              このページは管理者用です<br />
+              通常のパスワードリセットは
               <a href="/forgot-password" className="text-blue-600 hover:underline ml-1">
-                こちめE              </a>
+                こちら
+              </a>
             </p>
           </div>
         </div>

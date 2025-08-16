@@ -30,10 +30,12 @@ export default function AdminLogin() {
         throw new Error(data.error || 'ログインに失敗しました');
       }
 
-      // ト�Eクンを保孁E      localStorage.setItem('admin_token', data.token);
+      // トークンを保存
+      localStorage.setItem('admin_token', data.token);
       localStorage.setItem('admin_user', JSON.stringify(data.user));
 
-      // 管琁E��E��チE��ュボ�EドへリダイレクチE      router.push('/admin');
+      // 管理者ダッシュボードへリダイレクト
+      router.push('/admin');
     } catch (err: any) {
       setError(err.message || 'ログインに失敗しました');
     } finally {
@@ -48,8 +50,8 @@ export default function AdminLogin() {
           <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-gray-900 font-bold text-2xl">A</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">管琁E��E��グイン</h1>
-          <p className="text-sm text-gray-600 mt-2">XBRL財務データAPI 管琁E��ンソール</p>
+          <h1 className="text-2xl font-bold text-gray-900">管理者ログイン</h1>
+          <p className="text-sm text-gray-600 mt-2">XBRL財務データAPI 管理者コンソール</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -71,7 +73,8 @@ export default function AdminLogin() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              パスワーチE            </label>
+              パスワード
+            </label>
             <input
               id="password"
               type="password"
@@ -101,17 +104,18 @@ export default function AdminLogin() {
 
         <div className="mt-6 text-center">
           <a href="/" className="text-sm text-gray-600 hover:text-gray-900">
-            ↁEメインサイトに戻めE          </a>
+            ← メインサイトに戻る
+          </a>
         </div>
 
-        {/* 管琁E��E��カウント情報 */}
+        {/* 管理者アカウント情報 */}
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-xs text-gray-600 mb-2">管琁E��E��カウント！E/p>
+          <p className="text-xs text-gray-600 mb-2">管理者アカウント</p>
           <code className="text-xs bg-gray-100 px-2 py-1 rounded block mb-1">
             メール: admin@xbrl-api.com
           </code>
           <code className="text-xs bg-gray-100 px-2 py-1 rounded block">
-            パスワーチE Admin@2024#XBRL
+            パスワード: Admin@2024#XBRL
           </code>
         </div>
       </div>

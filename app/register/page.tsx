@@ -20,7 +20,7 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // localStorageから事前入力データを取征E    const pendingEmail = localStorage.getItem('pendingEmail');
+    // localStorageから事前入力データを取得    const pendingEmail = localStorage.getItem('pendingEmail');
     const selectedPlan = localStorage.getItem('selectedPlan');
     
     if (pendingEmail) {
@@ -38,15 +38,15 @@ export default function Register() {
 
     if (stepNumber === 1) {
       if (!formData.email) {
-        newErrors.email = 'メールアドレスは忁E��でぁE;
+        newErrors.email = 'メールアドレスは必須です';
       } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = '有効なメールアドレスを�E力してください';
+        newErrors.email = '有効なメールアドレスを入力してください';
       }
 
       if (!formData.password) {
-        newErrors.password = 'パスワード�E忁E��でぁE;
+        newErrors.password = 'パスワードは必須です';
       } else if (formData.password.length < 8) {
-        newErrors.password = 'パスワード�E8斁E��以上にしてください';
+        newErrors.password = 'パスワードは8文字以上にしてください';
       }
 
       if (formData.password !== formData.confirmPassword) {
@@ -56,16 +56,16 @@ export default function Register() {
 
     if (stepNumber === 2) {
       if (!formData.name) {
-        newErrors.name = '名前は忁E��でぁE;
+        newErrors.name = '名前は必須です';
       }
     }
 
     if (stepNumber === 3) {
       if (!formData.agreeToTerms) {
-        newErrors.agreeToTerms = '利用規紁E��の同意が忁E��でぁE;
+        newErrors.agreeToTerms = '利用規約への同意が必須です';
       }
       if (!formData.agreeToDisclaimer) {
-        newErrors.agreeToDisclaimer = '免責事頁E��の同意が忁E��でぁE;
+        newErrors.agreeToDisclaimer = '免責事項への同意が必須です';
       }
     }
 
@@ -91,7 +91,7 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      // 実際のAPI呼び出ぁE      const response = await fetch('/api/auth/register', {
+      // 実際のAPI呼び出し      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,29 +113,29 @@ export default function Register() {
         throw new Error(data.error || '登録に失敗しました');
       }
 
-      // 登録成功時�E処琁E      if (data.success) {
-        // ユーザーチE�EタをLocalStorageに保存！Eelcomeペ�Eジで使用�E�E        localStorage.setItem('registrationData', JSON.stringify(data.user));
+      // 登録成功時の処理      if (data.success) {
+        // ユーザーデータをLocalStorageに保存（welcomeページで使用）        localStorage.setItem('registrationData', JSON.stringify(data.user));
         
-        // welcomeペ�EジへリダイレクチE        router.push('/welcome');
+        // welcomeページへリダイレクト        router.push('/welcome');
       }
     } catch (error) {
       setIsLoading(false);
       
-      // エラーメチE��ージの表示
+      // エラーメッセージの表示
       if (error instanceof Error) {
         if (error.message.includes('既に登録')) {
-          setErrors({ email: 'こ�Eメールアドレスは既に登録されてぁE��ぁE });
-          setStep(1); // Step 1に戻めE        } else {
+          setErrors({ email: 'このメールアドレスは既に登録されています' });
+          setStep(1); // Step 1に戻る        } else {
           alert(`登録エラー: ${error.message}`);
         }
       } else {
-        alert('予期しなぁE��ラーが発生しました。もぁE��度お試しください、E);
+        alert('予期しないエラーが発生しました。もう一度お試しください。');
       }
     }
   };
 
   const plans = {
-    beta: { name: 'ベ�Eタアクセス', price: '¥0', period: '20年刁E, api: '1,000囁E朁E, description: '現在ベ�Eタ版�E完�E無斁E }
+    beta: { name: 'ベータアクセス', price: '¥0', period: '20年分', api: '1,000回/月', description: '現在ベータ版は完全無料' }
   };
 
   return (
@@ -146,10 +146,10 @@ export default function Register() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
             XBRL財務データAPI
           </h1>
-          <p className="text-gray-600">アカウント作�E</p>
+          <p className="text-gray-600">アカウント作成</p>
         </div>
 
-        {/* プログレスバ�E */}
+        {/* プログレスバー */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className={`flex-1 h-2 rounded-full ${step >= 1 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
@@ -161,7 +161,7 @@ export default function Register() {
           <div className="flex justify-between mt-2 text-sm text-gray-600">
             <span className={step === 1 ? 'font-bold text-blue-600' : ''}>アカウント情報</span>
             <span className={step === 2 ? 'font-bold text-blue-600' : ''}>プロフィール</span>
-            <span className={step === 3 ? 'font-bold text-blue-600' : ''}>確誁E/span>
+            <span className={step === 3 ? 'font-bold text-blue-600' : ''}>確認</span>
           </div>
         </div>
 
@@ -192,7 +192,8 @@ export default function Register() {
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    パスワーチE                  </label>
+                    パスワード
+                  </label>
                   <input
                     type="password"
                     id="password"
@@ -201,7 +202,7 @@ export default function Register() {
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.password ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="8斁E��以丁E
+                    placeholder="8文字以上"
                   />
                   {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
                   
@@ -215,9 +216,9 @@ export default function Register() {
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
                         パスワード強度: {
-                          formData.password.length < 8 ? '弱ぁE :
-                          formData.password.length < 12 ? '普送E :
-                          formData.password.length < 16 ? '強ぁE : 'とても強ぁE
+                          formData.password.length < 8 ? '弱い' :
+                          formData.password.length < 12 ? '普通' :
+                          formData.password.length < 16 ? '強い' : 'とても強い'
                         }
                       </p>
                     </div>
@@ -226,7 +227,8 @@ export default function Register() {
 
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    パスワード（確認！E                  </label>
+                    パスワード（確認）
+                  </label>
                   <input
                     type="password"
                     id="confirmPassword"
@@ -235,7 +237,7 @@ export default function Register() {
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="パスワードを再�E劁E
+                    placeholder="パスワードを再入力"
                   />
                   {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}
                 </div>
@@ -245,7 +247,8 @@ export default function Register() {
                   onClick={handleNext}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
                 >
-                  次へ ↁE                </button>
+                  次へ →
+                </button>
               </div>
             )}
 
@@ -273,7 +276,7 @@ export default function Register() {
 
                 <div>
                   <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-                    会社吁E<span className="text-gray-400">�E�任意！E/span>
+                    会社吁E<span className="text-gray-400">�E�任意！E/span>
                   </label>
                   <input
                     type="text"
@@ -281,13 +284,13 @@ export default function Register() {
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="株式会社、E��E
+                    placeholder="株式会社、E��E
                   />
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-blue-700">
-                    <span className="font-semibold">ヒンチE</span> プロフィール惁E��は後からダチE��ュボ�Eドで変更できます、E                  </p>
+                    <span className="font-semibold">ヒンチE</span> プロフィール惁E��は後からダチE��ュボ�Eドで変更できます、E                  </p>
                 </div>
 
                 <div className="flex gap-4">
@@ -307,36 +310,36 @@ export default function Register() {
               </div>
             )}
 
-            {/* Step 3: ベ�Eタ版確誁E*/}
+            {/* Step 3: ベ�Eタ版確誁E*/}
             {step === 3 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">ベ�Eタ版へようこそ</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">ベ�Eタ版へようこそ</h2>
                 
-                {/* ベ�Eタ版�E特典表示 */}
+                {/* ベ�Eタ版�E特典表示 */}
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
                   <div className="flex items-center mb-4">
                     <div className="bg-white/20 rounded-full px-4 py-1 text-sm font-bold">
-                      🚀 ベ�Eタ限宁E                    </div>
+                      🚀 ベ�Eタ限宁E                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">ベ�Eタアクセス</h3>
+                  <h3 className="text-2xl font-bold mb-3">ベ�Eタアクセス</h3>
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>全20年刁E�EチE�Eタアクセス</span>
+                      <span>全20年刁E�EチE�Eタアクセス</span>
                     </div>
                     <div className="flex items-center">
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>1,000囁E月�EAPI呼び出ぁE/span>
+                      <span>1,000囁E月�EAPI呼び出ぁE/span>
                     </div>
                     <div className="flex items-center">
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>全機�Eへのフルアクセス</span>
+                      <span>全機�Eへのフルアクセス</span>
                     </div>
                     <div className="flex items-center">
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -347,13 +350,13 @@ export default function Register() {
                   </div>
                   <div className="mt-6 pt-4 border-t border-white/20">
                     <div className="text-3xl font-bold">¥0<span className="text-lg font-normal">/朁E/span></div>
-                    <p className="text-sm opacity-90 mt-1">正式版まで完�E無斁E/p>
+                    <p className="text-sm opacity-90 mt-1">正式版まで完�E無斁E/p>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-800">
-                    <span className="font-semibold">📧 お知らせ:</span> 正式版リリース時�E事前にメールでお知らせし、�Eータ参加老E��定�E特別価格をご案�Eします、E                  </p>
+                    <span className="font-semibold">📧 お知らせ:</span> 正式版リリース時�E事前にメールでお知らせし、�Eータ参加老E��定�E特別価格をご案�Eします、E                  </p>
                 </div>
 
                 <div className="space-y-4">
@@ -370,17 +373,17 @@ export default function Register() {
                   </label>
                   {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms}</p>}
 
-                  {/* 投賁E��言免責事頁E*/}
+                  {/* 投賁E��言免責事頁E*/}
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">⚠�E�E重要な免責事頁E/h4>
+                    <h4 className="font-semibold text-gray-900 mb-2">⚠�E�E重要な免責事頁E/h4>
                     <div className="text-sm text-gray-700 space-y-2 mb-3">
-                      <p>本サービスは以下�E点につぁE��ご理解ぁE��だく忁E��があります！E/p>
+                      <p>本サービスは以下�E点につぁE��ご理解ぁE��だく忁E��があります！E/p>
                       <ul className="list-disc list-inside space-y-1 ml-2">
-                        <li>提供するデータは<strong>惁E��提供�Eみ</strong>を目皁E��してぁE��ぁE/li>
-                        <li><strong>投賁E��言・投賁E��誘を行うも�Eではありません</strong></li>
-                        <li>投賁E��断は忁E��ご�E身の責任で行ってください</li>
-                        <li>チE�Eタ利用による損失につぁE��一刁E��任を負ぁE��せん</li>
-                        <li>金融啁E��取引法に基づく投賁E��言業の登録は行っておりません</li>
+                        <li>提供するデータは<strong>惁E��提供�Eみ</strong>を目皁E��してぁE��ぁE/li>
+                        <li><strong>投賁E��言・投賁E��誘を行うも�Eではありません</strong></li>
+                        <li>投賁E��断は忁E��ご�E身の責任で行ってください</li>
+                        <li>チE�Eタ利用による損失につぁE��一刁E��任を負ぁE��せん</li>
+                        <li>金融啁E��取引法に基づく投賁E��言業の登録は行っておりません</li>
                       </ul>
                     </div>
                     <label className="flex items-start">
@@ -391,7 +394,7 @@ export default function Register() {
                         className="mt-1 mr-3"
                       />
                       <span className="text-sm font-medium text-gray-800">
-                        上記�E免責事頁E��琁E��し、本サービスが投賁E��言ではなぁE��とに同意しまぁE                      </span>
+                        上記�E免責事頁E��琁E��し、本サービスが投賁E��言ではなぁE��とに同意しまぁE                      </span>
                     </label>
                   </div>
                   {errors.agreeToDisclaimer && <p className="text-sm text-red-500">{errors.agreeToDisclaimer}</p>}
@@ -430,7 +433,7 @@ export default function Register() {
         {/* ログインリンク */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            すでにアカウントをお持ちですか�E�{' '}
+            すでにアカウントをお持ちですか�E�{' '}
             <a href="/login" className="text-blue-600 hover:underline font-semibold">
               ログイン
             </a>
