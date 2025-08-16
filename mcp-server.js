@@ -100,6 +100,38 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'get_financial_data',
+        description: 'Get financial data (revenue, profit, etc.) for a specific company from their securities report',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: {
+              type: 'string',
+              description: 'Company ID (e.g., S100L777)',
+            },
+          },
+          required: ['company_id'],
+        },
+      },
+      {
+        name: 'get_revenue_ranking',
+        description: 'Get top companies ranked by revenue (2021 fiscal year)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Number of companies to return (default: 50, max: 100)',
+              default: 50,
+            },
+            sector: {
+              type: 'string',
+              description: 'Filter by sector (optional)',
+            },
+          },
+        },
+      },
+      {
         name: 'list_all_companies',
         description: 'List all companies with pagination. Total: 4,225 Japanese companies.',
         inputSchema: {
@@ -225,6 +257,55 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: JSON.stringify({ sectors }, null, 2),
+            },
+          ],
+        };
+      }
+      
+      case 'get_financial_data': {
+        const response = await fetch(`${API_URL}/financial-data?company_id=${args.company_id}`, {
+          headers: {
+            'X-API-Key': API_KEY,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to get financial data: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+      
+      case 'get_revenue_ranking': {
+        const limit = args.limit || 50;
+        const response = await fetch(`${API_URL}/financial-data?action=ranking&limit=${limit}${args.sector ? `&sector=${args.sector}` : ''}`, {
+          headers: {
+            'X-API-Key': API_KEY,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to get revenue ranking: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
             },
           ],
         };
