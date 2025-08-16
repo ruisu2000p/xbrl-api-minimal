@@ -14,6 +14,26 @@ export default function DashboardPage() {
   }, []);
 
   async function checkAuth() {
+    // まずLocalStorageを確認
+    const localUser = localStorage.getItem('user');
+    if (localUser) {
+      const userData = JSON.parse(localUser);
+      setUser(userData);
+      
+      // APIキー情報を取得
+      try {
+        const statsResponse = await fetch('/api/v1/apikeys');
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setStats(statsData.stats);
+        }
+      } catch (error) {
+        console.error('Stats fetch failed:', error);
+      }
+      return;
+    }
+
+    // LocalStorageにない場合はSupabase認証を確認
     try {
       const response = await fetch('/api/auth/me');
       if (!response.ok) {
@@ -52,6 +72,15 @@ export default function DashboardPage() {
               <Link href="/dashboard/apikeys" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                 APIキー管理
               </Link>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('user');
+                  router.push('/');
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                ログアウト
+              </button>
               <Link href="/delete" className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
                 退会
               </Link>
