@@ -1,44 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
-// パスワードのハッシュ化
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
-
-// デモアカウント（実際にはデータベースから取得）
-const demoAccounts = new Map([
-  ['demo@example.com', {
-    id: 'demo-user-001',
-    email: 'demo@example.com',
-    password: hashPassword('demo1234'),
-    name: 'デモユーザー',
-    company: 'デモ株式会社',
-    plan: 'beta',
-    apiKey: 'xbrl_demo_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',
-    createdAt: '2025-01-01T00:00:00Z',
-    usage: {
-      apiCalls: 245,
-      lastReset: new Date().toISOString(),
-      monthlyLimit: 1000
-    }
-  }],
-  ['test@example.com', {
-    id: 'test-user-001',
-    email: 'test@example.com',
-    password: hashPassword('test1234'),
-    name: 'テストユーザー',
-    company: 'テスト企業',
-    plan: 'beta',
-    apiKey: 'xbrl_test_q1w2e3r4t5y6u7i8o9p0a1s2d3f4g5h6',
-    createdAt: '2025-01-01T00:00:00Z',
-    usage: {
-      apiCalls: 123,
-      lastReset: new Date().toISOString(),
-      monthlyLimit: 1000
-    }
-  }]
-]);
+// Supabase Client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,46 +20,67 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ユーザーの検索（デモ用：実際はデータベースから）
-    const user = demoAccounts.get(email.toLowerCase());
-    
-    if (!user) {
+    // Supabaseでログイン
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (authError || !authData.user) {
       return NextResponse.json(
         { error: 'メールアドレスまたはパスワードが正しくありません' },
         { status: 401 }
       );
     }
 
-    // パスワードの検証
-    const hashedInputPassword = hashPassword(password);
-    if (user.password !== hashedInputPassword) {
-      return NextResponse.json(
-        { error: 'メールアドレスまたはパスワードが正しくありません' },
-        { status: 401 }
-      );
-    }
+    // ユーザーのAPIキー情報を取得
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
+    );
 
-    // セッショントークンの生成
-    const sessionToken = crypto.randomBytes(32).toString('hex');
-
-    // パスワードを除外してユーザー情報を返す
-    const { password: _, ...safeUser } = user;
+    const { data: apiKeys } = await supabaseAdmin
+      .from('api_keys')
+      .select('key_prefix, key_suffix, name, is_active')
+      .eq('user_id', authData.user.id)
+      .eq('is_active', true)
+      .limit(1);
 
     // レスポンスの作成
     const response = NextResponse.json({
       success: true,
       message: 'ログインに成功しました',
-      user: safeUser,
-      sessionToken
+      user: {
+        id: authData.user.id,
+        email: authData.user.email!,
+        name: authData.user.user_metadata?.name || '',
+        company: authData.user.user_metadata?.company || null,
+        plan: authData.user.user_metadata?.plan || 'beta',
+        apiKey: apiKeys && apiKeys.length > 0 
+          ? `${apiKeys[0].key_prefix}...${apiKeys[0].key_suffix}`
+          : null,
+        createdAt: authData.user.created_at
+      },
+      session: authData.session
     }, { status: 200 });
 
-    // セッションCookieの設定
-    response.cookies.set('session', sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30 // 30日間
-    });
+    // Supabaseのセッショントークンをクッキーに設定
+    if (authData.session) {
+      response.cookies.set('sb-access-token', authData.session.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30 // 30日間
+      });
+
+      response.cookies.set('sb-refresh-token', authData.session.refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30 // 30日間
+      });
+    }
 
     return response;
 
@@ -107,20 +95,34 @@ export async function POST(request: NextRequest) {
 
 // セッション確認用（オプション）
 export async function GET(request: NextRequest) {
-  const sessionToken = request.cookies.get('session')?.value;
+  const accessToken = request.cookies.get('sb-access-token')?.value;
   
-  if (!sessionToken) {
+  if (!accessToken) {
     return NextResponse.json(
       { authenticated: false },
       { status: 200 }
     );
   }
 
-  // 実際はセッションの検証を行う
+  // Supabaseでセッショントークンを検証
+  const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+
+  if (error || !user) {
+    return NextResponse.json(
+      { authenticated: false },
+      { status: 200 }
+    );
+  }
+
   return NextResponse.json(
     { 
       authenticated: true,
-      message: 'セッションは有効です'
+      message: 'セッションは有効です',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.name
+      }
     },
     { status: 200 }
   );
