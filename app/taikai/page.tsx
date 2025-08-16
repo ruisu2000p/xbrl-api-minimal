@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
-export default function DeleteAccountPage() {
+export default function TaikaiPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,15 +70,22 @@ export default function DeleteAccountPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            アカウント削除
-          </h1>
-          <p className="text-gray-600">退会手続き</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* ヘッダー */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <button onClick={() => router.push('/dashboard')} className="text-gray-600 hover:text-gray-900">
+                ← 戻る
+              </button>
+              <h1 className="text-xl font-bold">アカウント削除</h1>
+            </div>
+          </div>
         </div>
+      </header>
 
+      <div className="max-w-md mx-auto px-4 py-12">
         <div className="bg-white rounded-lg shadow p-8">
           {step === 1 ? (
             <>
@@ -124,12 +130,13 @@ export default function DeleteAccountPage() {
                   )}
 
                   <div className="flex gap-3">
-                    <Link
-                      href="/dashboard"
+                    <button
+                      type="button"
+                      onClick={() => router.push('/dashboard')}
                       className="flex-1 text-center py-2 px-4 border border-gray-300 rounded text-gray-700 bg-white hover:bg-gray-50"
                     >
                       キャンセル
-                    </Link>
+                    </button>
                     <button
                       type="submit"
                       disabled={loading}
@@ -186,12 +193,6 @@ export default function DeleteAccountPage() {
               </div>
             </>
           )}
-        </div>
-
-        <div className="mt-6 text-center">
-          <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
-            ← ダッシュボードに戻る
-          </Link>
         </div>
       </div>
     </div>
