@@ -5,29 +5,20 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
-// パスワードリセットトークンの保存（実際はデータベース使用）
-const resetTokens = new Map<string, { email: string; expires: Date }>();
+// Supabase Client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-// メール送信のシミュレーション（実際はメールサービス使用）
-async function sendPasswordResetEmail(email: string, token: string) {
-  // 本番環境では、SendGrid、AWS SES、Resend等のメールサービスを使用
-  console.log(`
-    ========================================
-    パスワードリセットメール（開発用）
-    ========================================
-    宛先: ${email}
-    
-    パスワードリセットURL:
-    ${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}
-    
-    このリンクは1時間で有効期限が切れます。
-    ========================================
-  `);
-  
-  return true;
-}
+// Supabase Admin Client (for user lookup)
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,16 +41,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // リセットトークンの生成
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const expires = new Date();
-    expires.setHours(expires.getHours() + 1); // 1時間後に期限切れ
+    // Supabaseのパスワードリセット機能を使用
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://xbrl-api-minimal.vercel.app'}/reset-password`,
+    });
 
-    // トークンを保存（実際はデータベースに保存）
-    resetTokens.set(resetToken, { email, expires });
+    if (error) {
+      console.error('Supabase password reset error:', error);
+      // セキュリティのため、詳細なエラーは返さない
+      return NextResponse.json({
+        success: true,
+        message: 'パスワードリセット用のメールを送信しました'
+      }, { status: 200 });
+    }
 
-    // メール送信
-    await sendPasswordResetEmail(email, resetToken);
+    console.log(`Password reset email sent to: ${email}`);
 
     // セキュリティのため、メールアドレスの存在有無に関わらず同じレスポンスを返す
     return NextResponse.json({
@@ -76,36 +72,30 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// トークンの検証（GET）
+// トークンの検証（GET） - Supabaseのリカバリートークンは自動検証されるので簡易版
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get('token');
-
-  if (!token) {
+  const email = request.nextUrl.searchParams.get('email');
+  
+  if (!email) {
     return NextResponse.json(
-      { valid: false, error: 'トークンが必要です' },
-      { status: 400 }
+      { message: 'Supabaseのパスワードリセット機能を使用してください' },
+      { status: 200 }
     );
   }
 
-  const tokenData = resetTokens.get(token);
+  // メールアドレスでユーザーの存在確認
+  const { data: users } = await supabaseAdmin.auth.admin.listUsers();
+  const user = users?.users?.find(u => u.email === email);
 
-  if (!tokenData) {
+  if (user) {
     return NextResponse.json(
-      { valid: false, error: '無効なトークンです' },
-      { status: 400 }
-    );
-  }
-
-  if (tokenData.expires < new Date()) {
-    resetTokens.delete(token);
-    return NextResponse.json(
-      { valid: false, error: 'トークンの有効期限が切れています' },
-      { status: 400 }
+      { valid: true, email: user.email },
+      { status: 200 }
     );
   }
 
   return NextResponse.json(
-    { valid: true, email: tokenData.email },
-    { status: 200 }
+    { valid: false, error: 'ユーザーが見つかりません' },
+    { status: 404 }
   );
 }

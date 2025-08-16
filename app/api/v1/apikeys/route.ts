@@ -14,6 +14,7 @@ import {
   maskApiKey,
   calculateExpiryDate 
 } from '@/app/api/_lib/apiKey';
+import { getAllKeysMonthlyUsage } from '@/app/api/_lib/logApiUsage';
 
 /**
  * GET /api/v1/apikeys
@@ -45,18 +46,23 @@ export async function GET() {
       );
     }
 
-    // 統計情報を取得
-    const { data: stats } = await admin.rpc('get_api_key_stats', { p_user_id: userId });
+    // 統計情報を取得（APIキーIDのリストから集計）
+    const apiKeyIds = data?.map(key => key.id) || [];
+    const monthlyUsage = apiKeyIds.length > 0 
+      ? await getAllKeysMonthlyUsage(apiKeyIds)
+      : null;
 
     return NextResponse.json({
       keys: data || [],
-      stats: stats?.[0] || {
-        total_keys: 0,
-        active_keys: 0,
-        revoked_keys: 0,
-        total_requests: 0,
-        requests_today: 0,
-        requests_this_month: 0,
+      stats: {
+        total_keys: data?.length || 0,
+        active_keys: data?.filter(k => k.is_active && k.status !== 'revoked').length || 0,
+        revoked_keys: data?.filter(k => !k.is_active || k.status === 'revoked').length || 0,
+        total_requests: monthlyUsage?.total_requests || 0,
+        successful_requests: monthlyUsage?.successful_requests || 0,
+        failed_requests: monthlyUsage?.failed_requests || 0,
+        remaining_quota: monthlyUsage?.remaining_quota || 1000,
+        quota_limit: monthlyUsage?.quota_limit || 1000,
       },
     });
   } catch (error) {

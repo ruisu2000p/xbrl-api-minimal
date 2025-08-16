@@ -20,34 +20,30 @@ export default function SDKPage() {
       install: 'npm install @xbrl-jp/sdk',
       example: `import { XBRLClient } from '@xbrl-jp/sdk';
 
-// クライアントの初期化
-const client = new XBRLClient({
+// クライアント�E初期匁Econst client = new XBRLClient({
   apiKey: 'YOUR_API_KEY'
 });
 
-// 企業一覧を取得
-const companies = await client.companies.list({
+// 企業一覧を取征Econst companies = await client.companies.list({
   limit: 100,
   sector: '輸送用機器'
 });
 
-// 特定企業の財務データを取得
-const financial = await client.financial.get({
+// 特定企業の財務データを取征Econst financial = await client.financial.get({
   companyId: 'S100LO6W',
   year: 2023
 });
 
-// 有価証券報告書のセクションを取得
-const document = await client.documents.get({
+// 有価証券報告書のセクションを取征Econst document = await client.documents.get({
   companyId: 'S100LO6W',
   year: 2023,
   section: '0101010'
 });`,
       features: [
-        'TypeScript完全対応',
-        '自動リトライ機能',
-        'プロミスベースAPI',
-        'ストリーミングサポート',
+        'TypeScript完�E対忁E,
+        '自動リトライ機�E',
+        'プロミスベ�EスAPI',
+        'ストリーミングサポ�EチE,
         'Webhook署名検証',
         'エラーハンドリング'
       ]
@@ -58,38 +54,33 @@ const document = await client.documents.get({
       install: 'pip install xbrl-jp',
       example: `from xbrl_jp import XBRLClient
 
-# クライアントの初期化
-client = XBRLClient(api_key='YOUR_API_KEY')
+# クライアント�E初期匁Eclient = XBRLClient(api_key='YOUR_API_KEY')
 
-# 企業一覧を取得
-companies = client.companies.list(
+# 企業一覧を取征Ecompanies = client.companies.list(
     limit=100,
     sector='輸送用機器'
 )
 
-# 特定企業の財務データを取得
-financial = client.financial.get(
+# 特定企業の財務データを取征Efinancial = client.financial.get(
     company_id='S100LO6W',
     year=2023
 )
 
-# 有価証券報告書のセクションを取得
-document = client.documents.get(
+# 有価証券報告書のセクションを取征Edocument = client.documents.get(
     company_id='S100LO6W',
     year=2023,
     section='0101010'
 )
 
-# データフレームに変換（pandas連携）
-import pandas as pd
+# チE�Eタフレームに変換�E�Eandas連携�E�Eimport pandas as pd
 df = pd.DataFrame(companies['data'])`,
       features: [
-        'Type hints対応',
+        'Type hints対忁E,
         'pandas連携',
-        '非同期サポート（asyncio）',
-        'データ検証',
+        '非同期サポ�Eト！Esyncio�E�E,
+        'チE�Eタ検証',
         'カスタムエラークラス',
-        'ロギング機能'
+        'ロギング機�E'
       ]
     },
     ruby: {
@@ -98,41 +89,37 @@ df = pd.DataFrame(companies['data'])`,
       install: 'gem install xbrl-jp',
       example: `require 'xbrl_jp'
 
-# クライアントの初期化
-client = XBRLJP::Client.new(api_key: 'YOUR_API_KEY')
+# クライアント�E初期匁Eclient = XBRLJP::Client.new(api_key: 'YOUR_API_KEY')
 
-# 企業一覧を取得
-companies = client.companies.list(
+# 企業一覧を取征Ecompanies = client.companies.list(
   limit: 100,
   sector: '輸送用機器'
 )
 
-# 特定企業の財務データを取得
-financial = client.financial.get(
+# 特定企業の財務データを取征Efinancial = client.financial.get(
   company_id: 'S100LO6W',
   year: 2023
 )
 
-# 有価証券報告書のセクションを取得
-document = client.documents.get(
+# 有価証券報告書のセクションを取征Edocument = client.documents.get(
   company_id: 'S100LO6W',
   year: 2023,
   section: '0101010'
 )
 
-# イテレータパターン
+# イチE��ータパターン
 client.companies.each_page do |page|
   page.each do |company|
     puts company['name']
   end
 end`,
       features: [
-        'Rubyらしいインターフェース',
-        'ブロック構文サポート',
-        'ページネーション自動処理',
+        'RubyらしぁE��ンターフェース',
+        'ブロチE��構文サポ�EチE,
+        'ペ�Eジネ�Eション自動�E琁E,
         'エラーハンドリング',
-        'Rails統合',
-        'テストヘルパー'
+        'Rails統吁E,
+        'チE��ト�Eルパ�E'
       ]
     },
     go: {
@@ -147,11 +134,9 @@ import (
 )
 
 func main() {
-    // クライアントの初期化
-    client := xbrl.NewClient("YOUR_API_KEY")
+    // クライアント�E初期匁E    client := xbrl.NewClient("YOUR_API_KEY")
     
-    // 企業一覧を取得
-    companies, err := client.Companies.List(&xbrl.CompanyListOptions{
+    // 企業一覧を取征E    companies, err := client.Companies.List(&xbrl.CompanyListOptions{
         Limit: 100,
         Sector: "輸送用機器",
     })
@@ -159,26 +144,24 @@ func main() {
         panic(err)
     }
     
-    // 特定企業の財務データを取得
-    financial, err := client.Financial.Get(&xbrl.FinancialOptions{
+    // 特定企業の財務データを取征E    financial, err := client.Financial.Get(&xbrl.FinancialOptions{
         CompanyID: "S100LO6W",
         Year: 2023,
     })
     
-    // 有価証券報告書のセクションを取得
-    document, err := client.Documents.Get(&xbrl.DocumentOptions{
+    // 有価証券報告書のセクションを取征E    document, err := client.Documents.Get(&xbrl.DocumentOptions{
         CompanyID: "S100LO6W",
         Year: 2023,
         Section: "0101010",
     })
 }`,
       features: [
-        '完全な型安全性',
-        'コンテキスト対応',
-        '並行処理サポート',
+        '完�Eな型安�E性',
+        'コンチE��スト対忁E,
+        '並行�E琁E��ポ�EチE,
         'エラーハンドリング',
-        'カスタムHTTPクライアント',
-        'モックテスト対応'
+        'カスタムHTTPクライアンチE,
+        'モチE��チE��ト対忁E
       ]
     },
     php: {
@@ -190,37 +173,32 @@ require_once 'vendor/autoload.php';
 
 use XBRLJP\\Client;
 
-// クライアントの初期化
-$client = new Client('YOUR_API_KEY');
+// クライアント�E初期匁E$client = new Client('YOUR_API_KEY');
 
-// 企業一覧を取得
-$companies = $client->companies()->list([
+// 企業一覧を取征E$companies = $client->companies()->list([
     'limit' => 100,
     'sector' => '輸送用機器'
 ]);
 
-// 特定企業の財務データを取得
-$financial = $client->financial()->get([
+// 特定企業の財務データを取征E$financial = $client->financial()->get([
     'company_id' => 'S100LO6W',
     'year' => 2023
 ]);
 
-// 有価証券報告書のセクションを取得
-$document = $client->documents()->get([
+// 有価証券報告書のセクションを取征E$document = $client->documents()->get([
     'company_id' => 'S100LO6W',
     'year' => 2023,
     'section' => '0101010'
 ]);
 
-// Laravel統合
-$companies = XBRLJP::companies()->paginate(20);`,
+// Laravel統吁E$companies = XBRLJP::companies()->paginate(20);`,
       features: [
         'PSR準拠',
-        'Laravel/Symfony統合',
-        'キャッシュサポート',
-        'ページネーション',
+        'Laravel/Symfony統吁E,
+        'キャチE��ュサポ�EチE,
+        'ペ�Eジネ�Eション',
         'エラーハンドリング',
-        'PHPUnit対応'
+        'PHPUnit対忁E
       ]
     },
     java: {
@@ -236,36 +214,31 @@ import jp.xbrl.models.*;
 
 public class Example {
     public static void main(String[] args) {
-        // クライアントの初期化
-        XBRLClient client = new XBRLClient("YOUR_API_KEY");
+        // クライアント�E初期匁E        XBRLClient client = new XBRLClient("YOUR_API_KEY");
         
-        // 企業一覧を取得
-        CompanyListRequest request = CompanyListRequest.builder()
+        // 企業一覧を取征E        CompanyListRequest request = CompanyListRequest.builder()
             .limit(100)
             .sector("輸送用機器")
             .build();
         CompanyListResponse companies = client.companies().list(request);
         
-        // 特定企業の財務データを取得
-        FinancialData financial = client.financial()
+        // 特定企業の財務データを取征E        FinancialData financial = client.financial()
             .get("S100LO6W", 2023);
         
-        // 有価証券報告書のセクションを取得
-        Document document = client.documents()
+        // 有価証券報告書のセクションを取征E        Document document = client.documents()
             .get("S100LO6W", 2023, "0101010");
         
-        // Spring Boot統合
-        @Autowired
+        // Spring Boot統吁E        @Autowired
         private XBRLClient xbrlClient;
     }
 }`,
       features: [
         'ビルダーパターン',
-        'Spring Boot統合',
-        '非同期サポート（CompletableFuture）',
+        'Spring Boot統吁E,
+        '非同期サポ�Eト！EompletableFuture�E�E,
         'Jackson連携',
-        'カスタム例外',
-        'JUnit対応'
+        'カスタム例夁E,
+        'JUnit対忁E
       ]
     }
   } as const;
@@ -282,8 +255,7 @@ public class Example {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button onClick={() => router.push('/')} className="text-gray-600 hover:text-gray-900">
-                ← 戻る
-              </button>
+                ↁE戻めE              </button>
               <h1 className="text-xl font-bold">SDK & ライブラリ</h1>
             </div>
             <div className="flex gap-2">
@@ -291,27 +263,24 @@ public class Example {
                 onClick={() => router.push('/docs')}
                 className="text-gray-600 hover:text-gray-900 px-4 py-2"
               >
-                APIドキュメント
-              </button>
+                APIドキュメンチE              </button>
               <button
                 onClick={() => router.push('/examples')}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
-                サンプルコード →
-              </button>
+                サンプルコーチEↁE              </button>
             </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* ヒーローセクション */}
+        {/* ヒ�Eローセクション */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white mb-8">
           <h1 className="text-3xl font-bold mb-4">公式SDK & ライブラリ</h1>
           <p className="text-blue-100 mb-6">
-            お好みの言語でXBRL財務データAPIを簡単に統合。<br />
-            すべてのSDKは、型安全性、エラーハンドリング、自動リトライ機能を標準装備。
-          </p>
+            お好みの言語でXBRL財務データAPIを簡単に統合、Ebr />
+            すべてのSDKは、型安�E性、エラーハンドリング、�E動リトライ機�Eを標準裁E��、E          </p>
           <div className="flex gap-4">
             <a 
               href="https://github.com/xbrl-jp"
@@ -323,12 +292,11 @@ public class Example {
               GitHub
             </a>
             <button className="bg-white/20 text-white px-6 py-2 rounded-lg hover:bg-white/30">
-              貢献ガイド
-            </button>
+              貢献ガイチE            </button>
           </div>
         </div>
 
-        {/* 言語選択タブ */}
+        {/* 言語選択タチE*/}
         <div className="bg-white rounded-t-xl border-b">
           <div className="flex gap-2 px-6 py-4 overflow-x-auto">
             {Object.keys(sdks).map((lang) => (
@@ -347,12 +315,12 @@ public class Example {
           </div>
         </div>
 
-        {/* SDKコンテンツ */}
+        {/* SDKコンチE��チE*/}
         <div className="bg-white rounded-b-xl p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold">{sdks[selectedLanguage].name} SDK</h2>
-              <p className="text-gray-600">バージョン {sdks[selectedLanguage].version}</p>
+              <p className="text-gray-600">バ�Eジョン {sdks[selectedLanguage].version}</p>
             </div>
             <div className="flex gap-2">
               <a 
@@ -368,28 +336,27 @@ public class Example {
                 href="#"
                 className="text-blue-600 hover:underline"
               >
-                詳細ドキュメント
-              </a>
+                詳細ドキュメンチE              </a>
             </div>
           </div>
 
-          {/* インストール */}
+          {/* インスト�Eル */}
           <div className="mb-8">
-            <h3 className="text-lg font-bold mb-3">インストール</h3>
+            <h3 className="text-lg font-bold mb-3">インスト�Eル</h3>
             <div className="bg-gray-900 rounded-lg p-4 relative">
               <code className="text-green-400 text-sm">{sdks[selectedLanguage].install}</code>
               <button
                 onClick={() => copyToClipboard(sdks[selectedLanguage].install, 'install')}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white"
               >
-                {copiedCode === 'install' ? '✓ コピー済み' : 'コピー'}
+                {copiedCode === 'install' ? '✁Eコピ�E済み' : 'コピ�E'}
               </button>
             </div>
           </div>
 
-          {/* 使用例 */}
+          {/* 使用侁E*/}
           <div className="mb-8">
-            <h3 className="text-lg font-bold mb-3">使用例</h3>
+            <h3 className="text-lg font-bold mb-3">使用侁E/h3>
             <div className="bg-gray-900 rounded-lg p-4 relative">
               <pre className="text-green-400 text-sm overflow-x-auto">
                 <code>{sdks[selectedLanguage].example}</code>
@@ -398,14 +365,14 @@ public class Example {
                 onClick={() => copyToClipboard(sdks[selectedLanguage].example, 'example')}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white"
               >
-                {copiedCode === 'example' ? '✓ コピー済み' : 'コピー'}
+                {copiedCode === 'example' ? '✁Eコピ�E済み' : 'コピ�E'}
               </button>
             </div>
           </div>
 
-          {/* 主な機能 */}
+          {/* 主な機�E */}
           <div className="mb-8">
-            <h3 className="text-lg font-bold mb-3">主な機能</h3>
+            <h3 className="text-lg font-bold mb-3">主な機�E</h3>
             <div className="grid grid-cols-2 gap-3">
               {sdks[selectedLanguage].features.map((feature, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -418,24 +385,24 @@ public class Example {
             </div>
           </div>
 
-          {/* その他のリソース */}
+          {/* そ�E他�Eリソース */}
           <div className="border-t pt-6">
-            <h3 className="text-lg font-bold mb-4">その他のリソース</h3>
+            <h3 className="text-lg font-bold mb-4">そ�E他�Eリソース</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <a href="#" className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
                 <div className="text-2xl mb-2">📚</div>
-                <div className="font-medium">完全ガイド</div>
-                <div className="text-sm text-gray-600">SDKの詳細な使い方</div>
+                <div className="font-medium">完�EガイチE/div>
+                <div className="text-sm text-gray-600">SDKの詳細な使ぁE��</div>
               </a>
               <a href="#" className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
                 <div className="text-2xl mb-2">🔧</div>
                 <div className="font-medium">API リファレンス</div>
-                <div className="text-sm text-gray-600">全メソッドの詳細</div>
+                <div className="text-sm text-gray-600">全メソチE��の詳細</div>
               </a>
               <a href="#" className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
                 <div className="text-2xl mb-2">💬</div>
                 <div className="font-medium">コミュニティ</div>
-                <div className="text-sm text-gray-600">質問やディスカッション</div>
+                <div className="text-sm text-gray-600">質問やチE��スカチE��ョン</div>
               </a>
             </div>
           </div>
@@ -445,40 +412,39 @@ public class Example {
         <div className="bg-white rounded-xl p-8 mt-8">
           <h2 className="text-2xl font-bold mb-6">コミュニティSDK</h2>
           <p className="text-gray-600 mb-6">
-            コミュニティによって開発・メンテナンスされているSDKです。公式サポートはありませんが、多くの開発者に利用されています。
-          </p>
+            コミュニティによって開発・メンチE��ンスされてぁE��SDKです。�E式サポ�Eト�Eありませんが、多くの開発老E��利用されてぁE��す、E          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold">Rust SDK</h3>
                 <span className="text-xs bg-gray-100 px-2 py-1 rounded">Community</span>
               </div>
-              <p className="text-sm text-gray-600 mb-3">高パフォーマンスなRust実装</p>
-              <a href="#" className="text-blue-600 hover:underline text-sm">github.com/user/xbrl-rust →</a>
+              <p className="text-sm text-gray-600 mb-3">高パフォーマンスなRust実裁E/p>
+              <a href="#" className="text-blue-600 hover:underline text-sm">github.com/user/xbrl-rust ↁE/a>
             </div>
             <div className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold">Swift SDK</h3>
                 <span className="text-xs bg-gray-100 px-2 py-1 rounded">Community</span>
               </div>
-              <p className="text-sm text-gray-600 mb-3">iOS/macOS向けSwift実装</p>
-              <a href="#" className="text-blue-600 hover:underline text-sm">github.com/user/xbrl-swift →</a>
+              <p className="text-sm text-gray-600 mb-3">iOS/macOS向けSwift実裁E/p>
+              <a href="#" className="text-blue-600 hover:underline text-sm">github.com/user/xbrl-swift ↁE/a>
             </div>
             <div className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold">C# SDK</h3>
                 <span className="text-xs bg-gray-100 px-2 py-1 rounded">Community</span>
               </div>
-              <p className="text-sm text-gray-600 mb-3">.NET/C#向け実装</p>
-              <a href="#" className="text-blue-600 hover:underline text-sm">github.com/user/xbrl-dotnet →</a>
+              <p className="text-sm text-gray-600 mb-3">.NET/C#向け実裁E/p>
+              <a href="#" className="text-blue-600 hover:underline text-sm">github.com/user/xbrl-dotnet ↁE/a>
             </div>
             <div className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold">Kotlin SDK</h3>
                 <span className="text-xs bg-gray-100 px-2 py-1 rounded">Community</span>
               </div>
-              <p className="text-sm text-gray-600 mb-3">Android/Kotlin向け実装</p>
-              <a href="#" className="text-blue-600 hover:underline text-sm">github.com/user/xbrl-kotlin →</a>
+              <p className="text-sm text-gray-600 mb-3">Android/Kotlin向け実裁E/p>
+              <a href="#" className="text-blue-600 hover:underline text-sm">github.com/user/xbrl-kotlin ↁE/a>
             </div>
           </div>
         </div>

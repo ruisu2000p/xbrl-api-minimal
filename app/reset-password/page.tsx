@@ -20,7 +20,7 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // トークンの検証
+    // ト�Eクンの検証
     if (token) {
       fetch(`/api/auth/forgot-password?token=${token}`)
         .then(res => res.json())
@@ -44,11 +44,11 @@ function ResetPasswordForm() {
     if (!formData.password) {
       newErrors.password = 'パスワードを入力してください';
     } else if (formData.password.length < 8) {
-      newErrors.password = 'パスワードは8文字以上にしてください';
+      newErrors.password = 'パスワード�E8斁E��以上にしてください';
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'パスワードを再入力してください';
+      newErrors.confirmPassword = 'パスワードを再�E力してください';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'パスワードが一致しません';
     }
@@ -79,7 +79,7 @@ function ResetPasswordForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'パスワードリセットに失敗しました');
+        throw new Error(data.error || 'パスワードリセチE��に失敗しました');
       }
 
       setSuccess(true);
@@ -88,7 +88,7 @@ function ResetPasswordForm() {
       if (error instanceof Error) {
         setErrors({ password: error.message });
       } else {
-        setErrors({ password: '予期しないエラーが発生しました' });
+        setErrors({ password: '予期しなぁE��ラーが発生しました' });
       }
     }
   };
@@ -109,13 +109,12 @@ function ResetPasswordForm() {
                 パスワードを変更しました
               </h2>
               <p className="text-gray-600 mb-6">
-                新しいパスワードでログインできます
-              </p>
+                新しいパスワードでログインできまぁE              </p>
               <button
                 onClick={() => router.push('/login')}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
               >
-                ログインページへ
+                ログインペ�Eジへ
               </button>
             </div>
           </div>
@@ -124,7 +123,7 @@ function ResetPasswordForm() {
     );
   }
 
-  // トークン検証中
+  // ト�Eクン検証中
   if (tokenValid === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -133,7 +132,7 @@ function ResetPasswordForm() {
     );
   }
 
-  // 無効なトークン
+  // 無効なト�Eクン
   if (tokenValid === false) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
@@ -146,17 +145,15 @@ function ResetPasswordForm() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                リンクが無効です
-              </h2>
+                リンクが無効でぁE              </h2>
               <p className="text-gray-600 mb-6">
-                このパスワードリセットリンクは無効か、<br />
-                有効期限が切れています。
-              </p>
+                こ�EパスワードリセチE��リンクは無効か、Ebr />
+                有効期限が�EれてぁE��す、E              </p>
               <button
                 onClick={() => router.push('/forgot-password')}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
               >
-                もう一度リセットする
+                もう一度リセチE��する
               </button>
             </div>
           </div>
@@ -165,28 +162,23 @@ function ResetPasswordForm() {
     );
   }
 
-  // パスワードリセットフォーム
+  // パスワードリセチE��フォーム
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         {/* ロゴ */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">X</span>
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              XBRL財務データAPI
-            </h1>
-          </div>
-          <p className="text-gray-600">新しいパスワードを設定</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+            XBRL財務データAPI
+          </h1>
+          <p className="text-gray-600">新しいパスワードを設宁E/p>
         </div>
 
         {/* フォーム */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              パスワードリセット
+              パスワードリセチE��
             </h2>
             <p className="text-gray-600">
               {email} の新しいパスワードを設定してください
@@ -196,8 +188,7 @@ function ResetPasswordForm() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                新しいパスワード
-              </label>
+                新しいパスワーチE              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -207,7 +198,7 @@ function ResetPasswordForm() {
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 ${
                     errors.password ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="8文字以上"
+                  placeholder="8斁E��以丁E
                   disabled={isSubmitting}
                 />
                 <button
@@ -239,9 +230,9 @@ function ResetPasswordForm() {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     パスワード強度: {
-                      formData.password.length < 8 ? '弱い' :
-                      formData.password.length < 12 ? '普通' :
-                      formData.password.length < 16 ? '強い' : 'とても強い'
+                      formData.password.length < 8 ? '弱ぁE :
+                      formData.password.length < 12 ? '普送E :
+                      formData.password.length < 16 ? '強ぁE : 'とても強ぁE
                     }
                   </p>
                 </div>
@@ -250,8 +241,7 @@ function ResetPasswordForm() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                パスワード（確認）
-              </label>
+                パスワード（確認！E              </label>
               <input
                 type={showPassword ? "text" : "password"}
                 id="confirmPassword"
@@ -260,7 +250,7 @@ function ResetPasswordForm() {
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="パスワードを再入力"
+                placeholder="パスワードを再�E劁E
                 disabled={isSubmitting}
               />
               {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}

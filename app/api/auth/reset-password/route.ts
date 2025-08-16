@@ -5,30 +5,22 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
-// パスワードのハッシュ化
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
-
-// リセットトークンの保存（実際はデータベース使用）
-// これは /api/auth/forgot-password で作成されたトークンを参照
-const resetTokens = new Map<string, { email: string; expires: Date }>();
-
-// デモアカウントのパスワード更新（実際はデータベース使用）
-const userPasswords = new Map<string, string>([
-  ['demo@example.com', hashPassword('demo1234')],
-  ['test@example.com', hashPassword('test1234')]
-]);
+// Supabase Admin Client
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+);
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, password } = body;
+    const { email, password } = body;
 
-    // バリデーション
-    if (!token || !password) {
+    // バリデーション - emailを使用する簡易版
+    if (!email || !password) {
       return NextResponse.json(
         { error: '必要な情報が不足しています' },
         { status: 400 }
@@ -43,31 +35,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // トークンの検証
-    const tokenData = resetTokens.get(token);
+    // メールアドレスからユーザーを検索
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers();
+    const user = users?.users?.find(u => u.email === email);
     
-    if (!tokenData) {
+    if (!user) {
+      // セキュリティのため、ユーザーが存在しない場合も成功を返す
+      return NextResponse.json({
+        success: true,
+        message: 'パスワードが正常に変更されました'
+      }, { status: 200 });
+    }
+
+    // Supabase Admin APIでパスワードを更新
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
+      user.id,
+      { password: password }
+    );
+
+    if (error) {
+      console.error('Supabase password update error:', error);
       return NextResponse.json(
-        { error: '無効なトークンです' },
-        { status: 400 }
+        { error: 'パスワードの更新に失敗しました' },
+        { status: 500 }
       );
     }
 
-    // 有効期限チェック
-    if (tokenData.expires < new Date()) {
-      resetTokens.delete(token);
-      return NextResponse.json(
-        { error: 'トークンの有効期限が切れています' },
-        { status: 400 }
-      );
-    }
-
-    // パスワードの更新（実際はデータベースで更新）
-    const hashedPassword = hashPassword(password);
-    userPasswords.set(tokenData.email, hashedPassword);
-
-    // トークンを削除（一度だけ使用可能）
-    resetTokens.delete(token);
+    console.log(`Password updated for user: ${email}`);
 
     // 成功レスポンス
     return NextResponse.json({

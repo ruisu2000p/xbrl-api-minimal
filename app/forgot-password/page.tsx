@@ -14,12 +14,12 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     
     if (!email) {
-      setError('メールアドレスを入力してください');
+      setError('メールアドレスを�E力してください');
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('有効なメールアドレスを入力してください');
+      setError('有効なメールアドレスを�E力してください');
       return;
     }
 
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('予期しないエラーが発生しました');
+        setError('予期しなぁE��ラーが発生しました');
       }
     }
   };
@@ -67,22 +67,18 @@ export default function ForgotPasswordPage() {
                 メールを送信しました
               </h2>
               <p className="text-gray-600 mb-6">
-                パスワードリセット用のリンクを<br />
+                パスワードリセチE��用のリンクめEbr />
                 <strong>{email}</strong><br />
-                に送信しました。
-              </p>
+                に送信しました、E              </p>
               <div className="bg-blue-50 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
-                  メールが届かない場合は、迷惑メールフォルダをご確認ください。
-                  それでも見つからない場合は、もう一度お試しください。
-                </p>
+                  メールが届かなぁE��合�E、迷惑メールフォルダをご確認ください、E                  それでも見つからなぁE��合�E、もぁE��度お試しください、E                </p>
               </div>
               <button
                 onClick={() => router.push('/login')}
                 className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold transition-all"
               >
-                ログインページに戻る
-              </button>
+                ログインペ�Eジに戻めE              </button>
             </div>
           </div>
         </div>
@@ -95,27 +91,20 @@ export default function ForgotPasswordPage() {
       <div className="max-w-md w-full">
         {/* ロゴ */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">X</span>
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              XBRL財務データAPI
-            </h1>
-          </div>
-          <p className="text-gray-600">パスワードをリセット</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+            XBRL財務データAPI
+          </h1>
+          <p className="text-gray-600">パスワードをリセチE��</p>
         </div>
 
         {/* フォーム */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              パスワードをお忘れですか？
-            </h2>
+              パスワードをお忘れですか�E�E            </h2>
             <p className="text-gray-600">
-              登録したメールアドレスを入力してください。<br />
-              パスワードリセット用のリンクをお送りします。
-            </p>
+              登録したメールアドレスを�E力してください、Ebr />
+              パスワードリセチE��用のリンクをお送りします、E            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -154,22 +143,21 @@ export default function ForgotPasswordPage() {
                   送信中...
                 </span>
               ) : (
-                'リセットリンクを送信'
+                'リセチE��リンクを送信'
               )}
             </button>
 
             <div className="text-center">
               <a href="/login" className="text-sm text-blue-600 hover:underline">
-                ログインページに戻る
-              </a>
+                ログインペ�Eジに戻めE              </a>
             </div>
           </form>
         </div>
 
-        {/* ヘルプ */}
+        {/* ヘルチE*/}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            お困りの場合は
+            お困り�E場合�E
             <a href="/support" className="text-blue-600 hover:underline mx-1">ヘルプセンター</a>
             をご覧ください
           </p>

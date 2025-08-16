@@ -29,6 +29,12 @@ export default function ApiKeysPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // LocalStorageからユーザー情報を確認
+    const localUser = localStorage.getItem('user');
+    if (!localUser) {
+      router.push('/login');
+      return;
+    }
     fetchKeys();
   }, []);
 
@@ -37,7 +43,14 @@ export default function ApiKeysPage() {
       const response = await fetch('/api/v1/apikeys');
       if (!response.ok) {
         if (response.status === 401) {
-          router.push('/login');
+          // LocalStorageを再確認
+          const localUser = localStorage.getItem('user');
+          if (!localUser) {
+            router.push('/login');
+            return;
+          }
+          // LocalStorageにユーザーがある場合は空の配列を表示
+          setKeys([]);
           return;
         }
         throw new Error('Failed to fetch keys');
@@ -46,6 +59,8 @@ export default function ApiKeysPage() {
       setKeys(data.keys || []);
     } catch (error) {
       console.error('Error fetching keys:', error);
+      // エラー時も空の配列を表示
+      setKeys([]);
     }
   }
 
@@ -67,6 +82,10 @@ export default function ApiKeysPage() {
 
       const data = await response.json();
       setCreatedKey(data.apiKey);
+      // 完全なAPIキーをLocalStorageに保存（ダッシュボードで使用）
+      if (data.apiKey) {
+        localStorage.setItem('currentApiKey', data.apiKey);
+      }
       setNewKeyName('');
       fetchKeys();
     } catch (error) {

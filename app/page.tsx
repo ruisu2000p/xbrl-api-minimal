@@ -274,7 +274,7 @@ export default function Home() {
       <section id="features" className="bg-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            BRL財務データAPIの強力な機能
+            XBRL財務データAPIの強力な機能
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="group hover:scale-105 transition-all">
@@ -452,7 +452,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h5 className="text-white font-bold text-xl mb-4">BRL財務データAPI</h5>
+              <h5 className="text-white font-bold text-xl mb-4">XBRL財務データAPI</h5>
               <p className="text-sm">
                 日本の上場企業4,231社の財務データを<br />
                 クラウドインフラから配信
