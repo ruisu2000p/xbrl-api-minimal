@@ -118,11 +118,14 @@ export async function DELETE(request: NextRequest) {
 
     // 4. アクセスログを削除（もしある場合）
     console.log('📊 Deleting access logs...');
-    await supabaseAdmin
-      .from('api_access_logs')
-      .delete()
-      .eq('user_id', userId)
-      .catch(err => console.log('No access logs to delete'));
+    try {
+      await supabaseAdmin
+        .from('api_access_logs')
+        .delete()
+        .eq('user_id', userId);
+    } catch (err) {
+      console.log('No access logs to delete');
+    }
 
     // 5. auth.usersから削除（最後に実行）
     console.log('🔐 Deleting from auth.users...');
