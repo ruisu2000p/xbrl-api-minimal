@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// サンプル企業データ（実際はデータベースやファイルシステムから取得）
+// Supabase クライアントの初期化
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
+
+// サンプル企業データ（フォールバック用）
 const sampleCompanies = [
   { id: '7203', name: 'トヨタ自動車株式会社', ticker: '7203', sector: '輸送用機器', market: '東証プライム' },
   { id: '6758', name: 'ソニーグループ株式会社', ticker: '6758', sector: '電気機器', market: '東証プライム' },
@@ -36,36 +43,63 @@ export async function GET(request: NextRequest) {
     // クエリパラメータ取得
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
-    const perPage = parseInt(searchParams.get('per_page') || '20');
+    const perPage = parseInt(searchParams.get('per_page') || '100');
     const sector = searchParams.get('sector');
     const search = searchParams.get('search');
 
+    // Supabaseから企業データを取得
+    let query = supabase
+      .from('companies')
+      .select('*', { count: 'exact' });
+
     // フィルタリング
-    let filteredCompanies = [...sampleCompanies];
-    
     if (sector) {
-      filteredCompanies = filteredCompanies.filter(c => c.sector === sector);
+      query = query.eq('sector', sector);
     }
     
     if (search) {
-      const searchLower = search.toLowerCase();
-      filteredCompanies = filteredCompanies.filter(c => 
-        c.name.toLowerCase().includes(searchLower) ||
-        c.ticker.includes(search)
-      );
+      query = query.or(`name.ilike.%${search}%,id.ilike.%${search}%,ticker.ilike.%${search}%`);
     }
 
     // ページネーション
-    const startIndex = (page - 1) * perPage;
-    const endIndex = startIndex + perPage;
-    const paginatedCompanies = filteredCompanies.slice(startIndex, endIndex);
+    const from = (page - 1) * perPage;
+    const to = from + perPage - 1;
+    query = query.range(from, to);
+
+    // データ取得
+    const { data: companies, error, count } = await query;
+
+    if (error) {
+      console.error('Database error:', error);
+      // フォールバック: サンプルデータを使用
+      const startIndex = (page - 1) * perPage;
+      const endIndex = startIndex + perPage;
+      const paginatedCompanies = sampleCompanies.slice(startIndex, endIndex);
+      
+      return NextResponse.json({
+        companies: paginatedCompanies,
+        total: sampleCompanies.length,
+        page,
+        per_page: perPage,
+        total_pages: Math.ceil(sampleCompanies.length / perPage),
+        source: 'fallback',
+        error: 'Database connection failed'
+      }, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600'
+        }
+      });
+    }
 
     return NextResponse.json({
-      companies: paginatedCompanies,
-      total: filteredCompanies.length,
+      companies: companies || [],
+      total: count || 0,
       page,
       per_page: perPage,
-      total_pages: Math.ceil(filteredCompanies.length / perPage)
+      total_pages: Math.ceil((count || 0) / perPage),
+      source: 'database'
     }, {
       status: 200,
       headers: {
