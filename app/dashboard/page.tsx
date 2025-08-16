@@ -1066,7 +1066,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">APIキー情報</h3>
                   <button
-                    onClick={generateNewApiKey}
+                    onClick={() => generateNewApiKey()}
                     disabled={isGeneratingKey}
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
                   >
