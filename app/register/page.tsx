@@ -296,7 +296,7 @@ export default function Register() {
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-blue-700">
-                    <span className="font-semibold">ヒンチE</span> プロフィール惁E��は後からダチE��ュボ�Eドで変更できます、E                  </p>
+                    <span className="font-semibold">ヒント：</span> プロフィール情報は後からダッシュボードで変更できます。                  </p>
                 </div>
 
                 <div className="flex gap-4">
@@ -305,13 +305,15 @@ export default function Register() {
                     onClick={handlePrevious}
                     className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all"
                   >
-                    ↁE戻めE                  </button>
+                    ← 戻る
+                  </button>
                   <button
                     type="button"
                     onClick={handleNext}
                     className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
                   >
-                    次へ ↁE                  </button>
+                    次へ →
+                  </button>
                 </div>
               </div>
             )}
@@ -321,13 +323,13 @@ export default function Register() {
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">ベータ版へようこそ</h2>
                 
-                {/* ベ�Eタ版�E特典表示 */}
+                {/* ベータ版の特典表示 */}
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
                   <div className="flex items-center mb-4">
                     <div className="bg-white/20 rounded-full px-4 py-1 text-sm font-bold">
-                      🚀 ベ�Eタ限宁E                    </div>
+                      🚀 ベータ限定                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">ベ�Eタアクセス</h3>
+                  <h3 className="text-2xl font-bold mb-3">ベータアクセス</h3>
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -339,13 +341,13 @@ export default function Register() {
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>1,000囁E月�EAPI呼び出ぁE/span>
+                      <span>1,000回/月のAPI呼び出し</span>
                     </div>
                     <div className="flex items-center">
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>全機�Eへのフルアクセス</span>
+                      <span>全機能へのフルアクセス</span>
                     </div>
                     <div className="flex items-center">
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -355,14 +357,14 @@ export default function Register() {
                     </div>
                   </div>
                   <div className="mt-6 pt-4 border-t border-white/20">
-                    <div className="text-3xl font-bold">¥0<span className="text-lg font-normal">/朁E/span></div>
-                    <p className="text-sm opacity-90 mt-1">正式版まで完�E無斁E/p>
+                    <div className="text-3xl font-bold">¥0<span className="text-lg font-normal">/月</span></div>
+                    <p className="text-sm opacity-90 mt-1">正式版まで完全無料</p>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-800">
-                    <span className="font-semibold">📧 お知らせ:</span> 正式版リリース時�E事前にメールでお知らせし、�Eータ参加老E��定�E特別価格をご案�Eします、E                  </p>
+                    <span className="font-semibold">📧 お知らせ:</span> 正式版リリース時は事前にメールでお知らせし、ベータ参加者限定の特別価格をご案内します。                  </p>
                 </div>
 
                 <div className="space-y-4">
@@ -374,22 +376,22 @@ export default function Register() {
                       className="mt-1 mr-3"
                     />
                     <span className="text-sm text-gray-600">
-                      <a href="/terms" className="text-blue-600 hover:underline" target="_blank">利用規紁E/a>および
-                      <a href="/privacy" className="text-blue-600 hover:underline" target="_blank">プライバシーポリシー</a>に同意しまぁE                    </span>
+                      <a href="/terms" className="text-blue-600 hover:underline" target="_blank">利用規約</a>および
+                      <a href="/privacy" className="text-blue-600 hover:underline" target="_blank">プライバシーポリシー</a>に同意します                    </span>
                   </label>
                   {errors.agreeToTerms && <p className="text-sm text-red-500">{errors.agreeToTerms}</p>}
 
-                  {/* 投賁E��言免責事頁E*/}
+                  {/* 投資助言免責事項 */}
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">⚠�E�E重要な免責事頁E/h4>
+                    <h4 className="font-semibold text-gray-900 mb-2">⚠️ 重要な免責事項</h4>
                     <div className="text-sm text-gray-700 space-y-2 mb-3">
-                      <p>本サービスは以下�E点につぁE��ご理解ぁE��だく忁E��があります！E/p>
+                      <p>本サービスは以下の点についてご理解いただく必要があります：</p>
                       <ul className="list-disc list-inside space-y-1 ml-2">
-                        <li>提供するデータは<strong>惁E��提供�Eみ</strong>を目皁E��してぁE��ぁE/li>
-                        <li><strong>投賁E��言・投賁E��誘を行うも�Eではありません</strong></li>
-                        <li>投賁E��断は忁E��ご�E身の責任で行ってください</li>
-                        <li>チE�Eタ利用による損失につぁE��一刁E��任を負ぁE��せん</li>
-                        <li>金融啁E��取引法に基づく投賁E��言業の登録は行っておりません</li>
+                        <li>提供するデータは<strong>情報提供のみ</strong>を目的としています</li>
+                        <li><strong>投資助言・投資勧誘を行うものではありません</strong></li>
+                        <li>投資判断は必ずご自身の責任で行ってください</li>
+                        <li>データ利用による損失について一切責任を負いません</li>
+                        <li>金融商品取引法に基づく投資助言業の登録は行っておりません</li>
                       </ul>
                     </div>
                     <label className="flex items-start">
@@ -400,7 +402,7 @@ export default function Register() {
                         className="mt-1 mr-3"
                       />
                       <span className="text-sm font-medium text-gray-800">
-                        上記�E免責事頁E��琁E��し、本サービスが投賁E��言ではなぁE��とに同意しまぁE                      </span>
+                        上記の免責事項を理解し、本サービスが投資助言ではないことに同意します                      </span>
                     </label>
                   </div>
                   {errors.agreeToDisclaimer && <p className="text-sm text-red-500">{errors.agreeToDisclaimer}</p>}
@@ -412,7 +414,8 @@ export default function Register() {
                     onClick={handlePrevious}
                     className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all"
                   >
-                    ↁE戻めE                  </button>
+                    ← 戻る
+                  </button>
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -439,7 +442,7 @@ export default function Register() {
         {/* ログインリンク */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            すでにアカウントをお持ちですか�E�{' '}
+            すでにアカウントをお持ちですか？{' '}
             <a href="/login" className="text-blue-600 hover:underline font-semibold">
               ログイン
             </a>
