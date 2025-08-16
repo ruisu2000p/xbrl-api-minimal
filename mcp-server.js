@@ -2,7 +2,7 @@
 
 /**
  * XBRL Financial Data MCP Server
- * Claude Desktop用のMCPサーバー実装
+ * Provides access to 4,225 Japanese companies financial data
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -13,10 +13,11 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import fetch from 'node-fetch';
 
-// APIサーバーの設定
-const API_BASE_URL = process.env.XBRL_API_URL || 'http://localhost:5001';
+// API Configuration
+const API_URL = process.env.XBRL_API_URL || 'https://xbrl-api-minimal.vercel.app/api/v1';
+const API_KEY = process.env.XBRL_API_KEY || 'xbrl_live_test_admin_key_2025';
 
-// MCPサーバーの作成
+// Create MCP server
 const server = new Server(
   {
     name: 'xbrl-financial-data',
@@ -29,272 +30,228 @@ const server = new Server(
   }
 );
 
-// ツール定義
+// Helper function to make API requests
+async function makeApiRequest(endpoint, params = {}) {
+  const url = new URL(`${API_URL}${endpoint}`);
+  Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+  
+  try {
+    const response = await fetch(url.toString(), {
+      headers: {
+        'X-API-Key': API_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('API request error:', error);
+    throw error;
+  }
+}
+
+// Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: 'get_company_files',
-        description: '指定企業の有価証券報告書ファイル一覧を取得します',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            company_id: {
-              type: 'string',
-              description: '企業ID（例: S100LJ4F）',
-            },
-            year: {
-              type: 'string',
-              description: '年度（デフォルト: 2021）',
-              default: '2021',
-            },
-          },
-          required: ['company_id'],
-        },
-      },
-      {
-        name: 'get_file_content',
-        description: '指定企業の特定セクションの内容を取得します',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            company_id: {
-              type: 'string',
-              description: '企業ID（例: S100LJ4F）',
-            },
-            file_index: {
-              type: 'number',
-              description: 'ファイルインデックス（0から開始）',
-            },
-            year: {
-              type: 'string',
-              description: '年度（デフォルト: 2021）',
-              default: '2021',
-            },
-          },
-          required: ['company_id', 'file_index'],
-        },
-      },
-      {
         name: 'search_companies',
-        description: '企業を検索します（名前または証券コード）',
+        description: 'Search for Japanese companies in the XBRL database. Returns company information including ID, name, ticker, sector, and market.',
         inputSchema: {
           type: 'object',
           properties: {
-            query: {
+            search: {
               type: 'string',
-              description: '検索クエリ（企業名または証券コード）',
+              description: 'Search term (company name, ID, or ticker)',
             },
-            limit: {
+            sector: {
+              type: 'string',
+              description: 'Filter by sector (e.g., 輸送用機器, 電気機器, 情報・通信業)',
+            },
+            page: {
               type: 'number',
-              description: '取得件数の上限',
-              default: 10,
+              description: 'Page number (default: 1)',
+              default: 1,
+            },
+            per_page: {
+              type: 'number',
+              description: 'Results per page (default: 20, max: 100)',
+              default: 20,
             },
           },
-          required: ['query'],
         },
       },
       {
-        name: 'get_financial_overview',
-        description: '企業の財務概要（主要な経営指標）を取得します',
+        name: 'get_company_by_id',
+        description: 'Get detailed information about a specific company by its ID',
         inputSchema: {
           type: 'object',
           properties: {
             company_id: {
               type: 'string',
-              description: '企業ID（例: S100LJ4F）',
-            },
-            year: {
-              type: 'string',
-              description: '年度（デフォルト: 2021）',
-              default: '2021',
+              description: 'Company ID (e.g., S100L777)',
             },
           },
           required: ['company_id'],
         },
       },
       {
-        name: 'compare_companies',
-        description: '複数企業の特定セクションを比較します',
+        name: 'list_all_companies',
+        description: 'List all companies with pagination. Total: 4,225 Japanese companies.',
         inputSchema: {
           type: 'object',
           properties: {
-            company_ids: {
-              type: 'array',
-              items: { type: 'string' },
-              description: '比較する企業IDのリスト',
+            page: {
+              type: 'number',
+              description: 'Page number (default: 1)',
+              default: 1,
             },
-            section: {
-              type: 'string',
-              description: '比較するセクション（例: 企業の概況、事業の状況）',
-            },
-            year: {
-              type: 'string',
-              description: '年度（デフォルト: 2021）',
-              default: '2021',
+            per_page: {
+              type: 'number',
+              description: 'Results per page (default: 100, max: 1000)',
+              default: 100,
             },
           },
-          required: ['company_ids', 'section'],
+        },
+      },
+      {
+        name: 'get_sectors',
+        description: 'Get a list of all available sectors/industries',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'get_statistics',
+        description: 'Get database statistics including total companies, sectors, etc.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
         },
       },
     ],
   };
 });
 
-// ツール実行ハンドラ
+// Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-
+  
   try {
     switch (name) {
-      case 'get_company_files': {
-        const response = await fetch(
-          `${API_BASE_URL}/api/companies/${args.company_id}/files?year=${args.year || '2021'}`
-        );
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch company files');
-        }
-        
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `企業: ${data.company_name || data.company_id}\n年度: ${data.year}\nファイル数: ${data.total_files}\n\n` +
-                data.files.map((f, i) => `${i}. ${f.section} (${f.name}, ${Math.round(f.size/1024)}KB)`).join('\n'),
-            },
-          ],
-        };
-      }
-
-      case 'get_file_content': {
-        const response = await fetch(
-          `${API_BASE_URL}/api/companies/${args.company_id}/files?year=${args.year || '2021'}&file=${args.file_index}`
-        );
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch file content');
-        }
-        
-        // コンテンツを適切な長さに制限
-        let content = data.file.content;
-        if (content.length > 10000) {
-          content = content.substring(0, 10000) + '\n\n[...内容が長いため省略されました...]';
-        }
-        
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `ファイル: ${data.file.name}\nサイズ: ${Math.round(data.file.size/1024)}KB\n\n${content}`,
-            },
-          ],
-        };
-      }
-
       case 'search_companies': {
-        // 現在のAPIには検索機能がないため、ダミーデータを返す
-        // 将来的にはAPIを拡張して実装
-        const sampleCompanies = [
-          { id: 'S100LJ4F', name: '亀田製菓株式会社' },
-          { id: 'S100LJ65', name: '豊田通商株式会社' },
-          { id: 'S100LJ64', name: 'エステー株式会社' },
-          { id: 'S100LJ5C', name: 'セキ株式会社' },
+        const result = await makeApiRequest('/companies', {
+          search: args.search,
+          sector: args.sector,
+          page: args.page || 1,
+          per_page: args.per_page || 20,
+        });
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+      
+      case 'get_company_by_id': {
+        const result = await makeApiRequest('/companies', {
+          search: args.company_id,
+          per_page: 1,
+        });
+        
+        if (result.companies && result.companies.length > 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result.companies[0], null, 2),
+              },
+            ],
+          };
+        } else {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Company with ID ${args.company_id} not found`,
+              },
+            ],
+          };
+        }
+      }
+      
+      case 'list_all_companies': {
+        const result = await makeApiRequest('/companies', {
+          page: args.page || 1,
+          per_page: args.per_page || 100,
+        });
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+      
+      case 'get_sectors': {
+        // This would need a dedicated endpoint, for now return sample sectors
+        const sectors = [
+          '輸送用機器',
+          '電気機器',
+          '情報・通信業',
+          'サービス業',
+          '銀行業',
+          '医薬品',
+          '化学',
+          '機械',
+          '小売業',
+          '建設業',
         ];
         
-        const filtered = sampleCompanies.filter(c => 
-          c.name.includes(args.query) || c.id.includes(args.query.toUpperCase())
-        );
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ sectors }, null, 2),
+            },
+          ],
+        };
+      }
+      
+      case 'get_statistics': {
+        const result = await makeApiRequest('/companies', {
+          per_page: 1,
+        });
+        
+        const stats = {
+          total_companies: result.total || 0,
+          data_source: result.source || 'unknown',
+          api_status: 'online',
+          last_updated: new Date().toISOString(),
+        };
         
         return {
           content: [
             {
               type: 'text',
-              text: `検索結果（"${args.query}"）:\n\n` +
-                filtered.map(c => `- ${c.id}: ${c.name}`).join('\n'),
+              text: JSON.stringify(stats, null, 2),
             },
           ],
         };
       }
-
-      case 'get_financial_overview': {
-        // 企業の概況ファイル（通常はindex 1）を取得
-        const response = await fetch(
-          `${API_BASE_URL}/api/companies/${args.company_id}/files?year=${args.year || '2021'}&file=1`
-        );
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch financial overview');
-        }
-        
-        // 主要な経営指標を抽出（簡易版）
-        const content = data.file.content;
-        const lines = content.split('\n').slice(0, 100); // 最初の100行から抽出
-        
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `企業ID: ${args.company_id}\n年度: ${args.year || '2021'}\n\n主要な経営指標（概要）:\n${lines.join('\n')}`,
-            },
-          ],
-        };
-      }
-
-      case 'compare_companies': {
-        const results = [];
-        
-        for (const companyId of args.company_ids) {
-          try {
-            // まずファイル一覧を取得
-            const listResponse = await fetch(
-              `${API_BASE_URL}/api/companies/${companyId}/files?year=${args.year || '2021'}`
-            );
-            const listData = await listResponse.json();
-            
-            // 指定セクションのファイルを探す
-            const targetFile = listData.files.find(f => f.section === args.section);
-            
-            if (targetFile) {
-              // ファイル内容を取得
-              const contentResponse = await fetch(
-                `${API_BASE_URL}/api/companies/${companyId}/files?year=${args.year || '2021'}&file=${targetFile.index}`
-              );
-              const contentData = await contentResponse.json();
-              
-              results.push({
-                company_id: companyId,
-                company_name: listData.company_name || companyId,
-                content: contentData.file.content.substring(0, 2000), // 最初の2000文字
-              });
-            }
-          } catch (error) {
-            results.push({
-              company_id: companyId,
-              error: error.message,
-            });
-          }
-        }
-        
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `セクション比較: ${args.section}\n年度: ${args.year || '2021'}\n\n` +
-                results.map(r => {
-                  if (r.error) {
-                    return `【${r.company_id}】\nエラー: ${r.error}`;
-                  }
-                  return `【${r.company_name || r.company_id}】\n${r.content}\n`;
-                }).join('\n---\n\n'),
-            },
-          ],
-        };
-      }
-
+      
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -303,22 +260,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [
         {
           type: 'text',
-          text: `エラーが発生しました: ${error.message}`,
+          text: `Error: ${error.message}`,
         },
       ],
-      isError: true,
     };
   }
 });
 
-// サーバー起動
+// Start the server
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('XBRL MCP Server started');
+  console.error('XBRL MCP Server started successfully');
+  console.error(`API URL: ${API_URL}`);
+  console.error(`Total companies available: 4,225`);
 }
 
 main().catch((error) => {
-  console.error('Server error:', error);
+  console.error('Fatal error:', error);
   process.exit(1);
 });

@@ -23,12 +23,16 @@ if exist "%CONFIG_PATH%" (
 
 :: Create the configuration file
 echo Creating MCP configuration...
+
+:: Get current directory with proper escaping
+set CURRENT_DIR=%CD:\=\\%
+
 (
 echo {
 echo   "mcpServers": {
 echo     "xbrl-financial-data": {
 echo       "command": "node",
-echo       "args": ["%CD%\\mcp-server.js"],
+echo       "args": ["%CURRENT_DIR%\\mcp-server.js"],
 echo       "env": {
 echo         "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
 echo         "XBRL_API_KEY": "xbrl_live_test_admin_key_2025"
