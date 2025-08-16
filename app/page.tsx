@@ -365,55 +365,6 @@ export default function Home() {
       </section>
 
 
-      {/* FAQ */}
-      <section className="bg-white py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            よくある質問
-          </h3>
-          <div className="space-y-6">
-            <details className="group bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-all">
-              <summary className="flex justify-between items-center cursor-pointer">
-                <span className="font-semibold text-lg">APIキーはどのように取得できますか？</span>
-                <span className="text-2xl group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="mt-4 text-gray-600">
-                無料アカウントに登録後、ダッシュボードからワンクリックでAPIキーを生成できます。キーは即座に利用可能になります。
-              </p>
-            </details>
-            
-            <details className="group bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-all">
-              <summary className="flex justify-between items-center cursor-pointer">
-                <span className="font-semibold text-lg">データはどのくらいの頻度で更新されますか？</span>
-                <span className="text-2xl group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="mt-4 text-gray-600">
-                EDINETに新しい有価証券報告書が提出されると、24時間以内に自動的にデータベースに反映されます。
-              </p>
-            </details>
-            
-            <details className="group bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-all">
-              <summary className="flex justify-between items-center cursor-pointer">
-                <span className="font-semibold text-lg">プランの変更はいつでもできますか？</span>
-                <span className="text-2xl group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="mt-4 text-gray-600">
-                はい、いつでもアップグレード・ダウングレードが可能です。変更は即座に反映され、日割り計算で料金調整されます。
-              </p>
-            </details>
-            
-            <details className="group bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-all">
-              <summary className="flex justify-between items-center cursor-pointer">
-                <span className="font-semibold text-lg">SDKは提供されていますか？</span>
-                <span className="text-2xl group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="mt-4 text-gray-600">
-                Python、JavaScript/TypeScript、Ruby、Go向けの公式SDKを提供しています。GitHubで公開しており、コミュニティによる他言語のSDKも利用可能です。
-              </p>
-            </details>
-          </div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="bg-gradient-to-r from-blue-600 to-indigo-600 py-20">
@@ -489,7 +440,7 @@ export default function Home() {
           
           <div className="mt-12 pt-8 border-t border-gray-800">
             <div className="text-center">
-              <p className="text-sm mb-4">&copy; 2025 BRL Financial Data API. All rights reserved.</p>
+              <p className="text-sm mb-4">&copy; 2025 XBRL Financial Data API. All rights reserved.</p>
               <p className="text-xs text-gray-500">
                 本サービスは、金融庁のEDINETから取得したXBRLデータを活用しています。<br />
                 データの正確性については一切の保証をいたしません。投資判断は自己責任で行ってください。
