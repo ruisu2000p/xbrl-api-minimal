@@ -24,21 +24,23 @@ export async function GET(request: NextRequest) {
         api_key: 'xbrl_live_' + Math.random().toString(36).substring(2, 15)
       };
 
-      const { error: insertError } = await admin
+      const { data: createdProfile, error: insertError } = await admin
         .from('profiles')
-        .insert(newProfile);
+        .insert(newProfile)
+        .select()
+        .single();
 
-      if (insertError) {
+      if (insertError || !createdProfile) {
         console.error('Failed to create profile:', insertError);
         return NextResponse.json({ error: 'Failed to create profile' }, { status: 500 });
       }
 
       return NextResponse.json({
         user: {
-          id: newProfile.id,
-          email: newProfile.email,
-          plan: newProfile.plan,
-          createdAt: new Date().toISOString()
+          id: createdProfile.id,
+          email: createdProfile.email,
+          plan: createdProfile.plan,
+          createdAt: createdProfile.created_at || new Date().toISOString()
         }
       });
     }
