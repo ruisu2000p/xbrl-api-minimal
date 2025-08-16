@@ -271,30 +271,6 @@ export default function SupportPage() {
               )}
             </div>
 
-            {/* お問い合わせセクション */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-8 text-white mt-8">
-              <h3 className="text-2xl font-bold mb-4">解決しませんでしたか？</h3>
-              <p className="mb-6 opacity-90">
-                サポートチームが直接お手伝いいたします。お気軽にお問い合わせください。
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white/10 rounded-lg p-4">
-                  <h4 className="font-bold mb-2">📧 メールサポート</h4>
-                  <p className="text-sm opacity-90 mb-3">24時間以内に回答</p>
-                  <button className="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100">
-                    メールで問い合わせ
-                  </button>
-                </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <h4 className="font-bold mb-2">💬 チャットサポート</h4>
-                  <p className="text-sm opacity-90 mb-3">平日 9:00-18:00</p>
-                  <button className="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100">
-                    チャットを開始
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {/* API ステータス */}
             <div id="status" className="bg-white rounded-xl shadow-sm p-8 mt-8">
               <h3 className="text-2xl font-bold mb-6">API ステータス</h3>
