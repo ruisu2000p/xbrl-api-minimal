@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import SimpleLogin from './simple-login';
 import { 
   Copy,
   Key,
@@ -34,10 +35,10 @@ export default function DashboardPage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [needsLogin, setNeedsLogin] = useState(false);
 
   useEffect(() => {
     checkAuth();
-    fetchProfile();
   }, []);
 
   // userが設定された後にAPIキーを取得
@@ -48,16 +49,11 @@ export default function DashboardPage() {
   }, [user]);
 
   async function checkAuth() {
-    // LocalStorageをチェック（後方互換性のため）
+    // LocalStorageをチェック
     const localUser = localStorage.getItem('user');
     if (!localUser) {
-      // デモモードで続行
-      setUser({
-        id: 'demo',
-        email: 'demo@example.com',
-        plan: 'beta',
-        createdAt: new Date().toISOString()
-      });
+      // ログインが必要
+      setNeedsLogin(true);
       setLoading(false);
       return;
     }
@@ -65,20 +61,32 @@ export default function DashboardPage() {
     const userData = JSON.parse(localUser);
     setUser(userData);
     setLoading(false);
+    // プロファイルを取得
+    fetchProfile(userData.email);
   }
 
-  async function fetchProfile() {
+  async function fetchProfile(email: string) {
     try {
-      const response = await fetch('/api/dashboard/profile');
+      const response = await fetch('/api/dashboard/profile', {
+        headers: {
+          'x-user-email': email
+        }
+      });
       if (response.ok) {
         const data = await response.json();
-        if (data.user && !data.isDemo) {
+        console.log('Profile data:', data);
+        if (data.user) {
           setUser(data.user);
         }
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
     }
+  }
+
+  function handleLogin(email: string) {
+    setNeedsLogin(false);
+    checkAuth();
   }
 
   async function fetchApiKey() {
@@ -180,6 +188,10 @@ export default function DashboardPage() {
     );
   }
 
+  if (needsLogin) {
+    return <SimpleLogin onLogin={handleLogin} />;
+  }
+
   const planDetails = getPlanDetails(user?.plan || 'beta');
 
   return (
@@ -197,7 +209,9 @@ export default function DashboardPage() {
                 onClick={() => {
                   localStorage.removeItem('user');
                   localStorage.removeItem('apiKey');
-                  router.push('/');
+                  setNeedsLogin(true);
+                  setUser(null);
+                  setApiKey('');
                 }}
                 className="text-sm text-gray-600 hover:text-gray-900"
               >
