@@ -52,14 +52,9 @@ export default function Home() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">X</span>
-              </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                XBRL財務データAPI
-              </h1>
-            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              XBRL財務データAPI
+            </h1>
             <nav className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">機能</a>
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">料金</a>
@@ -96,7 +91,7 @@ export default function Home() {
                 onClick={() => router.push('/register')}
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-xl transition-all transform hover:scale-105"
               >
-                無料で始める →
+                無料で始める
               </button>
               <button 
                 onClick={() => document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -164,7 +159,7 @@ export default function Home() {
       <section id="pricing" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-12">
           <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium mb-4">
-            🚀 現在ベータ版公開中
+            現在ベータ版公開中
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-4">
             ベータテスト参加者募集中
@@ -179,7 +174,7 @@ export default function Home() {
         <div className="max-w-lg mx-auto">
           <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 text-white relative">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-6 py-1 rounded-full text-sm font-bold shadow-lg">
-              🎯 ベータ限定
+              ベータ限定
             </div>
             
             <div className="text-center mb-6">
@@ -242,8 +237,8 @@ export default function Home() {
             
             <div className="mt-6 p-4 bg-blue-500/20 rounded-lg">
               <p className="text-sm text-blue-100 text-center">
-                📧 正式版リリース時は事前にお知らせします<br />
-                🎁 ベータ参加者は正式版で特別価格を適用予定
+                正式版リリース時は事前にお知らせします<br />
+                ベータ参加者は正式版で特別価格を適用予定
               </p>
             </div>
           </div>
@@ -279,7 +274,7 @@ export default function Home() {
       <section id="features" className="bg-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            XBRL財務データAPIの強力な機能
+            BRL財務データAPIの強力な機能
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="group hover:scale-105 transition-all">
@@ -443,7 +438,7 @@ export default function Home() {
               disabled={isSubmitting}
               className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 disabled:opacity-50 transition-all transform hover:scale-105 shadow-lg"
             >
-              {isSubmitting ? '送信中...' : '無料登録 →'}
+              {isSubmitting ? '送信中...' : '無料登録'}
             </button>
           </form>
           <p className="text-blue-200 text-sm mt-4">
@@ -457,12 +452,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">X</span>
-                </div>
-                <h5 className="text-white font-bold text-xl">XBRL財務データAPI</h5>
-              </div>
+              <h5 className="text-white font-bold text-xl mb-4">BRL財務データAPI</h5>
               <p className="text-sm">
                 日本の上場企業4,231社の財務データを<br />
                 クラウドインフラから配信
@@ -499,7 +489,7 @@ export default function Home() {
           
           <div className="mt-12 pt-8 border-t border-gray-800">
             <div className="text-center">
-              <p className="text-sm mb-4">&copy; 2025 XBRL Financial Data API. All rights reserved.</p>
+              <p className="text-sm mb-4">&copy; 2025 BRL Financial Data API. All rights reserved.</p>
               <p className="text-xs text-gray-500">
                 本サービスは、金融庁のEDINETから取得したXBRLデータを活用しています。<br />
                 データの正確性については一切の保証をいたしません。投資判断は自己責任で行ってください。
