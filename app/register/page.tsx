@@ -20,7 +20,8 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // localStorageから事前入力データを取得    const pendingEmail = localStorage.getItem('pendingEmail');
+    // localStorageから事前入力データを取得
+    const pendingEmail = localStorage.getItem('pendingEmail');
     const selectedPlan = localStorage.getItem('selectedPlan');
     
     if (pendingEmail) {
@@ -91,7 +92,8 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      // 実際のAPI呼び出し      const response = await fetch('/api/auth/register', {
+      // 実際のAPI呼び出し
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -259,7 +261,7 @@ export default function Register() {
                 
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    お名剁E<span className="text-red-500">*</span>
+                    お名前 <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -269,14 +271,14 @@ export default function Register() {
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.name ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="山田 太郁E
+                    placeholder="山田 太郎"
                   />
                   {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
                 </div>
 
                 <div>
                   <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-                    会社吁E<span className="text-gray-400">�E�任意！E/span>
+                    会社名 <span className="text-gray-400">（任意）</span>
                   </label>
                   <input
                     type="text"
@@ -284,7 +286,7 @@ export default function Register() {
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="株式会社、E��E
+                    placeholder="株式会社○○"
                   />
                 </div>
 
@@ -310,10 +312,10 @@ export default function Register() {
               </div>
             )}
 
-            {/* Step 3: ベ�Eタ版確誁E*/}
+            {/* Step 3: ベータ版確認 */}
             {step === 3 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">ベ�Eタ版へようこそ</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">ベータ版へようこそ</h2>
                 
                 {/* ベ�Eタ版�E特典表示 */}
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
@@ -327,7 +329,7 @@ export default function Register() {
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span>全20年刁E�EチE�Eタアクセス</span>
+                      <span>全20年分のデータアクセス</span>
                     </div>
                     <div className="flex items-center">
                       <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

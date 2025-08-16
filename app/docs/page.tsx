@@ -142,7 +142,7 @@ export default function DocsPage() {
 
   const handleTryIt = async () => {
     if (!tryItApiKey) {
-      alert('APIキーを�E力してください');
+      alert('APIキーを入力してください');
       return;
     }
 
@@ -311,14 +311,14 @@ export default function DocsPage() {
 
                   <h2 className="text-2xl font-bold mt-8 mb-4">APIキーの取得</h2>
                   <ol className="list-decimal pl-6 space-y-2 mb-6">
-                    <li>アカウントを作�Eまた�Eログイン</li>
-                    <li>ダチE��ュボ�Eドから「APIキー」セクションへ移勁E/li>
-                    <li>「新しいAPIキーを生成」をクリチE��</li>
-                    <li>生�Eされたキーを安�Eな場所に保孁E/li>
+                    <li>アカウントを作成またはログイン</li>
+                    <li>ダッシュボードから「APIキー」セクションへ移動</li>
+                    <li>「新しいAPIキーを生成」をクリック</li>
+                    <li>生成されたキーを安全な場所に保存</li>
                   </ol>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">認証方況E/h2>
-                  <p className="mb-4">APIキーは <code className="bg-gray-100 px-2 py-1 rounded">X-API-Key</code> ヘッダーに含めてください�E�E/p>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">認証方法</h2>
+                  <p className="mb-4">APIキーは <code className="bg-gray-100 px-2 py-1 rounded">X-API-Key</code> ヘッダーに含めてください。</p>
                   
                   <div className="bg-gray-900 rounded-lg p-4 text-white mb-6">
                     <code className="text-green-400">
@@ -327,25 +327,25 @@ export default function DocsPage() {
                     </code>
                   </div>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">セキュリチE��のベスト�EラクチE��ス</h2>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">セキュリティのベストプラクティス</h2>
                   <ul className="list-disc pl-6 space-y-2">
-                    <li>APIキーを�E開リポジトリにコミットしなぁE/li>
-                    <li>クライアントサイド�EコードにAPIキーを含めなぁE/li>
-                    <li>環墁E��数を使用してAPIキーを管琁E/li>
-                    <li>定期皁E��APIキーをローチE�Eション</li>
+                    <li>APIキーを公開リポジトリにコミットしない</li>
+                    <li>クライアントサイドのコードにAPIキーを含めない</li>
+                    <li>環境変数を使用してAPIキーを管理</li>
+                    <li>定期的にAPIキーをローテーション</li>
                     <li>不要になったAPIキーは削除</li>
                   </ul>
 
                   <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-6">
                     <p className="text-yellow-700">
-                      <strong>⚠�E�E重要E</strong> APIキーが漏洩した場合�E、直ちにダチE��ュボ�Eドから無効化し、新しいキーを生成してください、E                    </p>
+                      <strong>⚠️ 重要</strong> APIキーが漏洩した場合は、直ちにダッシュボードから無効化し、新しいキーを生成してください。                    </p>
                   </div>
                 </div>
               )}
 
               {activeSection === 'endpoints' && (
                 <div className="space-y-8">
-                  <h1 className="text-3xl font-bold mb-6">APIエンド�EインチE/h1>
+                  <h1 className="text-3xl font-bold mb-6">APIエンドポイント</h1>
                   
                   <div className="flex gap-4 mb-6">
                     {Object.keys(endpoints).map((key) => (
@@ -361,7 +361,7 @@ export default function DocsPage() {
                         {key === 'companies' && '企業一覧'}
                         {key === 'companyDetail' && '企業詳細'}
                         {key === 'financial' && '財務データ'}
-                        {key === 'documents' && 'ドキュメンチE}
+                        {key === 'documents' && 'ドキュメント'}
                         {key === 'search' && '検索'}
                       </button>
                     ))}
@@ -388,9 +388,9 @@ export default function DocsPage() {
                         <thead>
                           <tr className="border-b">
                             <th className="text-left py-2">名前</th>
-                            <th className="text-left py-2">垁E/th>
-                            <th className="text-left py-2">忁E��E/th>
-                            <th className="text-left py-2">説昁E/th>
+                            <th className="text-left py-2">型</th>
+                            <th className="text-left py-2">必須</th>
+                            <th className="text-left py-2">説明</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -400,9 +400,9 @@ export default function DocsPage() {
                               <td className="py-2 text-sm">{param.type}</td>
                               <td className="py-2">
                                 {param.required ? (
-                                  <span className="text-red-600 font-medium">忁E��E/span>
+                                  <span className="text-red-600 font-medium">必須</span>
                                 ) : (
-                                  <span className="text-gray-500">任愁E/span>
+                                  <span className="text-gray-500">任意</span>
                                 )}
                               </td>
                               <td className="py-2 text-sm">{param.description}</td>
@@ -411,7 +411,7 @@ export default function DocsPage() {
                         </tbody>
                       </table>
 
-                      <h3 className="font-bold mb-4">レスポンス侁E/h3>
+                      <h3 className="font-bold mb-4">レスポンス例</h3>
                       <div className="bg-gray-900 rounded-lg p-4 text-white overflow-x-auto">
                         <pre className="text-sm">
                           <code className="text-green-400">{endpoints[selectedEndpoint].response}</code>
@@ -454,15 +454,15 @@ export default function DocsPage() {
                   <h1 className="text-3xl font-bold mb-6">エラーハンドリング</h1>
                   
                   <p className="mb-6">
-                    APIは標準的なHTTPスチE�Eタスコードを使用してリクエスト�E成功また�E失敗を示します、E                  </p>
+                    APIは標準的なHTTPステータスコードを使用してリクエストの成功または失敗を示します。                  </p>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">HTTPスチE�EタスコーチE/h2>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">HTTPステータスコード</h2>
                   <table className="w-full border-collapse mb-6">
                     <thead>
                       <tr className="border-b bg-gray-50">
-                        <th className="text-left py-2 px-4">コーチE/th>
+                        <th className="text-left py-2 px-4">コード</th>
                         <th className="text-left py-2 px-4">意味</th>
-                        <th className="text-left py-2 px-4">説昁E/th>
+                        <th className="text-left py-2 px-4">説明</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -474,12 +474,12 @@ export default function DocsPage() {
                       <tr className="border-b">
                         <td className="py-2 px-4"><code className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded">400</code></td>
                         <td className="py-2 px-4">Bad Request</td>
-                        <td className="py-2 px-4">リクエストが不正です（パラメータエラーなど�E�E/td>
+                        <td className="py-2 px-4">リクエストが不正です（パラメータエラーなど）</td>
                       </tr>
                       <tr className="border-b">
                         <td className="py-2 px-4"><code className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded">401</code></td>
                         <td className="py-2 px-4">Unauthorized</td>
-                        <td className="py-2 px-4">APIキーが無効また�E未提供でぁE/td>
+                        <td className="py-2 px-4">APIキーが無効または未提供です</td>
                       </tr>
                       <tr className="border-b">
                         <td className="py-2 px-4"><code className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded">403</code></td>
@@ -499,18 +499,18 @@ export default function DocsPage() {
                       <tr className="border-b">
                         <td className="py-2 px-4"><code className="bg-red-100 text-red-700 px-2 py-1 rounded">500</code></td>
                         <td className="py-2 px-4">Internal Server Error</td>
-                        <td className="py-2 px-4">サーバ�Eエラーが発生しました</td>
+                        <td className="py-2 px-4">サーバーエラーが発生しました</td>
                       </tr>
                     </tbody>
                   </table>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">エラーレスポンス形弁E/h2>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">エラーレスポンス形式</h2>
                   <div className="bg-gray-900 rounded-lg p-4 text-white mb-6">
                     <pre className="text-sm">
                       <code className="text-red-400">{`{
   "error": {
     "code": "invalid_api_key",
-    "message": "提供されたAPIキーが無効でぁE,
+    "message": "提供されたAPIキーが無効です",
     "details": {
       "provided_key": "sk_test_***",
       "timestamp": "2024-01-14T12:34:56Z"
@@ -523,56 +523,56 @@ export default function DocsPage() {
                   <h2 className="text-2xl font-bold mt-8 mb-4">エラーコード一覧</h2>
                   <ul className="list-disc pl-6 space-y-2">
                     <li><code className="bg-gray-100 px-2 py-1 rounded">invalid_api_key</code> - APIキーが無効</li>
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">missing_parameter</code> - 忁E��パラメータが不足</li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">missing_parameter</code> - 必須パラメータが不足</li>
                     <li><code className="bg-gray-100 px-2 py-1 rounded">invalid_parameter</code> - パラメータの値が不正</li>
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">rate_limit_exceeded</code> - レート制限趁E��</li>
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">resource_not_found</code> - リソースが存在しなぁE/li>
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">internal_error</code> - サーバ�E冁E��エラー</li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">rate_limit_exceeded</code> - レート制限超過</li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">resource_not_found</code> - リソースが存在しない</li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">internal_error</code> - サーバー内部エラー</li>
                   </ul>
                 </div>
               )}
 
               {activeSection === 'ratelimits' && (
                 <div className="prose max-w-none">
-                  <h1 className="text-3xl font-bold mb-6">レート制陁E/h1>
+                  <h1 className="text-3xl font-bold mb-6">レート制限</h1>
                   
                   <p className="mb-6">
-                    APIの安定性とパフォーマンスを維持するため、�Eランに応じたレート制限を設けてぁE��す、E                  </p>
+                    APIの安定性とパフォーマンスを維持するため、プランに応じたレート制限を設けています。                  </p>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">プラン別制陁E/h2>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">プラン別制限</h2>
                   <table className="w-full border-collapse mb-6">
                     <thead>
                       <tr className="border-b bg-gray-50">
                         <th className="text-left py-2 px-4">プラン</th>
-                        <th className="text-left py-2 px-4">月間リクエスチE/th>
+                        <th className="text-left py-2 px-4">月間リクエスト</th>
                         <th className="text-left py-2 px-4">同時接続数</th>
-                        <th className="text-left py-2 px-4">バ�EストレーチE/th>
+                        <th className="text-left py-2 px-4">バーストレート</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="border-b">
                         <td className="py-2 px-4 font-medium">Free</td>
-                        <td className="py-2 px-4">100囁E朁E/td>
+                        <td className="py-2 px-4">100回/月</td>
                         <td className="py-2 px-4">1</td>
-                        <td className="py-2 px-4">1囁E私E/td>
+                        <td className="py-2 px-4">1回/秒</td>
                       </tr>
                       <tr className="border-b">
                         <td className="py-2 px-4 font-medium">Standard</td>
-                        <td className="py-2 px-4">3,000囁E朁E/td>
+                        <td className="py-2 px-4">3,000回/月</td>
                         <td className="py-2 px-4">5</td>
-                        <td className="py-2 px-4">10囁E私E/td>
+                        <td className="py-2 px-4">10回/秒</td>
                       </tr>
                       <tr className="border-b">
                         <td className="py-2 px-4 font-medium">Pro</td>
-                        <td className="py-2 px-4">無制陁E/td>
+                        <td className="py-2 px-4">無制限</td>
                         <td className="py-2 px-4">20</td>
-                        <td className="py-2 px-4">100囁E私E/td>
+                        <td className="py-2 px-4">100回/秒</td>
                       </tr>
                     </tbody>
                   </table>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">レート制限�EチE��ー</h2>
-                  <p className="mb-4">すべてのAPIレスポンスには、現在のレート制限状態を示す�EチE��ーが含まれます！E/p>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">レート制限ヘッダー</h2>
+                  <p className="mb-4">すべてのAPIレスポンスには、現在のレート制限状態を示すヘッダーが含まれます。</p>
                   
                   <div className="bg-gray-100 rounded-lg p-4 mb-6">
                     <code className="text-sm">
@@ -585,13 +585,14 @@ export default function DocsPage() {
                   <ul className="list-disc pl-6 space-y-2 mb-6">
                     <li><code className="bg-gray-100 px-2 py-1 rounded">X-RateLimit-Limit</code> - 現在の期間の最大リクエスト数</li>
                     <li><code className="bg-gray-100 px-2 py-1 rounded">X-RateLimit-Remaining</code> - 残りのリクエスト数</li>
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">X-RateLimit-Reset</code> - リセチE��時刻�E�ENIXタイムスタンプ！E/li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">X-RateLimit-Reset</code> - リセット時刻のUNIXタイムスタンプ</li>
                   </ul>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">レート制限趁E��時�E対忁E/h2>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">レート制限超過時の対応</h2>
                   <div className="bg-red-50 border-l-4 border-red-400 p-4">
                     <p className="text-red-700">
-                      レート制限に達した場合、APIは <code className="bg-red-100 px-2 py-1 rounded">429 Too Many Requests</code> を返します、E                      <code className="bg-red-100 px-2 py-1 rounded">Retry-After</code> ヘッダーを確認して、次のリクエストまでの征E��時間を確認してください、E                    </p>
+                      レート制限に達した場合、APIは <code className="bg-red-100 px-2 py-1 rounded">429 Too Many Requests</code> を返します。<br />
+                      <code className="bg-red-100 px-2 py-1 rounded">Retry-After</code> ヘッダーを確認して、次のリクエストまでの待機時間を確認してください。                    </p>
                   </div>
                 </div>
               )}
@@ -602,21 +603,21 @@ export default function DocsPage() {
                   
                   <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
                     <p className="text-blue-700">
-                      <strong>ℹ�E�E注愁E</strong> Webhook機�EはProプランでのみ利用可能です、E                    </p>
+                      <strong>ℹ️ 注意</strong> Webhook機能はProプランでのみ利用可能です。                    </p>
                   </div>
 
                   <p className="mb-6">
-                    Webhookを使用すると、特定�Eイベントが発生したときに、指定したURLに自動的に通知を送信できます、E                  </p>
+                    Webhookを使用すると、特定のイベントが発生したときに、指定したURLに自動的に通知を送信できます。                  </p>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">対応イベンチE/h2>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">対応イベント</h2>
                   <ul className="list-disc pl-6 space-y-2 mb-6">
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">company.created</code> - 新しい企業が追加されぁE/li>
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">document.updated</code> - ドキュメントが更新されぁE/li>
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">financial.published</code> - 新しい財務データが�E開された</li>
-                    <li><code className="bg-gray-100 px-2 py-1 rounded">rate_limit.warning</code> - レート制限�E80%に到遁E/li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">company.created</code> - 新しい企業が追加された</li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">document.updated</code> - ドキュメントが更新された</li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">financial.published</code> - 新しい財務データが公開された</li>
+                    <li><code className="bg-gray-100 px-2 py-1 rounded">rate_limit.warning</code> - レート制限の80%に到達</li>
                   </ul>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">Webhookペイロード侁E/h2>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">Webhookペイロード例</h2>
                   <div className="bg-gray-900 rounded-lg p-4 text-white mb-6">
                     <pre className="text-sm">
                       <code className="text-green-400">{`{
@@ -634,8 +635,8 @@ export default function DocsPage() {
                     </pre>
                   </div>
 
-                  <h2 className="text-2xl font-bold mt-8 mb-4">Webhook署名�E検証</h2>
-                  <p className="mb-4">セキュリチE��のため、すべてのWebhookリクエストにはHMAC-SHA256署名が含まれます！E/p>
+                  <h2 className="text-2xl font-bold mt-8 mb-4">Webhook署名の検証</h2>
+                  <p className="mb-4">セキュリティのため、すべてのWebhookリクエストにはHMAC-SHA256署名が含まれます。</p>
                   
                   <div className="bg-gray-900 rounded-lg p-4 text-white">
                     <pre className="text-sm">
@@ -660,35 +661,35 @@ function verifyWebhookSignature(payload, signature, secret) {
                   
                   <div className="space-y-8">
                     <div className="border-l-4 border-blue-400 pl-4">
-                      <h3 className="text-xl font-bold">v1.0.0 - 2025年1朁E4日</h3>
+                      <h3 className="text-xl font-bold">v1.0.0 - 2025年1月14日</h3>
                       <p className="text-gray-600 mb-2">初回リリース</p>
                       <ul className="list-disc pl-6 space-y-1 text-sm">
-                        <li>企業一覧・詳細APIの実裁E/li>
-                        <li>財務データAPIの実裁E/li>
-                        <li>ドキュメント取得APIの実裁E/li>
-                        <li>検索APIの実裁E/li>
-                        <li>Webhook機�E�E�Eroプラン�E�E/li>
+                        <li>企業一覧・詳細APIの実装</li>
+                        <li>財務データAPIの実装</li>
+                        <li>ドキュメント取得APIの実装</li>
+                        <li>検索APIの実装</li>
+                        <li>Webhook機能（Proプラン）</li>
                       </ul>
                     </div>
 
                     <div className="border-l-4 border-green-400 pl-4">
-                      <h3 className="text-xl font-bold">v0.9.0 - 2023年12朁E日</h3>
+                      <h3 className="text-xl font-bold">v0.9.0 - 2023年12月1日</h3>
                       <p className="text-gray-600 mb-2">ベ�Eタ版リリース</p>
                       <ul className="list-disc pl-6 space-y-1 text-sm">
-                        <li>限定ユーザーへのベ�EタチE��ト開姁E/li>
-                        <li>基本皁E��API機�Eの実裁E/li>
-                        <li>レート制限�E実裁E/li>
+                        <li>限定ユーザーへのベータテスト開始</li>
+                        <li>基本的なAPI機能の実装</li>
+                        <li>レート制限の実装</li>
                       </ul>
                     </div>
 
                     <div className="border-l-4 border-gray-400 pl-4">
-                      <h3 className="text-xl font-bold">今後�E予宁E/h3>
-                      <p className="text-gray-600 mb-2">開発中の機�E</p>
+                      <h3 className="text-xl font-bold">今後の予定</h3>
+                      <p className="text-gray-600 mb-2">開発中の機能</p>
                       <ul className="list-disc pl-6 space-y-1 text-sm">
-                        <li>GraphQL API対忁E/li>
-                        <li>バッチ�E琁EPI</li>
+                        <li>GraphQL API対応</li>
+                        <li>バッチ処理API</li>
                         <li>リアルタイムストリーミング</li>
-                        <li>機械学習による予測刁E��API</li>
+                        <li>機械学習による予測分析API</li>
                         <li>カスタムWebhookフィルター</li>
                       </ul>
                     </div>
