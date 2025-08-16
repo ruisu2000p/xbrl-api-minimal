@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,7 +10,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -19,20 +17,27 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
-        setError(error.message);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'ログインに失敗しました');
         return;
       }
 
+      // ユーザー情報を保存
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
       router.push('/dashboard');
-      router.refresh();
     } catch (err: any) {
-      setError(err.message || 'ログインに失敗しました');
+      setError('ネットワークエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -40,8 +45,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-8">ログイン</h1>
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-2xl">X</span>
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              XBRL財務データAPI
+            </h1>
+          </Link>
+          <h2 className="text-xl font-semibold text-gray-700">ログイン</h2>
+        </div>
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded">
             {error}
@@ -80,11 +95,19 @@ export default function LoginPage() {
             {loading ? 'ログイン中...' : 'ログイン'}
           </button>
         </form>
-        <p className="mt-6 text-center text-gray-600">
-          <Link href="/register" className="text-blue-600 hover:underline">
-            新規登録はこちら
-          </Link>
-        </p>
+        <div className="mt-6 text-center text-gray-600 space-y-2">
+          <p>
+            <Link href="/forgot-password" className="text-blue-600 hover:underline text-sm">
+              パスワードをお忘れの方
+            </Link>
+          </p>
+          <p>
+            アカウントをお持ちでない方は
+            <Link href="/register" className="text-blue-600 hover:underline font-semibold ml-1">
+              新規登録
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
