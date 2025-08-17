@@ -414,7 +414,6 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li><a href="/docs" className="hover:text-white transition-colors">APIドキュメント</a></li>
                 <li><a href="/sdk" className="hover:text-white transition-colors">SDK & ライブラリ</a></li>
-                <li><a href="/examples" className="hover:text-white transition-colors">サンプルコード</a></li>
               </ul>
             </div>
             <div>
