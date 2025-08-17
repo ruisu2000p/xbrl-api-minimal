@@ -130,7 +130,6 @@ export default function SecurityPage() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-6">データ暗号化</h2>
-              
               <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6">
                 <h3 className="font-bold text-lg mb-2">暗号化ポリシー</h3>
                 <p className="text-gray-700">
@@ -224,7 +223,6 @@ export default function SecurityPage() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-6">認証とアクセス制御</h2>
-              
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6">
                   <h3 className="font-bold text-lg mb-4">API認証</h3>
@@ -348,7 +346,6 @@ export default function SecurityPage() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-6">インフラストラクチャセキュリティ</h2>
-              
               <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <div className="border border-blue-200 rounded-lg p-6 bg-blue-50">
                   <div className="flex items-center mb-4">
@@ -470,7 +467,6 @@ export default function SecurityPage() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-6">コンプライアンス</h2>
-              
               <div className="grid md:grid-cols-2 gap-6 mb-8">
                 {certifications.map((cert, index) => (
                   <div key={index} className="border rounded-lg p-6">
@@ -553,7 +549,6 @@ export default function SecurityPage() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-6">監視とインシデント対応</h2>
-              
               <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-8 mb-8">
                 <h3 className="font-bold text-lg mb-4">24/7 セキュリティオペレーションセンター（SOC）</h3>
                 <p className="text-gray-700 mb-4">
@@ -691,7 +686,6 @@ export default function SecurityPage() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-6">脆弱性管理</h2>
-              
               <div className="bg-purple-50 border-l-4 border-purple-500 p-6 mb-6">
                 <h3 className="font-bold text-lg mb-2">脆弱性管理プログラム</h3>
                 <p className="text-gray-700">
@@ -841,7 +835,6 @@ export default function SecurityPage() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold mb-6">データプライバシー</h2>
-              
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-8 mb-6">
                 <h3 className="font-bold text-lg mb-4">プライバシーファースト設計</h3>
                 <p className="text-gray-700">
