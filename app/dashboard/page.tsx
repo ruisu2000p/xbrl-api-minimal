@@ -289,6 +289,117 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Claude Desktop MCP連携 */}
+        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Claude Desktop連携設定
+          </h2>
+          
+          <div className="bg-white rounded-lg p-4 mb-4">
+            <p className="text-gray-700 mb-4">
+              Claude DesktopからXBRL財務データAPIに直接アクセスできるよう設定します。
+            </p>
+            
+            <div className="space-y-4">
+              <div className="border-l-4 border-purple-400 pl-4">
+                <h3 className="font-semibold text-gray-900 mb-2">ステップ 1: 設定ファイルを開く</h3>
+                <div className="bg-gray-50 rounded p-3 space-y-2">
+                  <div>
+                    <span className="font-medium">Windows:</span>
+                    <code className="block mt-1 text-sm bg-gray-100 px-2 py-1 rounded">%APPDATA%\Claude\claude_desktop_config.json</code>
+                  </div>
+                  <div>
+                    <span className="font-medium">macOS:</span>
+                    <code className="block mt-1 text-sm bg-gray-100 px-2 py-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code>
+                  </div>
+                  <div>
+                    <span className="font-medium">Linux:</span>
+                    <code className="block mt-1 text-sm bg-gray-100 px-2 py-1 rounded">~/.config/Claude/claude_desktop_config.json</code>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-l-4 border-purple-400 pl-4">
+                <h3 className="font-semibold text-gray-900 mb-2">ステップ 2: 以下の設定を追加</h3>
+                <div className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
+                  <pre className="text-sm">
+{`{
+  "mcpServers": {
+    "xbrl-api": {
+      "command": "node",
+      "args": ["C:/path/to/mcp-xbrl-server.js"],
+      "env": {
+        "XBRL_API_KEY": "${apiKey}"
+      }
+    }
+  }
+}`}
+                  </pre>
+                </div>
+                <button
+                  onClick={() => {
+                    const config = {
+                      mcpServers: {
+                        "xbrl-api": {
+                          command: "node",
+                          args: ["C:/path/to/mcp-xbrl-server.js"],
+                          env: {
+                            XBRL_API_KEY: apiKey
+                          }
+                        }
+                      }
+                    };
+                    navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  設定をコピー
+                </button>
+              </div>
+
+              <div className="border-l-4 border-purple-400 pl-4">
+                <h3 className="font-semibold text-gray-900 mb-2">ステップ 3: MCPサーバーファイルを作成</h3>
+                <p className="text-gray-600 mb-2">
+                  <a href="https://github.com/ruisu2000p/xbrl-api-minimal/blob/main/mcp-server/mcp-xbrl-server.js" 
+                     target="_blank" 
+                     rel="noopener noreferrer"
+                     className="text-blue-600 hover:text-blue-700 underline">
+                    MCPサーバーファイル
+                  </a>
+                  をダウンロードして、任意の場所に保存してください。
+                </p>
+                <div className="bg-blue-50 rounded p-3">
+                  <p className="text-sm text-blue-700">
+                    💡 <code className="bg-blue-100 px-1 rounded">C:/path/to/mcp-xbrl-server.js</code> を実際のファイルパスに置き換えてください
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-l-4 border-purple-400 pl-4">
+                <h3 className="font-semibold text-gray-900 mb-2">ステップ 4: Claude Desktopを再起動</h3>
+                <p className="text-gray-600">
+                  設定を反映させるため、Claude Desktopアプリケーションを完全に終了してから再起動してください。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h3 className="font-semibold text-green-800 mb-2">✅ 設定完了後の使用例</h3>
+            <ul className="space-y-2 text-sm text-green-700">
+              <li>「トヨタ自動車の財務データを取得してください」</li>
+              <li>「自動車メーカー5社の売上高を比較してください」</li>
+              <li>「2021年度の営業利益上位10社を教えてください」</li>
+            </ul>
+          </div>
+        </div>
+
         {/* APIドキュメント */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
