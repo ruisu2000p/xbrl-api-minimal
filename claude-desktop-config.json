@@ -5,7 +5,7 @@
       "args": ["C:\\Users\\pumpk\\Downloads\\xbrl-api-minimal\\mcp-server.js"],
       "env": {
         "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
-        "XBRL_API_KEY": "xbrl_live_test_admin_key_2025"
+        "XBRL_API_KEY": "xbrl_live_12b1a708907167ad8620537e90ba0afbcdd43a83cad80830"
       }
     }
   }
