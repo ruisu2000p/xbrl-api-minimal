@@ -1,6 +1,7 @@
 {
   "name": "xbrl-api-minimal",
   "version": "1.0.0",
+  "type": "module",
   "description": "XBRL財務データAPI - 最小構成版",
   "scripts": {
     "dev": "next dev",
@@ -22,7 +23,7 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "next": "14.0.0",
-    "node-fetch": "^2.7.0",
+    "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-feather": "^2.0.10",
