@@ -1,7 +1,6 @@
 {
   "name": "xbrl-api-minimal",
   "version": "1.0.0",
-  "type": "module",
   "description": "XBRL財務データAPI - 最小構成版",
   "scripts": {
     "dev": "next dev",

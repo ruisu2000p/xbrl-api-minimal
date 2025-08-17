@@ -61,3 +61,10 @@ pids
 tmp/
 temp/
 .vercel
+
+# MCP Server files (Claude Desktop integration)
+/mcp-server/
+*.bat
+test-*.js
+check-*.js
+get-*.js
