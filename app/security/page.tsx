@@ -49,9 +49,9 @@ export default function SecurityPage() {
       category: 'アクセス制御',
       features: [
         'SHA-256によるAPIキーハッシュ化',
-        'レート制限（100req/分、10,000req/時）',
-        'IP許可リスト（エンタープライズプラン）',
-        'ロールベースアクセス制御（RBAC）',
+        'レート制限 (100req/分、10,000req/時)',
+        'IP許可リスト (エンタープライズプラン)',
+        'ロールベースアクセス制御 (RBAC)',
       ],
     },
     {
@@ -142,7 +142,7 @@ export default function SecurityPage() {
                 <div className="border rounded-lg p-6">
                   <h3 className="font-bold text-lg mb-4 flex items-center">
                     <span className="text-2xl mr-3">🔄</span>
-                    転送時の暗号化（Encryption in Transit）
+                    転送時の暗号化 (Encryption in Transit)
                   </h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
@@ -151,15 +151,15 @@ export default function SecurityPage() {
                     </li>
                     <li className="flex items-start">
                       <span className="font-semibold mr-2">証明書:</span>
-                      <span>信頼された認証局（CA）発行のSSL/TLS証明書</span>
+                      <span>信頼された認証局 (CA)発行のSSL/TLS証明書</span>
                     </li>
                     <li className="flex items-start">
                       <span className="font-semibold mr-2">暗号スイート:</span>
-                      <span>AEAD暗号（AES-GCM）、楕円曲線暗号（ECDHE）</span>
+                      <span>AEAD暗号 (AES-GCM)、楕円曲線暗号 (ECDHE)</span>
                     </li>
                     <li className="flex items-start">
                       <span className="font-semibold mr-2">HSTS:</span>
-                      <span>HTTPSの強制使用（max-age=31536000）</span>
+                      <span>HTTPSの強制使用 (max-age=31536000)</span>
                     </li>
                   </ul>
                 </div>
@@ -167,12 +167,12 @@ export default function SecurityPage() {
                 <div className="border rounded-lg p-6">
                   <h3 className="font-bold text-lg mb-4 flex items-center">
                     <span className="text-2xl mr-3">💾</span>
-                    保存時の暗号化（Encryption at Rest）
+                    保存時の暗号化 (Encryption at Rest)
                   </h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
                       <span className="font-semibold mr-2">データベース:</span>
-                      <span>AES-256-GCMによる透過的データ暗号化（TDE）</span>
+                      <span>AES-256-GCMによる透過的データ暗号化 (TDE)</span>
                     </li>
                     <li className="flex items-start">
                       <span className="font-semibold mr-2">ストレージ:</span>
@@ -192,7 +192,7 @@ export default function SecurityPage() {
                 <div className="border rounded-lg p-6">
                   <h3 className="font-bold text-lg mb-4 flex items-center">
                     <span className="text-2xl mr-3">🔑</span>
-                    鍵管理（Key Management）
+                    鍵管理 (Key Management)
                   </h3>
                   <ul className="space-y-3">
                     <li className="flex items-start">
@@ -283,7 +283,7 @@ export default function SecurityPage() {
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <div>
-                        <div className="font-semibold">2要素認証（開発中）</div>
+                        <div className="font-semibold">2要素認証 (開発中)</div>
                         <div className="text-sm text-gray-600">TOTP/SMS対応予定</div>
                       </div>
                     </li>
@@ -353,8 +353,8 @@ export default function SecurityPage() {
                     <h3 className="font-bold text-lg">Vercel Infrastructure</h3>
                   </div>
                   <ul className="space-y-2 text-sm">
-                    <li>• エッジネットワーク（全世界70+拠点）</li>
-                    <li>• DDoS保護（Cloudflare統合）</li>
+                    <li>• エッジネットワーク (全世界70+拠点)</li>
+                    <li>• DDoS保護 (Cloudflare統合)</li>
                     <li>• 自動スケーリング</li>
                     <li>• インフラ監視とアラート</li>
                     <li>• ISO 27001認証取得</li>
@@ -369,7 +369,7 @@ export default function SecurityPage() {
                   <ul className="space-y-2 text-sm">
                     <li>• AWS上での運用</li>
                     <li>• マルチリージョン対応</li>
-                    <li>• 自動バックアップ（日次）</li>
+                    <li>• 自動バックアップ (日次)</li>
                     <li>• Point-in-Timeリカバリ</li>
                     <li>• SOC 2 Type II準拠</li>
                   </ul>
@@ -383,7 +383,7 @@ export default function SecurityPage() {
                     <div>
                       <h4 className="font-semibold mb-2">ファイアウォール</h4>
                       <ul className="text-sm space-y-1 text-gray-700">
-                        <li>• WAF（Web Application Firewall）</li>
+                        <li>• WAF (Web Application Firewall)</li>
                         <li>• IPホワイトリスト/ブラックリスト</li>
                         <li>• ジオブロッキング対応</li>
                         <li>• レート制限とスロットリング</li>
@@ -489,7 +489,7 @@ export default function SecurityPage() {
                 <h3 className="font-bold text-lg mb-4">規制要件への対応</h3>
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-2">個人情報保護法（日本）</h4>
+                    <h4 className="font-semibold mb-2">個人情報保護法 (日本)</h4>
                     <ul className="text-sm space-y-1 text-gray-700">
                       <li>• 個人情報の適切な取得・利用・管理</li>
                       <li>• 利用目的の明示と同意取得</li>
@@ -498,12 +498,12 @@ export default function SecurityPage() {
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">GDPR（EU一般データ保護規則）</h4>
+                    <h4 className="font-semibold mb-2">GDPR (EU一般データ保護規則)</h4>
                     <ul className="text-sm space-y-1 text-gray-700">
-                      <li>• データ主体の権利保護（アクセス権、削除権等）</li>
+                      <li>• データ主体の権利保護 (アクセス権、削除権等)</li>
                       <li>• データ処理の法的根拠の明確化</li>
                       <li>• プライバシーバイデザイン</li>
-                      <li>• データ侵害通知（72時間以内）</li>
+                      <li>• データ侵害通知 (72時間以内)</li>
                     </ul>
                   </div>
                   <div>
@@ -550,7 +550,7 @@ export default function SecurityPage() {
             <div>
               <h2 className="text-2xl font-bold mb-6">監視とインシデント対応</h2>
               <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-8 mb-8">
-                <h3 className="font-bold text-lg mb-4">24/7 セキュリティオペレーションセンター（SOC）</h3>
+                <h3 className="font-bold text-lg mb-4">24/7 セキュリティオペレーションセンター (SOC)</h3>
                 <p className="text-gray-700 mb-4">
                   専門のセキュリティチームが24時間365日体制でシステムを監視し、
                   潜在的な脅威の検出と対応を行っています。
@@ -657,7 +657,7 @@ export default function SecurityPage() {
                 <ul className="mt-4 space-y-2">
                   <li className="flex items-start">
                     <span className="font-semibold mr-2">即時:</span>
-                    <span>影響を受けるお客様への個別通知（メール、電話）</span>
+                    <span>影響を受けるお客様への個別通知 (メール、電話)</span>
                   </li>
                   <li className="flex items-start">
                     <span className="font-semibold mr-2">1時間以内:</span>
@@ -669,7 +669,7 @@ export default function SecurityPage() {
                   </li>
                   <li className="flex items-start">
                     <span className="font-semibold mr-2">72時間以内:</span>
-                    <span>規制当局への報告（必要な場合）</span>
+                    <span>規制当局への報告 (必要な場合)</span>
                   </li>
                   <li className="flex items-start">
                     <span className="font-semibold mr-2">事後:</span>
@@ -905,7 +905,7 @@ export default function SecurityPage() {
                       </svg>
                       <div>
                         <div className="font-semibold">削除権</div>
-                        <div className="text-sm text-gray-600">データの削除要求（忘れられる権利）</div>
+                        <div className="text-sm text-gray-600">データの削除要求 (忘れられる権利)</div>
                       </div>
                     </li>
                   </ul>
@@ -921,14 +921,14 @@ export default function SecurityPage() {
                       <li>• データの仮名化・匿名化処理</li>
                       <li>• アクセスログの暗号化と改ざん防止</li>
                       <li>• データ分類とラベリング</li>
-                      <li>• DLP（Data Loss Prevention）ツールの導入</li>
+                      <li>• DLP (Data Loss Prevention)ツールの導入</li>
                     </ul>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">組織的措置</h4>
                     <ul className="text-sm space-y-1 text-gray-700">
-                      <li>• プライバシー影響評価（PIA）の実施</li>
-                      <li>• データ保護責任者（DPO）の任命</li>
+                      <li>• プライバシー影響評価 (PIA)の実施</li>
+                      <li>• データ保護責任者 (DPO)の任命</li>
                       <li>• 従業員への定期的なプライバシー教育</li>
                       <li>• データ処理契約の締結</li>
                     </ul>
@@ -984,7 +984,7 @@ export default function SecurityPage() {
                 <ul className="space-y-2 text-sm">
                   <li>• 法令に基づく開示要求がある場合</li>
                   <li>• お客様の生命、身体、財産の保護に必要な場合</li>
-                  <li>• サービス提供に必要な委託先への提供（守秘義務契約締結済み）</li>
+                  <li>• サービス提供に必要な委託先への提供 (守秘義務契約締結済み)</li>
                 </ul>
               </div>
             </div>
