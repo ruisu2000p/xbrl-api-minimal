@@ -415,7 +415,6 @@ export default function Home() {
                 <li><a href="/docs" className="hover:text-white transition-colors">APIドキュメント</a></li>
                 <li><a href="/sdk" className="hover:text-white transition-colors">SDK & ライブラリ</a></li>
                 <li><a href="/examples" className="hover:text-white transition-colors">サンプルコード</a></li>
-                <li><a href="/dashboard" className="hover:text-white transition-colors">ダッシュボード</a></li>
               </ul>
             </div>
             <div>

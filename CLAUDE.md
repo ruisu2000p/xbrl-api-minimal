@@ -235,4 +235,161 @@ chore: ビルドプロセスやツールの変更
 
 ---
 
-最終更新: 2025年8月16日 21:10 JST
+---
+
+## 📋 開発履歴（2025年8月17日）
+
+### 1. Supabase Storage統合とMCPサーバー実装
+
+#### 背景
+- **問題**: 企業データ（companiesテーブル）は存在するが、財務データ（Markdownファイル）にアクセスできない
+- **原因**: APIエンドポイントがStorageと連携していない
+
+#### 実装内容
+
+##### 1. データ構造の確認
+```
+Supabase構成:
+├── テーブル
+│   ├── companies (5,220社の基本情報)
+│   ├── profiles (ユーザープロファイル)
+│   └── api_keys (APIキー管理)
+└── Storage
+    └── markdown-files/
+        └── S100LJ4F/  # 亀田製菓の例
+            └── PublicDoc_markdown/
+                ├── 0101010_honbun_...md  # 企業概況
+                ├── 0102010_honbun_...md  # 事業状況
+                └── ... (全10ファイル)
+```
+
+##### 2. MCPサーバー開発
+- **mcp-server-with-storage.js**: Supabase Storage直接アクセス版
+- **認証**: Service Roleキーを使用
+- **メソッド**: POSTでファイルリスト取得
+
+```javascript
+// Storage アクセス例
+const listUrl = `${SUPABASE_URL}/storage/v1/object/list/markdown-files`;
+const response = await fetch(listUrl, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+    'apikey': SUPABASE_SERVICE_KEY,
+  },
+  body: JSON.stringify({
+    prefix: `${companyId}/PublicDoc_markdown`,
+    limit: 100,
+  }),
+});
+```
+
+##### 3. Claude Desktop統合
+```json
+// claude_desktop_config.json
+{
+  "mcpServers": {
+    "xbrl-api": {
+      "command": "node",
+      "args": ["C:\\Users\\pumpk\\Downloads\\xbrl-api-minimal\\mcp-server\\mcp-server-with-storage.js"],
+      "env": {
+        "XBRL_API_KEY": "xbrl_live_...",
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1"
+      }
+    }
+  }
+}
+```
+
+#### 取得可能なデータ
+
+##### 亀田製菓（S100LJ4F）の財務データ例
+| 決算年月 | 売上高（百万円） | 経常利益（百万円） | 当期純利益（百万円） |
+|---------|-----------------|-------------------|---------------------|
+| 2017年3月 | 98,206 | 7,122 | 2,702 |
+| 2018年3月 | 99,522 | 6,451 | 4,110 |
+| 2019年3月 | 100,041 | 6,573 | 4,402 |
+| 2020年3月 | 103,808 | 6,909 | 4,463 |
+| 2021年3月 | 103,305 | 6,889 | 4,757 |
+
+### 2. Vercelビルドエラー修正
+
+#### 問題
+- `package.json`の`"type": "module"`がNext.jsと競合
+- エラー: `module is not defined in ES module scope`
+
+#### 解決策
+1. `package.json`から`"type": "module"`を削除
+2. MCPサーバーファイルを別ディレクトリ（`mcp-server/`）に移動
+3. `.gitignore`にMCP関連ファイルを追加
+
+### 3. APIキー管理改善
+
+#### 実装内容
+- SHA256ハッシュでAPIキー保存
+- プレフィックス・サフィックスのみ表示
+- レート制限設定（100req/分、10,000req/時、100,000req/日）
+
+---
+
+## 🛠️ MCP（Model Context Protocol）サーバー
+
+### 利用可能なツール
+
+1. **search_companies** - 企業検索
+   - 企業名、ID、ティッカーで検索
+   - ページネーション対応
+
+2. **get_company_with_storage** - 企業詳細＋財務データ
+   - companiesテーブルから基本情報
+   - Storageから財務データ取得
+   - 自動的に財務指標を抽出
+
+3. **get_financial_data** - 詳細財務データ
+   - Markdownファイル直接アクセス
+   - 財務メトリクス自動抽出
+   - テーブルデータパース
+
+### セットアップ手順
+
+1. **依存関係インストール**
+```bash
+cd mcp-server
+npm install @modelcontextprotocol/sdk node-fetch
+```
+
+2. **Claude Desktop設定**
+- `%APPDATA%\Claude\claude_desktop_config.json`を編集
+- xbrl-apiサーバーを追加
+
+3. **Claude Desktop再起動**
+- 設定反映のため再起動必要
+
+---
+
+## 📊 データ統計
+
+- **総企業数**: 5,220社（2025年8月17日時点）
+- **データ期間**: 2021年4月〜2022年3月
+- **ファイル形式**: Markdown変換済み
+- **ストレージ**: Supabase Storage（markdown-filesバケット）
+
+---
+
+## ⚠️ 既知の問題と対策
+
+### 1. Claude Desktop Overloaded
+- **原因**: 複数MCPサーバーの同時起動
+- **対策**: 必要最小限のサーバーのみ有効化
+
+### 2. Storage アクセスエラー
+- **原因**: 認証キーの不一致
+- **対策**: Service Roleキーを使用（Anon keyではアクセス不可）
+
+### 3. Vercelデプロイ404エラー
+- **原因**: 新規エンドポイントのビルド遅延
+- **対策**: プッシュ後数分待機
+
+---
+
+最終更新: 2025年8月17日 16:10 JST
