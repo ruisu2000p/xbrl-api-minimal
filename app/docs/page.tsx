@@ -237,6 +237,14 @@ export default function DocsPage() {
                 Webhook
               </button>
               <button
+                onClick={() => setActiveSection('claude-mcp')}
+                className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                  activeSection === 'claude-mcp' ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100'
+                }`}
+              >
+                Claude MCP連携
+              </button>
+              <button
                 onClick={() => setActiveSection('changelog')}
                 className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                   activeSection === 'changelog' ? 'bg-blue-50 text-blue-700 font-medium' : 'hover:bg-gray-100'
@@ -651,6 +659,279 @@ function verifyWebhookSignature(payload, signature, secret) {
   return hash === signature;
 }`}</code>
                     </pre>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'claude-mcp' && (
+                <div className="prose max-w-none">
+                  <h1 className="text-3xl font-bold mb-6">Claude MCP連携</h1>
+                  
+                  <div className="bg-purple-50 border-l-4 border-purple-400 p-4 mb-6">
+                    <p className="text-purple-700">
+                      Claude Desktop アプリケーションから直接XBRL財務データAPIにアクセスできます。
+                      MCPサーバーを使用することで、自然言語で財務データを取得・分析できます。
+                    </p>
+                  </div>
+
+                  <h2 className="text-2xl font-bold mt-8 mb-4">セットアップ手順</h2>
+                  
+                  <h3 className="text-lg font-bold mt-6 mb-3">1. APIキーの取得</h3>
+                  <p className="mb-4">
+                    まず、ダッシュボードからAPIキーを取得してください。
+                  </p>
+                  <div className="bg-gray-100 rounded-lg p-4 mb-6">
+                    <code className="text-sm">xbrl_live_xxxxxxxxxxxxxxxxxxxxxx</code>
+                  </div>
+
+                  <h3 className="text-lg font-bold mt-6 mb-3">2. MCPサーバーファイルの作成</h3>
+                  <p className="mb-4">
+                    以下のコードを <code className="bg-gray-100 px-2 py-1 rounded">mcp-xbrl-server.js</code> として保存します。
+                  </p>
+                  <div className="bg-gray-900 rounded-lg p-4 text-white overflow-x-auto mb-6">
+                    <pre className="text-sm">
+                      <code className="text-green-400">{`#!/usr/bin/env node
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import fetch from 'node-fetch';
+
+const API_KEY = process.env.XBRL_API_KEY;
+const API_BASE_URL = 'https://xbrl-api-minimal.vercel.app/api/v1';
+
+const server = new Server(
+  {
+    name: 'xbrl-api-server',
+    version: '1.0.0',
+  },
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+);
+
+// ツールの定義
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (request.params.name === 'search_companies') {
+    const { query, limit = 10 } = request.params.arguments || {};
+    
+    const response = await fetch(\`\${API_BASE_URL}/companies?q=\${query}&limit=\${limit}\`, {
+      headers: {
+        'X-API-Key': API_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    const data = await response.json();
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(data, null, 2),
+        },
+      ],
+    };
+  }
+  
+  if (request.params.name === 'get_financial_data') {
+    const { company_id, year } = request.params.arguments || {};
+    
+    const response = await fetch(\`\${API_BASE_URL}/companies/\${company_id}/financial?year=\${year}\`, {
+      headers: {
+        'X-API-Key': API_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    const data = await response.json();
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(data, null, 2),
+        },
+      ],
+    };
+  }
+  
+  throw new Error(\`Unknown tool: \${request.params.name}\`);
+});
+
+// ツールリストの提供
+server.setRequestHandler('tools/list', async () => {
+  return {
+    tools: [
+      {
+        name: 'search_companies',
+        description: '企業名やティッカーで企業を検索',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: '検索キーワード' },
+            limit: { type: 'number', description: '取得件数（デフォルト: 10）' },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        name: 'get_financial_data',
+        description: '特定企業の財務データを取得',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: '企業ID' },
+            year: { type: 'number', description: '年度' },
+          },
+          required: ['company_id'],
+        },
+      },
+    ],
+  };
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);`}</code>
+                    </pre>
+                  </div>
+
+                  <h3 className="text-lg font-bold mt-6 mb-3">3. 依存関係のインストール</h3>
+                  <div className="bg-gray-900 rounded-lg p-4 text-white mb-6">
+                    <code className="text-green-400">
+                      npm install @modelcontextprotocol/sdk node-fetch
+                    </code>
+                  </div>
+
+                  <h3 className="text-lg font-bold mt-6 mb-3">4. Claude Desktop設定ファイルの編集</h3>
+                  <p className="mb-4">
+                    以下の場所にある設定ファイルを編集します：
+                  </p>
+                  <ul className="list-disc pl-6 mb-4">
+                    <li><strong>Windows:</strong> <code className="bg-gray-100 px-2 py-1 rounded">%APPDATA%\Claude\claude_desktop_config.json</code></li>
+                    <li><strong>macOS:</strong> <code className="bg-gray-100 px-2 py-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+                    <li><strong>Linux:</strong> <code className="bg-gray-100 px-2 py-1 rounded">~/.config/Claude/claude_desktop_config.json</code></li>
+                  </ul>
+                  
+                  <p className="mb-4">以下の内容を追加します：</p>
+                  <div className="bg-gray-900 rounded-lg p-4 text-white overflow-x-auto mb-6">
+                    <pre className="text-sm">
+                      <code className="text-green-400">{`{
+  "mcpServers": {
+    "xbrl-api": {
+      "command": "node",
+      "args": ["C:/path/to/mcp-xbrl-server.js"],
+      "env": {
+        "XBRL_API_KEY": "xbrl_live_xxxxxxxxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}`}</code>
+                    </pre>
+                  </div>
+
+                  <h3 className="text-lg font-bold mt-6 mb-3">5. Claude Desktopを再起動</h3>
+                  <p className="mb-6">
+                    設定を反映させるため、Claude Desktopアプリケーションを再起動してください。
+                  </p>
+
+                  <h2 className="text-2xl font-bold mt-8 mb-4">使用方法</h2>
+                  
+                  <div className="bg-blue-50 rounded-lg p-6 mb-6">
+                    <h3 className="font-bold mb-3">Claude Desktopでの使用例</h3>
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="font-semibold mb-2">例1: 企業検索</p>
+                        <p className="text-gray-700 italic">
+                          「トヨタ自動車の企業情報を検索してください」
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="font-semibold mb-2">例2: 財務データ取得</p>
+                        <p className="text-gray-700 italic">
+                          「トヨタ自動車の2021年度の財務データを取得してください」
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="font-semibold mb-2">例3: 複数企業の比較</p>
+                        <p className="text-gray-700 italic">
+                          「自動車メーカー5社の売上高を比較してください」
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h2 className="text-2xl font-bold mt-8 mb-4">利用可能なツール</h2>
+                  
+                  <div className="space-y-4">
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-bold text-lg mb-2">search_companies</h3>
+                      <p className="text-gray-600 mb-2">企業名やティッカーコードで企業を検索します。</p>
+                      <div className="bg-gray-100 rounded p-3">
+                        <p className="text-sm font-mono">
+                          引数: query (文字列), limit (数値, オプション)
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-bold text-lg mb-2">get_financial_data</h3>
+                      <p className="text-gray-600 mb-2">特定企業の財務データを取得します。</p>
+                      <div className="bg-gray-100 rounded p-3">
+                        <p className="text-sm font-mono">
+                          引数: company_id (文字列), year (数値, オプション)
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-bold text-lg mb-2">get_document_sections</h3>
+                      <p className="text-gray-600 mb-2">有価証券報告書の特定セクションを取得します。</p>
+                      <div className="bg-gray-100 rounded p-3">
+                        <p className="text-sm font-mono">
+                          引数: company_id (文字列), section (文字列), year (数値, オプション)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h2 className="text-2xl font-bold mt-8 mb-4">トラブルシューティング</h2>
+                  
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-yellow-400 pl-4">
+                      <h3 className="font-bold mb-2">MCPサーバーが認識されない</h3>
+                      <ul className="list-disc pl-6 text-sm space-y-1">
+                        <li>設定ファイルのパスが正しいか確認してください</li>
+                        <li>Node.jsが正しくインストールされているか確認してください</li>
+                        <li>Claude Desktopを完全に再起動してください</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="border-l-4 border-yellow-400 pl-4">
+                      <h3 className="font-bold mb-2">APIキーエラー</h3>
+                      <ul className="list-disc pl-6 text-sm space-y-1">
+                        <li>APIキーが正しくコピーされているか確認してください</li>
+                        <li>APIキーの有効期限を確認してください</li>
+                        <li>レート制限に達していないか確認してください</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="border-l-4 border-yellow-400 pl-4">
+                      <h3 className="font-bold mb-2">データが取得できない</h3>
+                      <ul className="list-disc pl-6 text-sm space-y-1">
+                        <li>インターネット接続を確認してください</li>
+                        <li>企業IDが正しいか確認してください</li>
+                        <li>指定した年度のデータが存在するか確認してください</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 mt-8">
+                    <h3 className="font-bold text-green-800 mb-2">サポート</h3>
+                    <p className="text-green-700">
+                      MCP連携に関するご質問は、
+                      <a href="mailto:support@xbrl-api.jp" className="underline">support@xbrl-api.jp</a>
+                      までお問い合わせください。
+                    </p>
                   </div>
                 </div>
               )}
