@@ -298,6 +298,87 @@ export default function DocsPage() {
                     </code>
                   </div>
 
+                  <h2 className="text-2xl font-bold mt-8 mb-4">利用可能なエンドポイント</h2>
+                  <div className="space-y-4 mb-8">
+                    <div className="border-l-4 border-green-400 pl-4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">GET</span>
+                        <code className="text-sm font-mono">/api/v1/companies</code>
+                      </div>
+                      <p className="text-sm text-gray-600">企業一覧を取得</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-green-400 pl-4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">GET</span>
+                        <code className="text-sm font-mono">/api/v1/companies/{'{id}'}</code>
+                      </div>
+                      <p className="text-sm text-gray-600">企業詳細を取得</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-blue-400 pl-4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">POST</span>
+                        <code className="text-sm font-mono">/api/v1/search</code>
+                      </div>
+                      <p className="text-sm text-gray-600">企業を検索</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-green-400 pl-4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">GET</span>
+                        <code className="text-sm font-mono">/api/v1/companies/{'{id}'}/financial</code>
+                      </div>
+                      <p className="text-sm text-gray-600">財務データを取得</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-green-400 pl-4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">GET</span>
+                        <code className="text-sm font-mono">/api/v1/companies/{'{id}'}/documents</code>
+                      </div>
+                      <p className="text-sm text-gray-600">有価証券報告書を取得</p>
+                    </div>
+                  </div>
+
+                  <h2 className="text-2xl font-bold mt-8 mb-4">使用例</h2>
+                  <div className="space-y-4 mb-8">
+                    <div className="bg-gray-900 rounded-lg p-4 text-white">
+                      <div className="text-sm text-gray-400 mb-2"># 企業一覧を取得</div>
+                      <code className="text-green-400">
+                        curl -H "Authorization: Bearer YOUR_API_KEY" \<br />
+                        &nbsp;&nbsp;https://xbrl-api-minimal.vercel.app/api/v1/companies
+                      </code>
+                    </div>
+                    
+                    <div className="bg-gray-900 rounded-lg p-4 text-white">
+                      <div className="text-sm text-gray-400 mb-2"># 特定企業の詳細を取得</div>
+                      <code className="text-green-400">
+                        curl -H "Authorization: Bearer YOUR_API_KEY" \<br />
+                        &nbsp;&nbsp;https://xbrl-api-minimal.vercel.app/api/v1/companies/S100LO6W
+                      </code>
+                    </div>
+                    
+                    <div className="bg-gray-900 rounded-lg p-4 text-white">
+                      <div className="text-sm text-gray-400 mb-2"># 企業を検索</div>
+                      <code className="text-green-400">
+                        curl -X POST \<br />
+                        &nbsp;&nbsp;-H "Authorization: Bearer YOUR_API_KEY" \<br />
+                        &nbsp;&nbsp;-H "Content-Type: application/json" \<br />
+                        &nbsp;&nbsp;-d '{`{"query": "トヨタ", "limit": 10}`}' \<br />
+                        &nbsp;&nbsp;https://xbrl-api-minimal.vercel.app/api/v1/search
+                      </code>
+                    </div>
+                    
+                    <div className="bg-gray-900 rounded-lg p-4 text-white">
+                      <div className="text-sm text-gray-400 mb-2"># 財務データを取得</div>
+                      <code className="text-green-400">
+                        curl -H "Authorization: Bearer YOUR_API_KEY" \<br />
+                        &nbsp;&nbsp;https://xbrl-api-minimal.vercel.app/api/v1/companies/S100LO6W/financial?year=2021
+                      </code>
+                    </div>
+                  </div>
+
                   <h2 className="text-2xl font-bold mt-8 mb-4">主な機能</h2>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>4,231社の日本企業データへのアクセス</li>
@@ -306,6 +387,7 @@ export default function DocsPage() {
                     <li>リアルタイムデータ更新</li>
                     <li>高度な検索・フィルタリング機能</li>
                     <li>Webhook対応 (Proプラン)</li>
+                    <li>Claude MCP連携対応</li>
                   </ul>
                 </div>
               )}
