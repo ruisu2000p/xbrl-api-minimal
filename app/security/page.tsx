@@ -352,7 +352,7 @@ export default function SecurityPage() {
               <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <div className="border border-blue-200 rounded-lg p-6 bg-blue-50">
                   <div className="flex items-center mb-4">
-                    <img src="https://vercel.com/favicon.ico" alt="Vercel" className="w-8 h-8 mr-3" />
+                    <div className="w-8 h-8 mr-3 bg-black rounded flex items-center justify-center text-white text-xs font-bold">V</div>
                     <h3 className="font-bold text-lg">Vercel Infrastructure</h3>
                   </div>
                   <ul className="space-y-2 text-sm">
@@ -366,7 +366,7 @@ export default function SecurityPage() {
 
                 <div className="border border-green-200 rounded-lg p-6 bg-green-50">
                   <div className="flex items-center mb-4">
-                    <img src="https://supabase.com/favicon/favicon-32x32.png" alt="Supabase" className="w-8 h-8 mr-3" />
+                    <div className="w-8 h-8 mr-3 bg-green-600 rounded flex items-center justify-center text-white text-xs font-bold">S</div>
                     <h3 className="font-bold text-lg">Supabase Infrastructure</h3>
                   </div>
                   <ul className="space-y-2 text-sm">
