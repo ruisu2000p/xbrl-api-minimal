@@ -421,8 +421,6 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li><a href="/support" className="hover:text-white transition-colors">ヘルプセンター</a></li>
                 <li><a href="/contact" className="hover:text-white transition-colors">お問い合わせ</a></li>
-                <li><a href="/status" className="hover:text-white transition-colors">API ステータス</a></li>
-                <li><a href="/community" className="hover:text-white transition-colors">コミュニティ</a></li>
               </ul>
             </div>
             <div>
