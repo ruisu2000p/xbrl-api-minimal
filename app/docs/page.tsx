@@ -888,14 +888,27 @@ await server.connect(transport);`}</code>
                   <p className="mb-4">
                     以下の場所にある設定ファイルを編集します：
                   </p>
-                  <ul className="list-disc pl-6 mb-4">
-                    <li><strong>Windows:</strong> <code className="bg-gray-100 px-2 py-1 rounded">%APPDATA%\Claude\claude_desktop_config.json</code></li>
-                    <li><strong>macOS:</strong> <code className="bg-gray-100 px-2 py-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
-                    <li><strong>Linux:</strong> <code className="bg-gray-100 px-2 py-1 rounded">~/.config/Claude/claude_desktop_config.json</code></li>
-                  </ul>
                   
-                  <p className="mb-4">以下の内容を追加します：</p>
-                  <div className="bg-gray-900 rounded-lg p-4 text-white overflow-x-auto mb-6">
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                    <p className="text-yellow-700 font-semibold mb-2">📍 設定ファイルの場所</p>
+                    <ul className="space-y-2">
+                      <li>
+                        <strong>Windows:</strong> 
+                        <code className="bg-yellow-100 px-2 py-1 rounded text-sm">%APPDATA%\Claude\claude_desktop_config.json</code>
+                      </li>
+                      <li>
+                        <strong>macOS:</strong> 
+                        <code className="bg-yellow-100 px-2 py-1 rounded text-sm">~/Library/Application Support/Claude/claude_desktop_config.json</code>
+                      </li>
+                      <li>
+                        <strong>Linux:</strong> 
+                        <code className="bg-yellow-100 px-2 py-1 rounded text-sm">~/.config/Claude/claude_desktop_config.json</code>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <p className="mb-4">以下の内容を設定ファイルに追加します：</p>
+                  <div className="bg-gray-900 rounded-lg p-4 text-white overflow-x-auto mb-4">
                     <pre className="text-sm">
                       <code className="text-green-400">{`{
   "mcpServers": {
@@ -909,6 +922,16 @@ await server.connect(transport);`}</code>
   }
 }`}</code>
                     </pre>
+                  </div>
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <p className="text-blue-800 font-semibold mb-2">💡 設定のポイント</p>
+                    <ul className="list-disc pl-5 space-y-2 text-sm text-blue-700">
+                      <li><code className="bg-blue-100 px-1 rounded">C:/path/to/mcp-xbrl-server.js</code> を実際のファイルパスに置き換えてください</li>
+                      <li><code className="bg-blue-100 px-1 rounded">xbrl_live_xxxxxxxxxxxxxxxxxxxxxx</code> をダッシュボードで取得したAPIキーに置き換えてください</li>
+                      <li>Windowsの場合、パスは <code className="bg-blue-100 px-1 rounded">C:/</code> または <code className="bg-blue-100 px-1 rounded">C:\\</code> の形式で記述できます</li>
+                      <li>既存の設定がある場合は、mcpServersセクションに追加してください</li>
+                    </ul>
                   </div>
 
                   <h3 className="text-lg font-bold mt-6 mb-3">5. Claude Desktopを再起動</h3>
