@@ -300,29 +300,6 @@ export default function DocsPage() {
 
                   <h2 className="text-2xl font-bold mt-8 mb-4">利用可能なエンドポイント</h2>
                   <div className="space-y-4 mb-8">
-                    <div className="border-l-4 border-green-400 pl-4">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">GET</span>
-                        <code className="text-sm font-mono">/api/v1/companies</code>
-                      </div>
-                      <p className="text-sm text-gray-600">企業一覧を取得</p>
-                    </div>
-                    
-                    <div className="border-l-4 border-green-400 pl-4">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">GET</span>
-                        <code className="text-sm font-mono">/api/v1/companies/{'{id}'}</code>
-                      </div>
-                      <p className="text-sm text-gray-600">企業詳細を取得</p>
-                    </div>
-                    
-                    <div className="border-l-4 border-blue-400 pl-4">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">POST</span>
-                        <code className="text-sm font-mono">/api/v1/search</code>
-                      </div>
-                      <p className="text-sm text-gray-600">企業を検索</p>
-                    </div>
                     
                     <div className="border-l-4 border-green-400 pl-4">
                       <div className="flex items-center gap-3 mb-1">
@@ -412,8 +389,8 @@ export default function DocsPage() {
                   
                   <div className="bg-gray-900 rounded-lg p-4 text-white mb-6">
                     <code className="text-green-400">
-                      curl -H "X-API-Key: sk_test_abc123xyz789" \<br />
-                      &nbsp;&nbsp;https://api.xbrl.jp/v1/companies
+                      curl -H "X-API-Key: YOUR_API_KEY" \<br />
+                      &nbsp;&nbsp;https://xbrl-api-minimal.vercel.app/api/v1/companies
                     </code>
                   </div>
 

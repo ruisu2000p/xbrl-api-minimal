@@ -400,50 +400,20 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* APIドキュメント */}
+        {/* Quick Links */}
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            APIドキュメント
+            クイックリンク
           </h2>
           
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium text-gray-900 mb-2">利用可能なエンドポイント</h3>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <div className="font-mono text-sm">
-                  <span className="text-green-600">GET</span> /api/v1/companies
-                  <p className="text-gray-600 ml-12">企業一覧を取得</p>
-                </div>
-                <div className="font-mono text-sm">
-                  <span className="text-green-600">GET</span> /api/v1/companies/{'{id}'}
-                  <p className="text-gray-600 ml-12">企業詳細を取得</p>
-                </div>
-                <div className="font-mono text-sm">
-                  <span className="text-blue-600">POST</span> /api/v1/search
-                  <p className="text-gray-600 ml-12">企業を検索</p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium text-gray-900 mb-2">使用例</h3>
-              <div className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
-                <pre className="text-sm">
-{`curl -H "Authorization: Bearer YOUR_API_KEY" \\
-  https://xbrl-api-minimal.vercel.app/api/v1/companies`}
-                </pre>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <Link
-                href="/docs"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                詳細なドキュメントを見る →
-              </Link>
-            </div>
+          <div className="flex gap-4">
+            <Link
+              href="/docs"
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              詳細なドキュメントを見る →
+            </Link>
           </div>
         </div>
       </main>
