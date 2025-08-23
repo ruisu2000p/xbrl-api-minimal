@@ -400,22 +400,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Links */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            クイックリンク
-          </h2>
-          
-          <div className="flex gap-4">
-            <Link
-              href="/docs"
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              詳細なドキュメントを見る →
-            </Link>
-          </div>
-        </div>
       </main>
     </div>
   );
