@@ -53,7 +53,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              XBRL財務データAPI
+              有価証券報告書財務データmcpAPI
             </h1>
             <nav className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">機能</a>
@@ -273,7 +273,7 @@ export default function Home() {
       <section id="features" className="bg-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            XBRL財務データAPIの強力な機能
+            有価証券報告書財務データmcpAPIの強力な機能
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="group hover:scale-105 transition-all">
@@ -402,7 +402,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h5 className="text-white font-bold text-xl mb-4">XBRL財務データAPI</h5>
+              <h5 className="text-white font-bold text-xl mb-4">有価証券報告書財務データmcpAPI</h5>
               <p className="text-sm">
                 日本の全上場企業の財務データを<br />
                 クラウドインフラから配信
