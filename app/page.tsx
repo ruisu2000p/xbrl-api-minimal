@@ -147,7 +147,7 @@ export default function Home() {
               </div>
               <h4 className="text-xl font-bold mb-4">分析開始</h4>
               <p className="text-gray-600">
-                取得したJSONデータを使って、財務分析やトレンド予測などの高度な分析を開始できます。
+                取得した財務データを使って、財務分析やトレンド予測などの高度な分析を開始できます。
               </p>
             </div>
           </div>
