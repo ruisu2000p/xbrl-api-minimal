@@ -138,7 +138,7 @@ export default function Home() {
               </div>
               <h4 className="text-xl font-bold mb-4">データ取得</h4>
               <p className="text-gray-600">
-                企業コードを指定してAPIを呼び出すだけで、20年分の財務データを簡単に取得できます。
+                企業を指定してAPIを呼び出すだけで、10年分の財務データを簡単に取得できます。
               </p>
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 text-center">
