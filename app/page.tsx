@@ -404,7 +404,7 @@ export default function Home() {
             <div>
               <h5 className="text-white font-bold text-xl mb-4">XBRL財務データAPI</h5>
               <p className="text-sm">
-                日本の上場企業4,231社の財務データを<br />
+                日本の全上場企業の財務データを<br />
                 クラウドインフラから配信
               </p>
             </div>
