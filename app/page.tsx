@@ -327,7 +327,7 @@ export default function Home() {
                 </div>
                 <h4 className="text-xl font-bold mb-3">膨大なデータ量</h4>
                 <p className="text-gray-600">
-                  4,231社×20年分の有価証券報告書。財務諸表から事業リスクまで、包括的なデータを提供します。
+                  全上場企業×10年分の有価証券報告書。財務諸表から事業リスクまで、包括的なデータを提供します。
                 </p>
               </div>
             </div>
