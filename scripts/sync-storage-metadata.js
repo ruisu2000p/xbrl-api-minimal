@@ -2,14 +2,9 @@
  * Supabase Storageのデータをスキャンして、storage_metadataテーブルを更新
  */
 
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const { createClient } = require('@supabase/supabase-js');
+const dotenv = require('dotenv');
+const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
 
@@ -263,4 +258,4 @@ async function main() {
 }
 
 // 実行
-main();
+main().catch(console.error);

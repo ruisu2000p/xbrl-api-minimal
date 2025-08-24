@@ -58,7 +58,6 @@ export default function Home() {
             <nav className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">機能</a>
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">料金</a>
-              <a href="#docs" className="text-gray-600 hover:text-gray-900 transition-colors">ドキュメント</a>
               <a href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">ログイン</a>
               <button 
                 onClick={() => router.push('/register')}
@@ -77,7 +76,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center">
             <h2 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              全上場企業4,231社の<br />
+              全上場企業の<br />
               <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 財務データを完全網羅
               </span>
