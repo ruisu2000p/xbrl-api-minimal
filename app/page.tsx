@@ -39,8 +39,8 @@ export default function Home() {
   // お客様の声セクションは削除
 
   const stats = [
-    { number: "4,231", label: "社", description: "対応企業数" },
-    { number: "2021-2022", label: "年度", description: "対象期間" },
+    { number: "全上場", label: "企業", description: "対応企業数" },
+    { number: "2015〜", label: "", description: "対象期間" },
     { number: "即座に", label: "", description: "データ取得" }
   ];
 
@@ -82,8 +82,8 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              2021年4月〜2022年3月期の有価証券報告書を含む<br />
-              4,231社の財務データベースを提供。
+              Claude MCPによる<br />
+              全上場企業の財務データを提供。
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
               <button 
