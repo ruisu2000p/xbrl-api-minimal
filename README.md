@@ -4,6 +4,17 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ruisu2000p/xbrl-api-minimal)
 
+## 📱 モバイルアクセス対応
+
+**NEW!** MCPサーバー機能をモバイルデバイス（スマホ・タブレット）からもアクセス可能になりました。
+
+### モバイルからの使用方法
+1. Web APIサーバーを起動: `cd mcp-server && npm start`
+2. 同じWi-Fi上のスマホから `http://[PCのIP]:8080` でアクセス
+3. APIキーでの認証により全データにアクセス可能
+
+詳細は[mobile-access-guide.md](mcp-server/mobile-access-guide.md)を参照してください。
+
 ## 🚀 クイックスタート
 
 ### 1. 環境準備（5分）
