@@ -1,20 +1,27 @@
 {
-  "name": "@xbrl-jp/mcp-server",
+  "name": "xbrl-api-minimal",
   "version": "1.0.0",
-  "description": "MCP server for XBRL financial data access via Supabase",
-  "type": "module",
-  "main": "index.js",
-  "bin": {
-    "xbrl-mcp": "./index-enhanced.js"
-  },
+  "description": "XBRL Financial Data API with MCP Server",
   "scripts": {
-    "start": "node index-enhanced.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "mcp:start": "node mcp-server/index-enhanced.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
     "@supabase/supabase-js": "^2.39.0",
+    "@vercel/analytics": "^1.5.0",
+    "next": "14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "node-fetch": "^3.3.2",
     "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.10.0",
+    "@types/react": "18.2.45",
+    "typescript": "5.3.3"
   },
   "keywords": ["mcp", "xbrl", "financial", "supabase"],
   "author": "",
