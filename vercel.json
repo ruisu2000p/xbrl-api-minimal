@@ -1,0 +1,10 @@
+{
+  "buildCommand": false,
+  "outputDirectory": ".",
+  "installCommand": "npm install",
+  "functions": {
+    "index-enhanced.js": {
+      "runtime": "nodejs20.x"
+    }
+  }
+}
