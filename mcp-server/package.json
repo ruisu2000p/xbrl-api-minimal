@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "MCP server for XBRL financial data access via Supabase",
   "type": "module",
-  "main": "index-enhanced.js",
+  "main": "index-api.js",
   "bin": {
-    "xbrl-mcp": "./index-enhanced.js"
+    "xbrl-mcp": "./index-api.js"
   },
   "scripts": {
-    "start": "node index-enhanced.js"
+    "start": "node index-api.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",

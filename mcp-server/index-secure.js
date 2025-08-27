@@ -2,7 +2,8 @@
 
 /**
  * Secure XBRL MCP Server
- * Vercelで発行されたAPIキーをSupabaseで検証
+ * Vercel APIを経由してXBRLデータにアクセス
+ * APIキーによる認証を使用
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -15,12 +16,8 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 // Configuration
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zxzyidqrvzfzhicfuhlo.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const XBRL_API_URL = process.env.XBRL_API_URL || 'https://xbrl-api-minimal.vercel.app';
 const USER_API_KEY = process.env.XBRL_API_KEY || '';
-
-// Supabase client (public)
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // API Key validation state
 let apiKeyValid = false;
@@ -28,7 +25,7 @@ let apiKeyInfo = null;
 let rateLimitRemaining = null;
 
 /**
- * APIキーをSupabaseで検証
+ * APIキーをVercel API経由で検証
  */
 async function validateApiKey(apiKey) {
   if (!apiKey) {
@@ -37,17 +34,14 @@ async function validateApiKey(apiKey) {
   }
 
   try {
-    // APIキーのハッシュ化（Vercelと同じ方式）
-    const hashedKey = crypto
-      .createHash('sha256')
-      .update(apiKey)
-      .digest('hex');
-
-    // Supabaseでキーを検証
-    const { data: keyData, error } = await supabase
-      .from('api_keys')
-      .select('*, profiles(*)')
-      .eq('key_hash', hashedKey)
+    // Vercel APIでキーを検証
+    const response = await fetch(`${XBRL_API_URL}/api/v1/validate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey
+      }
+    });
       .eq('is_active', true)
       .single();
 
