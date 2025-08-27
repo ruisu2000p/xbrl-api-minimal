@@ -1,27 +1,41 @@
-# XBRL MCP Server
+# XBRL MCP Server for Supabase
 
-Claude DesktopからXBRL財務データ（Supabase）にアクセスするためのMCPサーバー
+Claude Desktop/MobileからXBRL財務データにアクセスするためのMCPサーバー。
+Supabaseに保管された日本企業の有価証券報告書データ（4,231社）を検索・分析できます。
 
-## セットアップ
+## 🚀 クイックスタート
 
-### 1. 依存関係のインストール
+### オプション1: npm経由でインストール（推奨）
+
 ```bash
-cd xbrl-mcp-server
+npx @xbrl-jp/mcp-server
+```
+
+### オプション2: ローカルインストール
+
+```bash
+git clone https://github.com/ruisu2000p/xbrl-api-minimal.git
+cd xbrl-api-minimal/mcp-server
 npm install
 ```
 
-### 2. Claude Desktop設定
+## ⚙️ 設定
 
-`%APPDATA%\Claude\claude_desktop_config.json`を編集：
+### Claude Desktop設定
+
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+**Mac/Linux**: `~/.config/claude/claude_desktop_config.json`
+
+#### セキュア版（APIキー認証あり）
 
 ```json
 {
   "mcpServers": {
-    "xbrl-financial": {
-      "command": "node",
-      "args": ["C:\\Users\\pumpk\\Downloads\\xbrl-mcp-server\\index.js"],
+    "xbrl-secure": {
+      "command": "npx",
+      "args": ["@xbrl-jp/mcp-server", "--secure"],
       "env": {
-        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app",
+        "SUPABASE_URL": "https://zxzyidqrvzfzhicfuhlo.supabase.co",
         "XBRL_API_KEY": "your-api-key-here"
       }
     }
@@ -29,45 +43,155 @@ npm install
 }
 ```
 
-### 3. APIキーの取得
+#### Supabase直接接続版（Service Roleキー使用）
 
-1. https://xbrl-api-minimal.vercel.app にアクセス
+```json
+{
+  "mcpServers": {
+    "xbrl-supabase": {
+      "command": "npx",
+      "args": ["@xbrl-jp/mcp-server", "--enhanced"],
+      "env": {
+        "SUPABASE_URL": "https://zxzyidqrvzfzhicfuhlo.supabase.co",
+        "SUPABASE_SERVICE_KEY": "your-service-role-key"
+      }
+    }
+  }
+}
+```
+
+## 🔑 認証情報の取得
+
+### APIキー（セキュア版）
+
+1. [XBRL API Dashboard](https://xbrl-api-minimal.vercel.app) にアクセス
 2. アカウント作成/ログイン
-3. ダッシュボードからAPIキーを取得
-4. 上記設定の`your-api-key-here`を実際のキーに置換
+3. ダッシュボードからAPIキーをコピー
 
-### 4. Claude Desktopを再起動
+### Service Roleキー（Supabase直接接続）
+
+1. [Supabase Dashboard](https://supabase.com) にアクセス
+2. Project Settings → API
+3. Service Role Keyをコピー（⚠️ 秘密情報として扱ってください）
+
+## 📱 モバイル対応
+
+Claude iOSアプリでも利用可能です：
+
+```json
+{
+  "mcpServers": {
+    "xbrl-mobile": {
+      "command": "npx",
+      "args": ["@xbrl-jp/mcp-server", "--remote"],
+      "env": {
+        "XBRL_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+## 🔄 Claude Desktop/アプリを再起動
 
 設定を反映させるため、Claude Desktopを完全に終了してから再起動してください。
 
-## 使用例
+## 💡 使用例
 
-Claude Desktopで以下のように質問できます：
+Claude Desktop/モバイルアプリで以下のような質問ができます：
 
-- 「亀田製菓の企業情報を教えて」
-- 「食品業界の企業を5社検索して」
-- 「S100LJ4Fの2021年の財務データを分析して」
-- 「亀田製菓と明治の財務データを比較して」
+### 企業検索
+```
+「食品業界の上場企業を10社教えて」
+「売上高1000億円以上の製造業企業は？」
+```
 
-## 利用可能なツール
+### 財務データ分析
+```
+「亀田製菓の直近3年間の業績推移を分析して」
+「S100LJ4Fの2021年度の財務諸表を要約して」
+```
 
-- `search_companies` - 企業検索
-- `get_company_details` - 企業詳細取得
-- `get_financial_data` - 財務データ分析
-- `compare_companies` - 企業比較
+### 企業比較
+```
+「トヨタとホンダの収益性を比較して」
+「食品業界上位5社のROEを比較分析して」
+```
 
-## トラブルシューティング
+### セグメント分析
+```
+「ソニーの地域別売上構成を教えて」
+「任天堂の製品カテゴリ別収益を分析して」
+```
+
+## 🛠️ 利用可能なツール
+
+### 基本ツール（index-secure.js）
+- `search_companies` - 企業名/業種で検索
+- `get_company_details` - 企業詳細情報取得
+- `get_financial_documents` - 財務書類一覧取得
+- `read_financial_document` - 特定書類の内容取得
+
+### 拡張ツール（index-enhanced.js）
+- `get_income_statement` - 損益計算書取得
+- `get_balance_sheet` - 貸借対照表取得
+- `get_cash_flow` - キャッシュフロー計算書取得
+- `get_financial_ratios` - 財務比率分析（ROE、ROA等）
+- `search_companies` - 詳細検索（業種、規模等）
+- `get_company_profile` - 企業プロファイル取得
+- `compare_financials` - 複数企業の財務比較
+- `get_segment_data` - セグメント別業績取得
+
+## 🔧 トラブルシューティング
 
 ### MCPサーバーが認識されない
-1. JSONファイルの構文エラーがないか確認
-2. パスが正しいか確認（バックスラッシュをエスケープ）
-3. Claude Desktopを完全に再起動
+```bash
+# 設定ファイルの構文チェック
+jq . %APPDATA%\Claude\claude_desktop_config.json
 
-### APIエラーが発生する
-1. APIキーが正しく設定されているか確認
-2. APIキーの有効期限を確認
-3. 使用制限に達していないか確認
+# Claude Desktopの完全再起動
+taskkill /F /IM claude.exe
+start claude
+```
 
-## ライセンス
+### 接続エラーが発生する
+- APIキーが正しいか確認
+- ネットワーク接続を確認
+- Supabase URLが正しいか確認
 
-MIT
+### データが見つからない
+- 企業IDの形式を確認（例: S100LJ4F）
+- 年度指定を確認（2021、FY2021等）
+
+## 📊 データ仕様
+
+- **対象企業**: 日本の上場企業 4,231社
+- **データ期間**: 2016年度〜2021年度
+- **書類形式**: 有価証券報告書（Markdown変換済み）
+- **更新頻度**: 年次
+
+## 🔒 セキュリティ
+
+- APIキーは環境変数で管理
+- Service Roleキーは絶対に公開しない
+- HTTPSによる暗号化通信
+- レート制限によるAPI保護
+
+## 📚 関連リソース
+
+- [XBRL API Documentation](https://xbrl-api-minimal.vercel.app/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [MCP Protocol Specification](https://modelcontextprotocol.io)
+- [GitHub Repository](https://github.com/ruisu2000p/xbrl-api-minimal)
+
+## 📄 ライセンス
+
+MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照
+
+## 🤝 貢献
+
+バグ報告や機能要望は[GitHub Issues](https://github.com/ruisu2000p/xbrl-api-minimal/issues)まで。
+
+---
+
+*最終更新: 2025年1月*
