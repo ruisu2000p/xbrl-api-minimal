@@ -5,10 +5,12 @@
   "type": "module",
   "main": "index-api.js",
   "bin": {
-    "xbrl-mcp": "./index-api.js"
+    "xbrl-mcp": "./index-api.js",
+    "xbrl-mcp-remote": "./index-remote.js"
   },
   "scripts": {
-    "start": "node index-api.js"
+    "start": "node index-api.js",
+    "start:remote": "node index-remote.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",

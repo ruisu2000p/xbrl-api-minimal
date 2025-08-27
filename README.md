@@ -33,7 +33,24 @@ npm install
   "mcpServers": {
     "xbrl-api": {
       "command": "npx",
-      "args": ["@xbrl-jp/mcp-server"],
+      "args": ["@xbrl-jp/mcp-server", "--api"],
+      "env": {
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app",
+        "XBRL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+#### セキュア版（認証あり）
+
+```json
+{
+  "mcpServers": {
+    "xbrl-secure": {
+      "command": "npx",
+      "args": ["@xbrl-jp/mcp-server", "--secure"],
       "env": {
         "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app",
         "XBRL_API_KEY": "your-api-key-here"
@@ -50,9 +67,15 @@ npm install
 3. ダッシュボードからAPIキーをコピー
 4. 設定ファイルの`your-api-key-here`を置き換え
 
-## 📱 モバイル対応
+## 📱 モバイル対応（iOS/Android）
 
-Claude iOSアプリでも利用可能です：
+Claudeモバイルアプリでも利用可能です。
+
+### iOSアプリでの設定
+
+1. Claude iOSアプリを開く
+2. 設定 → Developer → Edit Config
+3. 以下の設定を追加：
 
 ```json
 {
@@ -61,12 +84,19 @@ Claude iOSアプリでも利用可能です：
       "command": "npx",
       "args": ["@xbrl-jp/mcp-server", "--remote"],
       "env": {
-        "XBRL_API_KEY": "your-api-key"
+        "XBRL_API_KEY": "your-api-key-here",
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app"
       }
     }
   }
 }
 ```
+
+### 重要なポイント
+
+- **`--remote`オプションが必須**: モバイル専用の軽量モード
+- **APIキーが必要**: ダッシュボードから取得
+- **ネットワーク接続必須**: オンラインでのみ動作
 
 ## 🔄 Claude Desktop/アプリを再起動
 
