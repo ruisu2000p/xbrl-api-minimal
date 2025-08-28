@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "mcp:start": "node mcp-server/index-enhanced.js"
+    "mcp": "node mcp-server/index.js",
+    "mcp:remote": "node mcp-server/index.js --remote",
+    "mcp:secure": "node mcp-server/index.js --secure",
+    "mcp:api": "node mcp-server/index.js --api"
+  },
+  "bin": {
+    "xbrl-mcp": "./mcp-server/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
@@ -22,6 +28,10 @@
     "@types/node": "20.10.0",
     "@types/react": "18.2.45",
     "typescript": "5.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ruisu2000p/xbrl-api-minimal.git"
   },
   "keywords": ["mcp", "xbrl", "financial", "supabase"],
   "author": "",
