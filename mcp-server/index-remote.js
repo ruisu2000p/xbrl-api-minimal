@@ -20,7 +20,7 @@ const USER_API_KEY = process.env.XBRL_API_KEY || '';
 // シンプルなHTTPリクエスト関数（node-fetch不要）
 async function makeRequest(endpoint, params = {}) {
   try {
-    const url = new URL(`${XBRL_API_URL}/api/v1/${endpoint}`);
+    const url = new URL(`${XBRL_API_URL}/api/${endpoint}`);
     
     // クエリパラメータを追加
     Object.entries(params).forEach(([key, value]) => {
@@ -44,13 +44,27 @@ async function makeRequest(endpoint, params = {}) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error (${response.status}): ${errorText}`);
+      let errorMessage;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || 'Unknown error';
+      } else if (contentType && contentType.includes('text/html')) {
+        // HTML response (404 page, etc.)
+        errorMessage = `API endpoint not found (${response.status})`;
+        console.error(`[ERROR] API returned HTML instead of JSON. Check endpoint: ${url.toString()}`);
+      } else {
+        errorMessage = await response.text();
+      }
+      
+      throw new Error(`API Error (${response.status}): ${errorMessage}`);
     }
 
     return await response.json();
   } catch (error) {
-    console.error(`[ERROR] API request failed: ${error.message}`);
+    console.error(`[ERROR] Request to ${endpoint} failed:`, error.message);
+    console.error(`[DEBUG] Full URL: ${url.toString()}`);
     throw error;
   }
 }

@@ -17,7 +17,7 @@ export class APIClient {
    * HTTPリクエストを送信（リトライ機能付き）
    */
   async request(endpoint, options = {}, retryCount = 0) {
-    const url = new URL(`/api/v1/${endpoint}`, this.baseURL);
+    const url = new URL(`/api/${endpoint}`, this.baseURL);
     
     // クエリパラメータを追加
     if (options.params) {

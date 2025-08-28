@@ -32,7 +32,7 @@ async function validateApiKey(apiKey) {
   }
 
   try {
-    const response = await fetch(`${XBRL_API_URL}/api/v1/validate`, {
+    const response = await fetch(`${XBRL_API_URL}/api/validate`, {
       method: 'GET',
       headers: {
         'X-API-Key': apiKey
@@ -64,7 +64,7 @@ async function validateApiKey(apiKey) {
  * Vercel API経由でリクエスト
  */
 async function callVercelAPI(endpoint, params = {}) {
-  const url = new URL(`${XBRL_API_URL}/api/v1/${endpoint}`);
+  const url = new URL(`${XBRL_API_URL}/api/${endpoint}`);
   
   if (params && Object.keys(params).length > 0) {
     Object.entries(params).forEach(([key, value]) => {
