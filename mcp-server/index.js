@@ -8,6 +8,7 @@
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -40,8 +41,15 @@ switch (mode) {
     break;
 }
 
+// スクリプトの存在確認
+if (!existsSync(scriptPath)) {
+  console.error(`[ERROR] Script not found: ${scriptPath}`);
+  console.error('[INFO] Please ensure all files are properly installed');
+  process.exit(1);
+}
+
 // 選択されたスクリプトを実行
-const child = spawn('node', [scriptPath], {
+const child = spawn(process.execPath, [scriptPath], {
   stdio: 'inherit',
   env: process.env
 });

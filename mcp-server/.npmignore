@@ -1,0 +1,28 @@
+# Test files
+test/
+*.test.js
+*.spec.js
+
+# Development files
+.env
+.env.local
+*.log
+
+# Git files
+.git/
+.gitignore
+
+# Documentation
+SUPABASE_SETUP.md
+
+# Build files
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
