@@ -231,11 +231,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'search_companies': {
         console.error(`[SEARCH] Searching for: ${args.query}`);
         
-        // companiesテーブルから検索
+        // companiesテーブルから検索 - 実際のカラム名を使用
         const { data, error } = await supabase
           .from('companies')
-          .select('id, company_name, ticker_symbol, industry_category, sector')
-          .or(`company_name.ilike.%${args.query}%,industry_category.ilike.%${args.query}%,sector.ilike.%${args.query}%`)
+          .select('*')
+          .or(`name.ilike.%${args.query}%,company_id.ilike.%${args.query}%`)
           .limit(args.limit || 10);
 
         if (error) {
@@ -381,11 +381,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { data, error } = await supabase
           .from('companies')
           .select('*')
-          .eq('id', args.company_id)
-          .single();
+          .or(`company_id.eq.${args.company_id},id.eq.${args.company_id}`)
+          .limit(1);
 
         if (error) throw error;
-        result = data;
+        result = data && data.length > 0 ? data[0] : null;
         break;
       }
 
