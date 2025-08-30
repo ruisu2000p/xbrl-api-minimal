@@ -133,6 +133,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       }
     },
     {
+      name: 'search_across_years',
+      description: 'FY2015-FY2025の年度範囲で企業データを検索',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          company_id: { type: 'string', description: '企業ID（例: S100LO6W）' },
+          start_year: { type: 'string', description: '開始年度（例: FY2015）', default: 'FY2015' },
+          end_year: { type: 'string', description: '終了年度（例: FY2025）', default: 'FY2025' }
+        },
+        required: ['company_id']
+      }
+    },
+    {
+      name: 'get_all_years_data',
+      description: 'FY2015-FY2025の全年度データを一括取得',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          company_id: { type: 'string', description: '企業ID（例: S100LO6W）' },
+          document_type: { type: 'string', description: 'ドキュメントタイプ（PublicDoc/AuditDoc）', default: 'PublicDoc' }
+        },
+        required: ['company_id']
+      }
+    },
+    {
       name: 'get_company',
       description: '企業の詳細情報を取得',
       inputSchema: {
@@ -221,6 +246,134 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           result = data || [];
           console.error(`[SEARCH] Found ${result.length} companies`);
         }
+        break;
+      }
+      
+      case 'get_all_years_data': {
+        const { company_id, document_type = 'PublicDoc' } = args;
+        console.error(`[GET_ALL_YEARS] Fetching all years data for ${company_id}`);
+        
+        const targetYears = [
+          'FY2015', 'FY2016', 'FY2017', 'FY2018', 'FY2019',
+          'FY2020', 'FY2021', 'FY2022', 'FY2023', 'FY2024', 'FY2025',
+          '2015', '2016', '2017', '2018', '2019',
+          '2020', '2021', '2022', '2023', '2024', '2025'
+        ];
+        
+        const allData = [];
+        
+        for (const year of targetYears) {
+          const pathPatterns = [
+            `${year}/${company_id}/${document_type}_markdown`,
+            `${year}/${company_id}/${document_type}`,
+            `${company_id}/${document_type}_markdown`,
+            `${company_id}/${document_type}`,
+            `${year}/${company_id}`,
+            `${company_id}`
+          ];
+          
+          for (const basePath of pathPatterns) {
+            try {
+              const { data: files } = await supabase.storage
+                .from('markdown-files')
+                .list(basePath, { limit: 100 });
+                
+              if (files && files.length > 0) {
+                // Get sample content from first file
+                let sampleContent = null;
+                if (files[0] && files[0].name) {
+                  try {
+                    const { data: fileData } = await supabase.storage
+                      .from('markdown-files')
+                      .download(`${basePath}/${files[0].name}`);
+                    if (fileData) {
+                      const text = await fileData.text();
+                      sampleContent = text.substring(0, 500);
+                    }
+                  } catch (e) {
+                    // Ignore sample content errors
+                  }
+                }
+                
+                allData.push({
+                  year: year.replace('FY', ''),
+                  fiscal_year: year.startsWith('FY') ? year : `FY${year}`,
+                  company_id,
+                  path: basePath,
+                  document_type,
+                  file_count: files.length,
+                  files: files.slice(0, 10).map(f => f.name),
+                  sample_content: sampleContent,
+                  has_data: true
+                });
+                console.error(`[GET_ALL_YEARS] Found ${files.length} files for ${year}`);
+                break;
+              }
+            } catch (err) {
+              // Path doesn't exist, try next
+            }
+          }
+        }
+        
+        result = {
+          company_id,
+          years_found: allData.length,
+          total_files: allData.reduce((sum, d) => sum + d.file_count, 0),
+          data: allData,
+          coverage: `${allData.length}/11 years (${Math.round(allData.length/11*100)}%)`
+        };
+        console.error(`[GET_ALL_YEARS] Found data for ${allData.length} years`);
+        break;
+      }
+      
+      case 'search_across_years': {
+        const { company_id, start_year = 'FY2015', end_year = 'FY2025' } = args;
+        console.error(`[SEARCH_YEARS] Searching ${company_id} from ${start_year} to ${end_year}`);
+        
+        const years = [];
+        const startNum = parseInt(start_year.replace('FY', ''));
+        const endNum = parseInt(end_year.replace('FY', ''));
+        
+        for (let year = startNum; year <= endNum; year++) {
+          years.push(`FY${year}`);
+        }
+        
+        const results = [];
+        
+        for (const year of years) {
+          // 複数のパスパターンを試行
+          const pathPatterns = [
+            `${year}/${company_id}`,
+            `${company_id}`,
+            `${year}/${company_id.toLowerCase()}`,
+            `${year.replace('FY', '')}/${company_id}`
+          ];
+          
+          for (const basePath of pathPatterns) {
+            try {
+              const { data: files } = await supabase.storage
+                .from('markdown-files')
+                .list(basePath, { limit: 100 });
+                
+              if (files && files.length > 0) {
+                results.push({
+                  year,
+                  company_id,
+                  path: basePath,
+                  file_count: files.length,
+                  files: files.map(f => f.name)
+                });
+                console.error(`[SEARCH_YEARS] Found ${files.length} files for ${year}`);
+                break; // このパターンで見つかったら次の年へ
+              }
+            } catch (err) {
+              // このパスパターンは存在しない、次を試す
+            }
+          }
+        }
+        
+        result = results;
+        console.error(`[SEARCH_YEARS] Found data for ${results.length} years`);
         break;
       }
 
