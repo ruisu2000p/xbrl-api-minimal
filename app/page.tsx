@@ -1,9 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+
+interface Company {
+  name: string
+  ticker?: string
+  company_id?: string
+  available_years?: string[]
+}
 
 export default function Home() {
-  const [companies, setCompanies] = useState([])
+  const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -98,21 +105,21 @@ export default function Home() {
         {/* Features */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-2">📊 財務データAPI</h3>
+            <h3 className="text-lg font-semibold mb-2">📊 Financial Data API</h3>
             <p className="text-gray-600">
-              有価証券報告書、財務諸表、監査報告書など包括的な財務データへのアクセス
+              Access comprehensive financial data including securities reports, financial statements, and audit reports
             </p>
           </div>
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-2">🔌 MCP Server統合</h3>
+            <h3 className="text-lg font-semibold mb-2">🔌 MCP Server Integration</h3>
             <p className="text-gray-600">
-              Claude DesktopやAIアプリケーションとのシームレスな統合
+              Seamless integration with Claude Desktop and AI applications via Model Context Protocol
             </p>
           </div>
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-2">☁️ Supabase基盤</h3>
+            <h3 className="text-lg font-semibold mb-2">☁️ Powered by Supabase</h3>
             <p className="text-gray-600">
-              高速で信頼性の高いクラウドインフラストラクチャー
+              Fast and reliable cloud infrastructure with real-time capabilities
             </p>
           </div>
         </div>
