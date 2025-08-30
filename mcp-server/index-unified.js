@@ -231,20 +231,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'search_companies': {
         console.error(`[SEARCH] Searching for: ${args.query}`);
         
-        // companiesテーブルから検索 - 実際のカラム名を使用
+        // companiesテーブルから全件取得してカラム構造を確認
         const { data, error } = await supabase
           .from('companies')
           .select('*')
-          .or(`name.ilike.%${args.query}%,company_id.ilike.%${args.query}%`)
-          .limit(args.limit || 10);
+          .limit(1000); // まず1000件取得
 
         if (error) {
           console.error('[SEARCH] Error:', error.message);
           // エラーでも空配列を返して続行
           result = [];
+        } else if (data && data.length > 0) {
+          // カラム名をデバッグ出力
+          console.error('[DEBUG] Available columns:', Object.keys(data[0]));
+          
+          // 手動でフィルタリング（検索キーワードが含まれるレコードを探す）
+          const query = args.query.toLowerCase();
+          result = data.filter(company => {
+            // 各フィールドを検索
+            return Object.values(company).some(value => 
+              value && value.toString().toLowerCase().includes(query)
+            );
+          }).slice(0, args.limit || 10);
+          
+          console.error(`[SEARCH] Found ${result.length} companies matching "${args.query}"`);
         } else {
-          result = data || [];
-          console.error(`[SEARCH] Found ${result.length} companies`);
+          result = [];
+          console.error('[SEARCH] No data in companies table');
         }
         break;
       }
@@ -378,14 +391,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'get_company': {
+        // まずシンプルに全件取得してカラム構造を確認
+        const { data: allData, error: checkError } = await supabase
+          .from('companies')
+          .select('*')
+          .limit(1);
+        
+        if (allData && allData.length > 0) {
+          console.error('[DEBUG] Companies table columns:', Object.keys(allData[0]));
+        }
+        
+        // IDでフィルタリング（カラム名がわかるまで全件から検索）
         const { data, error } = await supabase
           .from('companies')
           .select('*')
-          .or(`company_id.eq.${args.company_id},id.eq.${args.company_id}`)
-          .limit(1);
+          .limit(100);
 
         if (error) throw error;
-        result = data && data.length > 0 ? data[0] : null;
+        
+        // 手動でフィルタリング
+        result = data ? data.find(c => 
+          c.id === args.company_id || 
+          c.company_id === args.company_id ||
+          c.edinet_code === args.company_id ||
+          c.ticker === args.company_id
+        ) : null;
         break;
       }
 
