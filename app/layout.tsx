@@ -1,3 +1,5 @@
+import './globals.css'
+
 export const metadata = {
   title: 'XBRL Financial Data API',
   description: 'Access Japanese corporate financial data',
