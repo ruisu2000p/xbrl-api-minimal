@@ -391,32 +391,58 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'list_documents': {
         // Storage から企業のドキュメント一覧を取得
-        const basePath = args.year && args.year.startsWith('FY') 
-          ? `${args.year}/${args.company_id}`
-          : `${args.company_id}`;
-
-        const { data, error } = await supabase.storage
-          .from('markdown-files')
-          .list(basePath, {
-            limit: 100,
-            offset: 0
-          });
-
-        if (error) throw error;
+        // 複数のパスパターンを試行
+        const pathPatterns = [];
         
-        // PublicDoc_markdown内のファイルも確認
-        const publicPath = `${basePath}/PublicDoc_markdown`;
-        const { data: publicDocs } = await supabase.storage
-          .from('markdown-files')
-          .list(publicPath, {
-            limit: 100,
-            offset: 0
-          });
+        if (args.year) {
+          // 年度指定あり
+          pathPatterns.push(
+            `${args.year}/${args.company_id}`,
+            `FY${args.year}/${args.company_id}`,
+            `${args.year.replace('FY', '')}/${args.company_id}`
+          );
+        }
+        // 年度指定なし、または年度パスが見つからない場合のフォールバック
+        pathPatterns.push(args.company_id);
+        
+        let mainData = null;
+        let publicDocs = null;
+        let successPath = null;
+        
+        for (const basePath of pathPatterns) {
+          try {
+            const { data, error } = await supabase.storage
+              .from('markdown-files')
+              .list(basePath, {
+                limit: 100,
+                offset: 0
+              });
+            
+            if (data && data.length > 0) {
+              mainData = data;
+              successPath = basePath;
+              
+              // PublicDoc_markdown内のファイルも確認
+              const publicPath = `${basePath}/PublicDoc_markdown`;
+              const { data: pubDocs } = await supabase.storage
+                .from('markdown-files')
+                .list(publicPath, {
+                  limit: 100,
+                  offset: 0
+                });
+              publicDocs = pubDocs;
+              break;
+            }
+          } catch (e) {
+            // Try next pattern
+          }
+        }
 
         result = {
-          main: data || [],
+          main: mainData || [],
           public_docs: publicDocs || [],
-          path: basePath
+          path: successPath || args.company_id,
+          patterns_tried: pathPatterns
         };
         break;
       }
