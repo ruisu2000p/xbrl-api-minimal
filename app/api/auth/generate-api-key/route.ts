@@ -82,11 +82,12 @@ export async function POST(request: NextRequest) {
     const keyPrefix = apiKey.substring(0, 16);
     const keySuffix = apiKey.slice(-4);
 
-    // APIキーをデータベースに保存（最小限のカラムのみ使用）
+    // APIキーをデータベースに保存（nameカラムも含める）
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
       .from('api_keys')
       .insert({
         user_id: userId,
+        name: 'Default API Key',  // NOT NULL制約のため必須
         key_prefix: keyPrefix,
         key_hash: keyHash,
         is_active: true

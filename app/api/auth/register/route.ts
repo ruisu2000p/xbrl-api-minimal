@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
       .from('api_keys')
       .insert({
         user_id: userId,
+        name: 'Default API Key',  // NOT NULL制約のため必須
         key_prefix: keyPrefix,
         key_hash: keyHash,
         is_active: true
