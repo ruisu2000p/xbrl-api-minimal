@@ -73,6 +73,17 @@ vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
 vercel env add SUPABASE_SERVICE_ROLE_KEY
 ```
 
+## 📊 現在のデータ状況
+
+- **総企業数**: 5,220社
+- **データ期間**: 2015年〜2016年（FY2015/FY2016）
+- **ファイル形式**: Markdown（XBRLから変換済み）
+- **総ファイル数**: 約50,000ファイル
+- **Storage構造**: 
+  - FY2015/by_company/{company_id}/*.md
+  - FY2016/{company_id}/{AuditDoc|PublicDoc}/*.md
+- **メタデータテーブル**: `markdown_files_metadata`でインデックス管理
+
 ## 📁 プロジェクト構成
 
 ```
@@ -83,14 +94,68 @@ xbrl-api-minimal/
 │   │   └── v1/
 │   │       ├── companies/ # 企業一覧API
 │   │       ├── documents/ # ドキュメント取得API
+│   │       ├── markdown/  # Markdownファイル API
+│   │       ├── search/    # 統合検索API
 │   │       └── financial/ # 財務データAPI
 │   ├── dashboard/         # ユーザーダッシュボード
 │   └── auth/             # 認証ページ
 ├── supabase/
 │   └── schema.sql        # データベーススキーマ
 ├── scripts/
+│   ├── scan-storage-metadata.js # Storageスキャン
 │   └── migrate-data.js  # データ移行スクリプト
+├── sql/
+│   └── create-markdown-metadata-table.sql # Markdownメタデータテーブル
 └── public/              # 静的ファイル
+```
+
+## 🏗️ Supabase Storage統合セットアップ
+
+### 1. Markdownメタデータテーブル作成
+
+Supabaseダッシュボードで以下のSQLを実行：
+
+```sql
+-- sql/create-markdown-metadata-table.sql の内容をコピー&実行
+```
+
+### 2. Storageメタデータスキャン
+
+```bash
+# 最大1000ファイルをスキャン
+node scripts/scan-storage-metadata.js 1000
+
+# 全ファイルスキャン（時間がかかります）
+node scripts/scan-storage-metadata.js
+```
+
+### 3. API使用例
+
+#### Markdownファイル検索
+```bash
+# 企業名で検索
+curl -H "X-API-Key: your_key" \
+  "http://localhost:3000/api/v1/markdown?company_name=タカショー"
+
+# 年度とドキュメントタイプで検索
+curl -H "X-API-Key: your_key" \
+  "http://localhost:3000/api/v1/markdown?fiscal_year=2021&document_type=PublicDoc"
+```
+
+#### 統合検索
+```bash
+# 企業・ファイル統合検索
+curl -H "X-API-Key: your_key" \
+  "http://localhost:3000/api/v1/search?q=タカショー&limit=10"
+```
+
+#### ファイル内容取得
+```bash
+# ファイルのフルコンテンツを取得
+curl -X POST -H "X-API-Key: your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"file_path": "S100L3K4/PublicDoc_markdown/0101010_honbun_*.md"}' \
+  "http://localhost:3000/api/v1/markdown"
 ```
 
 ## 🤖 Claude Desktop MCP接続

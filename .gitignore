@@ -62,9 +62,8 @@ tmp/
 temp/
 .vercel
 
-# MCP Server files (Claude Desktop integration)
-/mcp-server/
-*.bat
+# MCP Server node_modules (Claude Desktop integration)
+/mcp-server/node_modules/
 test-*.js
 check-*.js
 get-*.js
