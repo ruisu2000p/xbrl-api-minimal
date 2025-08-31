@@ -171,11 +171,17 @@ async function logRateLimitExceeded(
  */
 export function cleanupRateLimitStore() {
   const now = Date.now();
-  for (const [key, data] of rateLimitStore.entries()) {
+  const keysToDelete: string[] = [];
+  
+  rateLimitStore.forEach((data, key) => {
     if (now > data.resetTime) {
-      rateLimitStore.delete(key);
+      keysToDelete.push(key);
     }
-  }
+  });
+  
+  keysToDelete.forEach(key => {
+    rateLimitStore.delete(key);
+  });
 }
 
 // 定期的にクリーンアップ（5分ごと）
