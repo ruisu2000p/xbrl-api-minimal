@@ -122,7 +122,7 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
   "mcpServers": {
     "xbrl-api": {
       "command": "npx",
-      "args": ["@xbrl-jp/mcp-server"],
+      "args": ["xbrl-mcp-server"],
       "env": {
         "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
         "XBRL_API_KEY": "your-api-key-here"
@@ -131,6 +131,12 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
   }
 }
 ```
+
+**npmパッケージ情報：**
+- パッケージ名: `xbrl-mcp-server`
+- バージョン: `0.1.1`
+- インストール: `npm install -g xbrl-mcp-server`
+- GitHub: https://github.com/ruisu2000p/xbrl-api-minimal
 
 3. **APIキーの取得**
    - https://xbrl-api-minimal.vercel.app/login にアクセス
@@ -143,10 +149,24 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
 ### 利用可能なMCPツール
 
 - `search_companies` - 企業検索（名前、ID、ティッカーコード）
-- `get_company` - 企業詳細情報取得
-- `get_financial_data` - 財務データ取得
-- `list_documents` - ドキュメント一覧取得
-- `get_document_content` - ドキュメント内容取得
+- `get_company_details` - 企業詳細情報取得（基本情報、財務サマリー）
+- `get_financial_data` - 詳細財務データ取得
+- `list_companies` - 企業一覧取得（ページネーション対応）
+
+### 使用例（Claude Desktop）
+
+Claude Desktopで以下のようにご質問いただけます：
+
+```
+株式会社タカショーの2021年度の財務情報を教えて
+→ search_companiesで企業を検索 → get_company_detailsで詳細取得
+
+売上高1000億円以上の企業を5社探して
+→ list_companiesで企業を取得し条件でフィルタリング
+
+亀田製菓の競合他社分析をしたい
+→ 複数のMCPツールを組み合わせて競合分析
+```
 
 ## 🔑 API使用方法
 

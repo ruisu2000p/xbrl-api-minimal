@@ -1,1 +1,45 @@
-{"name":"xbrl-mcp-server","version":"1.0.0","type":"module","dependencies":{"@supabase/supabase-js":"^2.56.1"}}
+{
+  "name": "xbrl-mcp-server",
+  "version": "0.1.1",
+  "description": "MCP server for XBRL Financial Data API - Access Japanese listed companies financial data",
+  "type": "module",
+  "main": "src/server.js",
+  "bin": {
+    "xbrl-mcp-server": "./bin/mcp-server.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node bin/mcp-server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": [
+    "mcp",
+    "xbrl",
+    "financial",
+    "api",
+    "claude",
+    "japanese",
+    "edinet",
+    "securities"
+  ],
+  "author": "ruisu2000p",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruisu2000p/xbrl-api-minimal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ruisu2000p/xbrl-api-minimal/issues"
+  },
+  "homepage": "https://github.com/ruisu2000p/xbrl-api-minimal#readme"
+}
