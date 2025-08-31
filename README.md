@@ -1,6 +1,6 @@
-# XBRL財務データAPI - 最小構成版
+# XBRL財務データAPI
 
-20年分の日本企業財務データを提供するAPIサービスの最小構成実装です。
+日本の上場企業4,231社の財務データを提供するAPIサービス。Supabase Edge Functionsによるセキュアな認証とレート制限を実装。
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ruisu2000p/xbrl-api-minimal)
 
