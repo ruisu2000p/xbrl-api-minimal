@@ -93,12 +93,67 @@ xbrl-api-minimal/
 └── public/              # 静的ファイル
 ```
 
+## 🤖 Claude Desktop MCP接続
+
+### 自動セットアップ（推奨）
+
+#### Windows
+```powershell
+# PowerShellで実行
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/main/setup-xbrl-mcp.ps1" -OutFile "setup.ps1"; .\setup.ps1
+```
+
+#### Mac/Linux
+```bash
+# ターミナルで実行
+curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/main/setup-xbrl-mcp.sh && bash setup.sh
+```
+
+### 手動セットアップ
+
+1. **Claude Desktop設定ファイルを開く**
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+   - Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Linux: `~/.config/claude/claude_desktop_config.json`
+
+2. **以下の設定を追加**
+```json
+{
+  "mcpServers": {
+    "xbrl-api": {
+      "command": "npx",
+      "args": ["@xbrl-jp/mcp-server"],
+      "env": {
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
+        "XBRL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+3. **APIキーの取得**
+   - https://xbrl-api-minimal.vercel.app/login にアクセス
+   - ログインまたは新規登録
+   - ダッシュボードからAPIキーを生成
+   - 上記設定の `your-api-key-here` を置き換え
+
+4. **Claude Desktopを再起動**
+
+### 利用可能なMCPツール
+
+- `search_companies` - 企業検索（名前、ID、ティッカーコード）
+- `get_company` - 企業詳細情報取得
+- `get_financial_data` - 財務データ取得
+- `list_documents` - ドキュメント一覧取得
+- `get_document_content` - ドキュメント内容取得
+
 ## 🔑 API使用方法
 
 ### 認証
 ```bash
 curl -H "X-API-Key: your_api_key" \
-  https://your-domain.vercel.app/api/v1/companies
+  https://xbrl-api-minimal.vercel.app/api/v1/companies
 ```
 
 ### エンドポイント
