@@ -8,6 +8,8 @@ export default function WelcomePage() {
   const [userData, setUserData] = useState<any>(null);
   const [showApiKey, setShowApiKey] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
   useEffect(() => {
     // LocalStorageから登録データを取得
@@ -19,17 +21,68 @@ export default function WelcomePage() {
       localStorage.setItem('user', JSON.stringify(data));
       // 元のregistrationDataは削除
       localStorage.removeItem('registrationData');
+      
+      // APIキーがない場合は生成を試みる
+      if (!data.apiKey && data.id) {
+        generateApiKey(data);
+      }
     } else {
       // 既にuserデータがある場合はそれを使用
       const userData = localStorage.getItem('user');
       if (userData) {
-        setUserData(JSON.parse(userData));
+        const data = JSON.parse(userData);
+        setUserData(data);
+        
+        // APIキーがない場合は生成を試みる
+        if (!data.apiKey && data.id) {
+          generateApiKey(data);
+        }
       } else {
         // データがない場合はダッシュボードへリダイレクト（ログインしている前提）
         router.push('/dashboard');
       }
     }
   }, [router]);
+
+  const generateApiKey = async (user: any) => {
+    setIsGeneratingKey(true);
+    setApiKeyError(null);
+    
+    try {
+      const response = await fetch('/api/auth/generate-api-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          plan: user.plan || 'beta'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.apiKey) {
+        // APIキーを取得できた場合、userDataを更新
+        const updatedUser = { ...user, apiKey: data.apiKey };
+        setUserData(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      } else if (data.hasExistingKey) {
+        // 既存のキーがある場合（表示はできない）
+        setApiKeyError('APIキーは既に生成されています。ダッシュボードから確認してください。');
+      } else {
+        // エラーの場合
+        setApiKeyError(data.error || 'APIキーの生成に失敗しました');
+        console.error('API key generation failed:', data);
+      }
+    } catch (error) {
+      console.error('API key generation error:', error);
+      setApiKeyError('APIキーの生成中にエラーが発生しました');
+    } finally {
+      setIsGeneratingKey(false);
+    }
+  };
 
   const copyApiKey = () => {
     if (userData?.apiKey) {
@@ -75,7 +128,12 @@ export default function WelcomePage() {
             <div className="flex items-center gap-2">
               <input
                 type={showApiKey ? "text" : "password"}
-                value={userData.apiKey || 'APIキーを生成中...'}
+                value={
+                  userData.apiKey ? userData.apiKey : 
+                  isGeneratingKey ? 'APIキーを生成中...' : 
+                  apiKeyError ? 'エラー: APIキー生成失敗' :
+                  'APIキーを生成中...'
+                }
                 readOnly
                 className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg font-mono text-sm"
               />
@@ -107,6 +165,18 @@ export default function WelcomePage() {
               </button>
             </div>
           </div>
+
+          {/* エラーメッセージ表示 */}
+          {apiKeyError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-600">
+                <span className="font-semibold">⚠️ エラー:</span> {apiKeyError}
+              </p>
+              <p className="text-xs text-red-500 mt-2">
+                サポートが必要な場合は、登録時のメールアドレスとユーザーIDをお知らせください。
+              </p>
+            </div>
+          )}
 
           {/* プラン情報 */}
           <div className="grid grid-cols-2 gap-4 mb-6">
