@@ -82,25 +82,14 @@ export async function POST(request: NextRequest) {
     const keyPrefix = apiKey.substring(0, 16);
     const keySuffix = apiKey.slice(-4);
 
-    // APIキーをデータベースに保存
+    // APIキーをデータベースに保存（最小限のカラムのみ使用）
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
       .from('api_keys')
       .insert({
         user_id: userId,
-        name: 'Default API Key',
         key_prefix: keyPrefix,
-        key_suffix: keySuffix,
         key_hash: keyHash,
-        is_active: true,
-        status: 'active',
-        environment: 'production',
-        created_by: userId,
-        tier: plan === 'pro' ? 'pro' : plan === 'basic' ? 'basic' : 'free',
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        rate_limit_per_minute: 60,
-        rate_limit_per_hour: 1000,
-        rate_limit_per_day: plan === 'pro' ? 10000 : plan === 'basic' ? 5000 : 1000
+        is_active: true
       })
       .select()
       .single();
@@ -131,8 +120,7 @@ export async function POST(request: NextRequest) {
       keyInfo: {
         prefix: keyPrefix,
         suffix: keySuffix,
-        expiresAt: apiKeyData.expires_at,
-        rateLimit: apiKeyData.rate_limit_per_day
+        createdAt: new Date().toISOString()
       }
     }, { status: 201 });
 

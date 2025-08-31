@@ -134,30 +134,9 @@ export async function POST(request: NextRequest) {
       .from('api_keys')
       .insert({
         user_id: userId,
-        name: 'Default API Key',
         key_prefix: keyPrefix,
-        key_suffix: keySuffix,
         key_hash: keyHash,
-        is_active: true,
-        status: 'active',
-        environment: 'production',
-        permissions: {
-          endpoints: ['*'],
-          scopes: ['read:markdown', 'read:companies', 'read:documents'],
-          rate_limit: plan === 'pro' ? 10000 : plan === 'basic' ? 5000 : 1000
-        },
-        metadata: {
-          created_via: 'registration',
-          user_email: email,
-          plan: plan || 'beta'
-        },
-        created_by: userId,
-        tier: plan === 'pro' ? 'pro' : plan === 'basic' ? 'basic' : 'free',
-        total_requests: 0,
-        successful_requests: 0,
-        failed_requests: 0,
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        is_active: true
       })
       .select()
       .single();
