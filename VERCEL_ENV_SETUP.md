@@ -1,25 +1,29 @@
 # Vercel環境変数設定ガイド
 
+## 🚨 重要: ユーザー登録エラーの解決方法
+
+現在、`Invalid API key`エラーが発生しています。これは**Supabase環境変数がVercelに設定されていない**ことが原因です。
+
 ## 必要な環境変数
 
 Vercel Dashboardで以下の環境変数を設定してください：
 
 ### 1. NEXT_PUBLIC_SUPABASE_URL
 ```
-https://zxzyidqrvzfzhicfuhlo.supabase.co
+https://wpwqxhyiglbtlaimrjrx.supabase.co
 ```
 
 ### 2. NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4enlpZHFydnpmeGhpY2Z1aGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQzNDU2MDAsImV4cCI6MjA0OTkyMTYwMH0.YOUR_ACTUAL_KEY_HERE
+Supabaseダッシュボードから取得してください
 ```
-（実際の値は .env.local ファイルから取得）
+取得場所: [Supabase Dashboard](https://supabase.com/dashboard/project/wpwqxhyiglbtlaimrjrx/settings/api) > Project API keys > anon public
 
-### 3. SUPABASE_SERVICE_ROLE_KEY
+### 3. SUPABASE_SERVICE_ROLE_KEY ⚠️ 秘密キー
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4enlpZHFydnpmeGhpY2Z1aGxvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNDM0NTYwMCwiZXhwIjoyMDQ5OTIxNjAwfQ.YOUR_ACTUAL_KEY_HERE
+Supabaseダッシュボードから取得してください（絶対に公開しないこと）
 ```
-（実際の値は .env.local ファイルから取得）
+取得場所: [Supabase Dashboard](https://supabase.com/dashboard/project/wpwqxhyiglbtlaimrjrx/settings/api) > Project API keys > service_role (secret)
 
 ## 設定手順
 

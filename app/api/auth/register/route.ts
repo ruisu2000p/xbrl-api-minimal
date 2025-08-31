@@ -8,10 +8,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
+// Supabase環境変数の確認
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// デバッグ情報（本番環境では削除すること）
+console.log('Environment check:', {
+  hasUrl: !!supabaseUrl,
+  hasServiceKey: !!supabaseServiceKey,
+  urlPrefix: supabaseUrl?.substring(0, 30),
+  keyLength: supabaseServiceKey?.length,
+  nodeEnv: process.env.NODE_ENV
+});
+
+// エラーチェック
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Missing environment variables:', {
+    NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
+    SUPABASE_SERVICE_ROLE_KEY: !!supabaseServiceKey
+  });
+  throw new Error('Supabase configuration is missing. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in environment variables.');
+}
+
 // Supabase Admin Client
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  supabaseUrl,
+  supabaseServiceKey,
   { auth: { persistSession: false } }
 );
 
