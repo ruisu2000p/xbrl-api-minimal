@@ -67,3 +67,11 @@ temp/
 test-*.js
 check-*.js
 get-*.js
+
+# Project specific env files
+.env.wpwqxhyiglbtlaimrjrx
+.env.zxzyidqrvzfzhicfuhlo
+
+# Test reports
+unmatched_ids_report.json
+*_report.json

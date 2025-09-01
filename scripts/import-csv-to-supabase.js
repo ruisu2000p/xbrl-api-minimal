@@ -2,7 +2,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.production' });
+require('dotenv').config({ path: '.env.wpwqxhyiglbtlaimrjrx' });
 
 // Supabaseクライアントの初期化
 const supabase = createClient(

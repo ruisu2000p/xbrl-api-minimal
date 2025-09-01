@@ -1,6 +1,11 @@
-# XBRL財務データAPI
+# XBRL財務データAPI v1.1.0
 
 日本の上場企業4,231社の財務データを提供するAPIサービス。Supabase Edge Functionsによるセキュアな認証とレート制限を実装。
+
+## 🆕 最新アップデート (v1.1.0)
+- **Markdown Documents API**: 10万件以上の有価証券報告書Markdownファイルへの直接アクセス
+- **Supabase Storage統合**: FY2015〜FY2024の財務データをストレージから取得可能
+- **日本語検索対応**: 企業名での検索機能を強化
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ruisu2000p/xbrl-api-minimal)
 
