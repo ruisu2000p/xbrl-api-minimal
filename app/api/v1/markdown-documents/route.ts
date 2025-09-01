@@ -73,11 +73,30 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // company_nameがNULLの場合、companiesテーブルから企業名を取得
+    const enrichedMetadata = await Promise.all(
+      metadata.map(async (doc) => {
+        if (!doc.company_name && doc.company_id) {
+          // companiesテーブルから企業名を取得
+          const { data: company } = await supabase
+            .from('companies')
+            .select('name')
+            .or(`id.eq.${doc.company_id},edinet_code.eq.${doc.company_id}`)
+            .single();
+          
+          if (company) {
+            return { ...doc, company_name: company.name };
+          }
+        }
+        return doc;
+      })
+    );
+
     // コンテンツを含める場合、Storageから取得
-    let results = metadata;
+    let results = enrichedMetadata;
     if (includeContent) {
       results = await Promise.all(
-        metadata.map(async (doc) => {
+        enrichedMetadata.map(async (doc) => {
           try {
             // Storage pathからファイル取得
             if (doc.storage_path) {
@@ -197,9 +216,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // company_nameがNULLの場合、companiesテーブルから企業名を取得
+    const enrichedMetadata = await Promise.all(
+      metadata.map(async (doc) => {
+        if (!doc.company_name && doc.company_id) {
+          // companiesテーブルから企業名を取得
+          const { data: company } = await supabase
+            .from('companies')
+            .select('name')
+            .or(`id.eq.${doc.company_id},edinet_code.eq.${doc.company_id}`)
+            .single();
+          
+          if (company) {
+            return { ...doc, company_name: company.name };
+          }
+        }
+        return doc;
+      })
+    );
+
     // 各ファイルのコンテンツを取得
     const documentsWithContent = await Promise.all(
-      metadata.map(async (doc) => {
+      enrichedMetadata.map(async (doc) => {
         try {
           if (!doc.storage_path) {
             return {
