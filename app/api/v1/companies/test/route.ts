@@ -64,7 +64,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         query,
         results,
-        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        serviceKeyLength: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0
       });
     }
     
