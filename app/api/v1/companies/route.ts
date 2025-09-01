@@ -46,12 +46,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // クエリパラメータ取得
+    // クエリパラメータ取得（MCPサーバー互換性対応）
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
-    const perPage = parseInt(searchParams.get('per_page') || '100');
-    const sector = searchParams.get('sector');
-    const search = searchParams.get('search');
+    const limit = searchParams.get('limit'); // MCPサーバーからのlimitパラメータ
+    const perPage = parseInt(searchParams.get('per_page') || limit || '100');
+    const sector = searchParams.get('sector') || searchParams.get('industry'); // MCPサーバーは'industry'を送る
+    const search = searchParams.get('search') || searchParams.get('query'); // MCPサーバーは'query'を送る
 
     // Supabaseから企業データを取得
     let query = supabase
