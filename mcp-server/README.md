@@ -1,12 +1,13 @@
-# @xbrl-jp/mcp-server v0.2.0
+# @xbrl-jp/mcp-server v0.3.0
 
 MCP (Model Context Protocol) Server for XBRL Financial Data API - Access Japanese listed companies financial data through Claude Desktop.
 
-## 🆕 Updates in v0.2.0
-- Support for markdown_files_metadata table with 100,000+ documents
-- Direct Supabase Storage integration for file retrieval
-- Improved Japanese company name search
-- Enhanced error handling and performance
+## 🆕 Updates in v0.3.0
+- **企業名検索対応**: 「亀田製菓」などの企業名で直接検索可能
+- **新ツール追加**: search_companies, analyze_financial_metrics
+- **自動ID解決**: 企業名から企業IDを自動取得
+- **財務分析機能**: ROE、ROA、利益率などの自動計算
+- **前年比較**: 成長率の自動計算機能
 
 ## 🚀 Quick Start
 
