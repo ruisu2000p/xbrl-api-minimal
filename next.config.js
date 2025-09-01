@@ -9,14 +9,6 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
   
-  // APIルートの設定
-  api: {
-    responseLimit: false,
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-  
   // キャッシュヘッダー設定
   async headers() {
     return [

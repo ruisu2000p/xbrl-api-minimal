@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
       const content = await fileData.text();
 
       // レスポンス構築
-      const response = {
+      const response: any = {
         success: true,
         metadata,
         content,
