@@ -192,10 +192,10 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
   "mcpServers": {
     "xbrl-api": {
       "command": "npx",
-      "args": ["xbrl-mcp-server"],
+      "args": ["xbrl-mcp-server@0.3.0"],
       "env": {
         "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
-        "XBRL_API_KEY": "your-api-key-here"
+        "XBRL_API_KEY": "xbrl_test_key_123"
       }
     }
   }
@@ -204,8 +204,8 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
 
 **npmパッケージ情報：**
 - パッケージ名: `xbrl-mcp-server`
-- バージョン: `0.1.1`
-- インストール: `npm install -g xbrl-mcp-server`
+- 最新バージョン: **`0.3.0`** 🆕
+- インストール: `npm install -g xbrl-mcp-server@0.3.0`
 - GitHub: https://github.com/ruisu2000p/xbrl-api-minimal
 
 3. **APIキーの取得**
@@ -216,26 +216,34 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
 
 4. **Claude Desktopを再起動**
 
-### 利用可能なMCPツール
+### 利用可能なMCPツール（v0.3.0）
 
-- `search_companies` - 企業検索（名前、ID、ティッカーコード）
-- `get_company_details` - 企業詳細情報取得（基本情報、財務サマリー）
-- `get_financial_data` - 詳細財務データ取得
-- `list_companies` - 企業一覧取得（ページネーション対応）
+#### 🆕 新ツール（企業名検索対応）
+- `search_companies` - 企業名で検索（例：「亀田製菓」）
+- `analyze_financial_metrics` - 財務指標分析（ROE、ROA、利益率等）
+- `get_company_financial_data` - 企業名で財務データ取得
+
+#### 既存ツール（強化版）
+- `get_financial_documents` - 財務文書取得（企業名対応）
+- `get_document_content` - 文書内容取得
+- `get_company_overview` - 企業概要取得
 
 ### 使用例（Claude Desktop）
 
-Claude Desktopで以下のようにご質問いただけます：
+企業名だけで検索できるようになりました！
 
 ```
-株式会社タカショーの2021年度の財務情報を教えて
-→ search_companiesで企業を検索 → get_company_detailsで詳細取得
+「亀田製菓の財務分析をして」
+→ 自動的に企業ID（S100TMYO）を解決して分析
 
-売上高1000億円以上の企業を5社探して
-→ list_companiesで企業を取得し条件でフィルタリング
+「トヨタの2024年の売上高を教えて」
+→ 企業名から直接財務データを取得
 
-亀田製菓の競合他社分析をしたい
-→ 複数のMCPツールを組み合わせて競合分析
+「ソニーのROEとROAを計算して」
+→ analyze_financial_metricsで自動計算
+
+「クスリのアオキの前年比成長率は？」
+→ 前年比較と成長率を自動計算
 ```
 
 ## 🔑 API使用方法
