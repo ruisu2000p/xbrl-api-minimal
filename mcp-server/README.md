@@ -1,6 +1,12 @@
-# @xbrl-jp/mcp-server
+# @xbrl-jp/mcp-server v0.2.0
 
 MCP (Model Context Protocol) Server for XBRL Financial Data API - Access Japanese listed companies financial data through Claude Desktop.
+
+## 🆕 Updates in v0.2.0
+- Support for markdown_files_metadata table with 100,000+ documents
+- Direct Supabase Storage integration for file retrieval
+- Improved Japanese company name search
+- Enhanced error handling and performance
 
 ## 🚀 Quick Start
 
