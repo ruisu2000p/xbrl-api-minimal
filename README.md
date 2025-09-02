@@ -1,8 +1,9 @@
-# XBRL財務データAPI v1.1.0
+# XBRL財務データAPI v1.1.1
 
 日本の上場企業4,231社の財務データを提供するAPIサービス。Supabase Edge Functionsによるセキュアな認証とレート制限を実装。
 
-## 🆕 最新アップデート (v1.1.0)
+## 🆕 最新アップデート (v1.1.1 - 2025年9月2日)
+- **MCPサーバー修正**: v0.4.1でモジュールエクスポートの問題を修正
 - **Markdown Documents API**: 10万件以上の有価証券報告書Markdownファイルへの直接アクセス
 - **Supabase Storage統合**: FY2015〜FY2024の財務データをストレージから取得可能
 - **日本語検索対応**: 企業名での検索機能を強化
@@ -192,7 +193,7 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
   "mcpServers": {
     "xbrl-api": {
       "command": "npx",
-      "args": ["xbrl-mcp-server@0.3.0"],
+      "args": ["xbrl-mcp-server@latest"],
       "env": {
         "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
         "XBRL_API_KEY": "xbrl_test_key_123"
@@ -204,8 +205,9 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
 
 **npmパッケージ情報：**
 - パッケージ名: `xbrl-mcp-server`
-- 最新バージョン: **`0.3.0`** 🆕
-- インストール: `npm install -g xbrl-mcp-server@0.3.0`
+- 最新バージョン: **`0.4.1`** 🆕 (2025年9月2日更新)
+- インストール: `npm install -g xbrl-mcp-server@latest`
+- NPMページ: https://www.npmjs.com/package/xbrl-mcp-server
 - GitHub: https://github.com/ruisu2000p/xbrl-api-minimal
 
 3. **APIキーの取得**
@@ -216,17 +218,19 @@ curl -o setup.sh https://raw.githubusercontent.com/ruisu2000p/xbrl-api-minimal/m
 
 4. **Claude Desktopを再起動**
 
-### 利用可能なMCPツール（v0.3.0）
+### 利用可能なMCPツール（v0.4.1）
 
-#### 🆕 新ツール（企業名検索対応）
-- `search_companies` - 企業名で検索（例：「亀田製菓」）
-- `analyze_financial_metrics` - 財務指標分析（ROE、ROA、利益率等）
-- `get_company_financial_data` - 企業名で財務データ取得
+#### 🆕 改善されたツール（v0.4.1）
+- `search_companies_by_name` - 企業名検索（部分一致対応）
+- `get_company_documents` - 財務文書取得（企業名/ID両対応）
+- `analyze_company_financials` - 財務分析（ROE、ROA、利益率自動計算）
+- `compare_companies` - 複数企業の比較分析
 
-#### 既存ツール（強化版）
-- `get_financial_documents` - 財務文書取得（企業名対応）
-- `get_document_content` - 文書内容取得
-- `get_company_overview` - 企業概要取得
+#### 主な改善点
+- ✅ モジュールエクスポートエラーを修正
+- ✅ 企業名での直接検索が可能に
+- ✅ 前年比較機能の追加
+- ✅ エラーハンドリングの改善
 
 ### 使用例（Claude Desktop）
 
@@ -278,6 +282,28 @@ GET /api/v1/financial?company_id=S100LO6W&year=2021
 | Free | ¥0 | 1年分、100回/月 |
 | Standard | ¥1,080 | 5年分、3,000回/月 |
 | Pro | ¥2,980 | 20年分、無制限 |
+
+## 🐛 トラブルシューティング
+
+### MCPサーバーエラー
+```
+SyntaxError: The requested module '../src/server.js' does not provide an export named 'main'
+```
+**解決方法**: 最新版（v0.4.1以降）にアップデート
+```bash
+npm uninstall -g xbrl-mcp-server
+npm install -g xbrl-mcp-server@latest
+```
+
+### Claude Desktopで接続できない
+1. Claude Desktopを完全に終了
+2. 設定ファイルを確認（JSONの構文エラーがないか）
+3. Claude Desktopを再起動
+4. ログファイルを確認: `%APPDATA%\Claude\logs\`
+
+### APIキーエラー
+- テスト用キー: `xbrl_test_key_123`（開発環境のみ）
+- 本番用キー: https://xbrl-api-minimal.vercel.app/dashboard から生成
 
 ## 🛠️ カスタマイズ
 
