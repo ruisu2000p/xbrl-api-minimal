@@ -1,6 +1,6 @@
 /**
- * XBRL Financial Data MCP Server v0.4.0
- * company_name検索最適化版
+ * XBRL Financial Data MCP Server v0.4.1
+ * company_name検索最適化版 - Fixed module export
  * 
  * このMCPサーバーは、日本の上場企業の財務文書へのアクセスを提供します。
  * company_nameパラメータで直接検索可能です。
@@ -122,7 +122,7 @@ async function searchCompaniesByName(companyName) {
 const server = new Server(
   {
     name: "xbrl-api-server",
-    version: "0.4.0",
+    version: "0.4.1",
   },
   {
     capabilities: {
@@ -655,10 +655,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("XBRL MCP Server v0.4.0 started - company_name検索最適化版");
+  console.error("XBRL MCP Server v0.4.1 started - company_name検索最適化版");
 }
 
-main().catch((error) => {
-  console.error("Server error:", error);
-  process.exit(1);
-});
+// main関数をエクスポート
+export { main };
+
+// このファイルが直接実行された場合のみサーバーを起動
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error("Server error:", error);
+    process.exit(1);
+  });
+}
