@@ -1,0 +1,269 @@
+openapi: 3.0.3
+info:
+  title: XBRL BFF API
+  description: Backend for Frontend API for XBRL financial data access
+  version: 1.0.0
+  contact:
+    name: XBRL API Support
+    email: support@xbrl-api.com
+
+servers:
+  - url: https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/xbrl-bff
+    description: Production server
+  - url: http://localhost:54321/functions/v1/xbrl-bff
+    description: Local development server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /search-company:
+    get:
+      summary: Search companies by name
+      description: Search for Japanese listed companies using partial name matching
+      operationId: searchCompany
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: Company name to search (e.g., トヨタ, 亀田製菓)
+          example: トヨタ
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Maximum number of results to return
+      responses:
+        '200':
+          description: Successful search
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    company_id:
+                      type: string
+                      description: Unique company identifier
+                      example: S100OC13
+                    company_name:
+                      type: string
+                      description: Full company name
+                      example: トヨタ自動車株式会社
+                  required:
+                    - company_id
+                    - company_name
+              example:
+                - company_id: S100OC13
+                  company_name: トヨタ自動車株式会社
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /list-md:
+    get:
+      summary: List markdown files for a company
+      description: Retrieve list of available markdown files for a specific company
+      operationId: listMarkdownFiles
+      parameters:
+        - in: query
+          name: company_id
+          required: true
+          schema:
+            type: string
+          description: Company identifier
+          example: S100OC13
+        - in: query
+          name: fiscal_year
+          schema:
+            type: string
+            pattern: ^\d{4}$
+          description: Optional fiscal year filter
+          example: '2023'
+      responses:
+        '200':
+          description: List of markdown files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    path:
+                      type: string
+                      description: Full path to the markdown file
+                      example: S100OC13/PublicDoc_markdown/0101010_honbun.md
+                    size:
+                      type: integer
+                      nullable: true
+                      description: File size in bytes
+                      example: 128734
+                    last_modified:
+                      type: string
+                      format: date-time
+                      nullable: true
+                      description: Last modification timestamp
+                      example: '2024-07-01T12:00:00Z'
+                  required:
+                    - path
+              example:
+                - path: S100OC13/PublicDoc_markdown/0101010_honbun.md
+                  size: 128734
+                  last_modified: '2024-07-01T12:00:00Z'
+                - path: S100OC13/PublicDoc_markdown/0102010_honbun.md
+                  size: 256890
+                  last_modified: '2024-07-01T12:00:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /get-md:
+    get:
+      summary: Get markdown file content
+      description: Retrieve the content of a specific markdown file
+      operationId: getMarkdownContent
+      parameters:
+        - in: query
+          name: path
+          required: true
+          schema:
+            type: string
+            pattern: \.md$
+          description: Path to the markdown file (must end with .md)
+          example: S100OC13/PublicDoc_markdown/0101010_honbun.md
+      responses:
+        '200':
+          description: Markdown file content
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    description: Path to the file
+                    example: S100OC13/PublicDoc_markdown/0101010_honbun.md
+                  content:
+                    type: string
+                    description: UTF-8 encoded markdown content
+                    example: "# 第一部【企業情報】\n\n## 第1【企業の概況】..."
+                  size:
+                    type: integer
+                    description: Content size in bytes
+                    example: 128734
+                required:
+                  - path
+                  - content
+                  - size
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API key for authentication
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Detailed error message
+      required:
+        - error
+        - message
+
+    RateLimitError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            retry_after:
+              type: integer
+              description: Seconds to wait before retry
+          required:
+            - retry_after
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Missing required parameter
+            message: Parameter 'q' is required
+
+    Unauthorized:
+      description: Unauthorized - Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Invalid API key
+            message: The provided API key is not valid
+
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retry
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitError'
+          example:
+            error: Rate limit exceeded
+            message: Too many requests. Please retry after 5 seconds
+            retry_after: 5
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Internal server error
+            message: An unexpected error occurred

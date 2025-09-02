@@ -1,9 +1,10 @@
 /**
- * XBRL Financial Data MCP Server v0.4.2
- * Supabase Storage統合版 - Fixed URL encoding
+ * XBRL Financial Data MCP Server v0.5.0
+ * BFF (Backend for Frontend) 統合版
  * 
- * このMCPサーバーは、日本の上場企業の財務文書へのアクセスを提供します。
- * company_nameパラメータで直接検索可能です。
+ * このMCPサーバーは、XBRL BFF Edge Function経由で
+ * 日本の上場企業の財務文書へのアクセスを提供します。
+ * Service Keyを配布せずに安全にデータアクセスが可能です。
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -14,13 +15,58 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import fetch from 'node-fetch';
 
-// APIの設定
-const API_URL = process.env.XBRL_API_URL || 'http://localhost:3005/api/v1';
-const API_KEY = process.env.XBRL_API_KEY || 'xbrl_test_key_123';
+// BFF API設定
+const BFF_URL = process.env.XBRL_API_URL || process.env.BFF_URL || 'https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/xbrl-bff';
+const API_KEY = process.env.XBRL_API_KEY || process.env.BFF_API_KEY || 'xbrl_test_key_123';
 
-// APIリクエストを送信する共通関数
+// BFFモード判定（URLがBFFエンドポイントを指している場合）
+const IS_BFF_MODE = BFF_URL.includes('/functions/') || BFF_URL.includes('/xbrl-bff');
+
+// BFF APIリクエストを送信する共通関数
+async function makeBffRequest(endpoint, params = {}) {
+  const url = new URL(`${BFF_URL}${endpoint}`);
+  
+  Object.keys(params).forEach(key => {
+    if (params[key] !== undefined && params[key] !== null) {
+      url.searchParams.append(key, params[key]);
+    }
+  });
+
+  const options = {
+    method: 'GET',
+    headers: {
+      'x-api-key': API_KEY,  // BFFはx-api-keyヘッダーを使用
+      'Content-Type': 'application/json',
+    },
+  };
+
+  try {
+    const response = await fetch(url.toString(), options);
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`BFF request failed: ${response.status} - ${error}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('BFF Request Error:', error);
+    throw error;
+  }
+}
+
+// 従来のAPIリクエスト（フォールバック用）
 async function makeApiRequest(endpoint, params = {}, method = 'GET', body = null) {
-  const url = new URL(`${API_URL}${endpoint}`);
+  // BFFモードの場合は専用関数を使用
+  if (IS_BFF_MODE && method === 'GET') {
+    // BFFエンドポイントマッピング
+    if (endpoint === '/search-company') {
+      return makeBffRequest('/search-company', params);
+    }
+    // その他のエンドポイントはBFF対応を追加可能
+  }
+  
+  const url = new URL(`${BFF_URL}${endpoint}`);
   
   if (method === 'GET') {
     Object.keys(params).forEach(key => {
@@ -57,24 +103,229 @@ async function makeApiRequest(endpoint, params = {}, method = 'GET', body = null
   }
 }
 
-// 企業名から企業情報を検索する関数（改善版）
-async function searchCompaniesByName(companyName) {
+// BFF経由で企業名検索
+async function searchCompanyViaBFF(companyName) {
   try {
-    console.error(`Searching for company: ${companyName}`);
+    const data = await makeBffRequest('/search-company', {
+      q: companyName,
+      limit: 20
+    });
     
-    // まず markdown-documents API で検索（より多くのデータがある）
-    // URLエンコーディングはmakeApiRequestで行われるため、ここでは不要
+    // BFFは既にユニークな企業リストを返す
+    return data.map(company => ({
+      company_id: company.company_id,
+      company_name: company.company_name,
+      available_years: [] // BFFは年度情報を返さない
+    }));
+  } catch (error) {
+    console.error('BFF search error:', error);
+    return [];
+  }
+}
+
+// Supabase直接アクセスで企業名検索（レガシー）
+async function searchCompanyInMetadata(companyName) {
+  // BFFモードの場合はBFF経由で検索
+  if (IS_BFF_MODE) {
+    return searchCompanyViaBFF(companyName);
+  }
+  
+  // レガシーモード（直接Supabaseアクセス）
+  const SUPABASE_URL = process.env.SUPABASE_URL || '';
+  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+  
+  if (!SUPABASE_SERVICE_KEY) {
+    console.error('SUPABASE_SERVICE_KEY not configured');
+    return searchCompaniesByNameViaAPI(companyName);
+  }
+
+  try {
+    const searchUrl = `${SUPABASE_URL}/rest/v1/markdown_files_metadata`;
+    const params = new URLSearchParams({
+      select: 'company_id,company_name,fiscal_year',
+      company_name: `ilike.%${companyName}%`,  // 部分一致検索
+      limit: '100'
+    });
+
+    const response = await fetch(`${searchUrl}?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'apikey': SUPABASE_SERVICE_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase search failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // 企業IDごとにグループ化
+    const companies = new Map();
+    data.forEach(row => {
+      if (!companies.has(row.company_id)) {
+        companies.set(row.company_id, {
+          company_id: row.company_id,
+          company_name: row.company_name,
+          fiscal_years: new Set()
+        });
+      }
+      if (row.fiscal_year) {
+        companies.get(row.company_id).fiscal_years.add(row.fiscal_year);
+      }
+    });
+
+    return Array.from(companies.values()).map(company => ({
+      company_id: company.company_id,
+      company_name: company.company_name,
+      available_years: Array.from(company.fiscal_years).sort()
+    }));
+  } catch (error) {
+    console.error('Supabase metadata search error:', error);
+    // フォールバック
+    return searchCompaniesByNameViaAPI(companyName);
+  }
+}
+
+// BFF経由でMarkdownファイル一覧取得
+async function listMdFilesViaBFF(companyId, fiscalYear = null) {
+  try {
+    const params = { company_id: companyId };
+    if (fiscalYear) {
+      params.fiscal_year = fiscalYear;
+    }
+    
+    const data = await makeBffRequest('/list-md', params);
+    return data.map(file => ({
+      file_name: file.path.split('/').pop(),
+      file_path: file.path,
+      storage_path: file.path,
+      size: file.size,
+      last_modified: file.last_modified
+    }));
+  } catch (error) {
+    console.error('BFF list files error:', error);
+    return [];
+  }
+}
+
+// Storage内のMarkdownファイルを列挙（レガシー）
+async function listMdFilesByCompanyId(companyId, fiscalYear = null) {
+  // BFFモードの場合はBFF経由で取得
+  if (IS_BFF_MODE) {
+    return listMdFilesViaBFF(companyId, fiscalYear);
+  }
+  
+  // レガシーモード
+  const SUPABASE_URL = process.env.SUPABASE_URL || '';
+  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+  
+  if (!SUPABASE_SERVICE_KEY) {
+    console.error('SUPABASE_SERVICE_KEY not configured');
+    return [];
+  }
+
+  try {
+    // まずmetadataテーブルから該当ファイル情報を取得
+    const metadataUrl = `${SUPABASE_URL}/rest/v1/markdown_files_metadata`;
+    const params = new URLSearchParams({
+      select: 'file_path,file_name,fiscal_year,section_type,content_preview',
+      company_id: `eq.${companyId}`,
+      order: 'file_order.asc,file_name.asc'
+    });
+
+    if (fiscalYear) {
+      params.append('fiscal_year', `eq.${fiscalYear}`);
+    }
+
+    const response = await fetch(`${metadataUrl}?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'apikey': SUPABASE_SERVICE_KEY
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Metadata fetch failed: ${response.status}`);
+    }
+
+    const files = await response.json();
+    
+    // ファイルごとにStorage URLを生成
+    return files.map(file => ({
+      ...file,
+      storage_path: `${companyId}/PublicDoc_markdown/${file.file_name}`,
+      download_url: `${SUPABASE_URL}/storage/v1/object/markdown-files/${companyId}/PublicDoc_markdown/${file.file_name}`
+    }));
+  } catch (error) {
+    console.error('Error listing files:', error);
+    return [];
+  }
+}
+
+// BFF経由でファイルコンテンツ取得
+async function getFileContentViaBFF(storagePath) {
+  try {
+    const data = await makeBffRequest('/get-md', {
+      path: storagePath
+    });
+    return data.content;
+  } catch (error) {
+    console.error('BFF get content error:', error);
+    return null;
+  }
+}
+
+// ファイルコンテンツをStorageから取得（レガシー）
+async function getFileContent(storagePath) {
+  // BFFモードの場合はBFF経由で取得
+  if (IS_BFF_MODE) {
+    return getFileContentViaBFF(storagePath);
+  }
+  
+  // レガシーモード
+  const SUPABASE_URL = process.env.SUPABASE_URL || '';
+  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+  
+  if (!SUPABASE_SERVICE_KEY) {
+    return null;
+  }
+
+  try {
+    const url = `${SUPABASE_URL}/storage/v1/object/markdown-files/${storagePath}`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'apikey': SUPABASE_SERVICE_KEY
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`File download failed: ${response.status}`);
+    }
+
+    return await response.text();
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    return null;
+  }
+}
+
+// 既存API経由の検索（フォールバック用）
+async function searchCompaniesByNameViaAPI(companyName) {
+  try {
+    console.error(`Fallback: Searching via API for: ${companyName}`);
+    
     const data = await makeApiRequest('/markdown-documents', {
-      query: companyName,  // エンコーディングしない
+      query: companyName,
       limit: 20
     });
     
     if (data.data && data.data.length > 0) {
-      // 企業IDと企業名のユニークなペアを収集
       const companies = new Map();
       data.data.forEach(doc => {
         if (doc.company_id && doc.company_name) {
-          // 重複を避けるためMapを使用
           if (!companies.has(doc.company_id)) {
             companies.set(doc.company_id, {
               company_id: doc.company_id,
@@ -82,14 +333,12 @@ async function searchCompaniesByName(companyName) {
               fiscal_years: new Set()
             });
           }
-          // 利用可能な年度を追加
           if (doc.fiscal_year) {
             companies.get(doc.company_id).fiscal_years.add(doc.fiscal_year);
           }
         }
       });
       
-      // Mapを配列に変換し、年度情報も含める
       return Array.from(companies.values()).map(company => ({
         company_id: company.company_id,
         company_name: company.company_name,
@@ -97,32 +346,28 @@ async function searchCompaniesByName(companyName) {
       }));
     }
     
-    // 見つからない場合は companies API も試す
-    const companiesData = await makeApiRequest('/companies', {
-      search: companyName,
-      limit: 10
-    });
-    
-    if (companiesData.data && companiesData.data.length > 0) {
-      return companiesData.data.map(company => ({
-        company_id: company.id,
-        company_name: company.name,
-        description: company.description
-      }));
-    }
-    
     return [];
   } catch (error) {
-    console.error('Company search error:', error);
+    console.error('API search error:', error);
     return [];
   }
+}
+
+// メイン検索関数（自動的に最適な方法を選択）
+async function searchCompaniesByName(companyName) {
+  // BFFモードを優先
+  if (IS_BFF_MODE) {
+    return searchCompanyViaBFF(companyName);
+  }
+  // レガシーモード
+  return searchCompanyInMetadata(companyName);
 }
 
 // MCPサーバーの作成
 const server = new Server(
   {
     name: "xbrl-api-server",
-    version: "0.4.2",
+    version: "0.5.0",
   },
   {
     capabilities: {
@@ -314,9 +559,70 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
         }
         
-        // ドキュメント取得
+        // Supabase直接アクセスが可能な場合
+        if (SUPABASE_SERVICE_KEY) {
+          const files = await listMdFilesByCompanyId(targetCompanyId, args.fiscal_year);
+          
+          let resultText = `【${targetCompanyName || targetCompanyId}】の財務文書\n`;
+          if (args.fiscal_year) {
+            resultText += `年度: ${args.fiscal_year}\n`;
+          }
+          resultText += '\n';
+          
+          if (files.length > 0) {
+            resultText += `📊 取得文書数: ${files.length}件\n\n`;
+            
+            if (args.include_content) {
+              // 主要な文書の内容を取得
+              const importantFiles = files.filter(f => 
+                f.section_type === '事業の状況' ||
+                f.section_type === '経理の状況' ||
+                f.file_name.includes('0102010') ||
+                f.file_name.includes('0104010')
+              ).slice(0, 3);
+              
+              for (const [index, file] of importantFiles.entries()) {
+                resultText += `--- 文書 ${index + 1} ---\n`;
+                resultText += `📄 ${file.file_name}\n`;
+                if (file.section_type) {
+                  resultText += `セクション: ${file.section_type}\n`;
+                }
+                
+                // コンテンツを取得
+                const content = await getFileContent(file.storage_path);
+                if (content) {
+                  const maxLength = 800;
+                  resultText += `内容（抜粋）:\n${content.substring(0, maxLength)}...\n\n`;
+                } else if (file.content_preview) {
+                  resultText += `内容（プレビュー）:\n${file.content_preview}\n\n`;
+                }
+              }
+            } else {
+              // メタデータのみ表示
+              files.slice(0, 10).forEach(file => {
+                resultText += `📄 ${file.file_name}\n`;
+                if (file.section_type) {
+                  resultText += `   セクション: ${file.section_type}\n`;
+                }
+              });
+              if (files.length > 10) {
+                resultText += `\n... 他${files.length - 10}件\n`;
+              }
+            }
+          } else {
+            resultText += "文書が見つかりませんでした。\n";
+          }
+          
+          return {
+            content: [{
+              type: "text",
+              text: resultText,
+            }],
+          };
+        }
+        
+        // フォールバック: 既存のAPI経由
         if (args.include_content) {
-          // POSTメソッドで詳細取得
           const data = await makeApiRequest('/markdown-documents', {}, 'POST', {
             company_id: targetCompanyId,
             fiscal_year: args.fiscal_year,
@@ -333,12 +639,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             resultText += `✅ 成功: ${data.summary?.successful_downloads || 0}件\n`;
             resultText += `❌ 失敗: ${data.summary?.failed_downloads || 0}件\n\n`;
             
-            // 主要な文書のみ表示
             const importantDocs = data.documents.filter(doc => 
               doc.file_name && (
-                doc.file_name.includes('0102010') || // 事業の状況
-                doc.file_name.includes('0103010') || // 設備の状況
-                doc.file_name.includes('0104010')    // 経理の状況
+                doc.file_name.includes('0102010') ||
+                doc.file_name.includes('0103010') ||
+                doc.file_name.includes('0104010')
               )
             );
             
@@ -347,7 +652,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               resultText += `📄 ${doc.file_name}\n`;
               
               if (doc.content) {
-                // 内容から重要な部分を抽出
                 const content = doc.content;
                 const maxLength = 800;
                 resultText += `内容（抜粋）:\n${content.substring(0, maxLength)}...\n\n`;
@@ -364,7 +668,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }],
           };
         } else {
-          // GETメソッドでメタデータのみ取得
           const data = await makeApiRequest('/markdown-documents', {
             company_id: targetCompanyId,
             fiscal_year: args.fiscal_year,
@@ -376,7 +679,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (data.data && data.data.length > 0) {
             resultText += `📁 総文書数: ${data.pagination?.total || data.data.length}件\n\n`;
             
-            // 年度別にグループ化
             const byYear = {};
             data.data.forEach(doc => {
               const year = doc.fiscal_year || 'unknown';
@@ -655,7 +957,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("XBRL MCP Server v0.4.2 started - Supabase Storage統合版");
+  console.error("XBRL MCP Server v0.5.0 started - BFF Integration");
+  if (IS_BFF_MODE) {
+    console.error("✅ BFF mode enabled (no Service Key required)");
+    console.error(`📍 BFF URL: ${BFF_URL}`);
+  } else {
+    console.error("⚠️ Using legacy API mode");
+  }
 }
 
 // main関数をエクスポート
