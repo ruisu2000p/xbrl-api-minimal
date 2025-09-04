@@ -40,8 +40,8 @@ Claude Desktopの設定ファイル（`%APPDATA%\Claude\claude_desktop_config.js
 {
   "mcpServers": {
     "shared-supabase-mcp": {
-      "command": "npx",
-      "args": ["shared-supabase-mcp@latest"]
+        "command": "npx",
+        "args": ["shared-supabase-mcp@0.3.1"]
     }
   }
 }
