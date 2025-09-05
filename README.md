@@ -25,7 +25,7 @@
   "mcpServers": {
     "shared-supabase-mcp": {
       "command": "npx",
-      "args": ["shared-supabase-mcp@latest"]
+      "args": ["shared-supabase-mcp@0.3.1"]
     }
   }
 }
