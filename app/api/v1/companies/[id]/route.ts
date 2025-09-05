@@ -5,13 +5,8 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { validateApiKey } from '@/lib/utils/validateApiKey';
 
-// APIキーの検証（簡易版）
-function validateApiKey(apiKey: string | null): boolean {
-  if (!apiKey) return false;
-  // 実際の実装では、データベースでAPIキーを確認
-  return apiKey.startsWith('xbrl_');
-}
 
 export async function GET(
   request: NextRequest,

@@ -5,21 +5,13 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseClient } from '@/lib/supabase/client';
+import { validateApiKey } from '@/lib/utils/validateApiKey';
 
 // Supabase クライアントの初期化
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+const supabase = createSupabaseClient();
 
 
-// APIキーの検証（簡易版）
-function validateApiKey(apiKey: string | null): boolean {
-  if (!apiKey) return false;
-  // 実際の実装では、データベースでAPIキーを確認
-  return apiKey.startsWith('xbrl_');
-}
 
 export async function GET(request: NextRequest) {
   try {
