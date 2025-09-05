@@ -13,19 +13,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// サンプル企業データ（フォールバック用）
-const sampleCompanies = [
-  { id: '7203', name: 'トヨタ自動車株式会社', ticker: '7203', sector: '輸送用機器', market: '東証プライム' },
-  { id: '6758', name: 'ソニーグループ株式会社', ticker: '6758', sector: '電気機器', market: '東証プライム' },
-  { id: '6861', name: '株式会社キーエンス', ticker: '6861', sector: '電気機器', market: '東証プライム' },
-  { id: '9984', name: 'ソフトバンクグループ株式会社', ticker: '9984', sector: '情報・通信業', market: '東証プライム' },
-  { id: '6098', name: '株式会社リクルートホールディングス', ticker: '6098', sector: 'サービス業', market: '東証プライム' },
-  { id: '6501', name: '株式会社日立製作所', ticker: '6501', sector: '電気機器', market: '東証プライム' },
-  { id: '8306', name: '株式会社三菱UFJフィナンシャル・グループ', ticker: '8306', sector: '銀行業', market: '東証プライム' },
-  { id: '9432', name: '日本電信電話株式会社', ticker: '9432', sector: '情報・通信業', market: '東証プライム' },
-  { id: '4519', name: '中外製薬株式会社', ticker: '4519', sector: '医薬品', market: '東証プライム' },
-  { id: '9433', name: 'KDDI株式会社', ticker: '9433', sector: '情報・通信業', market: '東証プライム' }
-];
 
 // APIキーの検証（簡易版）
 function validateApiKey(apiKey: string | null): boolean {
@@ -77,26 +64,11 @@ export async function GET(request: NextRequest) {
     const { data: companies, error, count } = await query;
 
     if (error) {
-      console.error('Database error:', error);
-      // フォールバック: サンプルデータを使用
-      const startIndex = (page - 1) * perPage;
-      const endIndex = startIndex + perPage;
-      const paginatedCompanies = sampleCompanies.slice(startIndex, endIndex);
-      
       return NextResponse.json({
-        companies: paginatedCompanies,
-        total: sampleCompanies.length,
-        page,
-        per_page: perPage,
-        total_pages: Math.ceil(sampleCompanies.length / perPage),
-        source: 'fallback',
-        error: 'Database connection failed'
+        error: 'Database connection failed',
+        message: error.message
       }, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600'
-        }
+        status: 503
       });
     }
 
@@ -116,7 +88,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('API Error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
