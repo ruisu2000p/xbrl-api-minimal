@@ -1,7 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Analytics } from '@vercel/analytics/next'
 
 export const metadata: Metadata = {
   title: 'XBRL財務データAPI - 20年分の有価証券報告書',
@@ -17,7 +16,6 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         {children}
-        <Analytics />
       </body>
     </html>
   )
