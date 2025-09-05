@@ -14,7 +14,6 @@ const supabase = createClient(
 );
 
 // Debug: Check if environment variables are loaded
- + '...');
 // APIキーの検証
 function validateApiKey(apiKey: string | null): boolean {
   if (!apiKey) return false;

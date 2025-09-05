@@ -13,10 +13,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // デバッグ情報（本番環境では削除すること）
-,
-  keyLength: supabaseServiceKey?.length,
-  nodeEnv: process.env.NODE_ENV
-});
 
 // エラーチェック
 if (!supabaseUrl || !supabaseServiceKey) {
