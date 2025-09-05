@@ -5,36 +5,20 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseClient } from '@/lib/supabase/client';
+import { validateApiKey } from '@/lib/utils/validateApiKey';
 
-// Supabase クライアントの初期化
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-// APIキーの検証
-async function validateApiKey(apiKey: string | null) {
-  if (!apiKey) return null;
-  
-  // デモ用: xbrl_で始まるキーを有効とする
-  if (apiKey.startsWith('xbrl_')) {
-    return { id: 'demo', key: apiKey };
-  }
-  
-  return null;
-}
+const supabase = createSupabaseClient();
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // APIキーの検証（オプション）
+    // APIキーの検証
     const apiKey = request.headers.get('x-api-key');
-    const keyData = await validateApiKey(apiKey);
     
-    if (apiKey && !keyData) {
+    if (!validateApiKey(apiKey)) {
       return NextResponse.json(
         { error: 'Invalid API key' },
         { status: 401 }
@@ -149,7 +133,6 @@ export async function GET(
     });
     
   } catch (error) {
-    console.error('Error fetching company files:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

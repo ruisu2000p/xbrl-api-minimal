@@ -393,7 +393,7 @@ export default function Home() {
             </button>
           </form>
           <p className="text-blue-200 text-sm mt-4">
-            登録することで、<a href="/terms" className="underline">利用規約</a>と<a href="/privacy" className="underline">プライバシーポリシー</a>に同意したものとみなされます。
+            登録することで、利用規約とプライバシーポリシーに同意したものとみなされます。
           </p>
         </div>
       </section>
@@ -410,25 +410,25 @@ export default function Home() {
               </p>
             </div>
             <div>
-              <h5 className="text-white font-semibold mb-4">サービス</h5>
-              <ul className="space-y-2 text-sm">
-                <li><a href="/docs" className="hover:text-white transition-colors">APIドキュメント</a></li>
-                <li><a href="/sdk" className="hover:text-white transition-colors">SDK & ライブラリ</a></li>
-              </ul>
+              <h5 className="text-white font-semibold mb-4">ドキュメント</h5>
+              <p className="text-sm">
+                APIの詳細はGitHubリポジトリの<br/>
+                READMEをご参照ください
+              </p>
             </div>
             <div>
-              <h5 className="text-white font-semibold mb-4">サポート</h5>
-              <ul className="space-y-2 text-sm">
-                <li><a href="/support" className="hover:text-white transition-colors">ヘルプセンター</a></li>
-                <li><a href="/contact" className="hover:text-white transition-colors">お問い合わせ</a></li>
-              </ul>
+              <h5 className="text-white font-semibold mb-4">パッケージ</h5>
+              <p className="text-sm">
+                NPM: shared-supabase-mcp<br/>
+                Claude Desktop対応
+              </p>
             </div>
             <div>
-              <h5 className="text-white font-semibold mb-4">法的情報</h5>
-              <ul className="space-y-2 text-sm">
-                <li><a href="/terms" className="hover:text-white transition-colors">利用規約</a></li>
-                <li><a href="/privacy" className="hover:text-white transition-colors">プライバシーポリシー</a></li>
-              </ul>
+              <h5 className="text-white font-semibold mb-4">リポジトリ</h5>
+              <p className="text-sm">
+                github.com/ruisu2000p/<br/>
+                xbrl-api-minimal
+              </p>
             </div>
           </div>
           
