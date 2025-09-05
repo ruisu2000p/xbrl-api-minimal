@@ -61,6 +61,7 @@ pids
 tmp/
 temp/
 .vercel
+supabase/.temp/
 
 # MCP Server node_modules (Claude Desktop integration)
 /mcp-server/node_modules/
