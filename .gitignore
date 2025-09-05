@@ -64,13 +64,44 @@ temp/
 
 # MCP Server node_modules (Claude Desktop integration)
 /mcp-server/node_modules/
+
+# Development and testing files
 test-*.js
+test-*.mjs
 check-*.js
 get-*.js
+*-test.js
+*-debug.js
+api-proxy-server.js
+express-server.js
+example-client.html
 
-# Project specific env files
+# Batch and shell scripts (developer-specific)
+*.bat
+*.sh
+
+# Claude Desktop configs (keep only examples)
+claude-desktop-config.json
+claude_desktop_config.json
+
+# Multiple package files
+package-mcp.json
+
+# Backup and version files
+*-backup.*
+*-old.*
+*_v1.*
+*_v2.*
+*_backup.*
+*-fixed.*
+
+# Additional environment files
+.env.production
 .env.wpwqxhyiglbtlaimrjrx
 .env.zxzyidqrvzfzhicfuhlo
+
+# MCP configuration
+mcp-config.json
 
 # Test reports
 unmatched_ids_report.json
