@@ -14,9 +14,7 @@ const supabase = createClient(
 );
 
 // Debug: Check if environment variables are loaded
-console.log('SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20) + '...');
-console.log('SERVICE_KEY loaded:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-
+ + '...');
 // APIキーの検証
 function validateApiKey(apiKey: string | null): boolean {
   if (!apiKey) return false;

@@ -84,10 +84,10 @@ function initSupabase(config) {
 
 // Logger utility
 const log = {
-  info: (msg) => console.log(chalk.blue('ℹ'), msg),
-  success: (msg) => console.log(chalk.green('✓'), msg),
-  error: (msg) => console.log(chalk.red('✗'), msg),
-  verbose: (msg) => options.verbose && console.log(chalk.gray('→'), msg),
+  info: (msg) => , msg),
+  success: (msg) => , msg),
+  error: (msg) => , msg),
+  verbose: (msg) => options.verbose && , msg),
 };
 
 // Statistics tracker
@@ -236,7 +236,7 @@ async function importMetadata(supabase, config, stats) {
 
 // Main import function
 async function main() {
-  console.log(chalk.bold.cyan('\n📦 XBRL Unified Import Tool\n'));
+  );
   
   const config = await loadConfig();
   const supabase = initSupabase(config);
@@ -264,14 +264,14 @@ async function main() {
     }
     
     // Display final report
-    console.log('\n' + chalk.bold.green('Import Summary:'));
+    );
     const report = stats.getReport();
-    console.log(chalk.cyan('├─'), `Total Processed: ${report.total}`);
-    console.log(chalk.green('├─'), `Success: ${report.success}`);
-    console.log(chalk.red('├─'), `Failed: ${report.failed}`);
-    console.log(chalk.yellow('├─'), `Skipped: ${report.skipped}`);
-    console.log(chalk.blue('├─'), `Duration: ${report.duration}`);
-    console.log(chalk.magenta('└─'), `Rate: ${report.rate}`);
+    , `Total Processed: ${report.total}`);
+    , `Success: ${report.success}`);
+    , `Failed: ${report.failed}`);
+    , `Skipped: ${report.skipped}`);
+    , `Duration: ${report.duration}`);
+    , `Rate: ${report.rate}`);
     
   } catch (error) {
     log.error(`Import failed: ${error.message}`);

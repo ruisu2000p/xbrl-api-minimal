@@ -26,7 +26,6 @@ interface User {
   createdAt?: string;
 }
 
-
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -74,7 +73,6 @@ export default function DashboardPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log('Profile data:', data);
         if (data.user) {
           setUser(data.user);
         }
@@ -103,7 +101,6 @@ export default function DashboardPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('API key response:', data);
         setApiKey(data.apiKey);
         // LocalStorageにもキャッシュ（MCP用）
         localStorage.setItem('apiKey', data.apiKey);
@@ -138,7 +135,6 @@ export default function DashboardPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('New API key generated:', data);
         setApiKey(data.apiKey);
         // LocalStorageにもキャッシュ（MCP用）
         localStorage.setItem('apiKey', data.apiKey);

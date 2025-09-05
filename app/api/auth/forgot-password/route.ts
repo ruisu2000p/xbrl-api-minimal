@@ -54,9 +54,6 @@ export async function POST(request: NextRequest) {
         message: 'パスワードリセット用のメールを送信しました'
       }, { status: 200 });
     }
-
-    console.log(`Password reset email sent to: ${email}`);
-
     // セキュリティのため、メールアドレスの存在有無に関わらず同じレスポンスを返す
     return NextResponse.json({
       success: true,

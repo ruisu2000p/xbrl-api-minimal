@@ -13,10 +13,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // デバッグ情報（本番環境では削除すること）
-console.log('Environment check:', {
-  hasUrl: !!supabaseUrl,
-  hasServiceKey: !!supabaseServiceKey,
-  urlPrefix: supabaseUrl?.substring(0, 30),
+,
   keyLength: supabaseServiceKey?.length,
   nodeEnv: process.env.NODE_ENV
 });
@@ -158,13 +155,6 @@ export async function POST(request: NextRequest) {
         warning: 'APIキーの自動発行に失敗しました。ダッシュボードから手動で発行してください。'
       }, { status: 201 });
     }
-    
-    console.log('✅ User registered with API key:', {
-      email,
-      userId,
-      apiKeyPrefix: keyPrefix
-    });
-
     // セッションの作成
     const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',

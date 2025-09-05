@@ -106,13 +106,6 @@ export async function POST(request: NextRequest) {
         code: apiKeyError.code
       }, { status: 500 });
     }
-
-    console.log('✅ API key generated successfully:', {
-      email,
-      userId,
-      keyPrefix
-    });
-
     // 成功レスポンス
     return NextResponse.json({
       success: true,

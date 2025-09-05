@@ -198,8 +198,6 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // テーブルが存在しない、またはデータがない場合は直接Storageを探索
-      console.log('Attempting direct storage access for company:', companyId);
-      
       // Storageのファイルリストを取得
       const { data: files, error: listError } = await supabase
         .storage

@@ -7,8 +7,6 @@ export async function GET(request: NextRequest) {
   try {
     // メールアドレスベースで処理
     const userEmail = request.headers.get('x-user-email') || 'demo@example.com';
-    console.log('Getting profile for email:', userEmail);
-
     // Supabaseからプロファイルを取得
     const { data: profile, error } = await admin
       .from('profiles')

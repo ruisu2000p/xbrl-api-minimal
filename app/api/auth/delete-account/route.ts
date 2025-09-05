@@ -36,7 +36,6 @@ export async function DELETE(request: NextRequest) {
     );
 
     // 1. ユーザー認証（本人確認）
-    console.log('🔐 Authenticating user for deletion:', email);
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -50,8 +49,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     const userId = authData.user.id;
-    console.log('User authenticated:', userId);
-
     // Admin clientで削除処理
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,15 +69,12 @@ export async function DELETE(request: NextRequest) {
     };
 
     // 2. APIキーを削除
-    console.log('🔑 Deleting API keys...');
     const { data: apiKeys } = await supabaseAdmin
       .from('api_keys')
       .select('id, key_prefix, key_suffix')
       .eq('user_id', userId);
 
     if (apiKeys && apiKeys.length > 0) {
-      console.log(`Found ${apiKeys.length} API keys to delete`);
-      
       const { error: deleteKeysError } = await supabaseAdmin
         .from('api_keys')
         .delete()
@@ -98,11 +92,9 @@ export async function DELETE(request: NextRequest) {
       }
 
       deletionReport.deletedData.apiKeys = apiKeys.length;
-      console.log('✅ API keys deleted');
     }
 
     // 3. public.usersから削除
-    console.log('📦 Deleting from public.users...');
     const { error: publicUserError } = await supabaseAdmin
       .from('users')
       .delete()
@@ -110,25 +102,21 @@ export async function DELETE(request: NextRequest) {
 
     if (!publicUserError) {
       deletionReport.deletedData.publicUserRecord = true;
-      console.log('✅ Deleted from public.users');
     } else if (publicUserError.code !== '23503') {
       // 外部キー制約エラー以外の場合
       console.error('Warning: Failed to delete from public.users:', publicUserError);
     }
 
     // 4. アクセスログを削除（もしある場合）
-    console.log('📊 Deleting access logs...');
     try {
       await supabaseAdmin
         .from('api_access_logs')
         .delete()
         .eq('user_id', userId);
     } catch (err) {
-      console.log('No access logs to delete');
     }
 
     // 5. auth.usersから削除（最後に実行）
-    console.log('🔐 Deleting from auth.users...');
     const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (authDeleteError) {
@@ -144,8 +132,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     deletionReport.deletedData.authUserRecord = true;
-    console.log('✅ User completely deleted');
-
     // 6. ログアウト処理
     await supabase.auth.signOut();
 

@@ -124,13 +124,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 成功レスポンス
-    console.log('✅ API key issued successfully:', {
-      email,
-      userId,
-      keyPrefix,
-      keyId: savedKey.id
-    });
-
     return NextResponse.json({
       success: true,
       message: 'APIキーが正常に発行されました',

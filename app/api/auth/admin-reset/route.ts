@@ -69,9 +69,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    console.log(`✅ Password successfully updated for user: ${email}`);
-
     return NextResponse.json({
       success: true,
       message: 'パスワードを更新しました',
