@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { admin } from '@/app/api/_lib/supabaseAdmin';
-import { getCurrentUserId, getCurrentUser } from '@/app/api/_lib/supabaseAuth';
+import { admin } from '@/lib/api/supabaseAdmin';
+import { getCurrentUserId, getCurrentUser } from '@/lib/api/supabaseAuth';
 
 // ユーザープロファイルを取得
 export async function GET(request: NextRequest) {

@@ -12,18 +12,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "setup": "node scripts/setup.js",
-    "setup:secure": "node scripts/setup-secure-api.js",
-    "migrate": "node scripts/migrate-data.js"
+    "migrate": "node scripts/import/migrate-data.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.3",
-    "@supabase/auth-helpers-nextjs": "^0.8.0",
     "@supabase/ssr": "^0.0.10",
     "@supabase/supabase-js": "^2.55.0",
-    "@vercel/analytics": "^1.5.0",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.2.1",
     "next": "14.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

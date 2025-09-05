@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { admin } from '@/app/api/_lib/supabaseAdmin';
-import { getCurrentUserId } from '@/app/api/_lib/supabaseAuth';
+import { admin } from '@/lib/api/supabaseAdmin';
+import { getCurrentUserId } from '@/lib/api/supabaseAuth';
 import { randomBytes } from 'crypto';
 
 // APIキーを取得

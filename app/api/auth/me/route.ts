@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/app/api/_lib/supabaseAuth';
+import { getCurrentUser } from '@/lib/api/supabaseAuth';
 
 export async function GET() {
   try {
