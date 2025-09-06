@@ -3,6 +3,7 @@
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![NPM: MCP Server](https://img.shields.io/npm/v/shared-supabase-mcp)](https://www.npmjs.com/package/shared-supabase-mcp)
+[![NPM: Minimal](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 
 日本企業4,231社の有価証券報告書（XBRL/EDINET）データにアクセスするための最小構成API。Supabaseインフラ上で動作し、Claude Desktop統合をサポート。
 
@@ -14,27 +15,54 @@
 - **Claude Desktop完全対応** - 自然言語で財務データにアクセス
 - **最小構成** - 必要最小限のコードで実装（22ファイルのみ）
 - **Vercelデプロイ済み** - すぐに利用可能
+- **2つのMCPバージョン提供**:
+  - `shared-supabase-mcp-minimal` - ゼロコンフィグ版（キー内蔵）
+  - `shared-supabase-mcp` - セキュア版（stdin認証）
 
 ## 🚀 クイックスタート
 
-### Claude Desktop統合（推奨）- 環境変数不要！
+### 方法1: ゼロコンフィグ版（最も簡単！）🎉
 
-`%APPDATA%\Claude\claude_desktop_config.json` に以下を追加するだけ:
+`%APPDATA%\Claude\claude_desktop_config.json` に追加するだけ:
 
 ```json
 {
   "mcpServers": {
-    "shared-supabase-mcp": {
+    "shared-supabase-mcp-minimal": {
       "command": "npx",
-      "args": ["shared-supabase-mcp@latest"]
+      "args": ["shared-supabase-mcp-minimal@latest"]
     }
   }
 }
 ```
 
-**環境変数の設定は不要です！** Supabaseの認証情報は内蔵されています。
+**設定不要！** anonキー内蔵で即動作。Claude Desktop再起動で完了。
 
-Claude Desktopを再起動後、すぐに使用開始できます。
+### 方法2: セキュア版（カスタムキー使用）🔒
+
+独自のSupabaseプロジェクトを使う場合:
+
+#### 1. ラッパースクリプト作成
+
+Windows用 (`mcp-wrapper.bat`):
+```batch
+@echo off
+echo YOUR_ANON_KEY | npx shared-supabase-mcp@latest ^
+  --supabase-url https://your-project.supabase.co ^
+  --supabase-key-stdin
+```
+
+#### 2. Claude Desktop設定
+
+```json
+{
+  "mcpServers": {
+    "shared-supabase-mcp": {
+      "command": "C:\\path\\to\\mcp-wrapper.bat"
+    }
+  }
+}
+```
 
 ### 💬 Claude Desktopでの使い方
 
@@ -193,6 +221,22 @@ Markdownドキュメントを直接取得
 ## 🤝 Contributing
 
 最小構成を維持するため、新機能追加は慎重に検討してください。バグ修正とパフォーマンス改善を優先します。
+
+## 📦 NPMパッケージ
+
+### ゼロコンフィグ版
+```bash
+npm install -g shared-supabase-mcp-minimal
+# または
+npx shared-supabase-mcp-minimal@latest
+```
+
+### セキュア版
+```bash
+npm install -g shared-supabase-mcp
+# または
+npx shared-supabase-mcp@latest --help
+```
 
 ## 📄 License
 
