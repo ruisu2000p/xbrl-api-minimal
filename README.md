@@ -21,7 +21,7 @@
 
 ## 🚀 クイックスタート
 
-### 方法1: ゼロコンフィグ版（最も簡単！）🎉
+### 方法1: ゼロコンフィグ版（最も簡単！）🎉 NEW v1.0.2
 
 `%APPDATA%\Claude\claude_desktop_config.json` に追加するだけ:
 
@@ -30,11 +30,13 @@
   "mcpServers": {
     "shared-supabase-mcp-minimal": {
       "command": "npx",
-      "args": ["shared-supabase-mcp-minimal@latest"]
+      "args": ["--yes", "shared-supabase-mcp-minimal@1.0.2"]
     }
   }
 }
 ```
+
+**重要**: `--yes`フラグとバージョン指定`@1.0.2`を含めてください。
 
 **設定不要！** anonキー内蔵で即動作。Claude Desktop再起動で完了。
 
@@ -224,11 +226,11 @@ Markdownドキュメントを直接取得
 
 ## 📦 NPMパッケージ
 
-### ゼロコンフィグ版
+### ゼロコンフィグ版 (v1.0.2)
 ```bash
-npm install -g shared-supabase-mcp-minimal
+npm install -g shared-supabase-mcp-minimal@1.0.2
 # または
-npx shared-supabase-mcp-minimal@latest
+npx --yes shared-supabase-mcp-minimal@1.0.2
 ```
 
 ### セキュア版
