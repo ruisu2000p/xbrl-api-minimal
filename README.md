@@ -12,13 +12,14 @@
 - **Markdown形式** - XBRLから変換済みで読みやすい
 - **最小構成** - 必要最小限のコードで実装（22ファイルのみ）
 - **Claude Desktop対応** - MCPサーバー経由で直接アクセス可能
+- **環境変数不要** - MCPサーバーは設定ファイル追加のみで動作
 - **Vercelデプロイ済み** - すぐに利用可能
 
 ## 🚀 クイックスタート
 
-### Claude Desktop統合（推奨）
+### Claude Desktop統合（推奨）- 環境変数不要！
 
-`%APPDATA%\Claude\claude_desktop_config.json` に以下を追加:
+`%APPDATA%\Claude\claude_desktop_config.json` に以下を追加するだけ:
 
 ```json
 {
@@ -31,9 +32,11 @@
 }
 ```
 
+**環境変数の設定は不要です！** Supabaseの認証情報は内蔵されています。
+
 Claude Desktopを再起動後、以下のコマンドが利用可能:
-- `query-my-data` - SQLクエリ実行
-- `get-storage-md` - Markdownファイル取得
+- `query-my-data` - SQLクエリ実行（自動認証）
+- `get-storage-md` - Markdownファイル取得（自動認証）
 
 ### REST API
 
@@ -70,20 +73,22 @@ markdown-files/
     └── PublicDoc_markdown/
 ```
 
-## 🛠️ 開発セットアップ
+## 🛠️ 開発セットアップ（APIカスタマイズ用）
 
 ### 前提条件
 - Node.js 18+
-- Supabase アカウント
+- Supabase アカウント（独自データベース使用時のみ）
 
-### 環境変数
+### 環境変数（オプション）
 
-`.env.local` を作成:
+**注意: MCPサーバー利用時は環境変数不要です。**
+
+独自のSupabaseプロジェクトを使用する場合のみ `.env.local` を作成:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url  # オプション
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key  # オプション
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # オプション
 ```
 
 ### ローカル開発
