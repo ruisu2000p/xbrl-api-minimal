@@ -16,12 +16,12 @@
 - **最小構成** - 必要最小限のコードで実装（22ファイルのみ）
 - **Vercelデプロイ済み** - すぐに利用可能
 - **2つのMCPバージョン提供**:
-  - `shared-supabase-mcp-minimal` v1.4.0 - ゼロコンフィグ版（究極のstdout防御、100%エラーなし）
+  - `shared-supabase-mcp-minimal` v1.5.0 - ゼロコンフィグ版（npx警告対策済み、完全動作保証）
   - `shared-supabase-mcp` v1.0.0 - セキュア版（stdin認証）
 
 ## 🚀 クイックスタート
 
-### 方法1: ゼロコンフィグ版（最も簡単！）🎉 v1.4.0
+### 方法1: ゼロコンフィグ版（最も簡単！）🎉 v1.5.0
 
 `%APPDATA%\Claude\claude_desktop_config.json` に追加するだけ:
 
@@ -30,13 +30,14 @@
   "mcpServers": {
     "xbrl-financial": {
       "command": "npx",
-      "args": ["shared-supabase-mcp-minimal@1.4.0"]
+      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.5.0"]
     }
   }
 }
 ```
 
 **🔥 究極防御版** - importより前にstdout保護、JSON以外は完全遮断！
+**⚠️ 重要**: `--loglevel=error` でnpxの警告を抑制（必須）
 
 **設定不要！** anonキー内蔵で即動作。Claude Desktop再起動で完了。
 
@@ -226,11 +227,11 @@ Markdownドキュメントを直接取得
 
 ## 📦 NPMパッケージ
 
-### ゼロコンフィグ版 (v1.4.0)
+### ゼロコンフィグ版 (v1.5.0)
 ```bash
-npm install -g shared-supabase-mcp-minimal@1.4.0
+npm install -g shared-supabase-mcp-minimal@1.5.0
 # または
-npx shared-supabase-mcp-minimal@1.4.0
+npx --loglevel=error shared-supabase-mcp-minimal@1.5.0
 ```
 
 ### セキュア版
