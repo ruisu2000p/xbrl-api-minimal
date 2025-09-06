@@ -16,12 +16,12 @@
 - **最小構成** - 必要最小限のコードで実装（22ファイルのみ）
 - **Vercelデプロイ済み** - すぐに利用可能
 - **2つのMCPバージョン提供**:
-  - `shared-supabase-mcp-minimal` v1.6.0 - ゼロコンフィグ版（MCPプロトコル完全対応、最小介入）
+  - `shared-supabase-mcp-minimal` v1.7.0 - ゼロコンフィグ版（デバッグログ追加、設定検証強化）
   - `shared-supabase-mcp` v1.0.0 - セキュア版（stdin認証）
 
 ## 🚀 クイックスタート
 
-### 方法1: ゼロコンフィグ版（最も簡単！）🎉 v1.6.0
+### 方法1: ゼロコンフィグ版（最も簡単！）🎉 v1.7.0
 
 `%APPDATA%\Claude\claude_desktop_config.json` に追加するだけ:
 
@@ -30,7 +30,7 @@
   "mcpServers": {
     "xbrl-financial": {
       "command": "npx",
-      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.6.0"]
+      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.7.0"]
     }
   }
 }
@@ -227,11 +227,11 @@ Markdownドキュメントを直接取得
 
 ## 📦 NPMパッケージ
 
-### ゼロコンフィグ版 (v1.6.0)
+### ゼロコンフィグ版 (v1.7.0)
 ```bash
-npm install -g shared-supabase-mcp-minimal@1.6.0
+npm install -g shared-supabase-mcp-minimal@1.7.0
 # または
-npx --loglevel=error shared-supabase-mcp-minimal@1.6.0
+npx --loglevel=error shared-supabase-mcp-minimal@1.7.0
 ```
 
 ### セキュア版
