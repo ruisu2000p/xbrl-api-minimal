@@ -16,12 +16,12 @@
 - **最小構成** - 必要最小限のコードで実装（22ファイルのみ）
 - **Vercelデプロイ済み** - すぐに利用可能
 - **2つのMCPバージョン提供**:
-  - `shared-supabase-mcp-minimal` v1.7.0 - ゼロコンフィグ版（デバッグログ追加、設定検証強化）
+  - `shared-supabase-mcp-minimal` v1.7.1 - ゼロコンフィグ版（完全動作保証、トラブルシューティングガイド付き）
   - `shared-supabase-mcp` v1.0.0 - セキュア版（stdin認証）
 
 ## 🚀 クイックスタート
 
-### 方法1: ゼロコンフィグ版（最も簡単！）🎉 v1.7.0
+### 方法1: ゼロコンフィグ版（最も簡単！）🎉 v1.7.1
 
 `%APPDATA%\Claude\claude_desktop_config.json` に追加するだけ:
 
@@ -30,7 +30,7 @@
   "mcpServers": {
     "xbrl-financial": {
       "command": "npx",
-      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.7.0"]
+      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.7.1"]
     }
   }
 }
@@ -40,6 +40,12 @@
 **⚠️ 重要**: `--loglevel=error` でnpxの警告を抑制（必須）
 
 **設定不要！** anonキー内蔵で即動作。Claude Desktop再起動で完了。
+
+**トラブルシューティング**: 「Please set」エラーが出る場合は、古いパッケージを削除：
+```bash
+npm uninstall -g xbrl-mcp-server
+npm cache clean --force
+```
 
 ### 方法2: セキュア版（カスタムキー使用）🔒
 
@@ -227,11 +233,11 @@ Markdownドキュメントを直接取得
 
 ## 📦 NPMパッケージ
 
-### ゼロコンフィグ版 (v1.7.0)
+### ゼロコンフィグ版 (v1.7.1)
 ```bash
-npm install -g shared-supabase-mcp-minimal@1.7.0
+npm install -g shared-supabase-mcp-minimal@1.7.1
 # または
-npx --loglevel=error shared-supabase-mcp-minimal@1.7.0
+npx --loglevel=error shared-supabase-mcp-minimal@1.7.1
 ```
 
 ### セキュア版
