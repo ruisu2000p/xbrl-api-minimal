@@ -17,7 +17,7 @@
 
 ## 🚀 クイックスタート
 
-### MCP Server（Claude Desktop向け）🎉 v1.8.0
+### MCP Server（Claude Desktop向け）🎉 v1.8.1
 
 `%APPDATA%\Claude\claude_desktop_config.json` に追加するだけ:
 
@@ -26,14 +26,14 @@
   "mcpServers": {
     "xbrl-financial": {
       "command": "npx",
-      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.8.0"]
+      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.8.1"]
     }
   }
 }
 ```
 
-**⚠️ Version 1.8.0 Critical Update (2025-09-07):**
-- **Fixed Supabase project URL** - Now uses correct project (`zxzyidqrvzfzhicfuhlo`)
+**⚠️ Version 1.8.1 Latest Update (2025-09-07):**
+- **Correct Supabase project URL** - Using the latest project (`wpwqxhyiglbtlaimrjrx`)
 - **Use `markdown_files_metadata` table** instead of `companies`
 - **Added `search-companies` tool** for easy company search
 - **Enhanced filter operators** ($ilike, $like, $gt, etc.)
@@ -194,11 +194,11 @@ Markdownドキュメントを直接取得
 
 ## 📦 NPMパッケージ
 
-### 最新版 (v1.8.0) - 2025-09-07
+### 最新版 (v1.8.1) - 2025-09-07
 ```bash
-npm install -g shared-supabase-mcp-minimal@1.8.0
+npm install -g shared-supabase-mcp-minimal@1.8.1
 # または
-npx --loglevel=error shared-supabase-mcp-minimal@1.8.0
+npx --loglevel=error shared-supabase-mcp-minimal@1.8.1
 ```
 
 **トラブルシューティング**: 古いバージョンのエラーが出る場合：
@@ -216,7 +216,7 @@ MIT License
 - [NPM Package](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 - [GitHub Repository](https://github.com/ruisu2000p/xbrl-api-minimal)
 - [Vercel Deployment](https://xbrl-api-minimal.vercel.app)
-- [Supabase Project](https://supabase.com/dashboard/project/zxzyidqrvzfzhicfuhlo)
+- [Supabase Project](https://supabase.com/dashboard/project/wpwqxhyiglbtlaimrjrx)
 
 ---
 
