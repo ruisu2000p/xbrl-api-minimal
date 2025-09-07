@@ -2,7 +2,7 @@
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![NPM: MCP Server](https://img.shields.io/npm/v/shared-supabase-mcp)](https://www.npmjs.com/package/shared-supabase-mcp)
+[![NPM: MCP Server](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 
 日本企業の有価証券報告書（XBRL/EDINET）データにアクセスするためのAPIシステムです。4,231社の財務データをSupabase上で管理し、RESTful APIとMCP（Model Context Protocol）サーバーを通じて提供します。
 
@@ -39,13 +39,18 @@ Claude Desktopの設定ファイル（`%APPDATA%\Claude\claude_desktop_config.js
 ```json
 {
   "mcpServers": {
-    "shared-supabase-mcp": {
-        "command": "npx",
-        "args": ["shared-supabase-mcp@0.3.1"]
+    "xbrl-financial": {
+      "command": "npx",
+      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.8.0"]
     }
   }
 }
 ```
+
+**⚠️ Version 1.8.0 Critical Update:**
+- Fixed Supabase project URL
+- Use `markdown_files_metadata` table instead of `companies`
+- Added `search-companies` tool
 
 #### 利用可能なツール
 
