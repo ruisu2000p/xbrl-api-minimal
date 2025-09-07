@@ -5,18 +5,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseClient } from '@/lib/supabase/client';
+import { validateApiKey } from '@/lib/utils/validateApiKey';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
-// APIキーの検証
-function validateApiKey(apiKey: string | null): boolean {
-  if (!apiKey) return false;
-  return apiKey.startsWith('xbrl_');
-}
+const supabase = createSupabaseClient();
 
 export async function GET(
   request: NextRequest,
@@ -63,8 +55,7 @@ export async function GET(
       });
 
     if (listError) {
-      console.error('Storage list error:', listError);
-      // ファイルが見つからない場合でも企業情報は返す
+        // ファイルが見つからない場合でも企業情報は返す
       return NextResponse.json({
         company,
         financial_data: null,
@@ -137,7 +128,6 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('API Error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

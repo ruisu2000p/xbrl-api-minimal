@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "migrate": "node scripts/import/unified-import.js"
+    "start": "next start"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
