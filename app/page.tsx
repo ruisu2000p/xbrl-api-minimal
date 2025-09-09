@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  // お客様の声は削除
   const [scrollY, setScrollY] = useState(0);
   const router = useRouter();
 
@@ -16,19 +13,6 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // お客様の声カルーセルは削除
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // 実際の登録処理をシミュレート
-    setTimeout(() => {
-      // メールをlocalStorageに保存してregistrationページへ
-      localStorage.setItem('pendingEmail', email);
-      router.push('/register');
-    }, 500);
-  };
 
   const handlePlanSelect = (plan: string) => {
     // プラン情報を保存してregistrationページへ
@@ -39,8 +23,7 @@ export default function Home() {
   // お客様の声セクションは削除
 
   const stats = [
-    { number: "4,231", label: "社", description: "対応企業数" },
-    { number: "2021-2022", label: "年度", description: "対象期間" },
+    { number: "2016-2024", label: "年度", description: "対象期間" },
     { number: "即座に", label: "", description: "データ取得" }
   ];
 
@@ -53,7 +36,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              XBRL財務データAPI
+              財務データMCP
             </h1>
             <nav className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">機能</a>
@@ -77,21 +60,22 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center">
             <h2 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              全上場企業4,231社の<br />
+              日本の全上場企業をカバー<br />
               <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                財務データを完全網羅
+                した財務MCP
               </span>
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              2021年4月〜2022年3月期の有価証券報告書を含む<br />
-              4,231社の財務データベースを提供。
+              2016年度から2024年度までの有価証券報告書を含む<br />
+              4,231社の完全な財務データベースを提供。
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
               <button 
                 onClick={() => router.push('/register')}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-xl transition-all transform hover:scale-105"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-xl transition-all transform hover:scale-105 relative animate-pulse"
               >
-                無料で始める
+                <span className="relative z-10">30秒で無料トライアル</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl blur-lg opacity-50 group-hover:opacity-100 transition-opacity"></div>
               </button>
               <button 
                 onClick={() => document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -102,7 +86,7 @@ export default function Home() {
             </div>
             
             {/* 統計情報 */}
-            <div className="grid grid-cols-3 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
                   <div className="text-3xl font-bold text-gray-900">
@@ -117,7 +101,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* デモセクション */}
+
+      {/* 従来のデモセクション */}
       <section id="demo-section" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
@@ -128,9 +113,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-white font-bold text-2xl">1</span>
               </div>
-              <h4 className="text-xl font-bold mb-4">APIキー取得</h4>
+              <h4 className="text-xl font-bold mb-4">MCP設定</h4>
               <p className="text-gray-600">
-                メールアドレスでアカウント登録後、ダッシュボードからAPIキーを即座に取得できます。
+                Claude Desktopの設定ファイルに1行追加するだけで、すぐに財務データへアクセス可能。
               </p>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 text-center">
@@ -139,7 +124,7 @@ export default function Home() {
               </div>
               <h4 className="text-xl font-bold mb-4">データ取得</h4>
               <p className="text-gray-600">
-                企業コードを指定してAPIを呼び出すだけで、20年分の財務データを簡単に取得できます。
+                自然言語でMCPを呼び出すだけで、過去の財務データを簡単に取得できます。
               </p>
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 text-center">
@@ -194,7 +179,7 @@ export default function Home() {
                 <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span className="font-semibold">全20年分のデータアクセス</span>
+                <span className="font-semibold">直近1年分のデータアクセス</span>
               </li>
               <li className="flex items-start">
                 <svg className="w-5 h-5 text-blue-200 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -247,21 +232,16 @@ export default function Home() {
         {/* 正式版予定 */}
         <div className="mt-16 text-center">
           <h4 className="text-xl font-bold text-gray-900 mb-4">正式版で予定されている料金プラン</h4>
-          <div className="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
             <div className="bg-white rounded-lg shadow p-4 opacity-75">
               <h5 className="font-bold text-gray-600">Free</h5>
               <p className="text-2xl font-bold text-gray-400">¥0/月</p>
-              <p className="text-sm text-gray-500">直近1年データ呼び出し/月</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-4 opacity-75">
-              <h5 className="font-bold text-gray-600">Standard</h5>
-              <p className="text-2xl font-bold text-gray-400">¥1,080/月</p>
-              <p className="text-sm text-gray-500">直近3年データ呼び出し/月</p>
+              <p className="text-sm text-gray-500">直近1年データアクセス</p>
             </div>
             <div className="bg-white rounded-lg shadow p-4 opacity-75">
               <h5 className="font-bold text-gray-600">Pro</h5>
               <p className="text-2xl font-bold text-gray-400">¥2,980/月</p>
-              <p className="text-sm text-gray-500">無制限呼び出し</p>
+              <p className="text-sm text-gray-500">制限なしアクセス</p>
             </div>
           </div>
           <p className="text-sm text-gray-500 mt-4">
@@ -274,7 +254,7 @@ export default function Home() {
       <section id="features" className="bg-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h3 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            XBRL財務データAPIの強力な機能
+            財務データMCPの強力な機能
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="group hover:scale-105 transition-all">
@@ -328,7 +308,7 @@ export default function Home() {
                 </div>
                 <h4 className="text-xl font-bold mb-3">膨大なデータ量</h4>
                 <p className="text-gray-600">
-                  4,231社×20年分の有価証券報告書。財務諸表から事業リスクまで、包括的なデータを提供します。
+                  4,231社×10年分の有価証券報告書。財務諸表から事業リスクまで、包括的なデータを提供します。
                 </p>
               </div>
             </div>
@@ -375,25 +355,14 @@ export default function Home() {
           <p className="text-xl text-blue-100 mb-8">
             クレジットカード不要。わずか30秒で登録完了。
           </p>
-          <form onSubmit={handleSubmit} className="max-w-md mx-auto flex flex-col sm:flex-row gap-4">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="メールアドレスを入力"
-              className="flex-1 px-6 py-4 rounded-xl text-gray-900 text-lg"
-              required
-            />
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 disabled:opacity-50 transition-all transform hover:scale-105 shadow-lg"
-            >
-              {isSubmitting ? '送信中...' : '無料登録'}
-            </button>
-          </form>
+          <button
+            onClick={() => router.push('/register')}
+            className="bg-white text-blue-600 px-12 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg text-lg"
+          >
+            無料登録
+          </button>
           <p className="text-blue-200 text-sm mt-4">
-            登録することで、利用規約とプライバシーポリシーに同意したものとみなされます。
+            登録することで、<a href="/terms" className="underline hover:text-white">利用規約</a>と<a href="/privacy" className="underline hover:text-white">プライバシーポリシー</a>に同意したものとみなされます。
           </p>
         </div>
       </section>
@@ -403,7 +372,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <h5 className="text-white font-bold text-xl mb-4">XBRL財務データAPI</h5>
+              <h5 className="text-white font-bold text-xl mb-4">財務データMCP</h5>
               <p className="text-sm">
                 日本の上場企業4,231社の財務データを<br />
                 クラウドインフラから配信
@@ -434,9 +403,13 @@ export default function Home() {
           
           <div className="mt-12 pt-8 border-t border-gray-800">
             <div className="text-center">
-              <p className="text-sm mb-4">&copy; 2025 XBRL Financial Data API. All rights reserved.</p>
+              <div className="flex justify-center gap-6 mb-4">
+                <a href="/terms" className="text-gray-400 hover:text-white text-sm">利用規約</a>
+                <a href="/privacy" className="text-gray-400 hover:text-white text-sm">プライバシーポリシー</a>
+              </div>
+              <p className="text-sm mb-4">&copy; 2025 財務データMCP. All rights reserved.</p>
               <p className="text-xs text-gray-500">
-                本サービスは、金融庁のEDINETから取得したXBRLデータを活用しています。<br />
+                本サービスはXBRLデータを活用しています。<br />
                 データの正確性については一切の保証をいたしません。投資判断は自己責任で行ってください。
               </p>
             </div>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XBRL財務データAPI - 改善版テスト</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // InteractiveDemo Component
+        function InteractiveDemo() {
+            const [selectedCompany, setSelectedCompany] = useState(null);
+            const [showComparison, setShowComparison] = useState(false);
+
+            const sampleCompanies = [
+                { id: 'toyota', name: 'トヨタ自動車', revenue: '31.3兆円', profit: '2.9兆円' },
+                { id: 'sony', name: 'ソニーグループ', revenue: '11.5兆円', profit: '1.2兆円' },
+                { id: 'nintendo', name: '任天堂', revenue: '1.7兆円', profit: '0.5兆円' },
+                { id: 'keyence', name: 'キーエンス', revenue: '0.8兆円', profit: '0.4兆円' },
+                { id: 'fast-retailing', name: 'ファーストリテイリング', revenue: '2.3兆円', profit: '0.3兆円' }
+            ];
+
+            const mockMCPResponse = selectedCompany ? `{
+  "tool": "search-companies",
+  "query": "${selectedCompany.name}",
+  "result": {
+    "company_id": "${selectedCompany.id}",
+    "name": "${selectedCompany.name}",
+    "fiscal_year": "FY2024",
+    "revenue": "${selectedCompany.revenue}",
+    "profit": "${selectedCompany.profit}",
+    "documents": [
+      "有価証券報告書",
+      "四半期報告書",
+      "決算短信"
+    ]
+  }
+}` : '';
+
+            return (
+                <section className="py-20 bg-gray-50">
+                    <div className="container mx-auto px-4">
+                        <h2 className="text-4xl font-bold text-center mb-12">
+                            インタラクティブデモ
+                        </h2>
+                        
+                        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <h3 className="text-xl font-semibold mb-4">企業を選択</h3>
+                                <div className="space-y-2">
+                                    {sampleCompanies.map(company => (
+                                        <button
+                                            key={company.id}
+                                            onClick={() => setSelectedCompany(company)}
+                                            className={`w-full text-left p-4 rounded-lg transition-all hover-lift ${
+                                                selectedCompany?.id === company.id 
+                                                    ? 'bg-blue-50 border-2 border-blue-500' 
+                                                    : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            <div className="font-semibold">{company.name}</div>
+                                            <div className="text-sm text-gray-600">
+                                                売上: {company.revenue} | 利益: {company.profit}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <h3 className="text-xl font-semibold mb-4">MCP レスポンス</h3>
+                                <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm h-96 overflow-y-auto">
+                                    <pre>{mockMCPResponse || '// 企業を選択してください'}</pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        {selectedCompany && (
+                            <div className="mt-8 text-center">
+                                <button 
+                                    onClick={() => setShowComparison(!showComparison)}
+                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all"
+                                >
+                                    {showComparison ? '比較を隠す' : '他社と比較'}
+                                </button>
+                            </div>
+                        )}
+
+                        {showComparison && selectedCompany && (
+                            <div className="mt-8 bg-white rounded-xl shadow-lg p-6 max-w-4xl mx-auto">
+                                <h3 className="text-xl font-semibold mb-4">財務比較チャート</h3>
+                                <div className="h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
+                                    <div className="text-gray-600">
+                                        {selectedCompany.name} vs 業界平均の財務チャート
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            );
+        }
+
+        // ValueProposition Component
+        function ValueProposition() {
+            return (
+                <section className="py-20 bg-white">
+                    <div className="container mx-auto px-4">
+                        <h2 className="text-4xl font-bold text-center mb-12">
+                            価値提案
+                        </h2>
+
+                        <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto mb-16">
+                            <div>
+                                <h3 className="text-2xl font-bold mb-6 text-red-600">Before: 手動分析</h3>
+                                <ul className="space-y-3">
+                                    <li className="flex items-start">
+                                        <span className="text-red-500 mr-2">✗</span>
+                                        <span>EDINETから手動でダウンロード</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-red-500 mr-2">✗</span>
+                                        <span>XBRLファイルの複雑な解析</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-red-500 mr-2">✗</span>
+                                        <span>1社あたり3時間以上</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-red-500 mr-2">✗</span>
+                                        <span>データの整合性確認が困難</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-2xl font-bold mb-6 text-green-600">After: MCP統合</h3>
+                                <ul className="space-y-3">
+                                    <li className="flex items-start">
+                                        <span className="text-green-500 mr-2">✓</span>
+                                        <span>Claude Desktopから直接アクセス</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-green-500 mr-2">✓</span>
+                                        <span>構造化されたMarkdown形式</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-green-500 mr-2">✓</span>
+                                        <span>数秒で完全なデータ取得</span>
+                                    </li>
+                                    <li className="flex items-start">
+                                        <span className="text-green-500 mr-2">✓</span>
+                                        <span>20年分のデータを瞬時に比較</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        }
+
+        // Main App Component
+        function App() {
+            return (
+                <div className="min-h-screen bg-white">
+                    {/* Hero Section */}
+                    <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-20">
+                        <div className="container mx-auto px-4">
+                            <div className="max-w-4xl mx-auto text-center">
+                                <div className="inline-flex items-center bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full mb-6">
+                                    <span className="font-semibold">EDINET公式データ</span>
+                                    <span className="mx-2">•</span>
+                                    <span>50GB+の財務データ</span>
+                                </div>
+                                
+                                <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                    XBRL財務データAPI
+                                </h1>
+                                
+                                <p className="text-xl text-gray-700 mb-8">
+                                    Claude Desktopから直接アクセス可能な<br/>
+                                    日本最大級の財務データベース
+                                </p>
+                                
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                                    <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-xl transition-all transform hover:scale-105 animate-pulse">
+                                        30秒で無料トライアル
+                                    </button>
+                                    <button className="bg-white text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold border-2 border-gray-300 hover:border-gray-400 transition-all">
+                                        デモを見る
+                                    </button>
+                                </div>
+                                
+                                <div className="flex justify-center gap-8 text-sm text-gray-600">
+                                    <div className="flex items-center">
+                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        4,231社のデータ
+                                    </div>
+                                    <div className="flex items-center">
+                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        20年分の履歴
+                                    </div>
+                                    <div className="flex items-center">
+                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        MCP対応
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <InteractiveDemo />
+                    <ValueProposition />
+                </div>
+            );
+        }
+
+        // Render the app
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
