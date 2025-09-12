@@ -65,4 +65,8 @@ excluded_tools: []
 # (contrary to the memories, which are loaded on demand).
 initial_prompt: ""
 
+<<<<<<< HEAD
 project_name: "xbrl-api-minimal-repo"
+=======
+project_name: "xbrl-api-minimal-main"
+>>>>>>> a49725ca0585b8336d9129c884d73cd3246d93d7

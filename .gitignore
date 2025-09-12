@@ -1,77 +1,53 @@
-# Dependencies
+# dependencies
 /node_modules
 /.pnp
 .pnp.js
-.yarn/install-state.gz
 
-# Testing
+# testing
 /coverage
 
-# Next.js
+# next.js
 /.next/
 /out/
 
-# Production
+# production
 /build
 
-# Misc
+# misc
 .DS_Store
 *.pem
 
-# Debug
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local env files
+# local env files
 .env*.local
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env
 
-# Vercel
+# vercel
 .vercel
 
-# Typescript
+# typescript
 *.tsbuildinfo
 next-env.d.ts
 
+# MCP local configs
+mcp-config.json
+/mcp-server/node_modules
+
 # IDE
+.serena/
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
 
-# OS
-Thumbs.db
-
-# Logs
-logs
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Temporary files
-tmp/
-temp/
-.vercel
-
-# MCP Server node_modules (Claude Desktop integration)
-/mcp-server/node_modules/
-test-*.js
-check-*.js
+# Test files
+*.test.js
+*.test.ts
 get-*.js
 
-# Project specific env files
-.env.wpwqxhyiglbtlaimrjrx
-.env.zxzyidqrvzfzhicfuhlo
-
-# Test reports
-unmatched_ids_report.json
-*_report.json
+# Temporary files
+*.tmp
+*.temp
+.cache/

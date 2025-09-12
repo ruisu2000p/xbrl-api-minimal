@@ -12,6 +12,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "clean": "rm -rf .next node_modules",
+    "analyze": "ANALYZE=true next build",
     "setup": "node scripts/setup.js",
     "setup:secure": "node scripts/setup-secure-api.js",
     "migrate": "node scripts/migrate-data.js"
@@ -19,11 +24,12 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.3",
     "@supabase/auth-helpers-nextjs": "^0.8.0",
-    "@supabase/ssr": "^0.0.10",
-    "@supabase/supabase-js": "^2.55.0",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.4",
     "@vercel/analytics": "^1.5.0",
     "axios": "^1.6.0",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "csv-parser": "^3.2.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.1",
@@ -40,9 +46,12 @@
   "devDependencies": {
     "@types/node": "20.10.0",
     "@types/react": "18.2.45",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.0.0",
+    "postcss": "^8.5.6",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.17",
     "typescript": "5.3.3"
   }
 }
