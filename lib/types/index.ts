@@ -128,3 +128,17 @@ export interface ApiError {
   details?: any;
   status?: number;
 }
+
+// Auth form types
+export interface AuthFormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  company: string;
+  plan: string;
+}
+
+export interface FormErrors {
+  [key: string]: string;
+}
