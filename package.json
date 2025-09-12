@@ -19,7 +19,8 @@
     "analyze": "ANALYZE=true next build",
     "setup": "node scripts/setup.js",
     "setup:secure": "node scripts/setup-secure-api.js",
-    "migrate": "node scripts/migrate-data.js"
+    "migrate": "node scripts/migrate-data.js",
+    "postinstall": "echo 'Dependencies installed successfully'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.3",
