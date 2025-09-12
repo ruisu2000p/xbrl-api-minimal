@@ -22,13 +22,8 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      const { error } = await sendPasswordResetEmail(email)
-      
-      if (error) {
-        setError(error.message)
-      } else {
-        setSuccess(true)
-      }
+      await sendPasswordResetEmail(email)
+      setSuccess(true)
     } catch (err) {
       setError('パスワードリセットメールの送信に失敗しました')
     } finally {
