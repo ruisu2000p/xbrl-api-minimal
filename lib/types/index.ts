@@ -34,6 +34,14 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface PaginationParams {
+  page: number;
+  per_page: number;
+  search?: string;
+  sector?: string;
+  fiscal_year?: string;
+}
+
 // Auth types
 export interface User {
   id: string;
