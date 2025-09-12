@@ -32,3 +32,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# MCP local configs
+mcp-config.json
+/mcp-server/node_modules
+
+# IDE
+.serena/
+.vscode/
+.idea/
+
+# Test files
+*.test.js
+*.test.ts
+get-*.js
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
