@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/client';
 import { Company, ApiResponse, PaginationParams } from '@/lib/types';
+import crypto from 'crypto';
 
 // GET /api/v1/companies - 企業一覧取得
 export async function GET(request: NextRequest) {
@@ -16,27 +17,39 @@ export async function GET(request: NextRequest) {
       fiscal_year: searchParams.get('fiscal_year') || '2024'
     }
 
-    // APIキー検証（改善版）
+    // シンプルなAPIキー検証
     const apiKey = request.headers.get('X-API-Key')
-    
-    // authMiddlewareを使用した検証
-    const { validateApiKeyWithDB, addRateLimitHeaders } = await import('@/lib/middleware/authMiddleware')
-    const validation = await validateApiKeyWithDB(apiKey || '', request)
-    
-    if (!validation.valid) {
-      const errorResponse = NextResponse.json<ApiResponse<null>>(
-        { 
-          error: validation.error || 'Invalid API key', 
-          status: validation.error?.includes('rate limit') ? 429 : 401 
-        },
-        { status: validation.error?.includes('rate limit') ? 429 : 401 }
+    if (!apiKey) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'API key required', status: 401 },
+        { status: 401 }
       )
-      
-      return addRateLimitHeaders(errorResponse, validation)
     }
 
     // Supabaseクライアント作成
     const supabase = createSupabaseServerClient()
+    
+    // APIキー検証（シンプル版）
+    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
+    const { data: validKey } = await supabase
+      .from('api_keys')
+      .select('id, status')
+      .eq('key_hash', keyHash)
+      .eq('status', 'active')
+      .single()
+    
+    if (!validKey) {
+      return NextResponse.json<ApiResponse<null>>(
+        { error: 'Invalid API key', status: 401 },
+        { status: 401 }
+      )
+    }
+
+    // APIキーの最終使用日時を更新
+    await supabase
+      .from('api_keys')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('id', validKey.id)
 
     // クエリ構築
     let query = supabase
@@ -73,8 +86,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 成功レスポンス作成
-    const successResponse = NextResponse.json({
+    // レスポンス作成
+    const response = {
       data: data as Company[],
       pagination: {
         page: params.page,
@@ -83,10 +96,9 @@ export async function GET(request: NextRequest) {
         total_pages: Math.ceil((count || 0) / params.per_page!)
       },
       status: 200
-    })
+    }
 
-    // レート制限ヘッダー追加
-    return addRateLimitHeaders(successResponse, validation)
+    return NextResponse.json(response)
 
   } catch (error) {
     console.error('API error:', error)
