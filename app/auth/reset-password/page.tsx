@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { updatePassword } from '@/lib/supabase/auth'
+import { updatePassword } from '@/lib/supabase/auth-client'
 
 export default function ResetPasswordPage() {
   const router = useRouter()

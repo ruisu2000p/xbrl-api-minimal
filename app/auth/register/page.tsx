@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signUpWithEmail } from '@/lib/supabase/auth'
+import { signUpWithEmail } from '@/lib/supabase/auth-client'
 
 const plans = [
   { value: 'free', label: '無料プラン', price: '¥0/月', requests: '10,000回/月' },
