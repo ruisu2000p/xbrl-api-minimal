@@ -56,7 +56,7 @@ export default function AuthPage() {
       // TODO: Supabase認証を実装
       // 現在は仮実装
       setTimeout(() => {
-        const userData: User = {
+        const userData: any = {
           id: Math.random().toString(36).substr(2, 9),
           name: formData.name || 'User',
           email: formData.email,
