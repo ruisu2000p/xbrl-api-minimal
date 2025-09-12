@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "clean": "rm -rf .next node_modules",
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

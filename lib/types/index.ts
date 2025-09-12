@@ -1,26 +1,91 @@
-// 企業データの型定義
+// Company related types
 export interface Company {
   id: string;
-  company_id: string;
   company_name: string;
   ticker_code?: string;
   sector?: string;
-  market?: string;
-  fiscal_year: string;
+  fiscal_year?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-// APIレスポンスの型定義
-export interface ApiResponse<T> {
+export interface CompanyData extends Company {
+  storage_path?: string;
+  document_type?: string;
+  file_count?: number;
+  has_tables?: boolean;
+}
+
+// API Response types
+export interface ApiResponse<T = any> {
+  success: boolean;
   data?: T;
   error?: string;
   message?: string;
-  status: number;
 }
 
-// ページネーションの型定義
-export interface PaginationParams {
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+// Auth types
+export interface User {
+  id: string;
+  email: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ApiKey {
+  id: string;
+  key: string;
+  user_id: string;
+  created_at: string;
+  expires_at?: string;
+  last_used_at?: string;
+  usage_count: number;
+}
+
+// Dashboard types
+export interface UsageStats {
+  total_requests: number;
+  requests_today: number;
+  requests_this_month: number;
+  rate_limit_remaining: number;
+}
+
+export interface DashboardData {
+  user: User;
+  api_keys: ApiKey[];
+  usage: UsageStats;
+}
+
+// Storage types
+export interface StorageFile {
+  name: string;
+  path: string;
+  size: number;
+  last_modified: string;
+  metadata?: Record<string, any>;
+}
+
+export interface MarkdownDocument {
+  company_id: string;
+  company_name: string;
+  file_name: string;
+  content: string;
+  fiscal_year: string;
+  document_type: 'PublicDoc' | 'AuditDoc';
+}
+
+// Request types
+export interface CompanySearchParams {
   page?: number;
   per_page?: number;
   search?: string;
@@ -28,38 +93,15 @@ export interface PaginationParams {
   fiscal_year?: string;
 }
 
-// ユーザー認証の型定義
-export interface User {
-  id: string;
-  email: string;
+export interface ApiKeyCreateRequest {
   name?: string;
-  company?: string;
-  plan: 'free' | 'basic' | 'pro';
-  created_at: string;
+  expires_in_days?: number;
 }
 
-// ファイルメタデータの型定義
-export interface FileMetadata {
-  company_id: string;
-  company_name: string;
-  fiscal_year: string;
-  storage_path: string;
-  document_type: 'PublicDoc' | 'AuditDoc';
-  file_size?: number;
-  has_tables?: boolean;
-}
-
-// フォームエラーの型定義
-export interface FormErrors {
-  [key: string]: string;
-}
-
-// 認証フォームデータの型定義
-export interface AuthFormData {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  company: string;
-  plan: 'free' | 'basic' | 'pro';
+// Error types
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: any;
+  status?: number;
 }
