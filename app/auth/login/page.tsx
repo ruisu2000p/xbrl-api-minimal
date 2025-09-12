@@ -26,23 +26,21 @@ export default function LoginPage() {
     }
 
     try {
-      const { data, error } = await signInWithEmail(
+      const data = await signInWithEmail(
         formData.email,
         formData.password
       )
 
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setError('メールアドレスまたはパスワードが正しくありません')
-        } else {
-          setError(error.message)
-        }
-      } else if (data.user) {
+      if (data.user) {
         // ログイン成功
         router.push('/dashboard')
       }
-    } catch (err) {
-      setError('ログイン中にエラーが発生しました')
+    } catch (err: any) {
+      if (err.message?.includes('Invalid login credentials')) {
+        setError('メールアドレスまたはパスワードが正しくありません')
+      } else {
+        setError(err.message || 'ログイン中にエラーが発生しました')
+      }
     } finally {
       setLoading(false)
     }
