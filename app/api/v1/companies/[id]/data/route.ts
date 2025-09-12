@@ -20,7 +20,7 @@ export async function GET(
     const apiKey = request.headers.get('X-API-Key');
     if (!apiKey || apiKey !== 'xbrl_demo') {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Invalid API key', status: 401 },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -37,7 +37,7 @@ export async function GET(
 
     if (companyError || !companyData) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Company not found', status: 404 },
+        { success: false, error: 'Company not found' },
         { status: 404 }
       );
     }
