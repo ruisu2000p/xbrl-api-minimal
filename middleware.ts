@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 // 保護されたルート
 const protectedRoutes = ['/dashboard', '/api/dashboard']
@@ -14,23 +13,21 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
 
-  // Supabaseクライアント作成（環境変数チェック）
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    // 環境変数が設定されていない場合はそのまま通す（開発環境用）
-    console.warn('Supabase environment variables not set')
+  // APIルートは認証チェックをスキップ（APIキー認証を使用）
+  if (pathname.startsWith('/api/')) {
     return NextResponse.next()
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  // 開発環境では認証チェックをスキップするオプション
+  if (process.env.NODE_ENV === 'development' && process.env.SKIP_AUTH === 'true') {
+    return NextResponse.next()
+  }
 
-  // セッション確認
-  const { data: { session }, error } = await supabase.auth.getSession()
+  // Cookieからセッショントークンを確認
+  const token = request.cookies.get('supabase-auth-token')
 
   // 保護されたルートへのアクセス
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !token) {
     // 未認証の場合はログインページへリダイレクト
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
@@ -39,7 +36,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 認証済みユーザーの認証ページへのアクセス
-  if (isAuthRoute && session) {
+  if (isAuthRoute && token) {
     // 既にログイン済みの場合はダッシュボードへリダイレクト
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'

@@ -31,6 +31,34 @@
 }
 ```
 
+#### Vercel MCP統合（オプション）🚀 NEW
+
+Vercelデプロイメントを管理したい場合は、Vercel MCPも追加できます:
+
+```json
+{
+  "mcpServers": {
+    "xbrl-financial": {
+      "command": "npx",
+      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.8.1"]
+    },
+    "vercel-mcp": {
+      "command": "npx",
+      "args": ["-y", "@vercel/mcp"],
+      "env": {
+        "VERCEL_ACCESS_TOKEN": "YOUR_VERCEL_ACCESS_TOKEN"
+      }
+    }
+  }
+}
+```
+
+**Vercel MCP機能:**
+- Vercelドキュメント検索
+- プロジェクトとデプロイメント管理
+- デプロイメントログ分析
+- プロジェクト専用URL: `https://mcp.vercel.com/ruisu2000p/xbrl-api-minimal`
+
 **⚠️ Version 1.8.1 Latest Update (2025-09-07):**
 - **Correct Supabase project URL** - Using the latest project (`wpwqxhyiglbtlaimrjrx`)
 - **Use `markdown_files_metadata` table** instead of `companies`
