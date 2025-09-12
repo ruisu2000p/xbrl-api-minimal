@@ -1,15 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  swcMinify: false, // SWCミニファイを一時的に無効化
   
-  // SWCフォールバックの無効化
-  // Vercelビルドでのキャッシュ問題を回避
+  // パフォーマンス最適化
   experimental: {
     // サーバーコンポーネントの最適化
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
-    // SWCフォールバックを無効化してVercelのビルトインSWCを使用
-    forceSwcTransforms: true,
   },
   
   // キャッシュヘッダー設定
