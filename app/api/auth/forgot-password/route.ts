@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     // バリデーション
     if (!email) {
       return NextResponse.json(
-        { error: 'メールアドレスを入力してください' },
+        { success: false, error: 'メールアドレスを入力してください' },
         { status: 400 }
       );
     }
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // メールアドレスの形式チェック
     if (!/\S+@\S+\.\S+/.test(email)) {
       return NextResponse.json(
-        { error: '有効なメールアドレスを入力してください' },
+        { success: false, error: '有効なメールアドレスを入力してください' },
         { status: 400 }
       );
     }
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Password reset error:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { success: false, error: 'サーバーエラーが発生しました' },
       { status: 500 }
     );
   }

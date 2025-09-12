@@ -24,7 +24,7 @@ export async function DELETE(_: NextRequest, { params }: Params) {
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please login first.' },
+        { success: false, error: 'Unauthorized. Please login first.' },
         { status: 401 }
       );
     }
@@ -42,7 +42,7 @@ export async function DELETE(_: NextRequest, { params }: Params) {
 
     if (error || !data) {
       return NextResponse.json(
-        { error: 'API key not found or already revoked' },
+        { success: false, error: 'API key not found or already revoked' },
         { status: 404 }
       );
     }
@@ -57,7 +57,7 @@ export async function DELETE(_: NextRequest, { params }: Params) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please login first.' },
+        { success: false, error: 'Unauthorized. Please login first.' },
         { status: 401 }
       );
     }
@@ -88,7 +88,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
-        { error: 'No valid fields to update' },
+        { success: false, error: 'No valid fields to update' },
         { status: 400 }
       );
     }
@@ -105,7 +105,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     if (error || !data) {
       return NextResponse.json(
-        { error: 'API key not found or revoked' },
+        { success: false, error: 'API key not found or revoked' },
         { status: 404 }
       );
     }
@@ -117,7 +117,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -133,7 +133,7 @@ export async function GET(_: NextRequest, { params }: Params) {
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please login first.' },
+        { success: false, error: 'Unauthorized. Please login first.' },
         { status: 401 }
       );
     }
@@ -150,7 +150,7 @@ export async function GET(_: NextRequest, { params }: Params) {
 
     if (error || !data) {
       return NextResponse.json(
-        { error: 'API key not found' },
+        { success: false, error: 'API key not found' },
         { status: 404 }
       );
     }
@@ -170,7 +170,7 @@ export async function GET(_: NextRequest, { params }: Params) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     // 入力検証
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'メールアドレスとパスワードを入力してください' },
+        { success: false, error: 'メールアドレスとパスワードを入力してください' },
         { status: 400 }
       );
     }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (dbError || !adminUser) {
       console.error('Admin user not found:', dbError);
       return NextResponse.json(
-        { error: 'メールアドレスまたはパスワードが正しくありません' },
+        { success: false, error: 'メールアドレスまたはパスワードが正しくありません' },
         { status: 401 }
       );
     }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const expectedPassword = 'Admin@2024#XBRL';
     if (password !== expectedPassword) {
       return NextResponse.json(
-        { error: 'メールアドレスまたはパスワードが正しくありません' },
+        { success: false, error: 'メールアドレスまたはパスワードが正しくありません' },
         { status: 401 }
       );
     }
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'ログイン処理中にエラーが発生しました' },
+      { success: false, error: 'ログイン処理中にエラーが発生しました' },
       { status: 500 }
     );
   }

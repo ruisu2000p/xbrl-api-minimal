@@ -40,14 +40,14 @@ export async function POST(request: NextRequest) {
 
     if (!userId || !email) {
       return NextResponse.json(
-        { error: 'ユーザー情報が不足しています' },
+        { success: false, error: 'ユーザー情報が不足しています' },
         { status: 400 }
       );
     }
 
     if (!supabaseAdmin) {
       return NextResponse.json(
-        { error: 'Supabase接続エラー: 環境変数が設定されていません' },
+        { success: false, error: 'Supabase接続エラー: 環境変数が設定されていません' },
         { status: 500 }
       );
     }
@@ -143,14 +143,14 @@ export async function GET(request: NextRequest) {
   
   if (!userId) {
     return NextResponse.json(
-      { error: 'ユーザーIDが必要です' },
+      { success: false, error: 'ユーザーIDが必要です' },
       { status: 400 }
     );
   }
 
   if (!supabaseAdmin) {
     return NextResponse.json(
-      { error: 'Supabase接続エラー' },
+      { success: false, error: 'Supabase接続エラー' },
       { status: 500 }
     );
   }
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.json(
-      { error: 'APIキー情報の取得に失敗しました' },
+      { success: false, error: 'APIキー情報の取得に失敗しました' },
       { status: 500 }
     );
   }

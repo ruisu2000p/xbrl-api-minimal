@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const auth = await authByApiKey(req);
     if (!auth.ok) {
       return NextResponse.json(
-        { error: auth.error },
+        { success: false, error: auth.error },
         { status: auth.status }
       );
     }
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
       );
       
       return NextResponse.json(
-        { error: 'Rate limit exceeded. Please wait a moment.' },
+        { success: false, error: 'Rate limit exceeded. Please wait a moment.' },
         { status: 429 }
       );
     }
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
       );
       
       return NextResponse.json(
-        { error: 'Database error occurred' },
+        { success: false, error: 'Database error occurred' },
         { status: 500 }
       );
     }
@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
     console.error('API error:', error);
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

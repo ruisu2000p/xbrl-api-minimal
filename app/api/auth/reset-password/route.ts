@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // バリデーション - emailを使用する簡易版
     if (!email || !password) {
       return NextResponse.json(
-        { error: '必要な情報が不足しています' },
+        { success: false, error: '必要な情報が不足しています' },
         { status: 400 }
       );
     }
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // パスワードの長さチェック
     if (password.length < 8) {
       return NextResponse.json(
-        { error: 'パスワードは8文字以上にしてください' },
+        { success: false, error: 'パスワードは8文字以上にしてください' },
         { status: 400 }
       );
     }
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Supabase password update error:', error);
       return NextResponse.json(
-        { error: 'パスワードの更新に失敗しました' },
+        { success: false, error: 'パスワードの更新に失敗しました' },
         { status: 500 }
       );
     }
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Password reset error:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { success: false, error: 'サーバーエラーが発生しました' },
       { status: 500 }
     );
   }

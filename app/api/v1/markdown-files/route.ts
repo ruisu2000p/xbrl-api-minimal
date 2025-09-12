@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const apiKey = request.headers.get('X-API-Key');
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'API key is required' },
+        { success: false, error: 'API key is required' },
         { status: 401 }
       );
     }
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const isValid = await validateApiKey(apiKey);
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch data' },
+        { success: false, error: 'Failed to fetch data' },
         { status: 500 }
       );
     }
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const apiKey = request.headers.get('X-API-Key');
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'API key is required' },
+        { success: false, error: 'API key is required' },
         { status: 401 }
       );
     }
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     const isValid = await validateApiKey(apiKey);
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     if (!file_path && !storage_path) {
       return NextResponse.json(
-        { error: 'file_path or storage_path is required' },
+        { success: false, error: 'file_path or storage_path is required' },
         { status: 400 }
       );
     }
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
 
       if (error || !data) {
         return NextResponse.json(
-          { error: 'File not found' },
+          { success: false, error: 'File not found' },
           { status: 404 }
         );
       }
@@ -184,14 +184,14 @@ export async function POST(request: NextRequest) {
       if (downloadError) {
         console.error('Storage download error:', downloadError);
         return NextResponse.json(
-          { error: 'Failed to download file', details: downloadError.message },
+          { success: false, error: 'Failed to download file', details: downloadError.message },
           { status: 500 }
         );
       }
 
       if (!fileData) {
         return NextResponse.json(
-          { error: 'File content is empty' },
+          { success: false, error: 'File content is empty' },
           { status: 404 }
         );
       }
@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
     } catch (storageError) {
       console.error('Storage access error:', storageError);
       return NextResponse.json(
-        { error: 'Failed to access file content' },
+        { success: false, error: 'Failed to access file content' },
         { status: 500 }
       );
     }
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

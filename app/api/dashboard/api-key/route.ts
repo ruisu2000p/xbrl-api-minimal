@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
       if (insertError) {
         console.error('Failed to create profile:', insertError);
-        return NextResponse.json({ error: 'Failed to create profile: ' + insertError.message }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Failed to create profile: ' + insertError.message }, { status: 500 });
       }
 
       console.log('Created new profile:', newProfile);
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ apiKey: profile.api_key, existing: true });
   } catch (error) {
     console.error('API key fetch error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
       if (insertError) {
         console.error('Failed to create profile:', insertError);
-        return NextResponse.json({ error: 'Failed to create profile: ' + insertError.message }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Failed to create profile: ' + insertError.message }, { status: 500 });
       }
 
       console.log('Created new profile with API key:', newProfile);
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Failed to update API key:', error);
-      return NextResponse.json({ error: 'Failed to update API key: ' + error.message }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Failed to update API key: ' + error.message }, { status: 500 });
     }
 
     // API使用履歴をログ（user_idがある場合のみ）
@@ -118,6 +118,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ apiKey: newApiKey, updated: true });
   } catch (error) {
     console.error('API key generation error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

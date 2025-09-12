@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // バリデーション
     if (!email || !password || !name) {
       return NextResponse.json(
-        { error: '必須項目が入力されていません' },
+        { success: false, error: '必須項目が入力されていません' },
         { status: 400 }
       );
     }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     // パスワードの長さチェック
     if (password.length < 8) {
       return NextResponse.json(
-        { error: 'パスワードは8文字以上にしてください' },
+        { success: false, error: 'パスワードは8文字以上にしてください' },
         { status: 400 }
       );
     }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     
     if (existingUser) {
       return NextResponse.json(
-        { error: 'このメールアドレスは既に登録されています' },
+        { success: false, error: 'このメールアドレスは既に登録されています' },
         { status: 409 }
       );
     }
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     if (authError) {
       console.error('Supabase auth error:', authError);
       return NextResponse.json(
-        { error: 'ユーザー登録に失敗しました' },
+        { success: false, error: 'ユーザー登録に失敗しました' },
         { status: 500 }
       );
     }
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     const userId = authData.user.id;
 
     // public.usersテーブルにも保存
-    const { error: dbUserError } = await supabaseAdmin
+    const { success: false, error: dbUserError } = await supabaseAdmin
       .from('users')
       .insert({
         id: userId,
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { success: false, error: 'サーバーエラーが発生しました' },
       { status: 500 }
     );
   }
@@ -222,7 +222,7 @@ export async function GET(request: NextRequest) {
   
   if (!user) {
     return NextResponse.json(
-      { error: 'ユーザーが見つかりません' },
+      { success: false, error: 'ユーザーが見つかりません' },
       { status: 404 }
     );
   }

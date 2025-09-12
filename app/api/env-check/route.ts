@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   // 本番環境では特定のデバッグキーが必要
   if (isProduction && debugKey !== 'xbrl2025debug') {
     return NextResponse.json(
-      { error: 'Unauthorized' },
+      { success: false, error: 'Unauthorized' },
       { status: 401 }
     );
   }

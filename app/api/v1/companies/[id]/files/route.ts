@@ -36,7 +36,7 @@ export async function GET(
     
     if (apiKey && !keyData) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -58,7 +58,7 @@ export async function GET(
     
     if (listError || !files) {
       return NextResponse.json(
-        { error: 'Company not found or no files available' },
+        { success: false, error: 'Company not found or no files available' },
         { status: 404 }
       );
     }
@@ -68,7 +68,7 @@ export async function GET(
       const index = parseInt(fileIndex);
       if (isNaN(index) || index < 0 || index >= files.length) {
         return NextResponse.json(
-          { error: 'Invalid file index' },
+          { success: false, error: 'Invalid file index' },
           { status: 400 }
         );
       }
@@ -82,7 +82,7 @@ export async function GET(
       
       if (downloadError || !fileData) {
         return NextResponse.json(
-          { error: 'Failed to download file' },
+          { success: false, error: 'Failed to download file' },
           { status: 500 }
         );
       }
@@ -151,7 +151,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching company files:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

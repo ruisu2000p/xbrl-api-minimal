@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // バリデーション
     if (!email || !userId) {
       return NextResponse.json(
-        { error: 'メールアドレスとユーザーIDが必要です' },
+        { success: false, error: 'メールアドレスとユーザーIDが必要です' },
         { status: 400 }
       );
     }
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json(
-        { error: 'ユーザーが見つかりません' },
+        { success: false, error: 'ユーザーが見つかりません' },
         { status: 404 }
       );
     }
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
 
   if (!email || !userId) {
     return NextResponse.json(
-      { error: 'メールアドレスとユーザーIDが必要です' },
+      { success: false, error: 'メールアドレスとユーザーIDが必要です' },
       { status: 400 }
     );
   }
@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.json(
-        { error: 'APIキーの取得に失敗しました' },
+        { success: false, error: 'APIキーの取得に失敗しました' },
         { status: 500 }
       );
     }
@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Get API keys error:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { success: false, error: 'サーバーエラーが発生しました' },
       { status: 500 }
     );
   }

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // バリデーション
     if (!email || !newPassword) {
       return NextResponse.json(
-        { error: 'メールアドレスと新しいパスワードを入力してください' },
+        { success: false, error: 'メールアドレスと新しいパスワードを入力してください' },
         { status: 400 }
       );
     }
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // パスワードの長さチェック
     if (newPassword.length < 8) {
       return NextResponse.json(
-        { error: 'パスワードは8文字以上にしてください' },
+        { success: false, error: 'パスワードは8文字以上にしてください' },
         { status: 400 }
       );
     }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     if (listError) {
       console.error('Error listing users:', listError);
       return NextResponse.json(
-        { error: 'ユーザー検索に失敗しました' },
+        { success: false, error: 'ユーザー検索に失敗しました' },
         { status: 500 }
       );
     }
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json(
-        { error: 'ユーザーが見つかりません' },
+        { success: false, error: 'ユーザーが見つかりません' },
         { status: 404 }
       );
     }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Password update error:', error);
       return NextResponse.json(
-        { error: 'パスワードの更新に失敗しました: ' + error.message },
+        { success: false, error: 'パスワードの更新に失敗しました: ' + error.message },
         { status: 500 }
       );
     }
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Admin reset password error:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { success: false, error: 'サーバーエラーが発生しました' },
       { status: 500 }
     );
   }
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
   
   if (!email) {
     return NextResponse.json(
-      { error: 'メールアドレスが必要です' },
+      { success: false, error: 'メールアドレスが必要です' },
       { status: 400 }
     );
   }
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json(
-        { error: 'ユーザーが見つかりません' },
+        { success: false, error: 'ユーザーが見つかりません' },
         { status: 404 }
       );
     }
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { success: false, error: 'サーバーエラーが発生しました' },
       { status: 500 }
     );
   }

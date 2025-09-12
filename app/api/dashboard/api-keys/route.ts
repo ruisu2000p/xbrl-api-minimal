@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // ユーザー認証確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
     // ユーザーのAPIキー取得
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching API keys:', error)
-      return NextResponse.json({ error: 'Failed to fetch API keys' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Failed to fetch API keys' }, { status: 500 })
     }
 
     // APIキーをマスク表示（最初と最後の文字のみ表示）
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ apiKeys: maskedKeys })
   } catch (error) {
     console.error('API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -64,14 +64,14 @@ export async function POST(request: NextRequest) {
     // ユーザー認証確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
     const { name, description, tier = 'free' } = body
 
     if (!name) {
-      return NextResponse.json({ error: 'API key name is required' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'API key name is required' }, { status: 400 })
     }
 
     // APIキー生成
@@ -95,12 +95,12 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Error creating API key:', insertError)
-      return NextResponse.json({ error: 'Failed to create API key' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Failed to create API key' }, { status: 500 })
     }
 
     // 2. レート制限設定を作成
     const limits = tierLimits[tier as keyof typeof tierLimits] || tierLimits.free
-    const { error: rateLimitError } = await supabase
+    const { success: false, error: rateLimitError } = await supabase
       .from('api_key_rate_limits')
       .insert({
         api_key_id: newKey.id,
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       console.error('Error setting rate limits:', rateLimitError)
       // APIキーを削除してロールバック
       await supabase.from('api_keys').delete().eq('id', newKey.id)
-      return NextResponse.json({ error: 'Failed to set rate limits' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Failed to set rate limits' }, { status: 500 })
     }
 
     // 生成したAPIキーは一度だけ表示
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -138,14 +138,14 @@ export async function DELETE(request: NextRequest) {
     // ユーザー認証確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const keyId = searchParams.get('id')
 
     if (!keyId) {
-      return NextResponse.json({ error: 'API key ID is required' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'API key ID is required' }, { status: 400 })
     }
 
     // 所有権確認と削除（RLSポリシーで保護）
@@ -157,12 +157,12 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       console.error('Error revoking API key:', error)
-      return NextResponse.json({ error: 'Failed to revoke API key' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Failed to revoke API key' }, { status: 500 })
     }
 
     return NextResponse.json({ message: 'API key revoked successfully' })
   } catch (error) {
     console.error('API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }

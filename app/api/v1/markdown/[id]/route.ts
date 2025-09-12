@@ -27,7 +27,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     const auth = await authByApiKey(req);
     if (!auth.ok) {
       return NextResponse.json(
-        { error: auth.error },
+        { success: false, error: auth.error },
         { status: auth.status }
       );
     }
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
       
       return NextResponse.json(
-        { error: 'Rate limit exceeded. Please wait a moment.' },
+        { success: false, error: 'Rate limit exceeded. Please wait a moment.' },
         { status: 429 }
       );
     }
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
       
       return NextResponse.json(
-        { error: 'Document not found' },
+        { success: false, error: 'Document not found' },
         { status: 404 }
       );
     }
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
       
       return NextResponse.json(
-        { error: 'Failed to retrieve document content' },
+        { success: false, error: 'Failed to retrieve document content' },
         { status: 500 }
       );
     }
@@ -145,7 +145,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     console.error('API error:', error);
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

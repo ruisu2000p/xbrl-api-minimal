@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const apiKey = request.headers.get('X-API-Key')
     if (!apiKey) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'API key required', status: 401 },
+        { success: false, error: 'API key required', status: 401 },
         { status: 401 }
       )
     }
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     
     if (!validKey) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Invalid API key', status: 401 },
+        { success: false, error: 'Invalid API key', status: 401 },
         { status: 401 }
       )
     }
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Database error:', error)
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Failed to fetch companies', status: 500 },
+        { success: false, error: 'Failed to fetch companies', status: 500 },
         { status: 500 }
       )
     }
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json<ApiResponse<null>>(
-      { error: 'Internal server error', status: 500 },
+      { success: false, error: 'Internal server error', status: 500 },
       { status: 500 }
     )
   }

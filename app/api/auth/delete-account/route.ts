@@ -13,7 +13,7 @@ export async function DELETE(request: NextRequest) {
     // バリデーション
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'メールアドレスとパスワードが必要です' },
+        { success: false, error: 'メールアドレスとパスワードが必要です' },
         { status: 400 }
       );
     }
@@ -44,7 +44,7 @@ export async function DELETE(request: NextRequest) {
 
     if (authError || !authData.user) {
       return NextResponse.json(
-        { error: 'メールアドレスまたはパスワードが正しくありません' },
+        { success: false, error: 'メールアドレスまたはパスワードが正しくありません' },
         { status: 401 }
       );
     }
@@ -81,7 +81,7 @@ export async function DELETE(request: NextRequest) {
     if (apiKeys && apiKeys.length > 0) {
       console.log(`Found ${apiKeys.length} API keys to delete`);
       
-      const { error: deleteKeysError } = await supabaseAdmin
+      const { success: false, error: deleteKeysError } = await supabaseAdmin
         .from('api_keys')
         .delete()
         .eq('user_id', userId);
@@ -103,7 +103,7 @@ export async function DELETE(request: NextRequest) {
 
     // 3. public.usersから削除
     console.log('📦 Deleting from public.users...');
-    const { error: publicUserError } = await supabaseAdmin
+    const { success: false, error: publicUserError } = await supabaseAdmin
       .from('users')
       .delete()
       .eq('id', userId);
@@ -129,7 +129,7 @@ export async function DELETE(request: NextRequest) {
 
     // 5. auth.usersから削除（最後に実行）
     console.log('🔐 Deleting from auth.users...');
-    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    const { success: false, error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (authDeleteError) {
       console.error('Failed to delete from auth.users:', authDeleteError);
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'メールアドレスとパスワードが必要です' },
+        { success: false, error: 'メールアドレスとパスワードが必要です' },
         { status: 400 }
       );
     }
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !authData.user) {
       return NextResponse.json(
-        { error: 'メールアドレスまたはパスワードが正しくありません' },
+        { success: false, error: 'メールアドレスまたはパスワードが正しくありません' },
         { status: 401 }
       );
     }
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Preview error:', error);
     return NextResponse.json(
-      { error: 'プレビューの取得に失敗しました' },
+      { success: false, error: 'プレビューの取得に失敗しました' },
       { status: 500 }
     );
   }

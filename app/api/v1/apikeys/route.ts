@@ -26,7 +26,7 @@ export async function GET() {
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please login first.' },
+        { success: false, error: 'Unauthorized. Please login first.' },
         { status: 401 }
       );
     }
@@ -41,7 +41,7 @@ export async function GET() {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch API keys' },
+        { success: false, error: 'Failed to fetch API keys' },
         { status: 500 }
       );
     }
@@ -68,7 +68,7 @@ export async function GET() {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please login first.' },
+        { success: false, error: 'Unauthorized. Please login first.' },
         { status: 401 }
       );
     }
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 
     if ((count || 0) >= 10) {
       return NextResponse.json(
-        { error: 'API key limit reached. Please revoke unused keys.' },
+        { success: false, error: 'API key limit reached. Please revoke unused keys.' },
         { status: 400 }
       );
     }
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json(
-        { error: 'Failed to create API key' },
+        { success: false, error: 'Failed to create API key' },
         { status: 500 }
       );
     }
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -191,7 +191,7 @@ export async function DELETE(req: NextRequest) {
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please login first.' },
+        { success: false, error: 'Unauthorized. Please login first.' },
         { status: 401 }
       );
     }
@@ -202,7 +202,7 @@ export async function DELETE(req: NextRequest) {
 
     if (ids.length === 0) {
       return NextResponse.json(
-        { error: 'No API key IDs provided' },
+        { success: false, error: 'No API key IDs provided' },
         { status: 400 }
       );
     }
@@ -224,7 +224,7 @@ export async function DELETE(req: NextRequest) {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json(
-        { error: 'Failed to revoke API keys' },
+        { success: false, error: 'Failed to revoke API keys' },
         { status: 500 }
       );
     }
@@ -236,7 +236,7 @@ export async function DELETE(req: NextRequest) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

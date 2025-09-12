@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     // バリデーション
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'メールアドレスとパスワードを入力してください' },
+        { success: false, error: 'メールアドレスとパスワードを入力してください' },
         { status: 400 }
       );
     }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !authData.user) {
       return NextResponse.json(
-        { error: 'メールアドレスまたはパスワードが正しくありません' },
+        { success: false, error: 'メールアドレスまたはパスワードが正しくありません' },
         { status: 401 }
       );
     }
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { success: false, error: 'サーバーエラーが発生しました' },
       { status: 500 }
     );
   }

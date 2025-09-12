@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   try {
     const adminKey = req.headers.get('X-Admin-Key');
     if (adminKey !== 'admin2025xbrl') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: authData } = await admin.auth.admin.listUsers();
@@ -29,6 +29,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ users: usersWithKeys });
   } catch (error) {
     console.error('Error:', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal error' }, { status: 500 });
   }
 }

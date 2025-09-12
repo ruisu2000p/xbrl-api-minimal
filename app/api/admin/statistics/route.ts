@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Statistics API Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch statistics' },
+      { success: false, error: 'Failed to fetch statistics' },
       { status: 500 }
     );
   }

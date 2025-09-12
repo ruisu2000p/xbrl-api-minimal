@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     
     if (!validateApiKey(apiKey)) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json(
-        { error: 'Database query failed' },
+        { success: false, error: 'Database query failed' },
         { status: 500 }
       );
     }
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     
     if (!validateApiKey(apiKey)) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
 
     if (!file_path && !storage_path) {
       return NextResponse.json(
-        { error: 'file_path or storage_path is required' },
+        { success: false, error: 'file_path or storage_path is required' },
         { status: 400 }
       );
     }
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
 
     if (metaError || !metadata) {
       return NextResponse.json(
-        { error: 'File metadata not found' },
+        { success: false, error: 'File metadata not found' },
         { status: 404 }
       );
     }
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
     if (storageError || !fileData) {
       console.error('Storage error:', storageError);
       return NextResponse.json(
-        { error: 'File not found in storage' },
+        { success: false, error: 'File not found in storage' },
         { status: 404 }
       );
     }
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Content fetch error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -12,7 +12,7 @@ export async function GET() {
     
     if (!user) {
       return NextResponse.json(
-        { error: 'Not authenticated' },
+        { success: false, error: 'Not authenticated' },
         { status: 401 }
       );
     }
@@ -28,7 +28,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error getting user:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -92,7 +92,7 @@ export async function GET(
     
     if (!validateApiKey(apiKey)) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -102,7 +102,7 @@ export async function GET(
 
     if (!companyData) {
       return NextResponse.json(
-        { error: 'Company not found' },
+        { success: false, error: 'Company not found' },
         { status: 404 }
       );
     }
@@ -119,7 +119,7 @@ export async function GET(
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

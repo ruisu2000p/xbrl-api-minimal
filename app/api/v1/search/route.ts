@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     
     if (!validateApiKey(apiKey)) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     if (!query) {
       return NextResponse.json(
-        { error: 'Query parameter "q" is required' },
+        { success: false, error: 'Query parameter "q" is required' },
         { status: 400 }
       );
     }
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Search API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
     
     if (!validateApiKey(apiKey)) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -270,7 +270,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Advanced search error:', error);
       return NextResponse.json(
-        { error: 'Search failed' },
+        { success: false, error: 'Search failed' },
         { status: 500 }
       );
     }
@@ -303,7 +303,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Advanced search API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
