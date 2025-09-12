@@ -75,6 +75,20 @@ export interface StorageFile {
   metadata?: Record<string, any>;
 }
 
+export interface FileMetadata {
+  name: string;
+  id?: string;
+  updated_at?: string;
+  created_at?: string;
+  last_accessed_at?: string;
+  metadata?: Record<string, any>;
+  bucket_id?: string;
+  owner?: string;
+  cache_control?: string;
+  content_type?: string;
+  size?: number;
+}
+
 export interface MarkdownDocument {
   company_id: string;
   company_name: string;
