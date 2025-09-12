@@ -81,7 +81,7 @@ export async function DELETE(request: NextRequest) {
     if (apiKeys && apiKeys.length > 0) {
       console.log(`Found ${apiKeys.length} API keys to delete`);
       
-      const { success: false, error: deleteKeysError } = await supabaseAdmin
+      const { error: deleteKeysError } = await supabaseAdmin
         .from('api_keys')
         .delete()
         .eq('user_id', userId);
@@ -103,7 +103,7 @@ export async function DELETE(request: NextRequest) {
 
     // 3. public.usersから削除
     console.log('📦 Deleting from public.users...');
-    const { success: false, error: publicUserError } = await supabaseAdmin
+    const { error: publicUserError } = await supabaseAdmin
       .from('users')
       .delete()
       .eq('id', userId);
@@ -129,7 +129,7 @@ export async function DELETE(request: NextRequest) {
 
     // 5. auth.usersから削除（最後に実行）
     console.log('🔐 Deleting from auth.users...');
-    const { success: false, error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (authDeleteError) {
       console.error('Failed to delete from auth.users:', authDeleteError);

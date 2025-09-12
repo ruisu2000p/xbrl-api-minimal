@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     const userId = authData.user.id;
 
     // public.usersテーブルにも保存
-    const { success: false, error: dbUserError } = await supabaseAdmin
+    const { error: dbUserError } = await supabaseAdmin
       .from('users')
       .insert({
         id: userId,

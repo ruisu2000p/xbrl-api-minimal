@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     // 2. レート制限設定を作成
     const limits = tierLimits[tier as keyof typeof tierLimits] || tierLimits.free
-    const { success: false, error: rateLimitError } = await supabase
+    const { error: rateLimitError } = await supabase
       .from('api_key_rate_limits')
       .insert({
         api_key_id: newKey.id,
