@@ -51,9 +51,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { 
           success: false, 
-          error: `Database error: ${error.message}`,
-          hint: error.hint || '',
-          details: error.details || ''
+          error: `Database error: ${error.message} ${error.hint || ''}`,
+          status: 500
         },
         { status: 500 }
       );
@@ -77,8 +76,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        status: 500
       },
       { status: 500 }
     );

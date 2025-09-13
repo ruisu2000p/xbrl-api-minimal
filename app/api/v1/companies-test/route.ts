@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
         { 
           success: false, 
           error: `Database error: ${error.message}`,
-          details: error,
           status: 500 
         },
         { status: 500 }
@@ -80,8 +79,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json<ApiResponse<null>>(
       { 
         success: false, 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         status: 500 
       },
       { status: 500 }
