@@ -108,6 +108,7 @@ export default function RegisterPage() {
         setLoading(false)
         setSuccessMessage('登録処理中です... しばらくお待ちください')
 
+        // returnしてここで処理を終了（即座のリダイレクトを防ぐ）
         // Supabaseへの登録とセッション確立を待つ（3秒）
         setTimeout(() => {
           setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
@@ -118,6 +119,8 @@ export default function RegisterPage() {
             window.location.href = '/dashboard'
           }, 1000)
         }, 3000)
+
+        return // 重要: ここでreturnして、以降の処理を実行しない
       }
     } catch (err: any) {
       const errorMessage = err?.message || err?.toString() || '不明なエラー'
