@@ -77,10 +77,12 @@ export default function RegisterPage() {
         userCreated: !!result.data?.user,
         userId: result.data?.user?.id || 'なし',
         sessionCreated: !!result.data?.session,
+        hasSession: !!result.data?.session,
         errorMessage: result.error?.message || 'なし',
         errorDetails: (result.error as any)?.details || 'なし',
         errorOriginal: (result.error as any)?.originalMessage || 'なし',
         isExistingUser: !!(result as any).isExistingUser,
+        autoSignedIn: !!(result as any).autoSignedIn,
         requiresEmailConfirmation: !!(result as any).requiresEmailConfirmation,
         supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT SET',
         hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -88,12 +90,13 @@ export default function RegisterPage() {
 
       setDebugInfo(JSON.stringify(debugResult, null, 2))
 
-      // デバッグ用にアラートを追加
       if (result.error) {
         setError(result.error.message)
+        setLoading(false)
       } else if (result.data?.user) {
         // 既存ユーザーとしてログイン成功
         if ((result as any).isExistingUser) {
+          setLoading(false)
           setSuccessMessage('既存のアカウントでログインしました。ダッシュボードへリダイレクトします...')
           setTimeout(() => {
             router.push('/dashboard')
@@ -101,24 +104,7 @@ export default function RegisterPage() {
           return
         }
 
-        // autoSignedInの場合も待機処理を行う
-        if ((result as any).autoSignedIn) {
-          setLoading(false)
-          setSuccessMessage('登録処理中です... しばらくお待ちください')
-
-          // Supabaseへの登録とセッション確立を待つ（3秒）
-          setTimeout(() => {
-            setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
-
-            // さらに1秒待ってからリダイレクト
-            setTimeout(() => {
-              window.location.href = '/dashboard'
-            }, 1000)
-          }, 3000)
-          return
-        }
-
-        // 新規登録成功（通常のフロー）
+        // 新規登録成功 - すべての成功ケースで待機処理を行う
         setLoading(false)
         setSuccessMessage('登録処理中です... しばらくお待ちください')
 
