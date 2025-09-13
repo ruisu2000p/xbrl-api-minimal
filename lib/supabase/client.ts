@@ -1,15 +1,18 @@
 import { createBrowserClient } from '@supabase/ssr'
 
-// シングルトンインスタンスを保持
-let supabaseClient: ReturnType<typeof createBrowserClient> | null = null
+// グローバルスコープでシングルトンを管理
+declare global {
+  var __supabaseClient: ReturnType<typeof createBrowserClient> | undefined
+}
 
 /**
  * Create Supabase client with cookie-based session for client-side usage
  * Uses singleton pattern to avoid multiple instances
  */
 export function createSupabaseClient() {
-  if (supabaseClient) {
-    return supabaseClient
+  // すでにグローバルインスタンスが存在する場合はそれを返す
+  if (global.__supabaseClient) {
+    return global.__supabaseClient
   }
 
   // 環境変数から取得（NEXT_PUBLIC_プレフィックスでクライアントサイドでも利用可能）
@@ -20,8 +23,15 @@ export function createSupabaseClient() {
     throw new Error('Missing Supabase environment variables')
   }
 
-  supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey)
-  return supabaseClient
+  // グローバルインスタンスを作成
+  const client = createBrowserClient(supabaseUrl, supabaseAnonKey)
+
+  // 開発環境でのみグローバルに保存（本番環境でも同じ挙動にする）
+  if (typeof window !== 'undefined') {
+    global.__supabaseClient = client
+  }
+
+  return client
 }
 
 // サーバーサイド専用のSupabaseクライアント（SERVICE_ROLE_KEY使用）
