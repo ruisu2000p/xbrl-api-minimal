@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [debugInfo, setDebugInfo] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
@@ -28,6 +29,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuccessMessage(null)
     setDebugInfo(null)
     setLoading(true)
 
@@ -91,7 +93,7 @@ export default function RegisterPage() {
       } else if (result.data?.user) {
         // 既存ユーザーとしてログイン成功
         if ((result as any).isExistingUser) {
-          setError('既存のアカウントでログインしました。ダッシュボードへリダイレクトします...')
+          setSuccessMessage('既存のアカウントでログインしました。ダッシュボードへリダイレクトします...')
           setTimeout(() => {
             router.push('/dashboard')
           }, 1000)
@@ -99,11 +101,12 @@ export default function RegisterPage() {
         }
 
         // 新規登録成功
-        setError('登録処理中です... しばらくお待ちください')
+        setLoading(false)
+        setSuccessMessage('登録処理中です... しばらくお待ちください')
 
         // Supabaseへの登録とセッション確立を待つ（3秒）
         setTimeout(() => {
-          setError('登録が完了しました！ダッシュボードへ移動します...')
+          setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
 
           // さらに1秒待ってからリダイレクト
           setTimeout(() => {
@@ -142,6 +145,12 @@ export default function RegisterPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
                 {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+                {successMessage}
               </div>
             )}
 
