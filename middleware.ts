@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
   const authRoutes = ['/auth/login', '/auth/register']
   const publicRoutes = ['/auth/processing', '/auth/callback'] // 常にアクセス可能なページ
 
-  // パブリックルートは常に許可
+  // パブリックルートは常に許可（最初にチェック）
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     return supabaseResponse
   }

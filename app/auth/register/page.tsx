@@ -104,13 +104,13 @@ export default function RegisterPage() {
           return
         }
 
-        // 新規登録成功 - 待機画面へ強制的にリダイレクト
+        // 新規登録成功 - 待機画面へ強制的にリダイレクト（クライアントサイドで完全なURLリダイレクト）
         setLoading(false)
         setSuccessMessage('登録リクエストを受け付けました。処理画面へ移動します...')
 
-        // 1秒後に待機画面へリダイレクト
+        // 1秒後に待機画面へリダイレクト（window.location.hrefを使用）
         setTimeout(() => {
-          router.push('/auth/processing')
+          window.location.href = '/auth/processing'
         }, 1000)
 
         return // 重要: ここでreturnして、以降の処理を実行しない
