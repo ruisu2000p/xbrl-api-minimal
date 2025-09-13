@@ -5,12 +5,6 @@ export async function signUpWithEmail(email: string, password: string, metadata?
   const supabase = createSupabaseClient()
 
   try {
-    // まず既存ユーザーをチェック
-    const { data: existingUser } = await supabase.auth.signInWithPassword({
-      email,
-      password: 'dummy_check_password_12345' // 意図的に間違ったパスワード
-    }).catch(() => ({ data: null }))
-
     // 登録を試みる
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -21,18 +15,31 @@ export async function signUpWithEmail(email: string, password: string, metadata?
       }
     })
 
-    // エラーの詳細を処理
+    // エラーチェック
     if (error) {
-      // Database error saving new userの場合、より詳しいエラーメッセージに変換
-      if (error.message === 'Database error saving new user') {
-        return {
-          data,
-          error: {
-            ...error,
-            message: 'ユーザー登録でデータベースエラーが発生しました。このメールアドレスは既に登録されている可能性があります。',
-            originalMessage: error.message,
-            status: (error as any)?.status,
-            code: (error as any)?.code
+      // User already registeredのエラーをキャッチ
+      if (error.message.includes('User already registered')) {
+        // 既存ユーザーの場合は自動的にログインを試みる
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        })
+
+        if (signInError) {
+          return {
+            data: null,
+            error: {
+              message: 'このメールアドレスは既に登録されています。パスワードが正しくない場合はログインページからパスワードリセットをしてください。',
+              originalMessage: error.message
+            }
+          }
+        }
+
+        if (signInData?.session) {
+          return {
+            data: signInData,
+            error: null,
+            isExistingUser: true
           }
         }
       }
@@ -40,16 +47,18 @@ export async function signUpWithEmail(email: string, password: string, metadata?
       return { data, error }
     }
 
-    // 登録成功後、自動的にサインインを試みる
+    // 新規登録成功の場合
     if (data.user) {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
+      // セッションが既にある場合（メール確認不要の設定）
+      if (data.session) {
+        return { data, error: null }
+      }
 
-      // サインイン成功時はそのデータを返す
-      if (signInData?.session) {
-        return { data: signInData, error: signInError }
+      // メール確認が必要な場合
+      return {
+        data,
+        error: null,
+        requiresEmailConfirmation: true
       }
     }
 
@@ -59,8 +68,7 @@ export async function signUpWithEmail(email: string, password: string, metadata?
       data: null,
       error: {
         message: `予期しないエラーが発生しました: ${err.message || err}`,
-        originalError: err.message || err.toString(),
-        ...(err as any)
+        originalError: err.message || err.toString()
       }
     }
   }

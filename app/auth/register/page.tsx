@@ -60,7 +60,7 @@ export default function RegisterPage() {
       }
 
       // Supabase Authを使用して直接登録
-      const { data, error } = await signUpWithEmail(
+      const result = await signUpWithEmail(
         formData.email,
         formData.password,
         {
@@ -72,25 +72,37 @@ export default function RegisterPage() {
       // デバッグ情報を更新
       const debugResult = {
         ...debugData,
-        userCreated: !!data?.user,
-        sessionCreated: !!data?.session,
-        errorMessage: error?.message || 'なし',
-        errorCode: (error as any)?.code || 'なし'
+        userCreated: !!result.data?.user,
+        sessionCreated: !!result.data?.session,
+        errorMessage: result.error?.message || 'なし',
+        isExistingUser: !!(result as any).isExistingUser,
+        requiresEmailConfirmation: !!(result as any).requiresEmailConfirmation
       }
 
       setDebugInfo(JSON.stringify(debugResult, null, 2))
 
-      if (error) {
-        setError(`登録エラー: ${error.message || '不明なエラー'} (コード: ${(error as any)?.code || 'unknown'})`)
-      } else if (data.user) {
-        // 登録成功
-        // セッションが作成された場合は直接ダッシュボードへ
-        // セッションがない場合もログインページへリダイレクト（自動ログインできなかった場合）
-        if (data.session) {
+      if (result.error) {
+        setError(result.error.message)
+      } else if (result.data?.user) {
+        // 既存ユーザーとしてログイン成功
+        if ((result as any).isExistingUser) {
+          setError('既存のアカウントでログインしました。ダッシュボードへリダイレクトします...')
+          setTimeout(() => {
+            router.push('/dashboard')
+          }, 2000)
+          return
+        }
+
+        // 新規登録成功
+        if (result.data.session) {
+          // セッションがある場合は直接ダッシュボードへ
           router.push('/dashboard')
+        } else if ((result as any).requiresEmailConfirmation) {
+          // メール確認が必要な場合
+          setError('登録が完了しました！確認メールを送信しましたので、メールをご確認ください。')
         } else {
-          // 登録は成功したが自動ログインできなかった場合
-          setError('登録は成功しましたが、自動ログインに失敗しました。ログインページからログインしてください。')
+          // その他の場合はログインページへ
+          setError('登録が完了しました。ログインページからログインしてください。')
           setTimeout(() => {
             router.push('/auth/login?registered=true')
           }, 3000)
