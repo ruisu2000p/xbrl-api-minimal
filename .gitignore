@@ -1,16 +1,23 @@
 # Dependencies
 node_modules/
 package-lock.json
+/.pnp
+.pnp.js
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+.env.production
+.env.wpwqxhyiglbtlaimrjrx
 
 # Test files
 test-secure.js
 final-check.js
 security-check.js
+*.test.js
+*.test.ts
+get-*.js
 
 # Config examples (keep in repo for reference)
 # claude-config-example.json
@@ -25,10 +32,23 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+next-env.d.ts
+
+# Production
+/build
+/dist
+
 # OS files
 .DS_Store
 Thumbs.db
 desktop.ini
+*.pem
 
 # Editor
 .vscode/
@@ -40,16 +60,26 @@ desktop.ini
 tmp/
 temp/
 *.tmp
-
-# Build output
-dist/
-build/
-out/
-
-# Coverage
-coverage/
-.nyc_output/
-
-# Misc
+*.temp
 .cache/
 .history/
+
+# Coverage
+.nyc_output/
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
+# MCP local configs
+mcp-config.json
+/mcp-server/node_modules
+
+# SQL batch files (too many files)
+scripts/sql-inserts/
+scripts/sql-metadata/
+
+# Serena
+.serena/

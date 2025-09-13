@@ -1,0 +1,1 @@
+-- Check existing table structure

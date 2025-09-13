@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "xbrl-api": {
+      "command": "npx",
+      "args": ["xbrl-mcp-server"],
+      "env": {
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
+        "XBRL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}

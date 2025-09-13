@@ -1,0 +1,33 @@
+{
+  "name": "xbrl-api-vercel",
+  "description": "Vercel MCP integration for XBRL財務データAPI",
+  "endpoint": "https://mcp.vercel.com",
+  "projectUrl": "https://mcp.vercel.com/ruisu2000p/xbrl-api-minimal",
+  "capabilities": [
+    "search-docs",
+    "manage-projects",
+    "analyze-logs",
+    "deployments"
+  ],
+  "authentication": {
+    "type": "oauth",
+    "requiresConsent": true
+  },
+  "securityNotes": [
+    "Verify the official endpoint before connecting",
+    "Only use trusted MCP clients",
+    "Enable human confirmation for workflows"
+  ],
+  "supportedClients": [
+    "Claude Code",
+    "Claude Desktop",
+    "ChatGPT",
+    "Cursor",
+    "VS Code with Copilot",
+    "Devin",
+    "Raycast",
+    "Gemini Code Assist"
+  ],
+  "beta": true,
+  "lastUpdated": "2025-09-13"
+}
