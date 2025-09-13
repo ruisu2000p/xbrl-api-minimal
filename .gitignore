@@ -12,7 +12,9 @@ node_modules/
 # Test files
 *.test.js
 *.test.ts
-**/*test*
+*.spec.js
+*.spec.ts
+# **/*test*  # Commented out to allow test-mcp page
 **/*spec*
 
 # Config examples (keep in repo for reference)
