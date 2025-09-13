@@ -1,3 +1,7 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * 現在のユーザー情報を取得
  * GET /api/auth/me

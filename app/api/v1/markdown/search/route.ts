@@ -1,3 +1,7 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * Markdown検索API
  * GET /api/v1/markdown/search?q=keyword&limit=20

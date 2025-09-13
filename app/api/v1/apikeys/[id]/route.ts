@@ -1,3 +1,7 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * 個別APIキー管理エンドポイント
  * DELETE: APIキーを失効

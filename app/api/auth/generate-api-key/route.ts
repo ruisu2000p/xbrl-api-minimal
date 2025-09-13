@@ -1,3 +1,7 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // APIキー生成専用エンドポイント
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';

@@ -1,3 +1,7 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextRequest, NextResponse } from 'next/server';
 import { admin } from '@/app/api/_lib/supabaseAdmin';
 import { getCurrentUserId, getCurrentUser } from '@/app/api/_lib/supabaseAuth';

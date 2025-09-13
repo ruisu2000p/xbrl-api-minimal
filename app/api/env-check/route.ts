@@ -1,3 +1,7 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // 環境変数チェック用エンドポイント（デバッグ用）
 import { NextRequest, NextResponse } from 'next/server';
 
