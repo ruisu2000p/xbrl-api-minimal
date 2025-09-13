@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardPage() {
   const router = useRouter()
   const [apiKeys, setApiKeys] = useState<any[]>([])
   const [newKeyName, setNewKeyName] = useState('')
+  const [newKeyDescription, setNewKeyDescription] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedKey, setGeneratedKey] = useState<string | null>(null)
   const [showKeyModal, setShowKeyModal] = useState(false)
@@ -16,52 +18,50 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // ユーザー情報の取得（オプション）
-    const checkUser = async () => {
+    // Supabase認証状態の確認とAPIキー取得
+    const initializeDashboard = async () => {
       try {
-        // LocalStorageから基本情報を取得
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
-          setUser(JSON.parse(storedUser))
+        const supabase = createClient()
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError || !authUser) {
+          router.push('/login')
+          return
         }
         
-        // APIキー一覧を取得
+        setUser(authUser)
         await fetchApiKeys()
       } catch (error) {
-        console.error('Init error:', error)
+        console.error('Dashboard initialization error:', error)
+        setError('ダッシュボードの初期化に失敗しました')
       } finally {
         setLoading(false)
       }
     }
     
-    checkUser()
-  }, [])
+    initializeDashboard()
+  }, [router])
 
   const fetchApiKeys = async () => {
     try {
-      // LocalStorageから取得
-      const storedKeys = localStorage.getItem('apiKeys')
-      if (storedKeys) {
-        setApiKeys(JSON.parse(storedKeys))
+      const response = await fetch('/api/dashboard/api-keys', {
+        method: 'GET',
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
       
-      // APIからも取得を試みる
-      try {
-        const response = await fetch('/api/apikeys/generate')
-        const data = await response.json()
-        if (data.success && data.data) {
-          // APIからのデータとマージ
-          const localKeys = JSON.parse(localStorage.getItem('apiKeys') || '[]')
-          const mergedKeys = [...data.data, ...localKeys.filter((k: any) => 
-            !data.data.some((d: any) => d.id === k.id)
-          )]
-          setApiKeys(mergedKeys)
-        }
-      } catch {
-        // APIエラーは無視（LocalStorageのみ使用）
+      const data = await response.json()
+      if (data.apiKeys) {
+        setApiKeys(data.apiKeys)
+      } else {
+        setApiKeys([])
       }
     } catch (error) {
       console.error('Failed to fetch API keys:', error)
+      setError('APIキーの取得に失敗しました')
     }
   }
 
@@ -70,38 +70,38 @@ export default function DashboardPage() {
     setIsGenerating(true)
     
     try {
-      const response = await fetch('/api/apikeys/generate', {
+      const response = await fetch('/api/dashboard/api-keys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: newKeyName || 'My API Key',
-          email: user?.email || 'user@example.com'
+          description: newKeyDescription || 'API key generated from dashboard',
+          tier: 'free'
         })
       })
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
       const data = await response.json()
       
-      if (data.success) {
-        setGeneratedKey(data.data.key)
+      if (data.apiKey) {
+        setGeneratedKey(data.apiKey)
         setShowKeyModal(true)
         setNewKeyName('')
-        
-        // LocalStorageに保存
-        const existingKeys = JSON.parse(localStorage.getItem('apiKeys') || '[]')
-        existingKeys.unshift({
-          ...data.data,
-          key_preview: data.data.key_preview || `${data.data.key.substring(0, 16)}...${data.data.key.slice(-4)}`
-        })
-        localStorage.setItem('apiKeys', JSON.stringify(existingKeys))
+        setNewKeyDescription('')
         
         // リストを更新
-        fetchApiKeys()
+        await fetchApiKeys()
       } else {
         setError(data.error || 'APIキーの生成に失敗しました')
       }
     } catch (error) {
+      console.error('Generate API key error:', error)
       setError('APIキーの生成中にエラーが発生しました')
     } finally {
       setIsGenerating(false)
@@ -119,12 +119,32 @@ export default function DashboardPage() {
     })
   }
 
-  const deleteApiKey = (keyId: string) => {
-    if (confirm('このAPIキーを削除してもよろしいですか？')) {
-      const keys = JSON.parse(localStorage.getItem('apiKeys') || '[]')
-      const filtered = keys.filter((k: any) => k.id !== keyId)
-      localStorage.setItem('apiKeys', JSON.stringify(filtered))
-      setApiKeys(filtered)
+  const deleteApiKey = async (keyId: string) => {
+    if (!confirm('このAPIキーを削除してもよろしいですか？')) {
+      return
+    }
+    
+    try {
+      const response = await fetch(`/api/dashboard/api-keys?id=${keyId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.message) {
+        // 成功：リストを更新
+        await fetchApiKeys()
+      } else {
+        setError(data.error || 'APIキーの削除に失敗しました')
+      }
+    } catch (error) {
+      console.error('Delete API key error:', error)
+      setError('APIキーの削除中にエラーが発生しました')
     }
   }
 
@@ -178,18 +198,27 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="APIキー名（オプション）"
-              value={newKeyName}
-              onChange={(e) => setNewKeyName(e.target.value)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                placeholder="APIキー名（例：本番用キー）"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                placeholder="説明（オプション）"
+                value={newKeyDescription}
+                onChange={(e) => setNewKeyDescription(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
             <button
               onClick={generateApiKey}
               disabled={isGenerating}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {isGenerating ? '生成中...' : 'APIキーを生成'}
             </button>
@@ -215,32 +244,54 @@ export default function DashboardPage() {
                 <div key={key.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold text-gray-900">{key.name}</h3>
                         <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          key.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          key.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {key.status === 'active' ? 'アクティブ' : '無効'}
+                          {key.status === 'active' ? 'アクティブ' : key.status === 'revoked' ? '無効' : key.status}
+                        </span>
+                        <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                          {key.tier || 'free'}
                         </span>
                       </div>
-                      <div className="mt-2 flex items-center gap-2">
+                      
+                      {key.description && (
+                        <p className="text-sm text-gray-600 mb-2">{key.description}</p>
+                      )}
+                      
+                      <div className="flex items-center gap-2 mb-2">
                         <code className="bg-gray-100 px-2 py-1 rounded text-sm">
-                          {key.key_preview || key.key?.substring(0, 20) + '...'}
+                          {key.key_preview || `${key.name?.substring(0, 10)}...`}
                         </code>
                         <button
-                          onClick={() => copyToClipboard(key.key || key.key_preview)}
+                          onClick={() => copyToClipboard(key.key_preview || key.name || '')}
                           className="text-sm text-blue-600 hover:text-blue-800"
                         >
                           コピー
                         </button>
                       </div>
-                      <p className="text-xs text-gray-400 mt-2">
-                        作成日: {new Date(key.created_at).toLocaleDateString('ja-JP')}
-                      </p>
+                      
+                      <div className="text-xs text-gray-400 space-y-1">
+                        <p>作成日: {new Date(key.created_at).toLocaleDateString('ja-JP')}</p>
+                        {key.last_used_at && (
+                          <p>最終使用: {new Date(key.last_used_at).toLocaleDateString('ja-JP')}</p>
+                        )}
+                        {key.expires_at && (
+                          <p>有効期限: {new Date(key.expires_at).toLocaleDateString('ja-JP')}</p>
+                        )}
+                      </div>
+                      
+                      {key.api_key_rate_limits && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          <p>制限: {key.api_key_rate_limits.requests_per_hour}/時間, {key.api_key_rate_limits.requests_per_day}/日</p>
+                          <p>使用量: {key.api_key_rate_limits.current_hour_count}/{key.api_key_rate_limits.requests_per_hour} (今時間)</p>
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => deleteApiKey(key.id)}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 ml-4"
                     >
                       削除
                     </button>
