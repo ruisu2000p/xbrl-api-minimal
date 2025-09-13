@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, TrendingUp, Users, Shield, BarChart, Check, ChevronDown, Activity } from 'react-feather';
+import { useState } from 'react';
+import { Search, TrendingUp, Users, Shield, BarChart, Check, ChevronDown } from 'react-feather';
 
 // モダンUIコンポーネント
 const GlassCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -29,18 +29,6 @@ export default function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [animatedNumber, setAnimatedNumber] = useState(0);
-
-  // アニメーション数値
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAnimatedNumber((prev) => {
-        if (prev >= 4231) return 0;
-        return prev + 53;
-      });
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
 
   // ライブ検索デモ
   const handleSearch = async () => {
@@ -109,10 +97,6 @@ export default function Home() {
         </div>
 
         <div className="max-w-5xl mx-auto px-4 relative z-10">
-          <div className="inline-flex items-center bg-gradient-to-r from-violet-600/10 to-indigo-600/10 backdrop-blur-sm border border-white/20 text-white rounded-full px-4 py-2 mb-6">
-            <Activity className="w-4 h-4 mr-2" />
-            <span className="text-sm font-medium">リアルタイムで {Math.min(animatedNumber, 4231).toLocaleString()} 社のデータを提供中</span>
-          </div>
 
           <h2 className="text-6xl font-bold text-white mb-6 leading-tight">
             日本企業の財務データに
@@ -123,7 +107,7 @@ export default function Home() {
           </h2>
 
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            上場企業4,231社の有価証券報告書を
+            上場企業3,392社の有価証券報告書を
             <br />
             構造化されたAPIで簡単に取得・分析
           </p>
@@ -151,7 +135,7 @@ export default function Home() {
           {/* 統計情報 */}
           <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">4,231</div>
+              <div className="text-3xl font-bold text-white">3,392</div>
               <div className="text-sm text-gray-400">対応企業数</div>
             </div>
             <div className="text-center">
@@ -254,7 +238,7 @@ export default function Home() {
           <h3 className="text-4xl font-bold text-center mb-16 text-white">サービスの特徴</h3>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: '🏢', title: '4,231社の財務データ', description: '日本の上場企業の包括的な財務情報' },
+              { icon: '🏢', title: '3,392社の財務データ', description: '日本の上場企業の包括的な財務情報' },
               { icon: '📊', title: 'Markdown形式', description: '構造化されたデータで簡単に解析可能' },
               { icon: '⚡', title: 'RESTful API', description: 'シンプルで使いやすいエンドポイント' },
               { icon: '🔒', title: 'セキュアなアクセス', description: 'APIキーによる認証とレート制限' },
@@ -376,54 +360,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* お客様の声セクション */}
-      <section className="py-20 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-purple-900 to-slate-800"></div>
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
-          <h3 className="text-4xl font-bold text-center mb-16 text-white">お客様の声</h3>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                company: '金融データ分析会社',
-                name: '田中 様',
-                role: 'データサイエンティスト',
-                comment: 'XBRLデータがMarkdown形式で提供されるので、解析作業が大幅に効率化されました。20年分のデータにアクセスできるのも魅力的です。',
-                rating: 5
-              },
-              {
-                company: '投資コンサルティング',
-                name: '鈴木 様',
-                role: 'アナリスト',
-                comment: 'APIの応答速度が速く、大量のデータ処理にも対応できています。セキュリティ面でも安心して利用できています。',
-                rating: 5
-              },
-              {
-                company: 'AI開発企業',
-                name: '佐藤 様',
-                role: 'エンジニア',
-                comment: 'シンプルなRESTful APIで実装が簡単でした。ドキュメントも充実していて、開発がスムーズに進みました。',
-                rating: 5
-              }
-            ].map((testimonial, index) => (
-              <GlassCard key={index} className="p-8 rounded-2xl hover:bg-white/90 transition-all duration-300 transform hover:-translate-y-1 shadow-xl">
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-6 italic text-lg leading-relaxed">&ldquo;{testimonial.comment}&rdquo;</p>
-                <div className="border-t border-gray-200 pt-6">
-                  <p className="font-semibold text-gray-800">{testimonial.name}</p>
-                  <p className="text-sm text-gray-600">{testimonial.role}</p>
-                  <p className="text-sm text-gray-500">{testimonial.company}</p>
-                </div>
-              </GlassCard>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* FAQセクション */}
       <section className="py-20 relative">
@@ -434,7 +370,7 @@ export default function Home() {
             {[
               {
                 q: 'どのような企業のデータが利用できますか？',
-                a: '日本の上場企業4,231社の有価証券報告書データをご利用いただけます。東証プライム、スタンダード、グロース、その他の市場の企業が含まれています。'
+                a: '日本の上場企業3,392社の有価証券報告書データをご利用いただけます。東証プライム、スタンダード、グロース、その他の市場の企業が含まれています。'
               },
               {
                 q: 'データはどのくらいの頻度で更新されますか？',
@@ -499,7 +435,7 @@ export default function Home() {
   ],
   "pagination": {
     "page": 1,
-    "total": 4231
+    "total": 3392
   }
 }`}
             </pre>
@@ -526,7 +462,7 @@ export default function Home() {
             今すぐ始めよう
           </h3>
           <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
-            4,231社の財務データにアクセスして、データドリブンな意思決定を実現しましょう
+            3,392社の財務データにアクセスして、データドリブンな意思決定を実現しましょう
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a
@@ -557,7 +493,7 @@ export default function Home() {
                 <h5 className="font-bold text-xl">XBRL Financial Data API</h5>
               </div>
               <p className="text-gray-400 mb-4 leading-relaxed">
-                日本の上場企業4,231社の財務データを提供するプロフェッショナルAPIです。
+                日本の上場企業3,392社の財務データを提供するプロフェッショナルAPIです。
               </p>
               <p className="text-gray-500 text-sm">© 2025 XBRL Financial Data API. All rights reserved.</p>
             </div>
