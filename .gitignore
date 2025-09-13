@@ -107,7 +107,14 @@ claud*config*.json
 # Generated/Large files
 scripts/sql-inserts/
 scripts/sql-metadata/
+scripts/temp/
+scripts/generated/
 **/nul
+
+# Development SQL files (temporary)
+**/*batch*.sql
+**/*insert*.sql
+**/temp*.sql
 
 # API keys and secrets (extra protection)
 *secret*
