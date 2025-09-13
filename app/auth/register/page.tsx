@@ -89,10 +89,12 @@ export default function RegisterPage() {
         }
       })
 
-      // 即座に処理画面へリダイレクト
-      setSuccessMessage('登録リクエストを受け付けました。処理画面へ移動します...')
-      // 直接リダイレクト（遅延なし）
-      window.location.href = '/auth/processing'
+      // 登録成功メッセージを表示して、5秒後にダッシュボードへリダイレクト
+      setSuccessMessage('登録リクエストを受け付けました。ダッシュボードへ移動します...')
+      // 5秒後にダッシュボードへリダイレクト
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 5000)
 
       return
     } catch (err: any) {
