@@ -52,7 +52,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-purple-800 via-indigo-800 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 via-purple-900/50 via-indigo-900/30 to-slate-900">
       {/* モダンヘッダー */}
       <header className="fixed w-full top-0 z-50 backdrop-blur-lg bg-slate-900/70 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
