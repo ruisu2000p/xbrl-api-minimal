@@ -40,10 +40,6 @@ export default function TestMCPPage() {
     }
   ]
 
-  useEffect(() => {
-    loadApiKeys()
-  }, [loadApiKeys])
-
   const loadApiKeys = useCallback(async () => {
     const supabase = createSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -65,6 +61,10 @@ export default function TestMCPPage() {
       setApiKey(keys[0].key)
     }
   }, [router])
+
+  useEffect(() => {
+    loadApiKeys()
+  }, [loadApiKeys])
 
   const handleToolChange = (toolName: string) => {
     setSelectedTool(toolName)
