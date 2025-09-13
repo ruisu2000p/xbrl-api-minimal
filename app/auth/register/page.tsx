@@ -88,6 +88,7 @@ export default function RegisterPage() {
 
       setDebugInfo(JSON.stringify(debugResult, null, 2))
 
+      // デバッグ用にアラートを追加
       if (result.error) {
         setError(result.error.message)
       } else if (result.data?.user) {
@@ -100,7 +101,24 @@ export default function RegisterPage() {
           return
         }
 
-        // 新規登録成功
+        // autoSignedInの場合も待機処理を行う
+        if ((result as any).autoSignedIn) {
+          setLoading(false)
+          setSuccessMessage('登録処理中です... しばらくお待ちください')
+
+          // Supabaseへの登録とセッション確立を待つ（3秒）
+          setTimeout(() => {
+            setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
+
+            // さらに1秒待ってからリダイレクト
+            setTimeout(() => {
+              window.location.href = '/dashboard'
+            }, 1000)
+          }, 3000)
+          return
+        }
+
+        // 新規登録成功（通常のフロー）
         setLoading(false)
         setSuccessMessage('登録処理中です... しばらくお待ちください')
 
