@@ -8,9 +8,23 @@ export async function signUpWithEmail(email: string, password: string, metadata?
     email,
     password,
     options: {
-      data: metadata
+      data: metadata,
+      emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined
     }
   })
+
+  // 登録成功後、自動的にサインインを試みる
+  if (data.user && !error) {
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+    
+    // サインイン成功時はそのデータを返す
+    if (signInData.session) {
+      return { data: signInData, error: signInError }
+    }
+  }
 
   return { data, error }
 }
