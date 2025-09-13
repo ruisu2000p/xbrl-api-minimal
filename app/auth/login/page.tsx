@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-// @ts-ignore
 import { signInWithEmail } from '@/lib/auth'
 
 export default function LoginPage() {
