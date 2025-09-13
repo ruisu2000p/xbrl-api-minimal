@@ -52,7 +52,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 via-purple-900/50 via-indigo-900/30 to-slate-900">
       {/* モダンヘッダー */}
       <header className="fixed w-full top-0 z-50 backdrop-blur-lg bg-slate-900/70 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -66,12 +66,6 @@ export default function Home() {
               </div>
             </div>
             <nav className="flex items-center gap-6">
-              <a href="/docs" className="text-gray-300 hover:text-white transition-colors">
-                ドキュメント
-              </a>
-              <a href="/pricing" className="text-gray-300 hover:text-white transition-colors">
-                料金
-              </a>
               <a href="/auth/login" className="text-gray-300 hover:text-white transition-colors">
                 ログイン
               </a>
@@ -107,7 +101,7 @@ export default function Home() {
           </h2>
 
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            上場企業3,392社の有価証券報告書を
+            日本の上場企業の有価証券報告書を
             <br />
             構造化されたAPIで簡単に取得・分析
           </p>
@@ -135,16 +129,16 @@ export default function Home() {
           {/* 統計情報 */}
           <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">3,392</div>
-              <div className="text-sm text-gray-400">対応企業数</div>
+              <div className="text-2xl font-bold text-white">全上場企業</div>
+              <div className="text-sm text-gray-400">対応範囲</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white">20年分</div>
               <div className="text-sm text-gray-400">財務データ</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">99.9%</div>
-              <div className="text-sm text-gray-400">稼働率</div>
+              <div className="text-2xl font-bold text-white">高可用性</div>
+              <div className="text-sm text-gray-400">安定稼働</div>
             </div>
           </div>
         </div>
@@ -238,7 +232,7 @@ export default function Home() {
           <h3 className="text-4xl font-bold text-center mb-16 text-white">サービスの特徴</h3>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: '🏢', title: '3,392社の財務データ', description: '日本の上場企業の包括的な財務情報' },
+              { icon: '🏢', title: '包括的な財務データ', description: '日本の上場企業の包括的な財務情報' },
               { icon: '📊', title: 'Markdown形式', description: '構造化されたデータで簡単に解析可能' },
               { icon: '⚡', title: 'RESTful API', description: 'シンプルで使いやすいエンドポイント' },
               { icon: '🔒', title: 'セキュアなアクセス', description: 'APIキーによる認証とレート制限' },
@@ -255,110 +249,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 料金プランセクション */}
-      <section className="py-20 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-indigo-900 to-slate-900"></div>
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
-          <h3 className="text-4xl font-bold text-center mb-16 text-white">料金プラン</h3>
-          <div className="grid md:grid-cols-4 gap-6">
-            {[
-              {
-                name: '無料',
-                price: '¥0',
-                period: '/月',
-                features: [
-                  '10,000 リクエスト/月',
-                  '基本APIアクセス',
-                  '1年分のデータ',
-                  'コミュニティサポート'
-                ],
-                buttonText: '無料で始める',
-                buttonClass: 'bg-gray-600 hover:bg-gray-700',
-                value: 'free'
-              },
-              {
-                name: 'Basic',
-                price: '¥5,000',
-                period: '/月',
-                features: [
-                  '50,000 リクエスト/月',
-                  '全APIアクセス',
-                  '3年分のデータ',
-                  'メールサポート',
-                  'Webhook対応'
-                ],
-                buttonText: 'Basicを選択',
-                buttonClass: 'bg-blue-600 hover:bg-blue-700',
-                value: 'basic'
-              },
-              {
-                name: 'Pro',
-                price: '¥20,000',
-                period: '/月',
-                features: [
-                  '200,000 リクエスト/月',
-                  '全APIアクセス',
-                  '全期間データ',
-                  '優先サポート',
-                  'SLA保証',
-                  'カスタムフィールド'
-                ],
-                buttonText: 'Proを選択',
-                buttonClass: 'bg-purple-600 hover:bg-purple-700',
-                popular: true,
-                value: 'pro'
-              },
-              {
-                name: 'Enterprise',
-                price: 'お問い合わせ',
-                period: '',
-                features: [
-                  '無制限リクエスト',
-                  'カスタマイズ可能',
-                  '専任サポート',
-                  'オンプレミス対応',
-                  'SLA 99.9%保証'
-                ],
-                buttonText: 'お問い合わせ',
-                buttonClass: 'bg-gray-800 hover:bg-gray-900',
-                value: 'enterprise'
-              }
-            ].map((plan, index) => (
-              <GlassCard
-                key={index}
-                className={`rounded-2xl p-8 hover:bg-white/90 transition-all duration-300 transform hover:scale-105 ${plan.popular ? 'ring-2 ring-violet-400 shadow-2xl' : 'hover:shadow-xl'}`}
-              >
-                {plan.popular && (
-                  <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm px-4 py-2 rounded-full inline-block mb-6 font-semibold shadow-lg">
-                    人気プラン
-                  </div>
-                )}
-                <h4 className="text-2xl font-bold mb-4 text-gray-800">{plan.name}</h4>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                  <span className="text-gray-600">{plan.period}</span>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature, fIndex) => (
-                    <li key={fIndex} className="flex items-start">
-                      <svg className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => handlePlanSelect(plan.value)}
-                  className={`w-full text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${plan.buttonClass} shadow-lg`}
-                >
-                  {plan.buttonText}
-                </button>
-              </GlassCard>
-            ))}
-          </div>
-        </div>
-      </section>
 
 
       {/* FAQセクション */}
@@ -370,7 +260,7 @@ export default function Home() {
             {[
               {
                 q: 'どのような企業のデータが利用できますか？',
-                a: '日本の上場企業3,392社の有価証券報告書データをご利用いただけます。東証プライム、スタンダード、グロース、その他の市場の企業が含まれています。'
+                a: '日本の上場企業の有価証券報告書データをご利用いただけます。東証プライム、スタンダード、グロース、その他の市場の企業が含まれています。'
               },
               {
                 q: 'データはどのくらいの頻度で更新されますか？',
@@ -412,47 +302,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* APIドキュメントセクション */}
-      <section className="py-20 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-purple-900 to-slate-800"></div>
-        <div className="max-w-4xl mx-auto px-4 relative z-10">
-          <h3 className="text-4xl font-bold text-center mb-16 text-white">簡単なAPI利用</h3>
-          <div className="bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 text-white border border-white/10 shadow-2xl">
-            <div className="mb-6">
-              <span className="text-green-400 font-bold">GET</span>
-              <span className="ml-2 text-gray-300">/api/v1/companies</span>
-            </div>
-            <pre className="text-sm overflow-x-auto leading-relaxed">
-{`{
-  "data": [
-    {
-      "id": "S100L3K4",
-      "company_name": "株式会社タカショー",
-      "ticker_code": "7590",
-      "fiscal_year": "2021",
-      "sector": "卸売業"
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "total": 3392
-  }
-}`}
-            </pre>
-          </div>
-          <div className="text-center mt-12">
-            <a
-              href="/docs/api"
-              className="inline-flex items-center text-white bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-lg font-semibold"
-            >
-              APIドキュメントを見る
-              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      </section>
 
       {/* ファイナルCTAセクション */}
       <section className="py-20 relative">
@@ -462,20 +311,14 @@ export default function Home() {
             今すぐ始めよう
           </h3>
           <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
-            3,392社の財務データにアクセスして、データドリブンな意思決定を実現しましょう
+            日本企業の財務データにアクセスして、データドリブンな意思決定を実現しましょう
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex justify-center">
             <a
               href="/auth/register"
               className="bg-white text-violet-600 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-xl"
             >
               無料で始める
-            </a>
-            <a
-              href="/docs"
-              className="border-2 border-white text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-white hover:text-violet-600 transition-all duration-300 transform hover:scale-105"
-            >
-              ドキュメントを見る
             </a>
           </div>
         </div>
@@ -493,7 +336,7 @@ export default function Home() {
                 <h5 className="font-bold text-xl">XBRL Financial Data API</h5>
               </div>
               <p className="text-gray-400 mb-4 leading-relaxed">
-                日本の上場企業3,392社の財務データを提供するプロフェッショナルAPIです。
+                日本の上場企業の財務データを提供するプロフェッショナルAPIです。
               </p>
               <p className="text-gray-500 text-sm">© 2025 XBRL Financial Data API. All rights reserved.</p>
             </div>
@@ -501,8 +344,6 @@ export default function Home() {
             <div>
               <h6 className="font-semibold mb-4 text-gray-300">サービス</h6>
               <ul className="space-y-2 text-sm">
-                <li><a href="/docs" className="text-gray-400 hover:text-white transition-colors">ドキュメント</a></li>
-                <li><a href="/pricing" className="text-gray-400 hover:text-white transition-colors">料金</a></li>
                 <li><a href="/dashboard" className="text-gray-400 hover:text-white transition-colors">ダッシュボード</a></li>
                 <li><a href="/support" className="text-gray-400 hover:text-white transition-colors">サポート</a></li>
               </ul>

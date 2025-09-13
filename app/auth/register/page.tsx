@@ -6,16 +6,18 @@ import Link from 'next/link'
 import { signUpWithEmail } from '@/lib/auth'
 
 const plans = [
-  { value: 'free', label: '無料プラン', price: '¥0/月', requests: '10,000回/月' },
-  { value: 'basic', label: 'Basic', price: '¥5,000/月', requests: '50,000回/月' },
-  { value: 'pro', label: 'Pro', price: '¥20,000/月', requests: '200,000回/月' },
-  { value: 'enterprise', label: 'Enterprise', price: 'お問い合わせ', requests: '無制限' }
+  { value: 'free', label: '無料プラン', description: 'ベーシックアクセス' },
+  { value: 'basic', label: 'Basic', description: '標準アクセス' },
+  { value: 'pro', label: 'Pro', description: 'プロフェッショナルアクセス' },
+  { value: 'enterprise', label: 'Enterprise', description: 'エンタープライズアクセス' }
 ]
 
 export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -27,6 +29,8 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuccessMessage(null)
+    setDebugInfo(null)
     setLoading(true)
 
     // バリデーション
@@ -49,7 +53,8 @@ export default function RegisterPage() {
     }
 
     try {
-      const { data, error } = await signUpWithEmail(
+      // Supabase Authを使用して直接登録（メール確認リンク付き）
+      const result = await signUpWithEmail(
         formData.email,
         formData.password,
         {
@@ -58,15 +63,35 @@ export default function RegisterPage() {
         }
       )
 
-      if (error) {
-        setError(error.message)
-      } else if (data.user) {
-        // 登録成功 - 自動的にログインしてダッシュボードへ
-        // Supabaseは登録時に自動的にセッションを作成するので、直接ダッシュボードへ移動
-        router.push('/dashboard')
+      if (result.error) {
+        setError(result.error.message)
+        setLoading(false)
+        return
       }
-    } catch (err) {
-      setError('登録中にエラーが発生しました')
+
+      // 登録成功
+      if (result.data?.user) {
+        setLoading(false)
+
+        // セッションがある場合（メール確認OFF時）
+        if (result.data?.session) {
+          setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
+          setTimeout(() => {
+            router.push('/dashboard')
+          }, 1500)
+        } else {
+          // メール確認が必要な場合
+          setSuccessMessage('登録が完了しました！確認メールをご確認ください。メール内のリンクをクリックしてアカウントを有効化してください。')
+        }
+      }
+    } catch (err: any) {
+      const errorMessage = err?.message || err?.toString() || '不明なエラー'
+      setError(`登録中にエラーが発生しました: ${errorMessage}`)
+      setDebugInfo(JSON.stringify({
+        error: errorMessage,
+        stack: err?.stack || 'なし',
+        timestamp: new Date().toISOString()
+      }, null, 2))
     } finally {
       setLoading(false)
     }
@@ -79,17 +104,34 @@ export default function RegisterPage() {
           XBRL API アカウント作成
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          4,231社の財務データにアクセス
+          日本企業の財務データにアクセス
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} method="POST" action="#">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
                 {error}
               </div>
+            )}
+
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+                {successMessage}
+              </div>
+            )}
+
+            {debugInfo && (
+              <details className="bg-gray-100 border border-gray-300 rounded p-3">
+                <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                  デバッグ情報（クリックで展開）
+                </summary>
+                <pre className="mt-2 text-xs text-gray-600 overflow-x-auto">
+                  {debugInfo}
+                </pre>
+              </details>
             )}
 
             <div>
@@ -169,7 +211,7 @@ export default function RegisterPage() {
               >
                 {plans.map((plan) => (
                   <option key={plan.value} value={plan.value}>
-                    {plan.label} - {plan.price} ({plan.requests})
+                    {plan.label} - {plan.description}
                   </option>
                 ))}
               </select>

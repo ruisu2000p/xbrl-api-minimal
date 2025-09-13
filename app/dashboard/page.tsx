@@ -18,7 +18,7 @@ export default async function DashboardPage() {
     .from('api_keys')
     .select('*')
     .eq('user_id', user.id)
-    .eq('is_active', true)
+    .eq('status', 'active')
     .order('created_at', { ascending: false })
 
   return (

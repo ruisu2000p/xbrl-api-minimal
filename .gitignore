@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 /.pnp
 .pnp.js
 
@@ -13,7 +12,9 @@ package-lock.json
 # Test files
 *.test.js
 *.test.ts
-**/*test*
+*.spec.js
+*.spec.ts
+# **/*test*  # Commented out to allow test-mcp page
 **/*spec*
 
 # Config examples (keep in repo for reference)
@@ -22,6 +23,8 @@ package-lock.json
 
 # Package files
 *.tgz
+**/*.tgz
+**/*.tar.gz
 
 # Logs
 *.log
@@ -31,6 +34,7 @@ yarn-error.log*
 
 # Testing
 /coverage
+.nyc_output/
 
 # Next.js
 /.next/
@@ -43,32 +47,57 @@ next-env.d.ts
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 desktop.ini
-*.pem
 
-# Editor
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Editor directories and files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # Temporary files
-tmp/
-temp/
 *.tmp
 *.temp
+tmp/
+temp/
+.temp/
+.tmp/
 .cache/
 .history/
 
-# Coverage
-.nyc_output/
+# Certificate files
+*.pem
+*.key
+*.crt
 
 # Vercel
 .vercel
 
 # TypeScript
 *.tsbuildinfo
+**/*.tsbuildinfo
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# AI Tools
+.serena/
+.claude/
+.cursor/
 
 # MCP local configs
 mcp-config.json
@@ -78,15 +107,10 @@ claud*config*.json
 # Generated/Large files
 scripts/sql-inserts/
 scripts/sql-metadata/
-**/*.tgz
-**/*.tar.gz
-
-# AI Tools
-.serena/
-.claude/
-.cursor/
-
-# Build artifacts
-**/*.tsbuildinfo
 **/nul
-**/*.tmp
+
+# API keys and secrets (extra protection)
+*secret*
+*key*
+*token*
+api-keys.txt
