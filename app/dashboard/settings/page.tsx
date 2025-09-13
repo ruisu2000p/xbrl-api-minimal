@@ -201,7 +201,7 @@ export default function SettingsPage() {
           setSelectedPlan(subData.plan_id)
         } else {
           // サブスクリプションがない場合は無料プランを選択
-          const freePlan = plansData?.find(p => p.name === 'Free')
+          const freePlan = plansData?.find((p: SubscriptionPlan) => p.name === 'Free')
           if (freePlan) {
             setSelectedPlan(freePlan.id)
           }
