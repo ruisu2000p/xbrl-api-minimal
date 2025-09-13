@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Test files
+test-secure.js
+final-check.js
+security-check.js
+
+# Config examples (keep in repo for reference)
+# claude-config-example.json
+# .env.example
+
+# Package files
+*.tgz
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build output
+dist/
+build/
+out/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.history/
