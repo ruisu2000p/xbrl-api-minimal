@@ -1,11 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth'
 
 export default function ProcessingPage() {
-  const router = useRouter()
   const [message, setMessage] = useState('登録処理中です...')
   const [dots, setDots] = useState('')
 
