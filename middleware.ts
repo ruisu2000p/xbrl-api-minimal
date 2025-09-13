@@ -1,67 +1,63 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-
-// 保護されたルート
-const protectedRoutes = ['/dashboard', '/api/dashboard']
-// 認証済みユーザーがアクセスできないルート
-const authRoutes = ['/auth/login', '/auth/register']
-// 認証不要のルート
-const publicRoutes = ['/dashboard-test', '/api/apikeys/generate']
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-  // 公開ルートは認証チェックをスキップ
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
-  if (isPublicRoute) {
-    return NextResponse.next()
-  }
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: any) {
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+        },
+      },
+    }
+  )
 
-  // dashboard-testは除外
-  if (pathname.includes('dashboard-test')) {
-    return NextResponse.next()
-  }
+  // セッションを更新（Cookieにセッション情報を同期）
+  await supabase.auth.getUser()
 
-  // 保護されたルートかチェック
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
-
-  // APIルートは認証チェックをスキップ（APIキー認証を使用）
-  if (pathname.startsWith('/api/')) {
-    return NextResponse.next()
-  }
-
-  // 開発環境では認証チェックをスキップするオプション
-  if (process.env.NODE_ENV === 'development' && process.env.SKIP_AUTH === 'true') {
-    return NextResponse.next()
-  }
-
-  // Supabase認証トークンを確認（複数の可能なCookie名をチェック）
-  const authToken = request.cookies.get('sb-access-token') || 
-                   request.cookies.get('sb-auth-token') ||
-                   request.cookies.get('supabase-auth-token') ||
-                   request.cookies.get('sb-zxzyidqrvzfzhicfuhlo-auth-token') // Supabase project-specific token
-
-  // デバッグ情報は本番環境では出力しない
-
-  // 保護されたルートへのアクセス
-  if (isProtectedRoute && !authToken) {
-    // 未認証の場合はログインページへリダイレクト
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    url.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(url)
-  }
-
-  // 認証済みユーザーの認証ページへのアクセス
-  if (isAuthRoute && authToken) {
-    // 既にログイン済みの場合はダッシュボードへリダイレクト
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
-
-  return NextResponse.next()
+  return response
 }
 
 // ミドルウェアを適用するパス
