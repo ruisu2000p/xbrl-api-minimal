@@ -53,7 +53,7 @@ export default function RegisterPage() {
     }
 
     try {
-      // Supabase Authを使用して直接登録
+      // Supabase Authを使用して直接登録（メール確認リンク付き）
       const result = await signUpWithEmail(
         formData.email,
         formData.password,
@@ -81,7 +81,7 @@ export default function RegisterPage() {
           }, 1500)
         } else {
           // メール確認が必要な場合
-          setSuccessMessage('登録が完了しました！確認メールをご確認ください。')
+          setSuccessMessage('登録が完了しました！確認メールをご確認ください。メール内のリンクをクリックしてアカウントを有効化してください。')
         }
       }
     } catch (err: any) {

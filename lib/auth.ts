@@ -5,13 +5,13 @@ export async function signUpWithEmail(email: string, password: string, metadata?
   const supabase = createSupabaseClient()
 
   try {
-    // 登録を試みる（メール確認を無効化）
+    // 登録を試みる
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
-        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/processing?next=/dashboard` : undefined,
         shouldCreateUser: true
       }
     })

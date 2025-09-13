@@ -1,10 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createSupabaseClient } from '@/lib/supabase/client'
 
 export default function ProcessingPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [message, setMessage] = useState('登録処理中です...')
   const [dots, setDots] = useState('')
+  const next = searchParams.get('next') || '/dashboard'
 
   useEffect(() => {
     // ドットアニメーション
@@ -12,28 +17,62 @@ export default function ProcessingPage() {
       setDots(prev => prev.length >= 3 ? '' : prev + '.')
     }, 500)
 
-    // 3秒後にメッセージ変更
-    const messageTimeout = setTimeout(() => {
-      setMessage('登録を確認しています...')
-    }, 3000)
+    // セッション交換を試みる
+    const handleAuth = async () => {
+      const supabase = createSupabaseClient()
 
-    // 5秒後に強制的にダッシュボードへ移動
-    const checkTimeout = setTimeout(() => {
-      setMessage('登録が完了しました！ダッシュボードへ移動します...')
+      // URLにコードが含まれている場合、セッション交換を試みる
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const queryParams = new URLSearchParams(window.location.search)
 
-      // 1秒後にダッシュボードへ強制的に移動
-      setTimeout(() => {
-        // window.location.hrefで完全にページをリロード
-        window.location.href = '/dashboard'
-      }, 1000)
-    }, 5000)
+      if (hashParams.get('access_token') || queryParams.get('code')) {
+        setMessage('認証情報を確認しています...')
+
+        // セッション交換を試みる
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(window.location.href)
+          if (!error) {
+            setMessage('認証に成功しました！ダッシュボードへ移動します...')
+            setTimeout(() => {
+              router.replace(next)
+            }, 1000)
+            return
+          }
+        } catch (err) {
+          console.error('Session exchange error:', err)
+        }
+      }
+
+      // コードがない場合、またはエラーの場合は既存のユーザー確認を行う
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        setMessage('ログイン確認済み！ダッシュボードへ移動します...')
+        setTimeout(() => {
+          router.replace(next)
+        }, 1000)
+      } else {
+        // 5秒待ってから再チェック
+        setTimeout(async () => {
+          const { data: { user: recheckUser } } = await supabase.auth.getUser()
+          if (recheckUser) {
+            router.replace(next)
+          } else {
+            setMessage('登録を確認できませんでした。ログインページへ移動します...')
+            setTimeout(() => {
+              router.replace('/auth/login')
+            }, 1000)
+          }
+        }, 5000)
+      }
+    }
+
+    handleAuth()
 
     return () => {
       clearInterval(dotsInterval)
-      clearTimeout(messageTimeout)
-      clearTimeout(checkTimeout)
     }
-  }, [])
+  }, [router, next])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
