@@ -5,18 +5,44 @@ export async function signUpWithEmail(email: string, password: string, metadata?
   const supabase = createSupabaseClient()
 
   try {
-    // 登録を試みる
+    // 登録を試みる（メール確認を無効化）
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
-        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
+        shouldCreateUser: true
       }
     })
 
     // エラーチェック
     if (error) {
+      // Database error saving new userを特別に処理
+      if (error.message === 'Database error saving new user') {
+        // 実際にユーザーが作成されたか確認
+        const { data: checkUser } = await supabase.auth.getUser()
+
+        if (checkUser?.user) {
+          // ユーザーは作成されている場合
+          return {
+            data: { user: checkUser.user, session: null },
+            error: null,
+            requiresEmailConfirmation: true
+          }
+        }
+
+        // 本当にエラーの場合
+        return {
+          data: null,
+          error: {
+            message: 'ユーザー登録に失敗しました。時間をおいて再度お試しください。',
+            originalMessage: error.message,
+            details: 'Database error occurred'
+          }
+        }
+      }
+
       // User already registeredのエラーをキャッチ
       if (error.message.includes('User already registered')) {
         // 既存ユーザーの場合は自動的にログインを試みる
