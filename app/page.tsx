@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Search, TrendingUp, Users, Shield, BarChart, Check, ChevronDown, Activity } from 'react-feather';
 
 // モダンUIコンポーネント
@@ -420,7 +419,7 @@ export default function Home() {
                   <p className="text-sm text-gray-600">{testimonial.role}</p>
                   <p className="text-sm text-gray-500">{testimonial.company}</p>
                 </div>
-              </div>
+              </GlassCard>
             ))}
           </div>
         </div>
