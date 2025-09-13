@@ -38,7 +38,8 @@ export default function LoginPage() {
           setError(error.message || 'ログイン中にエラーが発生しました')
         }
       } else if (data?.user) {
-        // ログイン成功
+        // ログイン成功 - ルーターをリフレッシュしてCookieを同期
+        router.refresh()
         router.push('/dashboard')
       }
     } catch (err: any) {
