@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
@@ -42,9 +42,9 @@ export default function TestMCPPage() {
 
   useEffect(() => {
     loadApiKeys()
-  }, [])
+  }, [loadApiKeys])
 
-  const loadApiKeys = async () => {
+  const loadApiKeys = useCallback(async () => {
     const supabase = createSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -64,7 +64,7 @@ export default function TestMCPPage() {
       setApiKeys(keys)
       setApiKey(keys[0].key)
     }
-  }
+  }, [router])
 
   const handleToolChange = (toolName: string) => {
     setSelectedTool(toolName)
