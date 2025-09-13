@@ -202,7 +202,15 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
         </div>
 
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">APIキー一覧</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">APIキー一覧</h2>
+            <button
+              onClick={() => router.push('/dashboard/test-mcp')}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
+            >
+              MCPテスト
+            </button>
+          </div>
           {apiKeys.length > 0 ? (
             <div className="space-y-4">
               {apiKeys.map((key) => (
