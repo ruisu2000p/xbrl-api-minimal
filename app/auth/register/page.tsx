@@ -60,8 +60,6 @@ export default function RegisterPage() {
       }
 
       // Supabase Authを使用して直接登録
-      console.log('[Registration] Starting registration for:', formData.email)
-
       const result = await signUpWithEmail(
         formData.email,
         formData.password,
@@ -70,14 +68,6 @@ export default function RegisterPage() {
           plan: formData.plan
         }
       )
-
-      console.log('[Registration] Result:', {
-        hasData: !!result.data,
-        hasError: !!result.error,
-        hasUser: !!result.data?.user,
-        hasSession: !!result.data?.session,
-        errorMessage: result.error?.message
-      })
 
       // デバッグ情報を更新
       const debugResult = {

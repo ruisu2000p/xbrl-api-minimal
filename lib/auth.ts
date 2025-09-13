@@ -4,9 +4,6 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 export async function signUpWithEmail(email: string, password: string, metadata?: any) {
   const supabase = createSupabaseClient()
 
-  console.log('[Auth] SignUp called with email:', email)
-  console.log('[Auth] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-
   try {
     // 登録を試みる（メール確認を無効化）
     const { data, error } = await supabase.auth.signUp({
@@ -17,13 +14,6 @@ export async function signUpWithEmail(email: string, password: string, metadata?
         emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
         shouldCreateUser: true
       }
-    })
-
-    console.log('[Auth] SignUp response:', {
-      hasData: !!data,
-      hasError: !!error,
-      errorMessage: error?.message,
-      userId: data?.user?.id
     })
 
     // エラーチェック
