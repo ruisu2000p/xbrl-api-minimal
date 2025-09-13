@@ -98,20 +98,19 @@ export default function RegisterPage() {
           return
         }
 
-        // 新規登録成功 - 必ずダッシュボードへリダイレクト
-        if (result.data.session || (result as any).autoSignedIn) {
-          // セッションがある場合は直接ダッシュボードへ
-          router.push('/dashboard')
-        } else if ((result as any).requiresEmailConfirmation) {
-          // メール確認が必要な場合でも、一旦ダッシュボードへ
-          setError('登録が完了しました！メール確認が必要な場合は、送信されたメールをご確認ください。')
+        // 新規登録成功
+        setError('登録処理中です... しばらくお待ちください')
+
+        // Supabaseへの登録とセッション確立を待つ（3秒）
+        setTimeout(() => {
+          setError('登録が完了しました！ダッシュボードへ移動します...')
+
+          // さらに1秒待ってからリダイレクト
           setTimeout(() => {
-            router.push('/dashboard')
-          }, 2000)
-        } else {
-          // その他の場合もダッシュボードへ
-          router.push('/dashboard')
-        }
+            // 強制的にページをリロードしてセッションを更新
+            window.location.href = '/dashboard'
+          }, 1000)
+        }, 3000)
       }
     } catch (err: any) {
       const errorMessage = err?.message || err?.toString() || '不明なエラー'

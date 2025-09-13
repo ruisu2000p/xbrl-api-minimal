@@ -55,8 +55,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // 認証済みユーザーが認証ページにアクセスした場合
+  // ただし、登録直後のリダイレクトは除外
   if (authRoutes.some(route => pathname.startsWith(route)) && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    // 登録完了パラメータがある場合は許可
+    const searchParams = request.nextUrl.searchParams
+    if (!searchParams.get('registered')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return supabaseResponse
