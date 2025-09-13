@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseAuthServerClient } from '@/lib/supabase/auth'
+import { createSupabaseAuthServerClient } from '@/lib/supabase/auth-server'
 
 export async function GET(request: NextRequest) {
   try {

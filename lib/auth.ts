@@ -1,8 +1,7 @@
-// Client-side authentication functions
 import { createClient } from '@supabase/supabase-js'
 
 // Create Supabase client for authentication
-export function createSupabaseAuthClient() {
+function createSupabaseAuthClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -61,7 +60,7 @@ export async function sendPasswordResetEmail(email: string) {
   const supabase = createSupabaseAuthClient()
   
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/auth/reset-password`,
+    redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/reset-password`,
   })
 
   if (error) throw error

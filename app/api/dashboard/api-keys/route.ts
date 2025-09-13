@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseAuthServerClient } from '@/lib/supabase/auth'
-import { generateApiKey } from '@/lib/supabase/auth'
+import { createSupabaseAuthServerClient } from '@/lib/supabase/auth-server'
+import { generateApiKey } from '@/lib/supabase/api-key-utils'
 
 // 料金プランごとのレート制限設定
 const tierLimits = {

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { sendPasswordResetEmail } from '@/lib/supabase/auth-client'
+// @ts-ignore
+import { sendPasswordResetEmail } from '@/lib/auth'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')

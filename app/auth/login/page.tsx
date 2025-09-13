@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signInWithEmail } from '@/lib/supabase/auth-client'
+// @ts-ignore
+import { signInWithEmail } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()

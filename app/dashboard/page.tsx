@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrentUser, signOut } from '@/lib/supabase/auth-client'
+// @ts-ignore
+import { getCurrentUser, signOut } from '@/lib/auth'
 import ApiKeyManager from '@/components/dashboard/ApiKeyManager'
 import UsageChart from '@/components/dashboard/UsageChart'
 import PlanInfo from '@/components/dashboard/PlanInfo'
