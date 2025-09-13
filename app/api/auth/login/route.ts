@@ -7,13 +7,19 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase Client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export async function POST(request: NextRequest) {
+  // Create Supabase client inside the function
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -101,6 +107,19 @@ export async function POST(request: NextRequest) {
 
 // セッション確認用（オプション）
 export async function GET(request: NextRequest) {
+  // Create Supabase client inside the function
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  
   const accessToken = request.cookies.get('sb-access-token')?.value;
   
   if (!accessToken) {

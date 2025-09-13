@@ -8,34 +8,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase環境変数の確認
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Supabase環境変数の確認（ビルド時ではなく実行時に評価）
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// デバッグ情報（本番環境では削除すること）
-console.log('Environment check:', {
-  hasUrl: !!supabaseUrl,
-  hasServiceKey: !!supabaseServiceKey,
-  urlPrefix: supabaseUrl?.substring(0, 30),
-  keyLength: supabaseServiceKey?.length,
-  nodeEnv: process.env.NODE_ENV
-});
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('Missing environment variables:', {
+      NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
+      SUPABASE_SERVICE_ROLE_KEY: !!supabaseServiceKey
+    });
+    return null;
+  }
 
-// エラーチェック
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing environment variables:', {
-    NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
-    SUPABASE_SERVICE_ROLE_KEY: !!supabaseServiceKey
-  });
-  throw new Error('Supabase configuration is missing. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in environment variables.');
+  return createClient(
+    supabaseUrl,
+    supabaseServiceKey,
+    { auth: { persistSession: false } }
+  );
 }
-
-// Supabase Admin Client
-const supabaseAdmin = createClient(
-  supabaseUrl,
-  supabaseServiceKey,
-  { auth: { persistSession: false } }
-);
 
 // APIキーの生成
 function generateApiKey(): string {
@@ -70,6 +61,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'パスワードは8文字以上にしてください' },
         { status: 400 }
+      );
+    }
+
+    // Supabase Admin Clientを取得
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
       );
     }
 
@@ -202,6 +202,15 @@ export async function POST(request: NextRequest) {
 // ユーザー情報の取得（デバッグ用）
 export async function GET(request: NextRequest) {
   const email = request.nextUrl.searchParams.get('email');
+  
+  // Supabase Admin Clientを取得
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) {
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
   
   if (!email) {
     // 全ユーザー数を返す

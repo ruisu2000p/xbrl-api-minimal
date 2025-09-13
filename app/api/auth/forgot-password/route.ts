@@ -7,20 +7,24 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase Client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// Supabase Admin Client (for user lookup)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-);
-
 export async function POST(request: NextRequest) {
+  // Create Supabase clients inside the function
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  
+  const supabaseAdmin = supabaseServiceKey 
+    ? createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } })
+    : null;
   try {
     const body = await request.json();
     const { email } = body;
@@ -83,15 +87,25 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // メールアドレスでユーザーの存在確認
-  const { data: users } = await supabaseAdmin.auth.admin.listUsers();
-  const user = users?.users?.find(u => u.email === email);
+  // Create Supabase admin client if service key is available
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  const supabaseAdmin = supabaseUrl && supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } })
+    : null;
 
-  if (user) {
-    return NextResponse.json(
-      { valid: true, email: user.email },
-      { status: 200 }
-    );
+  // メールアドレスでユーザーの存在確認（supabaseAdminが利用可能な場合）
+  if (supabaseAdmin) {
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers();
+    const user = users?.users?.find(u => u.email === email);
+
+    if (user) {
+      return NextResponse.json(
+        { valid: true, email: user.email },
+        { status: 200 }
+      );
+    }
   }
 
   return NextResponse.json(

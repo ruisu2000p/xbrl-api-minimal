@@ -36,16 +36,11 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      const { error } = await updatePassword(password)
-      
-      if (error) {
-        setError(error.message)
-      } else {
-        alert('パスワードが更新されました')
-        router.push('/dashboard')
-      }
-    } catch (err) {
-      setError('パスワードの更新に失敗しました')
+      await updatePassword(password)
+      alert('パスワードが更新されました')
+      router.push('/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'パスワードの更新に失敗しました')
     } finally {
       setLoading(false)
     }

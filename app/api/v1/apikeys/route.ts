@@ -47,7 +47,7 @@ export async function GET() {
     }
 
     // 統計情報を取得（APIキーIDのリストから集計）
-    const apiKeyIds = data?.map(key => key.id) || [];
+    const apiKeyIds = data?.map((key: any) => key.id) || [];
     const monthlyUsage = apiKeyIds.length > 0 
       ? await getAllKeysMonthlyUsage(apiKeyIds)
       : null;
@@ -56,8 +56,8 @@ export async function GET() {
       keys: data || [],
       stats: {
         total_keys: data?.length || 0,
-        active_keys: data?.filter(k => k.is_active && k.status !== 'revoked').length || 0,
-        revoked_keys: data?.filter(k => !k.is_active || k.status === 'revoked').length || 0,
+        active_keys: data?.filter((k: any) => k.is_active && k.status !== 'revoked').length || 0,
+        revoked_keys: data?.filter((k: any) => !k.is_active || k.status === 'revoked').length || 0,
         total_requests: monthlyUsage?.total_requests || 0,
         successful_requests: monthlyUsage?.successful_requests || 0,
         failed_requests: monthlyUsage?.failed_requests || 0,
@@ -231,7 +231,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({
       revokedCount: data?.length || 0,
-      revokedIds: data?.map(k => k.id) || [],
+      revokedIds: data?.map((k: any) => k.id) || [],
     });
   } catch (error) {
     console.error('API error:', error);

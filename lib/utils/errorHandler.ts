@@ -31,6 +31,7 @@ export function handleApiError(error: unknown): NextResponse {
     if ('status' in error && typeof error.status === 'number') {
       return NextResponse.json<ApiResponse<null>>(
         {
+          success: false,
           error: error.message,
           status: error.status
         },
@@ -41,6 +42,7 @@ export function handleApiError(error: unknown): NextResponse {
     // 一般的なエラー
     return NextResponse.json<ApiResponse<null>>(
       {
+        success: false,
         error: error.message || 'Internal server error',
         status: 500
       },
@@ -51,6 +53,7 @@ export function handleApiError(error: unknown): NextResponse {
   // 不明なエラー
   return NextResponse.json<ApiResponse<null>>(
     {
+      success: false,
       error: 'An unexpected error occurred',
       status: 500
     },

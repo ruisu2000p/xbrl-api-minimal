@@ -50,7 +50,8 @@ export function createErrorResponse(
  */
 export function getApiKey(request: NextRequest): string | null {
   const apiKey = request.headers.get('x-api-key') || 
-                 request.headers.get('authorization')?.replace('Bearer ', '');
+                 request.headers.get('authorization')?.replace('Bearer ', '') || 
+                 null;
   return apiKey;
 }
 

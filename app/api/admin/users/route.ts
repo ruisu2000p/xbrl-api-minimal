@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { admin } from '@/app/api/_lib/supabaseAdmin';
+import { getAdminClient } from '@/app/api/_lib/supabaseAdmin';
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,10 +8,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get admin client
+    let admin: any;
+    try {
+      admin = getAdminClient();
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     const { data: authData } = await admin.auth.admin.listUsers();
     
     const usersWithKeys = await Promise.all(
-      (authData.users || []).map(async (user) => {
+      (authData.users || []).map(async (user: any) => {
         const { data: apiKeys } = await admin
           .from('api_keys')
           .select('id, name, key_prefix, scopes, revoked, created_at, last_used_at')

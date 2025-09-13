@@ -7,12 +7,6 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase クライアントの初期化
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
 // APIキーの検証
 function validateApiKey(apiKey: string | null): boolean {
   if (!apiKey) return false;
@@ -21,6 +15,18 @@ function validateApiKey(apiKey: string | null): boolean {
 
 // GET: Markdownファイル検索とメタデータ取得
 export async function GET(request: NextRequest) {
+  // Create Supabase client inside the function
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return NextResponse.json(
+      { error: 'Server configuration error' },
+      { status: 500 }
+    );
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
   try {
     // APIキー認証
     const apiKey = request.headers.get('X-API-Key');
@@ -142,6 +148,19 @@ export async function GET(request: NextRequest) {
 // POST: MarkdownファイルのフルコンテンツをStorageから取得
 export async function POST(request: NextRequest) {
   try {
+    // Create Supabase client inside the function
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
     // APIキー認証
     const apiKey = request.headers.get('X-API-Key');
     
