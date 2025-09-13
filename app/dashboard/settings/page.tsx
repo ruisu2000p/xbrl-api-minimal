@@ -11,6 +11,32 @@ interface UserProfile {
   company?: string | null
 }
 
+interface SubscriptionPlan {
+  id: string
+  name: string
+  description: string
+  price_monthly: number
+  price_yearly: number
+  requests_per_hour: number
+  requests_per_day: number
+  requests_per_month: number
+  features: any
+  is_active: boolean
+  display_order: number
+}
+
+interface UserSubscription {
+  id: string
+  user_id: string
+  plan_id: string
+  status: string
+  billing_cycle: string
+  current_period_start: string
+  current_period_end: string
+  cancel_at_period_end: boolean
+  subscription_plans?: SubscriptionPlan
+}
+
 export default function SettingsPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserProfile | null>(null)
@@ -18,6 +44,10 @@ export default function SettingsPage() {
   const [updateLoading, setUpdateLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [currentSubscription, setCurrentSubscription] = useState<UserSubscription | null>(null)
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
 
   // フォームステート
   const [formData, setFormData] = useState({
@@ -28,6 +58,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadUserProfile()
+    loadSubscriptionData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadUserProfile = async () => {
@@ -101,6 +133,13 @@ export default function SettingsPage() {
       return
     }
 
+    // メールアドレスのバリデーション
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.newEmail)) {
+      setError('正しいメールアドレス形式を入力してください')
+      return
+    }
+
     setUpdateLoading(true)
     setError('')
     setSuccess('')
@@ -116,9 +155,105 @@ export default function SettingsPage() {
         throw error
       }
 
-      setSuccess('メールアドレス変更の確認メールを送信しました。メールをご確認ください。')
+      setSuccess('メールアドレス変更の確認メールを送信しました。新しいメールアドレスに届いた確認リンクをクリックして変更を完了してください。')
+
+      // 成功後は入力フィールドをリセット
+      setFormData(prev => ({ ...prev, newEmail: '' }))
     } catch (err: any) {
-      setError(err.message || 'メールアドレスの変更に失敗しました')
+      if (err.message?.includes('already registered')) {
+        setError('このメールアドレスは既に使用されています')
+      } else {
+        setError(err.message || 'メールアドレスの変更に失敗しました')
+      }
+    } finally {
+      setUpdateLoading(false)
+    }
+  }
+
+  const loadSubscriptionData = async () => {
+    const supabase = createSupabaseClient()
+
+    try {
+      // プラン一覧を取得
+      const { data: plansData, error: plansError } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order')
+
+      if (plansError) throw plansError
+      setPlans(plansData || [])
+
+      // ユーザーの現在のサブスクリプションを取得
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: subData, error: subError } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            subscription_plans (*)
+          `)
+          .eq('user_id', user.id)
+          .single()
+
+        if (subData && !subError) {
+          setCurrentSubscription(subData)
+          setSelectedPlan(subData.plan_id)
+        } else {
+          // サブスクリプションがない場合は無料プランを選択
+          const freePlan = plansData?.find(p => p.name === 'Free')
+          if (freePlan) {
+            setSelectedPlan(freePlan.id)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error loading subscription data:', err)
+    }
+  }
+
+  const updateSubscription = async () => {
+    if (!selectedPlan || !user) return
+
+    setUpdateLoading(true)
+    setError('')
+    setSuccess('')
+
+    const supabase = createSupabaseClient()
+
+    try {
+      if (currentSubscription) {
+        // 既存のサブスクリプションを更新
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .update({
+            plan_id: selectedPlan,
+            billing_cycle: billingCycle,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+
+        if (error) throw error
+      } else {
+        // 新規サブスクリプションを作成
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: user.id,
+            plan_id: selectedPlan,
+            billing_cycle: billingCycle,
+            status: 'active',
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          })
+
+        if (error) throw error
+      }
+
+      setSuccess('プランが更新されました')
+      await loadSubscriptionData()
+    } catch (err: any) {
+      setError(err.message || 'プランの更新に失敗しました')
     } finally {
       setUpdateLoading(false)
     }
@@ -268,38 +403,177 @@ export default function SettingsPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">プラン管理</h2>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div>
-                <h3 className="font-medium text-gray-900">現在のプラン</h3>
-                <p className="text-sm text-gray-600">無料プラン</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  月間1,000リクエストまで利用可能
-                </p>
+          {/* 現在のプラン */}
+          {currentSubscription && currentSubscription.subscription_plans && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-blue-900">
+                    現在のプラン: {currentSubscription.subscription_plans.name}
+                  </h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    {currentSubscription.billing_cycle === 'monthly' ? '月額' : '年額'}プラン
+                  </p>
+                  <p className="text-xs text-blue-600 mt-2">
+                    • {currentSubscription.subscription_plans.requests_per_month.toLocaleString()}リクエスト/月
+                  </p>
+                </div>
+                <span className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
+                  {currentSubscription.status === 'active' ? 'アクティブ' : currentSubscription.status}
+                </span>
               </div>
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
-                アクティブ
-              </span>
             </div>
+          )}
 
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">プロプラン（準備中）</h3>
-              <p className="text-sm text-blue-800 mb-3">
-                より多くのリクエストと高度な機能をご利用いただけます。
-              </p>
-              <ul className="text-sm text-blue-700 space-y-1 mb-4">
-                <li>• 月間10,000リクエスト</li>
-                <li>• 優先サポート</li>
-                <li>• 高度な分析機能</li>
-                <li>• カスタムレポート</li>
-              </ul>
+          {/* 課金サイクル選択 */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              課金サイクル
+            </label>
+            <div className="flex space-x-4">
               <button
-                disabled
-                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed"
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-4 py-2 rounded-md font-medium ${
+                  billingCycle === 'monthly'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
               >
-                近日公開予定
+                月額
+              </button>
+              <button
+                onClick={() => setBillingCycle('yearly')}
+                className={`px-4 py-2 rounded-md font-medium ${
+                  billingCycle === 'yearly'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                年額（お得！）
               </button>
             </div>
+          </div>
+
+          {/* プラン一覧 */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {plans.map((plan) => {
+              const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly
+              const isCurrentPlan = currentSubscription?.plan_id === plan.id
+              const isSelected = selectedPlan === plan.id
+
+              return (
+                <div
+                  key={plan.id}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
+                  onClick={() => setSelectedPlan(plan.id)}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-lg">{plan.name}</h3>
+                    {isCurrentPlan && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                        現在のプラン
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
+
+                  <div className="mb-3">
+                    <span className="text-2xl font-bold">
+                      ¥{price.toLocaleString()}
+                    </span>
+                    <span className="text-gray-500 text-sm ml-1">
+                      /{billingCycle === 'monthly' ? '月' : '年'}
+                    </span>
+                  </div>
+
+                  <ul className="text-sm space-y-1 mb-4">
+                    <li className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {plan.requests_per_month.toLocaleString()}リクエスト/月
+                    </li>
+                    {plan.features?.support && (
+                      <li className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {plan.features.support === 'community' && 'コミュニティサポート'}
+                        {plan.features.support === 'email' && 'メールサポート'}
+                        {plan.features.support === 'priority' && '優先サポート'}
+                        {plan.features.support === 'dedicated' && '専任サポート'}
+                      </li>
+                    )}
+                    {plan.features?.data_export && (
+                      <li className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        データエクスポート
+                      </li>
+                    )}
+                    {plan.features?.custom_reports && (
+                      <li className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        カスタムレポート
+                      </li>
+                    )}
+                  </ul>
+
+                  <div className="flex items-center justify-center">
+                    <input
+                      type="radio"
+                      name="plan"
+                      checked={isSelected}
+                      onChange={() => setSelectedPlan(plan.id)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium">
+                      {isCurrentPlan ? '選択中' : '選択'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* プラン更新ボタン */}
+          <div className="mt-6">
+            <button
+              onClick={updateSubscription}
+              disabled={updateLoading || selectedPlan === currentSubscription?.plan_id}
+              className={`w-full px-6 py-3 rounded-md text-white font-medium ${
+                updateLoading || selectedPlan === currentSubscription?.plan_id
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {updateLoading ? '更新中...' : 'プランを変更'}
+            </button>
+
+            {selectedPlan === currentSubscription?.plan_id && (
+              <p className="text-sm text-gray-500 text-center mt-2">
+                既に選択されているプランです
+              </p>
+            )}
+          </div>
+
+          {/* 注意事項 */}
+          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm font-medium text-yellow-800 mb-2">プラン変更に関する注意事項</p>
+            <ul className="text-xs text-yellow-700 space-y-1">
+              <li>• プラン変更は即時反映されます</li>
+              <li>• ダウングレードした場合、現在の請求期間が終了するまで現在のプランの機能を利用できます</li>
+              <li>• アップグレードした場合、差額が日割り計算されます</li>
+              <li>• 決済処理は現在準備中のため、実際の課金は発生しません</li>
+            </ul>
           </div>
         </div>
       </main>
