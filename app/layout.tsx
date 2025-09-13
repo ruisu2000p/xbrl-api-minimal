@@ -19,7 +19,10 @@ export default function RootLayout({
       <body>
         {children}
         <Analytics />
-        <Script src="https://cdn.tailwindcss.com" strategy="afterInteractive" />
+        <Script
+          src="https://cdn.tailwindcss.com"
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   )

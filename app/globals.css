@@ -1,7 +1,7 @@
-/* Tailwind directives - CDN version is used in layout.tsx */
-/* @tailwind base; */
-/* @tailwind components; */
-/* @tailwind utilities; */
+/* Tailwind directives - Production build */
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
 
 /* Smooth scrolling */
 html {
