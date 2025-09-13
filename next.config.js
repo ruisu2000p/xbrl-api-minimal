@@ -4,7 +4,12 @@ const path = require('path')
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: false, // SWCミニファイを一時的に無効化
-  
+
+  // ビルドIDを強制的に変更してキャッシュを無効化
+  generateBuildId: async () => {
+    return `build-${Date.now()}`
+  },
+
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
