@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // 検索条件追加
     if (search) {
-      query = query.or(`name.ilike.%${search}%,ticker_code.ilike.%${search}%`);
+      query = query.or(`company_name.ilike.%${search}%,ticker_code.ilike.%${search}%`);
     }
 
     if (sector) {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * per_page;
     query = query
       .range(offset, offset + per_page - 1)
-      .order('name', { ascending: true });
+      .order('company_name', { ascending: true });
 
     // データ取得
     const { data, error, count } = await query;
