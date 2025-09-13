@@ -1,13 +1,22 @@
 import { createBrowserClient } from '@supabase/ssr'
 
+// シングルトンインスタンスを保持
+let supabaseClient: ReturnType<typeof createBrowserClient> | null = null
+
 /**
  * Create Supabase client with cookie-based session for client-side usage
+ * Uses singleton pattern to avoid multiple instances
  */
 export function createSupabaseClient() {
+  if (supabaseClient) {
+    return supabaseClient
+  }
+
   const supabaseUrl = 'https://wpwqxhyiglbtlaimrjrx.supabase.co'
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjQ1NDgsImV4cCI6MjA3MjE0MDU0OH0.2SrZynFcQR3Sctenuar5jPHiORC4EFm7BDmW36imiDU'
 
-  return createBrowserClient(supabaseUrl, supabaseKey)
+  supabaseClient = createBrowserClient(supabaseUrl, supabaseKey)
+  return supabaseClient
 }
 
 // サーバーサイド専用のSupabaseクライアント（SERVICE_ROLE_KEY使用）
