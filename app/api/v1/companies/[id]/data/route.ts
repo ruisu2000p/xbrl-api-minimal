@@ -62,7 +62,7 @@ export async function GET(
     }
 
     // ファイルURLの生成
-    const fileUrls = files?.map(file => {
+    const fileUrls = files?.map((file: any) => {
       const { data } = supabase
         .storage
         .from('markdown-files')
