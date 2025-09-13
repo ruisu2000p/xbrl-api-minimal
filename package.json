@@ -1,10 +1,10 @@
 {
   "name": "xbrl-api-minimal",
-  "version": "1.1.1",
+  "version": "1.1.4",
   "description": "XBRL財務データAPI - 最小構成版",
   "mcp": {
     "package": "shared-supabase-mcp-minimal",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Secure MCP server for XBRL financial data",
     "repository": "https://www.npmjs.com/package/shared-supabase-mcp-minimal"
   },
