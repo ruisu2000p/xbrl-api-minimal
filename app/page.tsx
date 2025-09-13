@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, TrendingUp, Users, Shield, BarChart3, Check, ChevronDown, Activity } from 'react-feather';
+import { Search, TrendingUp, Users, Shield, BarChart, Check, ChevronDown, Activity } from 'react-feather';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
