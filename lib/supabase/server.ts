@@ -30,9 +30,12 @@ export async function createSupabaseServerClient() {
 export async function createSupabaseServerAdminClient() {
   const cookieStore = await cookies()
 
+  // SERVICE_ROLE_KEYが無い場合はANON_KEYを使用（RLSポリシーで保護）
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    serviceKey!,
     {
       cookies: {
         getAll() {
