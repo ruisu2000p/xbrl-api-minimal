@@ -4,6 +4,26 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, TrendingUp, Users, Shield, BarChart, Check, ChevronDown, Activity } from 'react-feather';
 
+// モダンUIコンポーネント
+const GlassCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`backdrop-blur-md bg-white/80 border border-white/20 shadow-xl ${className}`}>
+    {children}
+  </div>
+);
+
+const GradientButton = ({ children, href, variant = 'primary' }: { children: React.ReactNode; href: string; variant?: 'primary' | 'secondary' }) => {
+  const variants = {
+    primary: 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25',
+    secondary: 'bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-gray-700'
+  };
+
+  return (
+    <a href={href} className={`px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 inline-flex items-center gap-2 ${variants[variant]}`}>
+      {children}
+    </a>
+  );
+};
+
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -45,21 +65,32 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* ヘッダー */}
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* モダンヘッダー */}
+      <header className="fixed w-full top-0 z-50 backdrop-blur-lg bg-slate-900/70 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">XBRL Financial Data API</h1>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">X</span>
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">XBRL Financial API</h1>
+              </div>
             </div>
-            <nav className="flex items-center space-x-4">
-              <a href="/auth/login" className="text-gray-600 hover:text-gray-900">
+            <nav className="flex items-center gap-6">
+              <a href="/docs" className="text-gray-300 hover:text-white transition-colors">
+                ドキュメント
+              </a>
+              <a href="/pricing" className="text-gray-300 hover:text-white transition-colors">
+                料金
+              </a>
+              <a href="/auth/login" className="text-gray-300 hover:text-white transition-colors">
                 ログイン
               </a>
-              <a 
-                href="/auth/register" 
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+              <a
+                href="/auth/register"
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-6 py-2.5 rounded-full hover:shadow-lg hover:shadow-violet-500/25 transition-all duration-300"
               >
                 無料で始める
               </a>
@@ -69,30 +100,30 @@ export default function Home() {
       </header>
 
       {/* ヒーローセクション - 強化版 */}
-      <section className="py-20 text-center relative overflow-hidden">
+      <section className="pt-32 pb-20 text-center relative overflow-hidden">
         {/* アニメーション背景 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-50"></div>
+        <div className="absolute inset-0"></div>
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+          <div className="absolute top-20 left-10 w-72 h-72 bg-violet-600 rounded-full mix-blend-screen filter blur-3xl opacity-10 animate-blob"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-indigo-600 rounded-full mix-blend-screen filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-purple-600 rounded-full mix-blend-screen filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 relative z-10">
-          <div className="inline-flex items-center bg-blue-100 text-blue-700 rounded-full px-4 py-2 mb-6">
+          <div className="inline-flex items-center bg-gradient-to-r from-violet-600/10 to-indigo-600/10 backdrop-blur-sm border border-white/20 text-white rounded-full px-4 py-2 mb-6">
             <Activity className="w-4 h-4 mr-2" />
             <span className="text-sm font-medium">リアルタイムで {Math.min(animatedNumber, 4231).toLocaleString()} 社のデータを提供中</span>
           </div>
 
-          <h2 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
+          <h2 className="text-6xl font-bold text-white mb-6 leading-tight">
             日本企業の財務データに
             <br />
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
               瞬時にアクセス
             </span>
           </h2>
 
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             上場企業4,231社の有価証券報告書を
             <br />
             構造化されたAPIで簡単に取得・分析
@@ -102,7 +133,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
             <a
               href="/auth/register"
-              className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white transition-all duration-200 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 shadow-lg"
+              className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white transition-all duration-300 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl hover:from-violet-700 hover:to-indigo-700 transform hover:scale-105 shadow-xl shadow-violet-500/25"
             >
               無料で始める
               <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,7 +142,7 @@ export default function Home() {
             </a>
             <a
               href="#demo"
-              className="group inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-md"
+              className="group inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl hover:bg-white/20 transition-all duration-300 shadow-md"
             >
               <Search className="w-5 h-5 mr-2" />
               ライブデモを試す
@@ -121,78 +152,80 @@ export default function Home() {
           {/* 統計情報 */}
           <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">4,231</div>
-              <div className="text-sm text-gray-600">対応企業数</div>
+              <div className="text-3xl font-bold text-white">4,231</div>
+              <div className="text-sm text-gray-400">対応企業数</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">20年分</div>
-              <div className="text-sm text-gray-600">財務データ</div>
+              <div className="text-3xl font-bold text-white">20年分</div>
+              <div className="text-sm text-gray-400">財務データ</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">99.9%</div>
-              <div className="text-sm text-gray-600">稼働率</div>
+              <div className="text-3xl font-bold text-white">99.9%</div>
+              <div className="text-sm text-gray-400">稼働率</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ライブデモセクション */}
-      <section id="demo" className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-center mb-4">企業データを今すぐ検索</h3>
-          <p className="text-gray-600 text-center mb-8">企業名やティッカーコードで検索してみてください</p>
+      <section id="demo" className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900"></div>
+        <div className="max-w-4xl mx-auto px-4 relative z-10">
+          <h3 className="text-4xl font-bold text-center mb-4 text-white">企業データを今すぐ検索</h3>
+          <p className="text-xl text-gray-300 text-center mb-12">企業名やティッカーコードで検索してみてください</p>
 
           {/* 検索バー */}
-          <div className="flex gap-2 mb-8">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="例: 亀田製菓、トヨタ、ソニー"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+          <GlassCard className="p-8 rounded-2xl mb-12">
+            <div className="flex gap-3 mb-8">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="例: 亀田製菓、トヨタ、ソニー"
+                className="flex-1 px-6 py-4 bg-white/50 backdrop-blur-sm border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-gray-900 placeholder-gray-600"
+              />
+              <button
+                onClick={handleSearch}
+                disabled={isSearching}
+                className="px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
               {isSearching ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               ) : (
                 <Search className="w-5 h-5" />
               )}
-            </button>
-          </div>
+              </button>
+            </div>
 
-          {/* 検索結果 */}
-          {searchResults.length > 0 && (
-            <div className="space-y-4 mb-8">
-              {searchResults.map((result) => (
-                <div key={result.id} className="p-4 border border-gray-200 rounded-lg hover:shadow-lg transition-all hover:border-blue-300">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold text-lg">{result.name}</h4>
-                      <p className="text-gray-600">
-                        ティッカー: {result.ticker} | セクター: {result.sector} | ID: {result.id}
-                      </p>
+            {/* 検索結果 */}
+            {searchResults.length > 0 && (
+              <div className="space-y-4 mb-8">
+                {searchResults.map((result) => (
+                  <div key={result.id} className="p-6 bg-white/30 backdrop-blur-sm border border-white/30 rounded-xl hover:shadow-xl transition-all duration-300 hover:bg-white/40">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-lg text-gray-800">{result.name}</h4>
+                        <p className="text-gray-600">
+                          ティッカー: {result.ticker} | セクター: {result.sector} | ID: {result.id}
+                        </p>
+                      </div>
+                      <button className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-lg">
+                        詳細を見る
+                      </button>
                     </div>
-                    <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition">
-                      詳細を見る
-                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
 
-          {/* サンプルAPIレスポンス */}
-          <div className="bg-gray-900 rounded-lg p-6 text-white">
-            <div className="mb-4 flex items-center">
-              <span className="text-green-400 font-mono">GET</span>
-              <span className="ml-2 font-mono">/api/v1/companies/search?q=亀田製菓</span>
-            </div>
-            <pre className="text-sm overflow-x-auto text-gray-300">
+            {/* サンプルAPIレスポンス */}
+            <div className="bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 text-white border border-white/10 shadow-2xl">
+              <div className="mb-4 flex items-center">
+                <span className="text-green-400 font-mono font-bold">GET</span>
+                <span className="ml-2 font-mono text-gray-300">/api/v1/companies/search?q=亀田製菓</span>
+              </div>
+              <pre className="text-sm overflow-x-auto text-gray-300 leading-relaxed">
 {`{
   "data": [
     {
@@ -209,15 +242,17 @@ export default function Home() {
     }
   ]
 }`}
-            </pre>
-          </div>
+              </pre>
+            </div>
+          </GlassCard>
         </div>
       </section>
 
       {/* 特徴セクション */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-center mb-12">サービスの特徴</h3>
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-purple-900 to-slate-800"></div>
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
+          <h3 className="text-4xl font-bold text-center mb-16 text-white">サービスの特徴</h3>
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { icon: '🏢', title: '4,231社の財務データ', description: '日本の上場企業の包括的な財務情報' },
@@ -227,20 +262,21 @@ export default function Home() {
               { icon: '📈', title: 'リアルタイム使用状況', description: 'ダッシュボードで使用量を可視化' },
               { icon: '🎯', title: '柔軟な検索', description: '企業名、ティッカー、セクターで検索' }
             ].map((feature, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                <div className="text-4xl mb-4 text-center">{feature.icon}</div>
-                <h4 className="text-xl font-semibold mb-2 text-center">{feature.title}</h4>
-                <p className="text-gray-600 text-center">{feature.description}</p>
-              </div>
+              <GlassCard key={index} className="p-8 rounded-2xl hover:bg-white/90 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl card-hover">
+                <div className="text-5xl mb-6 text-center">{feature.icon}</div>
+                <h4 className="text-xl font-semibold mb-4 text-center text-gray-800">{feature.title}</h4>
+                <p className="text-gray-600 text-center leading-relaxed">{feature.description}</p>
+              </GlassCard>
             ))}
           </div>
         </div>
       </section>
 
       {/* 料金プランセクション */}
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-center mb-12">料金プラン</h3>
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-indigo-900 to-slate-900"></div>
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
+          <h3 className="text-4xl font-bold text-center mb-16 text-white">料金プラン</h3>
           <div className="grid md:grid-cols-4 gap-6">
             {[
               {
@@ -305,46 +341,47 @@ export default function Home() {
                 value: 'enterprise'
               }
             ].map((plan, index) => (
-              <div 
-                key={index} 
-                className={`bg-white rounded-lg shadow-lg p-6 ${plan.popular ? 'ring-2 ring-purple-600' : ''}`}
+              <GlassCard
+                key={index}
+                className={`rounded-2xl p-8 hover:bg-white/90 transition-all duration-300 transform hover:scale-105 ${plan.popular ? 'ring-2 ring-violet-400 shadow-2xl' : 'hover:shadow-xl'}`}
               >
                 {plan.popular && (
-                  <div className="bg-purple-600 text-white text-sm px-3 py-1 rounded-full inline-block mb-4">
+                  <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm px-4 py-2 rounded-full inline-block mb-6 font-semibold shadow-lg">
                     人気プラン
                   </div>
                 )}
-                <h4 className="text-2xl font-bold mb-2">{plan.name}</h4>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold">{plan.price}</span>
+                <h4 className="text-2xl font-bold mb-4 text-gray-800">{plan.name}</h4>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
                   <span className="text-gray-600">{plan.period}</span>
                 </div>
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-4 mb-8">
                   {plan.features.map((feature, fIndex) => (
                     <li key={fIndex} className="flex items-start">
-                      <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      <span className="text-gray-600 text-sm">{feature}</span>
+                      <span className="text-gray-700">{feature}</span>
                     </li>
                   ))}
                 </ul>
-                <button 
+                <button
                   onClick={() => handlePlanSelect(plan.value)}
-                  className={`w-full text-white py-2 px-4 rounded-lg font-semibold transition ${plan.buttonClass}`}
+                  className={`w-full text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${plan.buttonClass} shadow-lg`}
                 >
                   {plan.buttonText}
                 </button>
-              </div>
+              </GlassCard>
             ))}
           </div>
         </div>
       </section>
 
       {/* お客様の声セクション */}
-      <section className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-center mb-12">お客様の声</h3>
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-purple-900 to-slate-800"></div>
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
+          <h3 className="text-4xl font-bold text-center mb-16 text-white">お客様の声</h3>
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
@@ -369,7 +406,7 @@ export default function Home() {
                 rating: 5
               }
             ].map((testimonial, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-lg">
+              <GlassCard key={index} className="p-8 rounded-2xl hover:bg-white/90 transition-all duration-300 transform hover:-translate-y-1 shadow-xl">
                 <div className="flex mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
@@ -377,9 +414,9 @@ export default function Home() {
                     </svg>
                   ))}
                 </div>
-                <p className="text-gray-700 mb-4 italic">&ldquo;{testimonial.comment}&rdquo;</p>
-                <div className="border-t pt-4">
-                  <p className="font-semibold">{testimonial.name}</p>
+                <p className="text-gray-700 mb-6 italic text-lg leading-relaxed">&ldquo;{testimonial.comment}&rdquo;</p>
+                <div className="border-t border-gray-200 pt-6">
+                  <p className="font-semibold text-gray-800">{testimonial.name}</p>
                   <p className="text-sm text-gray-600">{testimonial.role}</p>
                   <p className="text-sm text-gray-500">{testimonial.company}</p>
                 </div>
@@ -390,9 +427,10 @@ export default function Home() {
       </section>
 
       {/* FAQセクション */}
-      <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-center mb-12">よくある質問</h3>
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-indigo-900 to-slate-900"></div>
+        <div className="max-w-4xl mx-auto px-4 relative z-10">
+          <h3 className="text-4xl font-bold text-center mb-16 text-white">よくある質問</h3>
           <div className="space-y-4">
             {[
               {
@@ -416,12 +454,12 @@ export default function Home() {
                 a: '環境変数ベースの認証、APIキーによるアクセス制限、レート制限、SQLインジェクション対策など、エンタープライズレベルのセキュリティを実装しています。'
               }
             ].map((faq, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg">
+              <GlassCard key={index} className="rounded-2xl overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                  className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition"
+                  className="w-full px-8 py-6 text-left flex justify-between items-center hover:bg-white/70 transition-all duration-300"
                 >
-                  <span className="font-semibold">{faq.q}</span>
+                  <span className="font-semibold text-gray-800">{faq.q}</span>
                   <ChevronDown
                     className={`w-5 h-5 text-gray-500 transition-transform ${
                       openFaq === index ? 'transform rotate-180' : ''
@@ -429,26 +467,27 @@ export default function Home() {
                   />
                 </button>
                 {openFaq === index && (
-                  <div className="px-6 py-4 bg-gray-50 border-t">
-                    <p className="text-gray-700">{faq.a}</p>
+                  <div className="px-8 py-6 bg-white/30 border-t border-white/20 backdrop-blur-sm">
+                    <p className="text-gray-700 leading-relaxed">{faq.a}</p>
                   </div>
                 )}
-              </div>
+              </GlassCard>
             ))}
           </div>
         </div>
       </section>
 
       {/* APIドキュメントセクション */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-center mb-12">簡単なAPI利用</h3>
-          <div className="bg-gray-900 rounded-lg p-6 text-white">
-            <div className="mb-4">
-              <span className="text-green-400">GET</span>
-              <span className="ml-2">/api/v1/companies</span>
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-purple-900 to-slate-800"></div>
+        <div className="max-w-4xl mx-auto px-4 relative z-10">
+          <h3 className="text-4xl font-bold text-center mb-16 text-white">簡単なAPI利用</h3>
+          <div className="bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 text-white border border-white/10 shadow-2xl">
+            <div className="mb-6">
+              <span className="text-green-400 font-bold">GET</span>
+              <span className="ml-2 text-gray-300">/api/v1/companies</span>
             </div>
-            <pre className="text-sm overflow-x-auto">
+            <pre className="text-sm overflow-x-auto leading-relaxed">
 {`{
   "data": [
     {
@@ -466,30 +505,82 @@ export default function Home() {
 }`}
             </pre>
           </div>
-          <div className="text-center mt-8">
-            <a 
-              href="/docs/api" 
-              className="text-blue-600 hover:text-blue-700 font-semibold"
+          <div className="text-center mt-12">
+            <a
+              href="/docs/api"
+              className="inline-flex items-center text-white bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 rounded-xl hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-lg font-semibold"
             >
-              APIドキュメントを見る →
+              APIドキュメントを見る
+              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ファイナルCTAセクション */}
+      <section className="py-20 relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600"></div>
+        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+          <h3 className="text-4xl font-bold text-white mb-6">
+            今すぐ始めよう
+          </h3>
+          <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
+            4,231社の財務データにアクセスして、データドリブンな意思決定を実現しましょう
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <a
+              href="/auth/register"
+              className="bg-white text-violet-600 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-xl"
+            >
+              無料で始める
+            </a>
+            <a
+              href="/docs"
+              className="border-2 border-white text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-white hover:text-violet-600 transition-all duration-300 transform hover:scale-105"
+            >
+              ドキュメントを見る
             </a>
           </div>
         </div>
       </section>
 
       {/* フッター */}
-      <footer className="bg-gray-900 text-white py-8">
+      <footer className="bg-gray-900 text-white py-12 relative">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h5 className="font-bold mb-2">XBRL Financial Data API</h5>
-              <p className="text-gray-400 text-sm">© 2025 All rights reserved.</p>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="col-span-2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold">X</span>
+                </div>
+                <h5 className="font-bold text-xl">XBRL Financial Data API</h5>
+              </div>
+              <p className="text-gray-400 mb-4 leading-relaxed">
+                日本の上場企業4,231社の財務データを提供するプロフェッショナルAPIです。
+              </p>
+              <p className="text-gray-500 text-sm">© 2025 XBRL Financial Data API. All rights reserved.</p>
             </div>
-            <div className="flex space-x-6">
-              <a href="/terms" className="text-gray-400 hover:text-white">利用規約</a>
-              <a href="/privacy" className="text-gray-400 hover:text-white">プライバシーポリシー</a>
-              <a href="/docs" className="text-gray-400 hover:text-white">ドキュメント</a>
-              <a href="/support" className="text-gray-400 hover:text-white">サポート</a>
+
+            <div>
+              <h6 className="font-semibold mb-4 text-gray-300">サービス</h6>
+              <ul className="space-y-2 text-sm">
+                <li><a href="/docs" className="text-gray-400 hover:text-white transition-colors">ドキュメント</a></li>
+                <li><a href="/pricing" className="text-gray-400 hover:text-white transition-colors">料金</a></li>
+                <li><a href="/dashboard" className="text-gray-400 hover:text-white transition-colors">ダッシュボード</a></li>
+                <li><a href="/support" className="text-gray-400 hover:text-white transition-colors">サポート</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h6 className="font-semibold mb-4 text-gray-300">法的情報</h6>
+              <ul className="space-y-2 text-sm">
+                <li><a href="/terms" className="text-gray-400 hover:text-white transition-colors">利用規約</a></li>
+                <li><a href="/privacy" className="text-gray-400 hover:text-white transition-colors">プライバシーポリシー</a></li>
+                <li><a href="/security" className="text-gray-400 hover:text-white transition-colors">セキュリティ</a></li>
+                <li><a href="/compliance" className="text-gray-400 hover:text-white transition-colors">コンプライアンス</a></li>
+              </ul>
             </div>
           </div>
         </div>
