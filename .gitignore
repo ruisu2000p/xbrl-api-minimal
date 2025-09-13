@@ -51,3 +51,7 @@ get-*.js
 *.tmp
 *.temp
 .cache/
+
+# SQL batch files (too many files)
+scripts/sql-inserts/
+scripts/sql-metadata/

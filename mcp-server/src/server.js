@@ -15,8 +15,16 @@ import {
 import fetch from 'node-fetch';
 
 // APIの設定
-const API_URL = process.env.XBRL_API_URL || 'http://localhost:3005/api/v1';
+const API_URL = process.env.XBRL_API_URL || 'https://xbrl-api-minimal.vercel.app/api/v1';
 const API_KEY = process.env.XBRL_API_KEY || 'xbrl_test_key_123';
+
+// Supabase設定（オプション - 直接アクセス用）
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+// APIモード設定
+const API_MODE = process.env.API_MODE || 'vercel'; // 'vercel' or 'supabase'
 
 // APIリクエストを送信する共通関数
 async function makeApiRequest(endpoint, params = {}, method = 'GET', body = null) {
@@ -118,11 +126,39 @@ async function searchCompaniesByName(companyName) {
   }
 }
 
+// APIキー検証
+function validateApiKey() {
+  if (API_MODE === 'vercel' && !API_KEY) {
+    console.error('[WARNING] API_KEY is not set. Using test key.');
+    return false;
+  }
+  if (API_MODE === 'supabase' && (!SUPABASE_URL || !SUPABASE_ANON_KEY)) {
+    console.error('[ERROR] Supabase credentials are required for direct access mode.');
+    return false;
+  }
+  return true;
+}
+
+// 起動時の設定確認
+const isConfigValid = validateApiKey();
+if (!isConfigValid && API_MODE === 'supabase') {
+  console.error('[FATAL] Invalid configuration. Exiting.');
+  process.exit(1);
+}
+
+console.error(`[INFO] Starting XBRL MCP Server`);
+console.error(`[INFO] API Mode: ${API_MODE}`);
+console.error(`[INFO] API URL: ${API_URL}`);
+console.error(`[INFO] API Key: ${API_KEY ? API_KEY.substring(0, 10) + '...' : 'NOT SET'}`);
+if (API_MODE === 'supabase') {
+  console.error(`[INFO] Supabase URL: ${SUPABASE_URL}`);
+}
+
 // MCPサーバーの作成
 const server = new Server(
   {
     name: "xbrl-api-server",
-    version: "0.4.0",
+    version: "0.5.0",
   },
   {
     capabilities: {

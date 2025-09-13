@@ -1,7 +1,7 @@
 {
-  "name": "xbrl-mcp-server",
-  "version": "0.4.0",
-  "description": "MCP server for XBRL Financial Data API - Access Japanese listed companies financial data",
+  "name": "@xbrl-jp/mcp-server",
+  "version": "0.5.0",
+  "description": "MCP server for XBRL Financial Data API with API key authentication - Access 4,231 Japanese companies' financial data",
   "type": "module",
   "main": "src/server.js",
   "bin": {

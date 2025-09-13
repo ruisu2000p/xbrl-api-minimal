@@ -1,13 +1,18 @@
-# @xbrl-jp/mcp-server v0.3.0
+# @xbrl-jp/mcp-server v0.5.0
 
-MCP (Model Context Protocol) Server for XBRL Financial Data API - Access Japanese listed companies financial data through Claude Desktop.
+MCP (Model Context Protocol) Server for XBRL Financial Data API - Access Japanese listed companies financial data through Claude Desktop with secure API key authentication.
 
-## 🆕 Updates in v0.3.0
-- **企業名検索対応**: 「亀田製菓」などの企業名で直接検索可能
-- **新ツール追加**: search_companies, analyze_financial_metrics
-- **自動ID解決**: 企業名から企業IDを自動取得
-- **財務分析機能**: ROE、ROA、利益率などの自動計算
-- **前年比較**: 成長率の自動計算機能
+## 🆕 Updates in v0.5.0
+- **APIキー認証**: セキュアなAPIキー認証機能を実装
+- **デュアルモード**: Vercel APIとSupabase直接アクセスの両方をサポート
+- **第三者利用対応**: 各ユーザーが自分のAPIキーで利用可能
+- **レート制限管理**: プラン別のレート制限を実装
+- **エラーハンドリング改善**: より詳細なエラーメッセージ
+
+## 🔑 API Key Authentication
+- **無料プラン**: 100,000リクエスト/日
+- **プレミアムプラン**: 1,000,000リクエスト/日 + Supabase直接アクセス
+- **エンタープライズ**: 無制限アクセス + 専任サポート
 
 ## 🚀 Quick Start
 
@@ -27,7 +32,8 @@ Add the following to your `claude_desktop_config.json`:
       "args": ["@xbrl-jp/mcp-server"],
       "env": {
         "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
-        "XBRL_API_KEY": "your_api_key_here"
+        "XBRL_API_KEY": "your_api_key_here",
+        "API_MODE": "vercel"
       }
     }
   }
@@ -36,7 +42,10 @@ Add the following to your `claude_desktop_config.json`:
 
 ### 3. Get Your API Key
 
-Visit [https://xbrl-api-minimal.vercel.app](https://xbrl-api-minimal.vercel.app) to register and get your API key.
+1. Visit [https://xbrl-api-minimal.vercel.app/dashboard](https://xbrl-api-minimal.vercel.app/dashboard)
+2. Create an account or login
+3. Generate your API key from the dashboard
+4. Copy the key (format: `xbrl_live_xxxxx`)
 
 ## 📊 Available Tools
 

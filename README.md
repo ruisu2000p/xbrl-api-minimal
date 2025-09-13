@@ -36,6 +36,38 @@
 **🔥 最小介入版** - console.logのみリダイレクト、MCPプロトコル完全互換！
 **⚠️ 重要**: `--loglevel=error` でnpxの警告を抑制（必須）
 
+### 🔐 APIキー認証版（第三者利用向け）NEW v0.5.0
+
+自分のAPIキーで利用する場合:
+
+```json
+{
+  "mcpServers": {
+    "xbrl-api-auth": {
+      "command": "npx",
+      "args": ["@xbrl-jp/mcp-server"],
+      "env": {
+        "XBRL_API_KEY": "xbrl_live_your_key_here",
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
+        "API_MODE": "vercel"
+      }
+    }
+  }
+}
+```
+
+**APIキー取得方法:**
+1. [ダッシュボード](https://xbrl-api-minimal.vercel.app/dashboard)にアクセス
+2. アカウント作成・ログイン
+3. APIキー生成（形式: `xbrl_live_xxxxx`）
+
+**料金プラン:**
+- **無料**: 100,000リクエスト/日
+- **プレミアム**: 1,000,000リクエスト/日 + Supabase直接アクセス
+- **エンタープライズ**: 無制限 + 専任サポート
+
+詳細は[APIキー統合ガイド](docs/mcp-api-key-integration.md)を参照
+
 ### 💬 Claude Desktopでの使い方
 
 #### 基本的な使用例
