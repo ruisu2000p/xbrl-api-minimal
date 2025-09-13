@@ -1,7 +1,7 @@
 /* Tailwind directives - Production build */
-/* @tailwind base;
+@tailwind base;
 @tailwind components;
-@tailwind utilities; */
+@tailwind utilities;
 
 /* Smooth scrolling */
 html {
@@ -115,6 +115,31 @@ input:focus-visible {
 
 .gradient-indigo {
   background: linear-gradient(135deg, #667eea 0%, #4c63d2 100%);
+}
+
+/* 背景グラデーション - 淡い紫 */
+.bg-gradient-soft {
+  background: linear-gradient(135deg,
+    #0f172a 0%,           /* slate-900 */
+    #1e1b4b 20%,          /* indigo-900 */
+    #581c87 50%,          /* purple-900 */
+    #1e1b4b 80%,          /* indigo-900 */
+    #0f172a 100%          /* slate-900 */
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* ホバーエフェクトの強化 */
