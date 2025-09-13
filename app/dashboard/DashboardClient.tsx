@@ -150,6 +150,12 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user.email}</span>
               <button
+                onClick={() => router.push('/dashboard/settings')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                設定
+              </button>
+              <button
                 onClick={handleSignOut}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
