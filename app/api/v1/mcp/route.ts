@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { verifyApiKey } from '@/app/api/_lib/auth'
+import { authByApiKey } from '@/app/api/_lib/authByApiKey'
 
 // MCPツールの定義
 const MCP_TOOLS = {
@@ -31,7 +31,7 @@ const MCP_TOOLS = {
 
 export async function POST(request: NextRequest) {
   try {
-    // APIキーの検証
+    // APIキーの検証（x-api-keyヘッダーから取得）
     const apiKey = request.headers.get('x-api-key')
     if (!apiKey) {
       return NextResponse.json(
@@ -40,13 +40,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const userId = await verifyApiKey(apiKey)
-    if (!userId) {
+    // Authorizationヘッダーを設定してauthByApiKeyを呼び出す
+    const modifiedRequest = new NextRequest(request.url)
+    modifiedRequest.headers.set('authorization', `Bearer ${apiKey}`)
+
+    const authResult = await authByApiKey(modifiedRequest)
+    if (!authResult.ok) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
-        { status: 401 }
+        { error: authResult.error },
+        { status: authResult.status }
       )
     }
+
+    const userId = authResult.userId
 
     const body = await request.json()
     const { tool, parameters } = body
@@ -175,7 +181,7 @@ export async function POST(request: NextRequest) {
 
 // 利用可能なツールのリストを返す
 export async function GET(request: NextRequest) {
-  // APIキーの検証
+  // APIキーの検証（x-api-keyヘッダーから取得）
   const apiKey = request.headers.get('x-api-key')
   if (!apiKey) {
     return NextResponse.json(
@@ -184,11 +190,15 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const userId = await verifyApiKey(apiKey)
-  if (!userId) {
+  // Authorizationヘッダーを設定してauthByApiKeyを呼び出す
+  const modifiedRequest = new NextRequest(request.url)
+  modifiedRequest.headers.set('authorization', `Bearer ${apiKey}`)
+
+  const authResult = await authByApiKey(modifiedRequest)
+  if (!authResult.ok) {
     return NextResponse.json(
-      { error: 'Invalid API key' },
-      { status: 401 }
+      { error: authResult.error },
+      { status: authResult.status }
     )
   }
 
