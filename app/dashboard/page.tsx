@@ -25,27 +25,25 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    checkAuth()
-  }, [])
-
-  const checkAuth = async () => {
-    try {
-      const currentUser = await getCurrentUser()
-      if (!currentUser) {
-        // 認証がない場合はログインページへ
-        console.log('No user found, redirecting to login')
+    const checkAuth = async () => {
+      try {
+        const currentUser = await getCurrentUser()
+        if (!currentUser) {
+          // 認証がない場合はログインページへ
+          router.push('/auth/login?redirect=/dashboard')
+          return
+        }
+        setUser(currentUser)
+      } catch (error) {
+        // エラーの場合もログインページへ
         router.push('/auth/login?redirect=/dashboard')
-        return
+      } finally {
+        setLoading(false)
       }
-      setUser(currentUser)
-    } catch (error) {
-      console.error('Auth check failed:', error)
-      // エラーの場合もログインページへ
-      router.push('/auth/login?redirect=/dashboard')
-    } finally {
-      setLoading(false)
     }
-  }
+    checkAuth()
+  }, [router])
+
 
   const handleSignOut = async () => {
     try {

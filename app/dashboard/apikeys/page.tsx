@@ -36,7 +36,7 @@ export default function ApiKeysPage() {
       return;
     }
     fetchKeys();
-  }, []);
+  }, [router]);
 
   async function fetchKeys() {
     // LocalStorageからAPIキーを取得
