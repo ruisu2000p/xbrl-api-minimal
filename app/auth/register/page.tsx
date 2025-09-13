@@ -61,58 +61,41 @@ export default function RegisterPage() {
         company: formData.companyName || 'なし'
       }
 
-      // Supabase Authを使用して直接登録
-      const result = await signUpWithEmail(
+      // 登録を非同期で実行し、すぐに処理画面へ遷移
+      signUpWithEmail(
         formData.email,
         formData.password,
         {
           company_name: formData.companyName,
           plan: formData.plan
         }
-      )
-
-      // デバッグ情報を更新
-      const debugResult = {
-        ...debugData,
-        userCreated: !!result.data?.user,
-        userId: result.data?.user?.id || 'なし',
-        sessionCreated: !!result.data?.session,
-        hasSession: !!result.data?.session,
-        errorMessage: result.error?.message || 'なし',
-        errorDetails: (result.error as any)?.details || 'なし',
-        errorOriginal: (result.error as any)?.originalMessage || 'なし',
-        isExistingUser: !!(result as any).isExistingUser,
-        autoSignedIn: !!(result as any).autoSignedIn,
-        requiresEmailConfirmation: !!(result as any).requiresEmailConfirmation,
-        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT SET',
-        hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      }
-
-      setDebugInfo(JSON.stringify(debugResult, null, 2))
-
-      if (result.error) {
-        setError(result.error.message)
-        setLoading(false)
-      } else if (result.data?.user) {
-        // 既存ユーザーとしてログイン成功
-        if ((result as any).isExistingUser) {
-          setLoading(false)
-          setSuccessMessage('既存のアカウントでログインしました。ダッシュボードへリダイレクトします...')
-          setTimeout(() => {
-            router.push('/dashboard')
-          }, 1000)
-          return
+      ).then(result => {
+        // 結果をlocalStorageに保存（処理画面で確認用）
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('registrationResult', JSON.stringify({
+            success: !!result.data?.user,
+            email: formData.email,
+            timestamp: new Date().toISOString()
+          }))
         }
+      }).catch(err => {
+        // エラーもlocalStorageに保存
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('registrationResult', JSON.stringify({
+            success: false,
+            error: err.message,
+            timestamp: new Date().toISOString()
+          }))
+        }
+      })
 
-        // 新規登録成功 - 待機画面へ強制的にリダイレクト（クライアントサイドで完全なURLリダイレクト）
-        setLoading(false)
-        setSuccessMessage('登録リクエストを受け付けました。処理画面へ移動します...')
+      // 即座に処理画面へリダイレクト
+      setSuccessMessage('登録リクエストを受け付けました。処理画面へ移動します...')
+      setTimeout(() => {
+        window.location.href = '/auth/processing'
+      }, 500)
 
-        // 即座に待機画面へリダイレクト（window.location.replaceを使用）
-        window.location.replace('/auth/processing')
-
-        return // 重要: ここでreturnして、以降の処理を実行しない
-      }
+      return
     } catch (err: any) {
       const errorMessage = err?.message || err?.toString() || '不明なエラー'
       setError(`登録中にエラーが発生しました: ${errorMessage}`)
