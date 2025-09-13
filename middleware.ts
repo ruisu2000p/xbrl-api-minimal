@@ -29,17 +29,11 @@ export async function middleware(request: NextRequest) {
                    request.cookies.get('supabase-auth-token') ||
                    request.cookies.get('sb-zxzyidqrvzfzhicfuhlo-auth-token') // Supabase project-specific token
 
-  // デバッグ: Cookie情報をログ出力（本番環境では削除）
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Middleware - Path:', pathname)
-    console.log('Middleware - Has auth token:', !!authToken)
-    console.log('Middleware - All cookies:', request.cookies.getAll().map(c => c.name))
-  }
+  // デバッグ情報は本番環境では出力しない
 
   // 保護されたルートへのアクセス
   if (isProtectedRoute && !authToken) {
     // 未認証の場合はログインページへリダイレクト
-    console.log('Redirecting to login - no auth token found')
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('redirect', pathname)

@@ -7,20 +7,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase環境変数の確認
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase environment variables');
+// Supabase環境変数を関数内で取得
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null;
+  }
+  
+  return createClient(
+    supabaseUrl,
+    supabaseServiceKey,
+    { auth: { persistSession: false } }
+  );
 }
-
-// Supabase Admin Client
-const supabaseAdmin = supabaseUrl && supabaseServiceKey ? createClient(
-  supabaseUrl,
-  supabaseServiceKey,
-  { auth: { persistSession: false } }
-) : null;
 
 // APIキーの生成
 function generateApiKey(): string {
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabaseAdmin = getSupabaseAdmin();
     if (!supabaseAdmin) {
       return NextResponse.json(
         { success: false, error: 'Supabase接続エラー: 環境変数が設定されていません' },
@@ -152,6 +154,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const supabaseAdmin = getSupabaseAdmin();
   if (!supabaseAdmin) {
     return NextResponse.json(
       { success: false, error: 'Supabase接続エラー' },
