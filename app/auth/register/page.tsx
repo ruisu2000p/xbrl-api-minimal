@@ -6,10 +6,10 @@ import Link from 'next/link'
 import { signUpWithEmail } from '@/lib/auth'
 
 const plans = [
-  { value: 'free', label: '無料プラン', price: '¥0/月', requests: '10,000回/月' },
-  { value: 'basic', label: 'Basic', price: '¥5,000/月', requests: '50,000回/月' },
-  { value: 'pro', label: 'Pro', price: '¥20,000/月', requests: '200,000回/月' },
-  { value: 'enterprise', label: 'Enterprise', price: 'お問い合わせ', requests: '無制限' }
+  { value: 'free', label: '無料プラン', description: 'ベーシックアクセス' },
+  { value: 'basic', label: 'Basic', description: '標準アクセス' },
+  { value: 'pro', label: 'Pro', description: 'プロフェッショナルアクセス' },
+  { value: 'enterprise', label: 'Enterprise', description: 'エンタープライズアクセス' }
 ]
 
 export default function RegisterPage() {
@@ -86,7 +86,7 @@ export default function RegisterPage() {
           XBRL API アカウント作成
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          4,231社の財務データにアクセス
+          日本企業の財務データにアクセス
         </p>
       </div>
 
@@ -176,7 +176,7 @@ export default function RegisterPage() {
               >
                 {plans.map((plan) => (
                   <option key={plan.value} value={plan.value}>
-                    {plan.label} - {plan.price} ({plan.requests})
+                    {plan.label} - {plan.description}
                   </option>
                 ))}
               </select>

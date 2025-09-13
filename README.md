@@ -1,250 +1,179 @@
-# XBRL財務データAPI
+# XBRL財務データAPI + セキュアMCPサーバー
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
+[![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
+[![Security](https://img.shields.io/badge/Security-v2.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-日本企業4,231社の有価証券報告書（XBRL/EDINET）データにアクセスするための最小構成API。Supabaseインフラ上で動作。
+日本企業5,220社の有価証券報告書（XBRL/EDINET）データにアクセスするためのAPI + セキュアMCPサーバー
+
+## 🔒 重要: セキュリティアップデート v2.0.0
+
+**⚠️ v1.9.1以前のバージョンには重大なセキュリティ脆弱性があります。すぐにv2.0.0へアップグレードしてください。**
+
+### セキュリティ改善内容
+- ✅ **環境変数による認証** - ハードコードされたキーを削除
+- ✅ **レート制限** - 100リクエスト/分
+- ✅ **SQLインジェクション防止** - 入力検証とサニタイゼーション
+- ✅ **パストラバーサル防止** - セキュアなファイルアクセス
+- ✅ **アクティビティ監視** - リアルタイムセキュリティログ
 
 ## 🌟 特徴
 
-- **4,231社の財務データ** - 日本の全上場企業の有価証券報告書
+- **5,220社の財務データ** - 日本の全上場企業の有価証券報告書
 - **Markdown形式** - XBRLから変換済みで読みやすい
-- **ゼロコンフィグ** - 環境変数の設定不要、設定ファイル追加のみ
+- **セキュア設計** - 環境変数ベースの認証（v2.0.0+）
 - **Claude Desktop完全対応** - 自然言語で財務データにアクセス
-- **最小構成** - 必要最小限のコードで実装（22ファイルのみ）
 - **Vercelデプロイ済み** - すぐに利用可能
 
 ## 🚀 クイックスタート
 
-### MCP Server（Claude Desktop向け）🎉 v1.8.1
+### 1. セキュアMCPサーバー（v2.0.0） 🔒
 
-`%APPDATA%\Claude\claude_desktop_config.json` に追加するだけ:
-
-```json
-{
-  "mcpServers": {
-    "xbrl-financial": {
-      "command": "npx",
-      "args": ["--loglevel=error", "shared-supabase-mcp-minimal@1.8.1"]
-    }
-  }
-}
+#### インストール
+```bash
+npm install -g shared-supabase-mcp-minimal@latest
 ```
 
+#### 環境変数設定
+```bash
+# Windows (Command Prompt)
+set SUPABASE_URL=https://your-project.supabase.co
+set SUPABASE_ANON_KEY=your-anon-key-here
 
+# Windows (PowerShell)
+$env:SUPABASE_URL = "https://your-project.supabase.co"
+$env:SUPABASE_ANON_KEY = "your-anon-key-here"
 
-**🔥 最小介入版** - console.logのみリダイレクト、MCPプロトコル完全互換！
-**⚠️ 重要**: `--loglevel=error` でnpxの警告を抑制（必須）
+# macOS/Linux
+export SUPABASE_URL=https://your-project.supabase.co
+export SUPABASE_ANON_KEY=your-anon-key-here
+```
 
-### 🔐 APIキー認証版（第三者利用向け）NEW v0.5.0
-
-自分のAPIキーで利用する場合:
+#### Claude Desktop設定
+`%APPDATA%\Claude\claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "xbrl-api-auth": {
+    "xbrl-financial-secure": {
       "command": "npx",
-      "args": ["@xbrl-jp/mcp-server"],
+      "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
-        "XBRL_API_KEY": "xbrl_live_your_key_here",
-        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1",
-        "API_MODE": "vercel"
+        "SUPABASE_URL": "https://your-project.supabase.co",
+        "SUPABASE_ANON_KEY": "your-anon-key-here"
       }
     }
   }
 }
 ```
 
-**APIキー取得方法:**
-1. [ダッシュボード](https://xbrl-api-minimal.vercel.app/dashboard)にアクセス
-2. アカウント作成・ログイン
-3. APIキー生成（形式: `xbrl_live_xxxxx`）
+### 2. Web API エンドポイント
 
-**料金プラン:**
-- **無料**: 100,000リクエスト/日
-- **プレミアム**: 1,000,000リクエスト/日 + Supabase直接アクセス
-- **エンタープライズ**: 無制限 + 専任サポート
+本番環境: https://xbrl-api-minimal.vercel.app
 
-詳細は[APIキー統合ガイド](docs/mcp-api-key-integration.md)を参照
+#### 主要エンドポイント
+- `GET /api/v1/companies` - 企業一覧
+- `GET /api/v1/companies/{id}` - 企業詳細
+- `GET /api/v1/documents` - ドキュメント一覧
+- `GET /api/v1/financial-metrics/{company_id}` - 財務指標
 
-### 💬 Claude Desktopでの使い方
+## 📊 利用可能なMCPツール
 
-#### 基本的な使用例
-```
-「クスリのアオキの財務データを検索してください」
-「トヨタ自動車（7203）の有価証券報告書を見せてください」
-「自動車業界の企業の売上高を比較してください」
-```
+### `query-my-data`
+Supabaseテーブルから財務データをクエリ（セキュリティ検証付き）
 
-#### 利用可能なツール
-- `query-my-data` - データベースクエリ（自動認証）
-- `get-storage-md` - Markdownファイル取得（自動認証）
-- `search-companies` - 企業名検索（NEW in v1.8.0）
+### `get-storage-md`
+Supabase StorageからMarkdownドキュメントを取得（パス検証付き）
 
-### REST API（開発者向け）
+### `search-companies`
+企業名またはティッカーコードで検索（入力サニタイゼーション付き）
 
-```bash
-# 企業一覧取得
-curl -H "X-API-Key: xbrl_demo" \
-  https://xbrl-api-minimal.vercel.app/api/v1/companies
+### `get-security-status` (NEW)
+セキュリティステータスと不審なアクティビティを監視
 
-# 企業の財務データ取得
-curl -H "X-API-Key: xbrl_demo" \
-  https://xbrl-api-minimal.vercel.app/api/v1/companies/S100TIJL/data
+## 🔐 セキュリティベストプラクティス
 
-# Markdownドキュメント取得
-curl -H "X-API-Key: xbrl_demo" \
-  https://xbrl-api-minimal.vercel.app/api/v1/markdown-documents?company_id=S100TIJL
-```
+1. **新しいAPIキーを生成** - Supabaseダッシュボードで
+2. **`.env`ファイルをコミットしない** - バージョン管理から除外
+3. **定期的にキーをローテーション** - 推奨: 90日ごと
+4. **セキュリティステータスを監視** - `get-security-status`ツール使用
+5. **アクティビティログをレビュー** - 不審なパターンの検出
 
-## 📝 具体的な利用例
+## 📋 v1.xからv2.0への移行
 
-### 企業検索
-```
-「売上高が1兆円を超える企業を教えてください」
-「東証プライムの電気機器セクターの企業一覧」
-「社名に『ソニー』を含む企業を検索」
-```
+1. **最新版をインストール**
+   ```bash
+   npm install -g shared-supabase-mcp-minimal@latest
+   ```
 
-### 財務データ分析
-```
-「トヨタの過去5年間の売上推移を分析」
-「製薬業界のROE比較」
-「営業利益率が高い企業トップ10」
-```
+2. **環境変数を設定**（上記参照）
 
-### 有価証券報告書の内容確認
-```
-「キーエンスの事業内容を説明してください」
-「任天堂のリスク情報を要約」
-「ソフトバンクグループの経営戦略を分析」
-```
+3. **Claude Desktop設定を更新**（上記参照）
 
-## 📊 データ構造
+4. **新しいAPIキーを生成**（Supabaseダッシュボード）
 
-### markdown_files_metadata テーブル (v1.8.0で更新)
-| カラム | 型 | 説明 |
-|--------|------|------------|
-| company_id | text | 企業ID（例: S100KLVZ）|
-| company_name | text | 企業名 |
-| fiscal_year | text | 会計年度（例: 2024）|
-| storage_path | text | Storageパス |
-| document_type | text | PublicDoc/AuditDoc |
-| file_size | number | ファイルサイズ |
-| has_tables | boolean | テーブル有無 |
+5. **古いハードコードされたキーを無効化**
 
-### Supabase Storage
-```
-markdown-files/
-├── FY2016/          # 995社
-├── FY2021/          # 5,220社
-└── FY2024/          # 4,231社
-    └── {company_id}/
-        └── PublicDoc/
-```
+詳細は[SECURITY_MIGRATION_GUIDE.md](./SECURITY_MIGRATION_GUIDE.md)を参照
 
-## 🛠️ 開発セットアップ（APIカスタマイズ用）
-
-### 前提条件
-- Node.js 18+
-- Supabase アカウント（独自データベース使用時のみ）
+## 🛠️ 開発者向け情報
 
 ### ローカル開発
 
 ```bash
-git clone https://github.com/ruisu2000p/xbrl-api-minimal
+# リポジトリをクローン
+git clone https://github.com/ruisu2000p/xbrl-api-minimal.git
 cd xbrl-api-minimal
+
+# 依存関係をインストール
 npm install
+
+# 開発サーバーを起動
 npm run dev
 ```
 
-## 📁 最小構成
+### プロジェクト構造
 
 ```
 xbrl-api-minimal/
-├── app/
-│   ├── api/v1/              # APIエンドポイント（4ファイル）
-│   ├── layout.tsx           # レイアウト
-│   └── page.tsx             # ランディングページ
-├── lib/
-│   ├── middleware/          # レート制限
-│   ├── supabase/           # クライアント
-│   └── utils/              # ユーティリティ
-├── docs/                    # ドキュメント（4ファイル）
-└── sql/master-setup.sql    # データベース設定
+├── app/                    # Next.js アプリケーション
+├── package/                # MCPサーバーパッケージ
+│   ├── index-secure.js    # セキュアMCPサーバー（v2.0）
+│   ├── index.js           # 旧版（非推奨）
+│   └── README.md          # パッケージドキュメント
+├── lib/                    # 共有ライブラリ
+├── components/             # Reactコンポーネント
+└── SECURITY_MIGRATION_GUIDE.md  # セキュリティ移行ガイド
 ```
 
-合計: **22ファイルのみ**
+## 📈 バージョン履歴
 
-## 📚 APIエンドポイント
+### v2.0.0 (2024-01-XX)
+- 🔒 環境変数による認証管理
+- 🛡️ セキュリティ監視機能追加
+- ⚡ レート制限実装
+- 🚫 不正パターン検出
+- 📊 セキュリティステータス確認ツール
 
-### GET /api/v1/companies
-企業一覧を取得
+### v1.9.1 (非推奨)
+- ⚠️ ハードコードされた認証情報（セキュリティリスク）
 
-**パラメータ:**
-- `page` - ページ番号
-- `per_page` - 1ページあたりの件数
-- `search` - 検索キーワード
-- `sector` - 業種フィルター
+## 🤝 コントリビューション
 
-### GET /api/v1/companies/[id]/data
-企業の財務データとStorageファイルを取得
+セキュリティ問題は非公開で報告してください。その他の問題や機能リクエストはGitHub Issuesをご利用ください。
 
-### GET /api/v1/companies/[id]/files
-企業のファイル一覧を取得
+## 📜 ライセンス
 
-**パラメータ:**
-- `year` - 会計年度
-- `file` - ファイルインデックス
+MIT
 
-### GET /api/v1/markdown-documents
-Markdownドキュメントを直接取得
+## 🔗 関連リンク
 
-## 🔒 セキュリティ
-
-- APIキー認証（デモキー: `xbrl_demo`）
-- Supabase Row Level Security
-- レート制限実装
-- Service Roleキーはサーバーサイドのみ
-
-## 📈 パフォーマンス
-
-- **リポジトリサイズ**: 従来比67%削減
-- **ファイル数**: 22ファイル（最小構成）
-- **ビルド時間**: < 30秒
-- **API応答時間**: < 200ms
-
-## 🤝 Contributing
-
-最小構成を維持するため、新機能追加は慎重に検討してください。バグ修正とパフォーマンス改善を優先します。
-
-## 📦 NPMパッケージ
-
-### 最新版 (v1.8.1) - 2025-09-07
-```bash
-npm install -g shared-supabase-mcp-minimal@1.8.1
-# または
-npx --loglevel=error shared-supabase-mcp-minimal@1.8.1
-```
-
-**トラブルシューティング**: 古いバージョンのエラーが出る場合：
-```bash
-npm uninstall -g xbrl-mcp-server
-npm cache clean --force
-```
-
-## 📄 License
-
-MIT License
-
-## 🔗 リンク
-
-- [NPM Package](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-- [GitHub Repository](https://github.com/ruisu2000p/xbrl-api-minimal)
-- [Vercel Deployment](https://xbrl-api-minimal.vercel.app)
-- [Supabase Project](https://supabase.com/dashboard/project/wpwqxhyiglbtlaimrjrx)
+- [NPMパッケージ](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
+- [GitHubリポジトリ](https://github.com/ruisu2000p/xbrl-api-minimal)
+- [Vercel本番環境](https://xbrl-api-minimal.vercel.app)
+- [Supabaseダッシュボード](https://app.supabase.com)
 
 ---
 
-**Minimal is Beautiful** - 必要最小限のコードで最大限の価値を提供
+**⚠️ 重要**: v1.9.1以前を使用している場合は、セキュリティ脆弱性に対処するため、直ちにアップグレードしてください。

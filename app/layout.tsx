@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Analytics } from '@vercel/analytics/next'
-import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'XBRL財務データAPI - 20年分の有価証券報告書',
@@ -18,7 +17,6 @@ export default function RootLayout({
       <body>
         {children}
         <Analytics />
-        <Script src="https://cdn.tailwindcss.com" strategy="afterInteractive" />
       </body>
     </html>
   )

@@ -3,14 +3,10 @@
   "version": "1.1.1",
   "description": "XBRL財務データAPI - 最小構成版",
   "mcp": {
-    "package": "xbrl-mcp-server",
-    "version": "0.3.0",
-    "description": "Claude Desktop用MCPサーバー",
-    "repository": "https://www.npmjs.com/package/xbrl-mcp-server",
-    "vercel": {
-      "endpoint": "https://mcp.vercel.com",
-      "projectUrl": "https://mcp.vercel.com/ruisu2000p/xbrl-api-minimal"
-    }
+    "package": "shared-supabase-mcp-minimal",
+    "version": "2.0.0",
+    "description": "Secure MCP server for XBRL financial data",
+    "repository": "https://www.npmjs.com/package/shared-supabase-mcp-minimal"
   },
   "scripts": {
     "dev": "next dev",
