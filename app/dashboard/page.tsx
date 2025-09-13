@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { createSupabaseClient } from '@/lib/supabase/client'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -21,7 +21,7 @@ export default function DashboardPage() {
     // Supabase認証状態の確認とAPIキー取得
     const initializeDashboard = async () => {
       try {
-        const supabase = createClient()
+        const supabase = createSupabaseClient()
         const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
         
         if (authError || !authUser) {

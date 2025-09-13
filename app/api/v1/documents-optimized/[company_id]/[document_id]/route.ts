@@ -137,7 +137,7 @@ export async function GET(
         // コンテンツの基本分析（キャッシュされたコンテンツで実行）
         if (documentWithContent.content) {
           const lines = documentWithContent.content.split('\n');
-          const nonEmptyLines = lines.filter(line => line.trim().length > 0);
+          const nonEmptyLines = lines.filter((line: string) => line.trim().length > 0);
           
           documentWithContent.content_analysis = {
             total_characters: documentWithContent.content.length,
@@ -148,9 +148,9 @@ export async function GET(
 
           // セクション見出しを抽出（最適化版）
           const headings = lines
-            .filter(line => line.trim().startsWith('#'))
+            .filter((line: string) => line.trim().startsWith('#'))
             .slice(0, 20) // 最初の20個の見出しのみ
-            .map((line, index) => ({
+            .map((line: string, index: number) => ({
               level: (line.match(/^#+/) || [''])[0].length,
               text: line.replace(/^#+\s*/, ''),
               line_number: lines.indexOf(line) + 1
@@ -170,7 +170,7 @@ export async function GET(
     }
 
     // 同じ企業の関連ドキュメントを取得（キャッシュ付き）
-    const relatedCacheKey = generateFinancialCacheKey('related', company_id, document.fiscal_year);
+    const relatedCacheKey = generateFinancialCacheKey('document', company_id, document.fiscal_year);
     let relatedDocs = null;
     
     if (use_cache) {

@@ -317,7 +317,7 @@ export async function GET(
         }, {})
       : null;
 
-    if (industryAverage) {
+    if (industryAverage && industryData) {
       Object.keys(industryAverage).forEach(key => {
         industryAverage[key] = industryAverage[key] / industryData.length;
       });
