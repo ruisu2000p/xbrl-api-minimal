@@ -44,6 +44,12 @@ export async function middleware(request: NextRequest) {
   // 認証が必要なページの定義
   const protectedRoutes = ['/dashboard', '/api/dashboard']
   const authRoutes = ['/auth/login', '/auth/register']
+  const publicRoutes = ['/auth/processing', '/auth/callback'] // 常にアクセス可能なページ
+
+  // パブリックルートは常に許可
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
+    return supabaseResponse
+  }
 
   // 保護されたルートへのアクセス時
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
