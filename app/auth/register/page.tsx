@@ -91,9 +91,8 @@ export default function RegisterPage() {
 
       // 即座に処理画面へリダイレクト
       setSuccessMessage('登録リクエストを受け付けました。処理画面へ移動します...')
-      setTimeout(() => {
-        window.location.href = '/auth/processing'
-      }, 500)
+      // 直接リダイレクト（遅延なし）
+      window.location.href = '/auth/processing'
 
       return
     } catch (err: any) {
