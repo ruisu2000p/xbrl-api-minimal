@@ -377,7 +377,7 @@ export default function Home() {
                     </svg>
                   ))}
                 </div>
-                <p className="text-gray-700 mb-4 italic">"{testimonial.comment}"</p>
+                <p className="text-gray-700 mb-4 italic">&ldquo;{testimonial.comment}&rdquo;</p>
                 <div className="border-t pt-4">
                   <p className="font-semibold">{testimonial.name}</p>
                   <p className="text-sm text-gray-600">{testimonial.role}</p>
