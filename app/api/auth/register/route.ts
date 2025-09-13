@@ -85,10 +85,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Authでユーザーを作成
+    // email_confirm: true でメール確認をスキップ
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm: true,  // メール確認をスキップして即座に有効化
       user_metadata: {
         name,
         company: company || null,

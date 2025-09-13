@@ -62,8 +62,9 @@ export default function RegisterPage() {
       if (error) {
         setError(error.message)
       } else if (data.user) {
-        // 登録成功
-        router.push('/auth/verify-email')
+        // 登録成功 - 自動的にログインしてダッシュボードへ
+        // Supabaseは登録時に自動的にセッションを作成するので、直接ダッシュボードへ移動
+        router.push('/dashboard')
       }
     } catch (err) {
       setError('登録中にエラーが発生しました')
