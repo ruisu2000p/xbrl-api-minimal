@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// 保護されたルート（dashboard-testは除外）
-const protectedRoutes = ['/dashboard', '/api/dashboard'].filter(route => !route.includes('test'))
+// 保護されたルート
+const protectedRoutes = ['/dashboard', '/api/dashboard']
 // 認証済みユーザーがアクセスできないルート
 const authRoutes = ['/auth/login', '/auth/register']
 // 認証不要のルート
@@ -14,6 +14,11 @@ export async function middleware(request: NextRequest) {
   // 公開ルートは認証チェックをスキップ
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
   if (isPublicRoute) {
+    return NextResponse.next()
+  }
+
+  // dashboard-testは除外
+  if (pathname.includes('dashboard-test')) {
     return NextResponse.next()
   }
 
