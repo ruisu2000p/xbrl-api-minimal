@@ -32,9 +32,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('api_keys')
       .update({
-        is_active: false,
-        status: 'revoked',
-        updated_at: new Date().toISOString()
+        status: 'revoked'
       })
       .eq('id', keyId)
       .eq('user_id', user.id)

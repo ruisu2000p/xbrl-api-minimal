@@ -49,6 +49,7 @@ export default function RegisterPage() {
     }
 
     try {
+      // Supabase Authを使用して直接登録
       const { data, error } = await signUpWithEmail(
         formData.email,
         formData.password,
@@ -59,13 +60,19 @@ export default function RegisterPage() {
       )
 
       if (error) {
-        setError(error.message)
+        setError(error.message || '登録中にエラーが発生しました')
       } else if (data.user) {
-        // 登録成功 - 自動的にログインしてダッシュボードへ
-        // Supabaseは登録時に自動的にセッションを作成するので、直接ダッシュボードへ移動
-        router.push('/dashboard')
+        // 登録成功
+        // メール確認が必要な場合はメッセージを表示
+        if (!data.session) {
+          setError('登録確認メールを送信しました。メールを確認してください。')
+        } else {
+          // セッションが作成された場合は直接ダッシュボードへ
+          router.push('/dashboard')
+        }
       }
     } catch (err) {
+      console.error('Registration error:', err)
       setError('登録中にエラーが発生しました')
     } finally {
       setLoading(false)

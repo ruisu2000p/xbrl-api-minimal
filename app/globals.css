@@ -1,22 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Performance optimizations */
+/* Basic reset and styles */
 * {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Focus styles for accessibility */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible {
-  outline: 2px solid #3B82F6;
-  outline-offset: 2px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
