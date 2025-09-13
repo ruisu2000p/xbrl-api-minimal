@@ -20,35 +20,15 @@ export default function ProcessingPage() {
       setMessage('登録を確認しています...')
     }, 3000)
 
-    // 5秒後にユーザー確認
-    const checkTimeout = setTimeout(async () => {
-      try {
-        const user = await getCurrentUser()
-        if (user) {
-          setMessage('登録が完了しました！ダッシュボードへ移動します...')
-          setTimeout(() => {
-            window.location.href = '/dashboard'
-          }, 1000)
-        } else {
-          // ユーザーが見つからない場合は再度チェック
-          setMessage('もう少しお待ちください...')
-          setTimeout(async () => {
-            const retryUser = await getCurrentUser()
-            if (retryUser) {
-              window.location.href = '/dashboard'
-            } else {
-              // それでも見つからない場合はログインページへ
-              window.location.href = '/auth/login?registered=true'
-            }
-          }, 2000)
-        }
-      } catch (error) {
-        console.error('User check failed:', error)
-        setMessage('エラーが発生しました。ログインページへ移動します...')
-        setTimeout(() => {
-          window.location.href = '/auth/login?error=processing'
-        }, 2000)
-      }
+    // 5秒後に強制的にダッシュボードへ移動
+    const checkTimeout = setTimeout(() => {
+      setMessage('登録が完了しました！ダッシュボードへ移動します...')
+
+      // 1秒後にダッシュボードへ強制的に移動
+      setTimeout(() => {
+        // window.location.hrefで完全にページをリロード
+        window.location.href = '/dashboard'
+      }, 1000)
     }, 5000)
 
     return () => {
