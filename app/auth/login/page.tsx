@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signInWithEmail } from '@/lib/auth'
+// import { signInWithEmail } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,19 +26,23 @@ export default function LoginPage() {
     }
 
     try {
-      const { data, error } = await signInWithEmail(
-        formData.email,
-        formData.password
-      )
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
 
-      if (error) {
-        if (error.message?.includes('Invalid login credentials')) {
-          setError('メールアドレスまたはパスワードが正しくありません')
-        } else {
-          setError(error.message || 'ログイン中にエラーが発生しました')
-        }
-      } else if (data?.user) {
-        // ログイン成功 - ルーターをリフレッシュしてCookieを同期
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        setError(result.error || 'ログイン中にエラーが発生しました')
+      } else {
+        // ログイン成功 - Cookieがセットされているので直接遷移
         router.refresh()
         router.push('/dashboard')
       }

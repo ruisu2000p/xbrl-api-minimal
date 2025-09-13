@@ -5,21 +5,35 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
-  // Create Supabase client inside the function
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json(
-      { error: 'Server configuration error' },
-      { status: 500 }
-    );
-  }
-  
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const cookieStore = await cookies();
+
+  // Create SSR Supabase client
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  );
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -46,10 +60,26 @@ export async function POST(request: NextRequest) {
     }
 
     // ユーザーのAPIキー情報を取得
-    const supabaseAdmin = createClient(
+    const supabaseAdmin = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false } }
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // Server Componentからの呼び出し
+            }
+          },
+        },
+        auth: { persistSession: false }
+      }
     );
 
     const { data: apiKeys } = await supabaseAdmin
@@ -59,8 +89,8 @@ export async function POST(request: NextRequest) {
       .eq('is_active', true)
       .limit(1);
 
-    // レスポンスの作成
-    const response = NextResponse.json({
+    // レスポンスの作成 - SSRクライアントがCookieを自動管理
+    return NextResponse.json({
       success: true,
       message: 'ログインに成功しました',
       user: {
@@ -69,32 +99,13 @@ export async function POST(request: NextRequest) {
         name: authData.user.user_metadata?.name || '',
         company: authData.user.user_metadata?.company || null,
         plan: authData.user.user_metadata?.plan || 'beta',
-        apiKey: apiKeys && apiKeys.length > 0 
+        apiKey: apiKeys && apiKeys.length > 0
           ? `${apiKeys[0].key_prefix}...${apiKeys[0].key_suffix}`
           : null,
         createdAt: authData.user.created_at
       },
       session: authData.session
     }, { status: 200 });
-
-    // Supabaseのセッショントークンをクッキーに設定
-    if (authData.session) {
-      response.cookies.set('sb-access-token', authData.session.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 30 // 30日間
-      });
-
-      response.cookies.set('sb-refresh-token', authData.session.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 30 // 30日間
-      });
-    }
-
-    return response;
 
   } catch (error) {
     console.error('Login error:', error);
@@ -107,30 +118,32 @@ export async function POST(request: NextRequest) {
 
 // セッション確認用（オプション）
 export async function GET(request: NextRequest) {
-  // Create Supabase client inside the function
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json(
-      { error: 'Server configuration error' },
-      { status: 500 }
-    );
-  }
-  
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  
-  const accessToken = request.cookies.get('sb-access-token')?.value;
-  
-  if (!accessToken) {
-    return NextResponse.json(
-      { authenticated: false },
-      { status: 200 }
-    );
-  }
+  const cookieStore = await cookies();
 
-  // Supabaseでセッショントークンを検証
-  const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+  // Create SSR Supabase client
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // Server Componentからの呼び出し
+          }
+        },
+      },
+    }
+  );
+
+  // Supabaseでセッションを検証
+  const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
     return NextResponse.json(
