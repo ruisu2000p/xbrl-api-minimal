@@ -24,8 +24,7 @@ export async function signUpWithEmail(email: string, password: string, metadata?
     }
   })
 
-  if (error) throw error
-  return data
+  return { data, error }
 }
 
 // Sign in with email
@@ -37,8 +36,7 @@ export async function signInWithEmail(email: string, password: string) {
     password
   })
 
-  if (error) throw error
-  return data
+  return { data, error }
 }
 
 // Sign out
