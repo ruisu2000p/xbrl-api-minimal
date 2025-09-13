@@ -53,50 +53,37 @@ export default function RegisterPage() {
     }
 
     try {
-      // デバッグ情報を設定
-      const debugData = {
-        timestamp: new Date().toISOString(),
-        email: formData.email,
-        plan: formData.plan,
-        company: formData.companyName || 'なし'
-      }
-
-      // 登録を非同期で実行し、すぐに処理画面へ遷移
-      signUpWithEmail(
+      // Supabase Authを使用して直接登録
+      const result = await signUpWithEmail(
         formData.email,
         formData.password,
         {
           company_name: formData.companyName,
           plan: formData.plan
         }
-      ).then(result => {
-        // 結果をlocalStorageに保存（処理画面で確認用）
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('registrationResult', JSON.stringify({
-            success: !!result.data?.user,
-            email: formData.email,
-            timestamp: new Date().toISOString()
-          }))
-        }
-      }).catch(err => {
-        // エラーもlocalStorageに保存
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('registrationResult', JSON.stringify({
-            success: false,
-            error: err.message,
-            timestamp: new Date().toISOString()
-          }))
-        }
-      })
+      )
 
-      // 登録成功メッセージを表示して、5秒後にダッシュボードへリダイレクト
-      setSuccessMessage('登録リクエストを受け付けました。ダッシュボードへ移動します...')
-      // 5秒後にダッシュボードへリダイレクト
-      setTimeout(() => {
-        window.location.href = '/dashboard'
-      }, 5000)
+      if (result.error) {
+        setError(result.error.message)
+        setLoading(false)
+        return
+      }
 
-      return
+      // 登録成功
+      if (result.data?.user) {
+        setLoading(false)
+
+        // セッションがある場合（メール確認OFF時）
+        if (result.data?.session) {
+          setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
+          setTimeout(() => {
+            router.push('/dashboard')
+          }, 1500)
+        } else {
+          // メール確認が必要な場合
+          setSuccessMessage('登録が完了しました！確認メールをご確認ください。')
+        }
+      }
     } catch (err: any) {
       const errorMessage = err?.message || err?.toString() || '不明なエラー'
       setError(`登録中にエラーが発生しました: ${errorMessage}`)
