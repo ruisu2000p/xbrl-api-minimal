@@ -63,12 +63,15 @@ export default function RegisterPage() {
         setError(error.message || '登録中にエラーが発生しました')
       } else if (data.user) {
         // 登録成功
-        // メール確認が必要な場合はメッセージを表示
-        if (!data.session) {
-          setError('登録確認メールを送信しました。メールを確認してください。')
-        } else {
-          // セッションが作成された場合は直接ダッシュボードへ
+        console.log('Registration successful:', { user: data.user, session: data.session })
+
+        // セッションが作成された場合は直接ダッシュボードへ
+        // セッションがない場合もログインページへリダイレクト（自動ログインできなかった場合）
+        if (data.session) {
           router.push('/dashboard')
+        } else {
+          // 登録は成功したが自動ログインできなかった場合
+          router.push('/auth/login?registered=true')
         }
       }
     } catch (err) {
