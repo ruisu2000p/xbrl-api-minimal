@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
 import dynamic from 'next/dynamic'
+import { createSupabaseClient } from '@/lib/supabase/client'
 
 const ApiUsageStats = dynamic(() => import('@/components/ApiUsageStats'), {
   ssr: false,
@@ -32,14 +33,61 @@ interface DashboardClientProps {
   apiKeys: ApiKey[]
 }
 
+interface SubscriptionPlan {
+  id: string
+  name: string
+  description: string
+  price_monthly: number
+  price_yearly: number
+  requests_per_hour: number
+  requests_per_day: number
+  requests_per_month: number
+  features: any
+  is_active: boolean
+  display_order: number
+}
+
+interface UserSubscription {
+  id: string
+  user_id: string
+  plan_id: string
+  status: string
+  billing_cycle: string
+  current_period_start: string
+  current_period_end: string
+  cancel_at_period_end: boolean
+  subscription_plans?: SubscriptionPlan
+}
+
 export default function DashboardClient({ user, apiKeys }: DashboardClientProps) {
   const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
   const [keyName, setKeyName] = useState('')
   const [keyDescription, setKeyDescription] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [generatedKey, setGeneratedKey] = useState<string | null>(null)
   const [showKeyModal, setShowKeyModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'api' | 'account' | 'plan'>('api')
+
+  // アカウント設定用
+  const [formData, setFormData] = useState({
+    name: user.name || '',
+    company: user.company || '',
+    newEmail: user.email
+  })
+  const [updateLoading, setUpdateLoading] = useState(false)
+
+  // プラン管理用
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [currentSubscription, setCurrentSubscription] = useState<UserSubscription | null>(null)
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
+
+  useEffect(() => {
+    loadSubscriptionData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleGenerateKey = async () => {
     if (!keyName) {
@@ -104,6 +152,152 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     await signOut()
   }
 
+  const loadSubscriptionData = async () => {
+    const supabase = createSupabaseClient()
+
+    try {
+      // プラン一覧を取得
+      const { data: plansData, error: plansError } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order')
+
+      if (plansError) throw plansError
+      setPlans(plansData || [])
+
+      // ユーザーの現在のサブスクリプションを取得
+      const { data: subData, error: subError } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          subscription_plans (*)
+        `)
+        .eq('user_id', user.id)
+        .single()
+
+      if (subData && !subError) {
+        setCurrentSubscription(subData)
+        setSelectedPlan(subData.plan_id)
+      } else {
+        // サブスクリプションがない場合は無料プランを選択
+        const freePlan = plansData?.find((p: SubscriptionPlan) => p.name === 'Free')
+        if (freePlan) {
+          setSelectedPlan(freePlan.id)
+        }
+      }
+    } catch (err) {
+      console.error('Error loading subscription data:', err)
+    }
+  }
+
+  const updateProfile = async () => {
+    setUpdateLoading(true)
+    setError('')
+    setSuccess('')
+
+    const supabase = createSupabaseClient()
+
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          name: formData.name,
+          company: formData.company
+        }
+      })
+
+      if (updateError) throw updateError
+      setSuccess('プロファイルが更新されました')
+      router.refresh()
+    } catch (err: any) {
+      setError(err.message || 'プロファイルの更新に失敗しました')
+    } finally {
+      setUpdateLoading(false)
+    }
+  }
+
+  const updateEmail = async () => {
+    if (!formData.newEmail || formData.newEmail === user.email) {
+      setError('現在のメールアドレスと同じです')
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.newEmail)) {
+      setError('正しいメールアドレス形式を入力してください')
+      return
+    }
+
+    setUpdateLoading(true)
+    setError('')
+    setSuccess('')
+
+    const supabase = createSupabaseClient()
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: formData.newEmail
+      })
+
+      if (error) throw error
+      setSuccess('メールアドレス変更の確認メールを送信しました。新しいメールアドレスに届いた確認リンクをクリックして変更を完了してください。')
+      setFormData(prev => ({ ...prev, newEmail: '' }))
+    } catch (err: any) {
+      if (err.message?.includes('already registered')) {
+        setError('このメールアドレスは既に使用されています')
+      } else {
+        setError(err.message || 'メールアドレスの変更に失敗しました')
+      }
+    } finally {
+      setUpdateLoading(false)
+    }
+  }
+
+  const updateSubscription = async () => {
+    if (!selectedPlan) return
+
+    setUpdateLoading(true)
+    setError('')
+    setSuccess('')
+
+    const supabase = createSupabaseClient()
+
+    try {
+      if (currentSubscription) {
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .update({
+            plan_id: selectedPlan,
+            billing_cycle: billingCycle,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: user.id,
+            plan_id: selectedPlan,
+            billing_cycle: billingCycle,
+            status: 'active',
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          })
+
+        if (error) throw error
+      }
+
+      setSuccess('プランが更新されました')
+      await loadSubscriptionData()
+    } catch (err: any) {
+      setError(err.message || 'プランの更新に失敗しました')
+    } finally {
+      setUpdateLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* APIキー表示モーダル */}
@@ -150,12 +344,6 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user.email}</span>
               <button
-                onClick={() => router.push('/dashboard/settings')}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                設定
-              </button>
-              <button
                 onClick={handleSignOut}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
@@ -167,7 +355,59 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        {/* タブナビゲーション */}
+        <div className="border-b border-gray-200 mb-8">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('api')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'api'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              APIキー管理
+            </button>
+            <button
+              onClick={() => setActiveTab('account')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'account'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              アカウント設定
+            </button>
+            <button
+              onClick={() => setActiveTab('plan')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'plan'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              プラン管理
+            </button>
+          </nav>
+        </div>
+
+        {/* エラー・成功メッセージ */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-green-600">{success}</p>
+          </div>
+        )}
+
+        {/* APIキー管理タブ */}
+        {activeTab === 'api' && (
+          <>
+            <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">新しいAPIキーを生成</h2>
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded">
@@ -310,7 +550,222 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
             </div>
           </div>
         </div>
+          </>
+        )}
 
+        {/* アカウント設定タブ */}
+        {activeTab === 'account' && (
+          <div className="space-y-8">
+            {/* プロファイル設定 */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">プロファイル情報</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">名前</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="お名前を入力してください"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">会社名（オプション）</label>
+                  <input
+                    type="text"
+                    value={formData.company}
+                    onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="会社名を入力してください"
+                  />
+                </div>
+                <button
+                  onClick={updateProfile}
+                  disabled={updateLoading}
+                  className={`px-4 py-2 rounded-md text-white font-medium ${
+                    updateLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {updateLoading ? '更新中...' : 'プロファイルを更新'}
+                </button>
+              </div>
+            </div>
+
+            {/* メールアドレス変更 */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">メールアドレス変更</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">現在のメールアドレス</label>
+                  <input
+                    type="email"
+                    value={user.email}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">新しいメールアドレス</label>
+                  <input
+                    type="email"
+                    value={formData.newEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, newEmail: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="新しいメールアドレスを入力してください"
+                  />
+                </div>
+                <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-md">
+                  <p className="font-medium">⚠️ 注意事項</p>
+                  <ul className="mt-2 list-disc list-inside space-y-1">
+                    <li>新しいメールアドレスに確認メールが送信されます</li>
+                    <li>確認メール内のリンクをクリックして変更を完了してください</li>
+                  </ul>
+                </div>
+                <button
+                  onClick={updateEmail}
+                  disabled={updateLoading || !formData.newEmail || formData.newEmail === user.email}
+                  className={`px-4 py-2 rounded-md text-white font-medium ${
+                    updateLoading || !formData.newEmail || formData.newEmail === user.email
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-orange-600 hover:bg-orange-700'
+                  }`}
+                >
+                  {updateLoading ? '送信中...' : 'メールアドレスを変更'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* プラン管理タブ */}
+        {activeTab === 'plan' && (
+          <div className="space-y-8">
+            {/* 現在のプラン */}
+            {currentSubscription && currentSubscription.subscription_plans && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-blue-900">
+                      現在のプラン: {currentSubscription.subscription_plans.name}
+                    </h3>
+                    <p className="text-sm text-blue-700 mt-1">
+                      {currentSubscription.billing_cycle === 'monthly' ? '月額' : '年額'}プラン
+                    </p>
+                    <p className="text-xs text-blue-600 mt-2">
+                      • {currentSubscription.subscription_plans.requests_per_month.toLocaleString()}リクエスト/月
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
+                    {currentSubscription.status === 'active' ? 'アクティブ' : currentSubscription.status}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 課金サイクル選択 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">課金サイクル</label>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setBillingCycle('monthly')}
+                  className={`px-4 py-2 rounded-md font-medium ${
+                    billingCycle === 'monthly'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  月額
+                </button>
+                <button
+                  onClick={() => setBillingCycle('yearly')}
+                  className={`px-4 py-2 rounded-md font-medium ${
+                    billingCycle === 'yearly'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  年額（お得！）
+                </button>
+              </div>
+            </div>
+
+            {/* プラン一覧 */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {plans.map((plan) => {
+                const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly
+                const isCurrentPlan = currentSubscription?.plan_id === plan.id
+                const isSelected = selectedPlan === plan.id
+
+                return (
+                  <div
+                    key={plan.id}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
+                    onClick={() => setSelectedPlan(plan.id)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-lg">{plan.name}</h3>
+                      {isCurrentPlan && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                          現在のプラン
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
+                    <div className="mb-3">
+                      <span className="text-2xl font-bold">¥{price.toLocaleString()}</span>
+                      <span className="text-gray-500 text-sm ml-1">/{billingCycle === 'monthly' ? '月' : '年'}</span>
+                    </div>
+                    <ul className="text-sm space-y-1 mb-4">
+                      <li className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {plan.requests_per_month.toLocaleString()}リクエスト/月
+                      </li>
+                    </ul>
+                    <div className="flex items-center justify-center">
+                      <input
+                        type="radio"
+                        name="plan"
+                        checked={isSelected}
+                        onChange={() => setSelectedPlan(plan.id)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm font-medium">
+                        {isCurrentPlan ? '選択中' : '選択'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* プラン更新ボタン */}
+            <div>
+              <button
+                onClick={updateSubscription}
+                disabled={updateLoading || selectedPlan === currentSubscription?.plan_id}
+                className={`w-full px-6 py-3 rounded-md text-white font-medium ${
+                  updateLoading || selectedPlan === currentSubscription?.plan_id
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {updateLoading ? '更新中...' : 'プランを変更'}
+              </button>
+              {selectedPlan === currentSubscription?.plan_id && (
+                <p className="text-sm text-gray-500 text-center mt-2">
+                  既に選択されているプランです
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
