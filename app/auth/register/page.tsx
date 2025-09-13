@@ -108,10 +108,8 @@ export default function RegisterPage() {
         setLoading(false)
         setSuccessMessage('登録リクエストを受け付けました。処理画面へ移動します...')
 
-        // 1秒後に待機画面へリダイレクト（window.location.hrefを使用）
-        setTimeout(() => {
-          window.location.href = '/auth/processing'
-        }, 1000)
+        // 即座に待機画面へリダイレクト（window.location.replaceを使用）
+        window.location.replace('/auth/processing')
 
         return // 重要: ここでreturnして、以降の処理を実行しない
       }
