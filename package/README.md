@@ -1,13 +1,13 @@
-# shared-supabase-mcp-minimal v2.0.0 🔒
+# shared-supabase-mcp-minimal v2.1.0 🔒
 
 **Secure MCP server for XBRL financial data with environment-based configuration**
 
 [![npm version](https://badge.fury.io/js/shared-supabase-mcp-minimal.svg)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 [![Security Status](https://img.shields.io/badge/Security-Enhanced-green)](https://github.com/ruisu2000p/shared-supabase-mcp-minimal)
 
-## ⚠️ SECURITY UPDATE - v2.0.0
+## ⚠️ SECURITY UPDATE - v2.1.0
 
-**IMPORTANT**: Version 2.0.0 includes critical security improvements. All versions prior to 2.0.0 have been deprecated due to hardcoded credentials vulnerability.
+**IMPORTANT**: Version 2.1.0 includes critical security improvements and dependency optimizations. All versions prior to 2.0.0 have been deprecated due to hardcoded credentials vulnerability.
 
 ### 🔒 Security Features (NEW)
 - ✅ **Environment-based authentication** - No more hardcoded keys
@@ -17,7 +17,7 @@
 - ✅ **Activity monitoring** - Real-time security logging
 - ✅ **Suspicious pattern detection** - Automatic threat blocking
 
-## 📋 Migration from v1.x to v2.0.0
+## 📋 Migration from v1.x to v2.1.0
 
 ### Step 1: Install the latest version
 ```bash
@@ -127,7 +127,7 @@ LOG_SUSPICIOUS_ACTIVITY=true  # Default: true
 
 ## 📈 Version Comparison
 
-| Feature | v1.9.1 | v2.0.0 |
+| Feature | v1.9.1 | v2.1.0 |
 |---------|--------|--------|
 | Authentication | ❌ Hardcoded | ✅ Environment Variables |
 | Rate Limiting | ❌ None | ✅ 100 req/min |
@@ -135,6 +135,7 @@ LOG_SUSPICIOUS_ACTIVITY=true  # Default: true
 | Path Traversal Prevention | ❌ None | ✅ Path validation |
 | Security Monitoring | ❌ None | ✅ Real-time |
 | Key Rotation | ❌ Not possible | ✅ Anytime |
+| Dependencies | ❌ Bloated | ✅ Optimized |
 
 ## 🆘 Troubleshooting
 
@@ -149,7 +150,7 @@ LOG_SUSPICIOUS_ACTIVITY=true  # Default: true
 
 ## 📝 Migration Checklist
 
-- [ ] Install v2.0.0 or later
+- [ ] Install v2.1.0 or later
 - [ ] Set environment variables
 - [ ] Update Claude Desktop config
 - [ ] Generate new API keys in Supabase

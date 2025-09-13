@@ -1,6 +1,6 @@
 {
   "name": "xbrl-api-minimal",
-  "version": "1.1.4",
+  "version": "2.1.0",
   "description": "XBRL財務データAPI - 最小構成版",
   "mcp": {
     "package": "shared-supabase-mcp-minimal",
@@ -27,21 +27,14 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "@vercel/analytics": "^1.5.0",
-    "axios": "^1.6.0",
-    "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
-    "csv-parser": "^3.2.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "next": "14.0.0",
+    "next": "^14.2.32",
     "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-feather": "^2.0.10",
-    "recharts": "^3.1.2",
-    "stripe": "^14.0.0",
-    "swr": "^2.2.0"
+    "react-feather": "^2.0.10"
   },
   "devDependencies": {
     "@types/node": "20.10.0",
