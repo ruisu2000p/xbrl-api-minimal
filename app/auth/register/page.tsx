@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -27,6 +28,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setDebugInfo(null)
     setLoading(true)
 
     // バリデーション
@@ -49,6 +51,14 @@ export default function RegisterPage() {
     }
 
     try {
+      // デバッグ情報を設定
+      const debugData = {
+        timestamp: new Date().toISOString(),
+        email: formData.email,
+        plan: formData.plan,
+        company: formData.companyName || 'なし'
+      }
+
       // Supabase Authを使用して直接登録
       const { data, error } = await signUpWithEmail(
         formData.email,
@@ -59,8 +69,19 @@ export default function RegisterPage() {
         }
       )
 
+      // デバッグ情報を更新
+      const debugResult = {
+        ...debugData,
+        userCreated: !!data?.user,
+        sessionCreated: !!data?.session,
+        errorMessage: error?.message || 'なし',
+        errorCode: (error as any)?.code || 'なし'
+      }
+
+      setDebugInfo(JSON.stringify(debugResult, null, 2))
+
       if (error) {
-        setError(error.message || '登録中にエラーが発生しました')
+        setError(`登録エラー: ${error.message || '不明なエラー'} (コード: ${(error as any)?.code || 'unknown'})`)
       } else if (data.user) {
         // 登録成功
         // セッションが作成された場合は直接ダッシュボードへ
@@ -69,12 +90,20 @@ export default function RegisterPage() {
           router.push('/dashboard')
         } else {
           // 登録は成功したが自動ログインできなかった場合
-          router.push('/auth/login?registered=true')
+          setError('登録は成功しましたが、自動ログインに失敗しました。ログインページからログインしてください。')
+          setTimeout(() => {
+            router.push('/auth/login?registered=true')
+          }, 3000)
         }
       }
-    } catch (err) {
-      console.error('Registration error:', err)
-      setError('登録中にエラーが発生しました')
+    } catch (err: any) {
+      const errorMessage = err?.message || err?.toString() || '不明なエラー'
+      setError(`登録中にエラーが発生しました: ${errorMessage}`)
+      setDebugInfo(JSON.stringify({
+        error: errorMessage,
+        stack: err?.stack || 'なし',
+        timestamp: new Date().toISOString()
+      }, null, 2))
     } finally {
       setLoading(false)
     }
@@ -98,6 +127,17 @@ export default function RegisterPage() {
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
                 {error}
               </div>
+            )}
+
+            {debugInfo && (
+              <details className="bg-gray-100 border border-gray-300 rounded p-3">
+                <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                  デバッグ情報（クリックで展開）
+                </summary>
+                <pre className="mt-2 text-xs text-gray-600 overflow-x-auto">
+                  {debugInfo}
+                </pre>
+              </details>
             )}
 
             <div>
