@@ -177,3 +177,4 @@ MIT
 ---
 
 **⚠️ 重要**: v1.9.1以前を使用している場合は、セキュリティ脆弱性に対処するため、直ちにアップグレードしてください。# Force rebuild
+# Settings page deployment
