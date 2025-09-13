@@ -80,7 +80,21 @@ export async function signUpWithEmail(email: string, password: string, metadata?
         return { data, error: null }
       }
 
-      // メール確認が必要な場合
+      // セッションがない場合、自動的にログインを試みる
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (signInData?.session) {
+        return {
+          data: signInData,
+          error: null,
+          autoSignedIn: true
+        }
+      }
+
+      // それでもセッションがない場合はメール確認が必要
       return {
         data,
         error: null,

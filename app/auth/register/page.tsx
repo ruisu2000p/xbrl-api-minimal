@@ -94,23 +94,23 @@ export default function RegisterPage() {
           setError('既存のアカウントでログインしました。ダッシュボードへリダイレクトします...')
           setTimeout(() => {
             router.push('/dashboard')
-          }, 2000)
+          }, 1000)
           return
         }
 
-        // 新規登録成功
-        if (result.data.session) {
+        // 新規登録成功 - 必ずダッシュボードへリダイレクト
+        if (result.data.session || (result as any).autoSignedIn) {
           // セッションがある場合は直接ダッシュボードへ
           router.push('/dashboard')
         } else if ((result as any).requiresEmailConfirmation) {
-          // メール確認が必要な場合
-          setError('登録が完了しました！確認メールを送信しましたので、メールをご確認ください。')
-        } else {
-          // その他の場合はログインページへ
-          setError('登録が完了しました。ログインページからログインしてください。')
+          // メール確認が必要な場合でも、一旦ダッシュボードへ
+          setError('登録が完了しました！メール確認が必要な場合は、送信されたメールをご確認ください。')
           setTimeout(() => {
-            router.push('/auth/login?registered=true')
-          }, 3000)
+            router.push('/dashboard')
+          }, 2000)
+        } else {
+          // その他の場合もダッシュボードへ
+          router.push('/dashboard')
         }
       }
     } catch (err: any) {
