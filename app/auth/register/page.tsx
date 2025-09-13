@@ -104,21 +104,14 @@ export default function RegisterPage() {
           return
         }
 
-        // 新規登録成功 - すべての成功ケースで待機処理を行う
+        // 新規登録成功 - 待機画面へ強制的にリダイレクト
         setLoading(false)
-        setSuccessMessage('登録処理中です... しばらくお待ちください')
+        setSuccessMessage('登録リクエストを受け付けました。処理画面へ移動します...')
 
-        // returnしてここで処理を終了（即座のリダイレクトを防ぐ）
-        // Supabaseへの登録とセッション確立を待つ（3秒）
+        // 1秒後に待機画面へリダイレクト
         setTimeout(() => {
-          setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
-
-          // さらに1秒待ってからリダイレクト
-          setTimeout(() => {
-            // 強制的にページをリロードしてセッションを更新
-            window.location.href = '/dashboard'
-          }, 1000)
-        }, 3000)
+          router.push('/auth/processing')
+        }, 1000)
 
         return // 重要: ここでreturnして、以降の処理を実行しない
       }
