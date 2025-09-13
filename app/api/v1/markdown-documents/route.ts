@@ -1,3 +1,7 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/client';
 import { ApiResponse } from '@/lib/types';
@@ -17,14 +21,14 @@ export async function GET(request: NextRequest) {
     const apiKey = request.headers.get('X-API-Key');
     if (!apiKey || apiKey !== 'xbrl_demo') {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Invalid API key', status: 401 },
+        { success: false, error: 'Invalid API key', status: 401 },
         { status: 401 }
       );
     }
 
     if (!companyId) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'company_id is required', status: 400 },
+        { success: false, error: 'company_id is required', status: 400 },
         { status: 400 }
       );
     }
@@ -47,7 +51,7 @@ export async function GET(request: NextRequest) {
 
       if (listError || !files || files.length === 0) {
         return NextResponse.json<ApiResponse<null>>(
-          { error: 'No documents found', status: 404 },
+          { success: false, error: 'No documents found', status: 404 },
           { status: 404 }
         );
       }
@@ -64,7 +68,7 @@ export async function GET(request: NextRequest) {
     if (downloadError || !fileData) {
       console.error('Download error:', downloadError);
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Failed to download document', status: 404 },
+        { success: false, error: 'Failed to download document', status: 404 },
         { status: 404 }
       );
     }
@@ -90,7 +94,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json<ApiResponse<null>>(
-      { error: 'Internal server error', status: 500 },
+      { success: false, error: 'Internal server error', status: 500 },
       { status: 500 }
     );
   }

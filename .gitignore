@@ -1,35 +1,49 @@
 # Dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Test files
+*.test.js
+*.test.ts
+**/*test*
+**/*spec*
+
+# Config examples (keep in repo for reference)
+# claude-config-example.json
+# .env.example
+
+# Package files
+*.tgz
+**/*.tgz
+**/*.tar.gz
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Testing
 /coverage
+.nyc_output/
 
 # Next.js
 /.next/
 /out/
+next-env.d.ts
 
 # Production
 /build
+/dist
 
-# Environment variables
-.env*.local
-.env
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# OS generated files
+# OS files
 .DS_Store
 .DS_Store?
 ._*
@@ -37,6 +51,13 @@ pids
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
 # Editor directories and files
 .vscode/
@@ -48,8 +69,12 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+tmp/
+temp/
 .temp/
 .tmp/
+.cache/
+.history/
 
 # Certificate files
 *.pem
@@ -61,14 +86,26 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
-next-env.d.ts
+**/*.tsbuildinfo
 
 # Supabase
 supabase/.branches
 supabase/.temp
 
-# Serena (MCP development tool)
+# AI Tools
 .serena/
+.claude/
+.cursor/
+
+# MCP local configs
+mcp-config.json
+claud*config*.json
+!claude-config-example.json
+
+# Generated/Large files
+scripts/sql-inserts/
+scripts/sql-metadata/
+**/nul
 
 # API keys and secrets (extra protection)
 *secret*

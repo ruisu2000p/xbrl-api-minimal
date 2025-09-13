@@ -1,5 +1,9 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseAuthServerClient } from '@/lib/supabase/auth'
+import { createSupabaseAuthServerClient } from '@/lib/supabase/auth-server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +12,7 @@ export async function GET(request: NextRequest) {
     // ユーザー認証確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -64,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching usage logs:', error)
-      return NextResponse.json({ error: 'Failed to fetch usage data' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Failed to fetch usage data' }, { status: 500 })
     }
 
     // 統計情報の計算
@@ -88,7 +92,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 

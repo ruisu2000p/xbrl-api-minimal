@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseAuthServerClient } from '@/lib/supabase/auth'
+import { createSupabaseAuthServerClient } from '@/lib/supabase/auth-server'
 import crypto from 'crypto'
 
 interface ApiKeyValidation {

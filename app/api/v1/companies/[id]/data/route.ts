@@ -1,3 +1,7 @@
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/client';
 import { Company, ApiResponse, FileMetadata } from '@/lib/types';
@@ -20,7 +24,7 @@ export async function GET(
     const apiKey = request.headers.get('X-API-Key');
     if (!apiKey || apiKey !== 'xbrl_demo') {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Invalid API key', status: 401 },
+        { success: false, error: 'Invalid API key' },
         { status: 401 }
       );
     }
@@ -37,7 +41,7 @@ export async function GET(
 
     if (companyError || !companyData) {
       return NextResponse.json<ApiResponse<null>>(
-        { error: 'Company not found', status: 404 },
+        { success: false, error: 'Company not found' },
         { status: 404 }
       );
     }
@@ -58,7 +62,7 @@ export async function GET(
     }
 
     // ファイルURLの生成
-    const fileUrls = files?.map(file => {
+    const fileUrls = files?.map((file: any) => {
       const { data } = supabase
         .storage
         .from('markdown-files')
@@ -90,7 +94,7 @@ export async function GET(
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json<ApiResponse<null>>(
-      { error: 'Internal server error', status: 500 },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

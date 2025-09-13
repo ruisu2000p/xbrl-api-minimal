@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { maskApiKey } from '@/lib/supabase/auth'
+import { maskApiKey } from '@/lib/supabase/api-key-utils'
 
 export default function ApiKeyManager() {
   const [apiKeys, setApiKeys] = useState<any[]>([])

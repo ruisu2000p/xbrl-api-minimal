@@ -2,25 +2,55 @@
   "name": "xbrl-api-minimal",
   "version": "1.1.1",
   "description": "XBRL財務データAPI - 最小構成版",
+  "mcp": {
+    "package": "shared-supabase-mcp-minimal",
+    "version": "2.0.0",
+    "description": "Secure MCP server for XBRL financial data",
+    "repository": "https://www.npmjs.com/package/shared-supabase-mcp-minimal"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "clean": "rm -rf .next node_modules",
+    "analyze": "ANALYZE=true next build",
+    "setup": "node scripts/setup.js",
+    "setup:secure": "node scripts/setup-secure-api.js",
+    "migrate": "node scripts/migrate-data.js",
+    "postinstall": "echo 'Dependencies installed successfully'"
   },
   "dependencies": {
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@modelcontextprotocol/sdk": "^1.17.3",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
+    "@vercel/analytics": "^1.5.0",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
+    "csv-parser": "^3.2.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "next": "14.0.0",
+    "node-fetch": "^3.3.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-feather": "^2.0.10",
+    "recharts": "^3.1.2",
+    "stripe": "^14.0.0",
+    "swr": "^2.2.0"
   },
   "devDependencies": {
     "@types/node": "20.10.0",
     "@types/react": "18.2.45",
     "autoprefixer": "^10.4.21",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.0.0",
     "postcss": "^8.5.6",
+    "prettier": "^3.2.5",
     "tailwindcss": "^3.4.17",
     "typescript": "5.3.3"
   }

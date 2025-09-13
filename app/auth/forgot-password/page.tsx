@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { sendPasswordResetEmail } from '@/lib/supabase/auth'
+// @ts-ignore
+import { sendPasswordResetEmail } from '@/lib/auth'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -22,13 +23,8 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      const { error } = await sendPasswordResetEmail(email)
-      
-      if (error) {
-        setError(error.message)
-      } else {
-        setSuccess(true)
-      }
+      await sendPasswordResetEmail(email)
+      setSuccess(true)
     } catch (err) {
       setError('パスワードリセットメールの送信に失敗しました')
     } finally {

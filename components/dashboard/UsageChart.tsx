@@ -9,6 +9,7 @@ export default function UsageChart() {
 
   useEffect(() => {
     fetchUsageData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
   const fetchUsageData = async () => {

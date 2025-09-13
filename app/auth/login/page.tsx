@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signInWithEmail } from '@/lib/supabase/auth'
+import { signIn } from '@/app/actions/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,22 +26,20 @@ export default function LoginPage() {
     }
 
     try {
-      const { data, error } = await signInWithEmail(
-        formData.email,
-        formData.password
-      )
+      const result = await signIn(formData.email, formData.password)
 
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+      if (!result.success) {
+        if (result.error?.includes('Invalid login credentials')) {
           setError('メールアドレスまたはパスワードが正しくありません')
         } else {
-          setError(error.message)
+          setError(result.error || 'ログイン中にエラーが発生しました')
         }
-      } else if (data.user) {
-        // ログイン成功
+      } else {
+        // ログイン成功 - Server Actionが認証を処理
         router.push('/dashboard')
+        router.refresh()
       }
-    } catch (err) {
+    } catch (err: any) {
       setError('ログイン中にエラーが発生しました')
     } finally {
       setLoading(false)
@@ -116,8 +114,8 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                  loading 
-                    ? 'bg-gray-400 cursor-not-allowed' 
+                  loading
+                    ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
                 }`}
               >

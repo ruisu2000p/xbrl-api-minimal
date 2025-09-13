@@ -1,9 +1,12 @@
+import './globals.css'
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Analytics } from '@vercel/analytics/next'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
-  title: '財務データMCP - 10年分の有価証券報告書',
-  description: '日本の上場企業4,000社以上、10年分の財務データにアクセス',
+  title: 'XBRL財務データAPI - 20年分の有価証券報告書',
+  description: '日本の上場企業4,000社以上、20年分の財務データにアクセス',
 }
 
 export default function RootLayout({
@@ -13,11 +16,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <head>
-        <script src="https://cdn.tailwindcss.com"></script>
-      </head>
       <body>
         {children}
+        <Analytics />
+        <Script src="https://cdn.tailwindcss.com" strategy="afterInteractive" />
       </body>
     </html>
   )
