@@ -63,8 +63,6 @@ export default function RegisterPage() {
         setError(error.message || '登録中にエラーが発生しました')
       } else if (data.user) {
         // 登録成功
-        console.log('Registration successful:', { user: data.user, session: data.session })
-
         // セッションが作成された場合は直接ダッシュボードへ
         // セッションがない場合もログインページへリダイレクト（自動ログインできなかった場合）
         if (data.session) {

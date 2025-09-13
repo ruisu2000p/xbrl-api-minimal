@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface UsageStats {
   total_requests: number
@@ -18,11 +18,7 @@ export default function ApiUsageStats({ apiKeyId }: ApiUsageStatsProps) {
   const [stats, setStats] = useState<UsageStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchStats()
-  }, [apiKeyId])
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const url = apiKeyId
         ? `/api/dashboard/stats?apiKeyId=${apiKeyId}`
@@ -38,7 +34,11 @@ export default function ApiUsageStats({ apiKeyId }: ApiUsageStatsProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [apiKeyId])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
 
   if (loading) {
     return (
