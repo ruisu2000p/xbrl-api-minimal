@@ -60,6 +60,8 @@ export default function RegisterPage() {
       }
 
       // Supabase Authを使用して直接登録
+      console.log('[Registration] Starting registration for:', formData.email)
+
       const result = await signUpWithEmail(
         formData.email,
         formData.password,
@@ -69,14 +71,27 @@ export default function RegisterPage() {
         }
       )
 
+      console.log('[Registration] Result:', {
+        hasData: !!result.data,
+        hasError: !!result.error,
+        hasUser: !!result.data?.user,
+        hasSession: !!result.data?.session,
+        errorMessage: result.error?.message
+      })
+
       // デバッグ情報を更新
       const debugResult = {
         ...debugData,
         userCreated: !!result.data?.user,
+        userId: result.data?.user?.id || 'なし',
         sessionCreated: !!result.data?.session,
         errorMessage: result.error?.message || 'なし',
+        errorDetails: (result.error as any)?.details || 'なし',
+        errorOriginal: (result.error as any)?.originalMessage || 'なし',
         isExistingUser: !!(result as any).isExistingUser,
-        requiresEmailConfirmation: !!(result as any).requiresEmailConfirmation
+        requiresEmailConfirmation: !!(result as any).requiresEmailConfirmation,
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'NOT SET',
+        hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       }
 
       setDebugInfo(JSON.stringify(debugResult, null, 2))
