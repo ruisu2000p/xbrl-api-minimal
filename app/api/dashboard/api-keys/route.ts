@@ -3,7 +3,8 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseAuthServerClient } from '@/lib/supabase/auth-server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { generateApiKey } from '@/lib/supabase/api-key-utils'
 
 // 料金プランごとのレート制限設定
@@ -17,8 +18,19 @@ const tierLimits = {
 // APIキー一覧取得
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseAuthServerClient()
-    
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+        },
+      }
+    )
+
     // ユーザー認証確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -63,8 +75,19 @@ export async function GET(request: NextRequest) {
 // 新規APIキー生成
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseAuthServerClient()
-    
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+        },
+      }
+    )
+
     // ユーザー認証確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -137,8 +160,19 @@ export async function POST(request: NextRequest) {
 // APIキー削除
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = createSupabaseAuthServerClient()
-    
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+        },
+      }
+    )
+
     // ユーザー認証確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
