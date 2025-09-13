@@ -83,4 +83,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}// Trigger deploy 2025年 9月 13日 土曜日 15:50:20    
