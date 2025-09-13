@@ -9,15 +9,12 @@ package-lock.json
 .env.local
 .env.*.local
 .env.production
-.env.wpwqxhyiglbtlaimrjrx
 
 # Test files
-test-secure.js
-final-check.js
-security-check.js
 *.test.js
 *.test.ts
-get-*.js
+**/*test*
+**/*spec*
 
 # Config examples (keep in repo for reference)
 # claude-config-example.json
@@ -75,11 +72,21 @@ temp/
 
 # MCP local configs
 mcp-config.json
-/mcp-server/node_modules
+claud*config*.json
+!claude-config-example.json
 
-# SQL batch files (too many files)
+# Generated/Large files
 scripts/sql-inserts/
 scripts/sql-metadata/
+**/*.tgz
+**/*.tar.gz
 
-# Serena
+# AI Tools
 .serena/
+.claude/
+.cursor/
+
+# Build artifacts
+**/*.tsbuildinfo
+**/nul
+**/*.tmp
