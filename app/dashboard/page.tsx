@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-// @ts-ignore
 import { getCurrentUser, signOut } from '@/lib/auth'
-import ApiKeyManager from '@/components/dashboard/ApiKeyManager'
-import UsageChart from '@/components/dashboard/UsageChart'
-import PlanInfo from '@/components/dashboard/PlanInfo'
+import dynamic from 'next/dynamic'
+
+// 動的インポートでコンポーネントエラーを回避
+const ApiKeyManager = dynamic(() => import('@/components/dashboard/ApiKeyManager'), { 
+  ssr: false,
+  loading: () => <div>APIキー管理を読み込み中...</div>
+})
+const UsageChart = dynamic(() => import('@/components/dashboard/UsageChart'), { 
+  ssr: false,
+  loading: () => <div>使用状況グラフを読み込み中...</div>
+})
+const PlanInfo = dynamic(() => import('@/components/dashboard/PlanInfo'), { 
+  ssr: false,
+  loading: () => <div>プラン情報を読み込み中...</div>
+})
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -21,13 +32,16 @@ export default function DashboardPage() {
     try {
       const currentUser = await getCurrentUser()
       if (!currentUser) {
-        router.push('/auth/login')
+        // 認証がない場合はログインページへ
+        console.log('No user found, redirecting to login')
+        router.push('/auth/login?redirect=/dashboard')
         return
       }
       setUser(currentUser)
     } catch (error) {
       console.error('Auth check failed:', error)
-      router.push('/auth/login')
+      // エラーの場合もログインページへ
+      router.push('/auth/login?redirect=/dashboard')
     } finally {
       setLoading(false)
     }
