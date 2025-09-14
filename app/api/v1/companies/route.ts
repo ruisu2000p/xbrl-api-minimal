@@ -25,17 +25,16 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const perPage = parseInt(searchParams.get('per_page') || '20');
+
     const params: CompanySearchParams = {
-      page: parseInt(searchParams.get('page') || '1'),
-      per_page: parseInt(searchParams.get('per_page') || '20'),
+      page: page < 1 ? 1 : page,
+      per_page: perPage < 1 || perPage > 100 ? 20 : perPage,
       search: searchParams.get('search') || undefined,
       sector: searchParams.get('sector') || undefined,
       fiscal_year: searchParams.get('fiscal_year') || undefined,
     };
-
-    // Validate parameters
-    if (params.page < 1) params.page = 1;
-    if (params.per_page < 1 || params.per_page > 100) params.per_page = 20;
 
     // Search companies using service layer
     const result = await companyService.searchCompanies(params);
