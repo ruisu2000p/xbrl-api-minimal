@@ -11,7 +11,6 @@ export {
 
 // Configuration Manager
 export {
-  ConfigManager,
   configManager,
   getConfig,
   isProduction,
