@@ -3,13 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
-import dynamic from 'next/dynamic'
 import { createSupabaseClient } from '@/lib/supabase/client'
-
-const ApiUsageStats = dynamic(() => import('@/components/ApiUsageStats'), {
-  ssr: false,
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded"></div>
-})
 
 interface ApiKey {
   id: string
