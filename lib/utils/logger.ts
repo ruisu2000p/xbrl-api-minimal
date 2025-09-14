@@ -3,6 +3,8 @@
  * Replaces console.log/error with environment-aware logging
  */
 
+/* eslint-disable no-console */
+
 const isDevelopment = process.env.NODE_ENV === 'development'
 
 export const logger = {
