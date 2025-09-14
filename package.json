@@ -1,7 +1,7 @@
 {
   "name": "xbrl-api-minimal",
-  "version": "3.0.1",
-  "description": "XBRL財務データAPI - 最小構成版",
+  "version": "4.0.0",
+  "description": "XBRL財務データAPI - 商用版",
   "mcp": {
     "package": "shared-supabase-mcp-minimal",
     "version": "2.1.0",
@@ -15,7 +15,15 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "clean": "rm -rf .next node_modules"
+    "clean": "rm -rf .next node_modules",
+    "test": "jest",
+    "test:ci": "jest --ci --coverage",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:security": "jest --testPathPattern=security",
+    "deploy:staging": "sh scripts/deploy.sh staging",
+    "deploy:production": "sh scripts/deploy.sh production",
+    "db:migrate": "npx supabase db push",
+    "health:check": "curl http://localhost:3000/api/health"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
