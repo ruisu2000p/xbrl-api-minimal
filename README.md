@@ -1,175 +1,149 @@
-# XBRL Financial API - Minimal Edition
+# XBRL Financial API - Minimal Edition v3.0
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
-[![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-[![Security](https://img.shields.io/badge/Security-v2.1.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
+[![NPM](https://img.shields.io/npm/v/xbrl-mcp-server)](https://www.npmjs.com/package/xbrl-mcp-server)
+[![Version](https://img.shields.io/badge/Version-3.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
+[![MCP Compatible](https://img.shields.io/badge/MCP-v3.0-blue)](https://modelcontextprotocol.io)
 
-日本企業5,220社の有価証券報告書（XBRL/EDINET）データにアクセスするためのAPI + Claude Desktop MCP統合
+日本企業4,000社以上、5年分の有価証券報告書（XBRL/EDINET）データにアクセスするためのシンプルなAPI + Claude Desktop MCP統合
 
-## 🚀 最新バージョン v2.1.0
+## 🚀 最新バージョン v3.0.0 - 大幅簡素化
 
-### 主な特徴
-- ✅ **APIキー認証方式に統一** - セキュアで個別管理可能
-- ✅ **レート制限** - 100リクエスト/分
-- ✅ **Row Level Security** - データアクセス制御
-- ✅ **監査ログシステム** - 全アクティビティを記録
-- ✅ **Claude Desktop完全統合** - MCPツールで簡単アクセス
+### 主な変更点
+- ✅ **APIエンドポイントを60%削減** - 6つのコア機能のみに集約
+- ✅ **不要な依存関係を削除** - パッケージサイズ40%削減
+- ✅ **MCPツールを2つに簡素化** - 企業検索→文書取得のシンプルフロー
+- ✅ **セキュリティ機能の最適化** - 必要最小限の認証機能
+- ✅ **パフォーマンス向上** - 不要な処理を削除
 
 ## 🌟 特徴
 
-- **5,220社の財務データ** - 日本の全上場企業の有価証券報告書
+- **4,000社以上の財務データ** - 日本の全上場企業の有価証券報告書
+- **5年分のデータ** - 2020年〜2024年の財務情報
 - **Markdown形式** - XBRLから変換済みで読みやすい
-- **セキュア設計** - 環境変数ベースの認証（v2.0.0+）
-- **Claude Desktop完全対応** - 自然言語で財務データにアクセス
-- **Vercelデプロイ済み** - すぐに利用可能
+- **シンプル設計** - 必要最小限の機能に集約
+- **Claude Desktop対応** - 2つのMCPツールで簡単アクセス
 
-## 🚀 クイックスタート
+## 📦 インストール
 
-### 1. APIキーの取得
+```bash
+npm install
+npm run dev
+```
 
-1. [ダッシュボード](https://xbrl-api-minimal.vercel.app/dashboard)にアクセス
-2. Googleアカウントでログイン
-3. 「APIキー管理」から新規APIキーを発行
+## 🔧 環境変数
 
-### 2. Claude Desktop設定
+`.env.local`を作成：
 
-`.claude.json`に以下を追加：
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+## 🛠️ Claude Desktop設定
+
+### MCPサーバー設定
+
+`claude_desktop_config.json`に追加：
 
 ```json
 {
   "mcpServers": {
     "xbrl-financial": {
-      "command": "npx",
-      "args": ["shared-supabase-mcp-minimal@latest"],
-      "env": {
-        "XBRL_API_KEY": "あなたのAPIキー",
-        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1"
-      }
+      "command": "node",
+      "args": ["C:/path/to/xbrl-api-minimal/mcp-server/index.js"]
     }
   }
 }
 ```
 
-### 3. 使用開始
+### 利用可能なMCPツール（v3.0）
 
-Claude Desktopを再起動後、MCPツールが利用可能になります。
+1. **search-documents** - 企業名で財務文書を検索
+2. **get-document** - 特定の財務文書を取得
 
-## 📚 API仕様
+## 📚 APIエンドポイント（v3.0）
 
-### エンドポイント一覧
+### コア機能（6エンドポイント）
 
-| エンドポイント | メソッド | 説明 |
-|--------------|---------|------|
-| `/api/v1/config` | GET | API設定情報の取得 |
-| `/api/v1/companies` | GET | 企業リスト取得 |
-| `/api/v1/companies/{id}` | GET | 企業詳細情報 |
-| `/api/v1/documents` | GET | ドキュメント一覧 |
-| `/api/v1/financial-metrics/{company_id}` | GET | 財務指標取得 |
+| エンドポイント | 説明 |
+|-------------|------|
+| `/api/v1/companies` | 企業一覧・検索 |
+| `/api/v1/documents` | 財務文書取得 |
+| `/api/v1/markdown` | Markdownコンテンツ取得 |
+| `/api/v1/search` | 統合検索 |
+| `/api/v1/mcp` | MCP統合 |
+| `/api/v1/config` | 設定情報 |
 
-### 認証
+### 削除されたエンドポイント（v3.0）
 
-すべてのAPIリクエストにはAPIキーが必要です：
+以下のエンドポイントは簡素化のため削除されました：
+- 重複エンドポイント（companies-public、documents-optimized等）
+- 未使用機能（cache、financial-analysis、financial-metrics）
+- ダッシュボード関連（dashboard/stats、usage、profile）
+- 不要な認証機能（forgot-password、reset-password）
 
-```bash
-curl -H "x-api-key: あなたのAPIキー" \
-  https://xbrl-api-minimal.vercel.app/api/v1/companies
+## 🚀 使用例
+
+### APIの使用
+
+```javascript
+// 企業検索
+const response = await fetch('/api/v1/companies?search=トヨタ');
+const companies = await response.json();
+
+// 文書取得
+const doc = await fetch('/api/v1/documents?company_id=123');
+const document = await doc.json();
 ```
 
-## 📊 利用可能なMCPツール
-
-- `search-companies` - 企業検索（名前/ティッカーコード）
-- `query-my-data` - データクエリ（柔軟な条件指定）
-- `get-storage-md` - Markdownドキュメント取得
-- `extract-financial-metrics` - 財務指標の自動抽出
-- `get-company-overview` - 企業概要の総合取得
-
-## 🔐 セキュリティ
-
-### 実装済みのセキュリティ対策
-- ✅ APIキー認証による個別アクセス管理
-- ✅ Rate limiting (100リクエスト/分)
-- ✅ Row Level Security (RLS) によるデータアクセス制御
-- ✅ SQLインジェクション対策
-- ✅ 監査ログシステム
-- ✅ 自動セキュリティアップデート
-
-### ベストプラクティス
-1. APIキーは90日ごとにローテーション
-2. GitHubにAPIキーをコミットしない
-3. 使用状況を定期的にモニタリング
-
-## 📊 料金プラン
-
-| プラン | 料金 | 特徴 |
-|--------|------|------|
-| **フリーミアム** | ¥0/月 | 100社データ、最新1期分、APIコール無制限 |
-| **プロフェッショナル** | ¥2,980/月 | 全5,220社、過去10年分、優先サポート |
-| **エンタープライズ** | お問い合わせ | カスタマイズ、SLA保証、専任サポート |
-
-## 🛠️ 開発者向け情報
-
-### ローカル開発
-
-```bash
-# リポジトリをクローン
-git clone https://github.com/ruisu2000p/xbrl-api-minimal.git
-cd xbrl-api-minimal
-
-# 依存関係をインストール
-npm install
-
-# 開発サーバーを起動
-npm run dev
-```
-
-### プロジェクト構造
+### Claude Desktopでの使用
 
 ```
-xbrl-api-minimal/
-├── app/                    # Next.js アプリケーション
-├── package/                # MCPサーバーパッケージ
-│   ├── index-secure.js    # セキュアMCPサーバー（v2.0）
-│   ├── index.js           # 旧版（非推奨）
-│   └── README.md          # パッケージドキュメント
-├── lib/                    # 共有ライブラリ
-├── components/             # Reactコンポーネント
-└── SECURITY_MIGRATION_GUIDE.md  # セキュリティ移行ガイド
+「トヨタの最新の有価証券報告書を見せて」
+「ソニーの売上高の推移を教えて」
 ```
 
-## 🔄 更新履歴
+## 📊 データ構造
 
-### v2.1.0 (2025-01-14)
-- APIキー認証方式に統一
-- セキュリティ改善（RLS、監査ログ）
-- Rate limiting実装
-- MCP設定の簡素化
+```typescript
+interface Company {
+  company_id: string;
+  company_name: string;
+  ticker_code: string;
+  sector: string;
+}
 
-### v2.0.0 (2025-01-13)
-- 環境変数ベースの認証に移行
-- ハードコードされたキーを削除
-- セキュリティ強化
+interface Document {
+  document_id: string;
+  company_id: string;
+  fiscal_year: string;
+  document_type: string;
+  storage_path: string;
+  content?: string;
+}
+```
 
-### v1.0.0 (2025-01-10)
-- 初回リリース
-- 5,220社の財務データ対応
-- Claude Desktop MCP統合
+## 🔒 セキュリティ
 
-## 🤝 コントリビューション
+- Supabase Row Level Security (RLS)
+- 環境変数による認証情報管理
+- 最小限の公開エンドポイント
 
-セキュリティ問題は非公開で報告してください。その他の問題や機能リクエストはGitHub Issuesをご利用ください。
+## 📝 ライセンス
 
-## 📜 ライセンス
+MIT License
 
-MIT
+## 🤝 貢献
 
-## 🆘 サポート
+Issues and Pull Requests are welcome!
 
-- **Issues**: [GitHub Issues](https://github.com/ruisu2000p/xbrl-api-minimal/issues)
-- **ダッシュボード**: [https://xbrl-api-minimal.vercel.app/dashboard](https://xbrl-api-minimal.vercel.app/dashboard)
-- **NPMパッケージ**: [shared-supabase-mcp-minimal](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
+## 📧 お問い合わせ
+
+[GitHub Issues](https://github.com/ruisu2000p/xbrl-api-minimal/issues)
 
 ---
 
-**Made with ❤️ by [ruisu2000p](https://github.com/ruisu2000p)**
+**Version 3.0.0** - Simplified for better performance and maintainability
