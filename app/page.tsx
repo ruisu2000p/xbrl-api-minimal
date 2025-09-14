@@ -136,7 +136,7 @@ export default function Home() {
               <div className="text-sm text-gray-400">対応範囲</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">20年分</div>
+              <div className="text-3xl font-bold text-white">5年分</div>
               <div className="text-sm text-gray-400">財務データ</div>
             </div>
             <div className="text-center">
