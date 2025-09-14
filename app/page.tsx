@@ -66,6 +66,9 @@ export default function Home() {
               </div>
             </div>
             <nav className="flex items-center gap-6">
+              <a href="/pricing" className="text-gray-300 hover:text-white transition-colors">
+                料金プラン
+              </a>
               <a href="/auth/login" className="text-gray-300 hover:text-white transition-colors">
                 ログイン
               </a>
