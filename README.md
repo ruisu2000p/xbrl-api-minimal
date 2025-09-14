@@ -27,6 +27,13 @@
 
 ## 📦 インストール
 
+### NPMパッケージとして使用
+```bash
+npm install shared-supabase-mcp-minimal
+```
+詳細: https://www.npmjs.com/package/shared-supabase-mcp-minimal
+
+### ローカル開発
 ```bash
 npm install
 npm run dev
@@ -45,6 +52,8 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ## 🛠️ Claude Desktop設定
 
 ### 方法1: NPMパッケージを使用（推奨）
+
+[NPMパッケージ: shared-supabase-mcp-minimal](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 
 `claude_desktop_config.json`に追加：
 
