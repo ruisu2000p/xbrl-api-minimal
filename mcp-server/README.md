@@ -9,13 +9,10 @@
 
 **IMPORTANT**: Version 2.1.0 includes critical security improvements and dependency optimizations. All versions prior to 2.0.0 have been deprecated due to hardcoded credentials vulnerability.
 
-### 🔒 Security Features (NEW)
+### 🔒 Security Features
 - ✅ **Environment-based authentication** - No more hardcoded keys
-- ✅ **Rate limiting** - 100 requests per minute
 - ✅ **SQL injection protection** - Input validation and sanitization
 - ✅ **Path traversal prevention** - Secure file access
-- ✅ **Activity monitoring** - Real-time security logging
-- ✅ **Suspicious pattern detection** - Automatic threat blocking
 
 ## 📋 Migration from v1.x to v2.1.0
 
@@ -63,9 +60,9 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json`:
 ## 🚀 Features
 
 - **4,231 Japanese companies** - Comprehensive financial data coverage
+- **5 years of data (FY2021-FY2025)** - Latest financial reports
 - **Markdown format** - Pre-converted from XBRL for easy reading
 - **Secure authentication** - Environment variable based (v2.0.0+)
-- **Real-time monitoring** - Security status tracking
 - **MCP protocol compliant** - Clean stdout, proper JSON-RPC communication
 
 ## 📊 Available Tools
@@ -77,7 +74,7 @@ Query XBRL financial data from Supabase tables with security validation.
 - `table` (required): Table name (companies, markdown_files_metadata)
 - `filters` (optional): Filter conditions with SQL injection protection
 - `select` (optional): Columns to select
-- `limit` (optional): Max 100 results per query
+- `limit` (optional): Number of results to return
 
 ### `get-storage-md`
 Retrieve Markdown documents from Supabase Storage with path validation.
@@ -90,25 +87,16 @@ Retrieve Markdown documents from Supabase Storage with path validation.
 Search companies by name or ticker code with input sanitization.
 
 **Parameters:**
-- `query` (required): Company name or ticker code (2-100 chars)
-- `limit` (optional): Number of results (max: 50)
+- `query` (required): Company name or ticker code
+- `limit` (optional): Number of results (default: 10)
 
-### `get-security-status` (NEW)
-Monitor security status and suspicious activities.
-
-**Returns:**
-- Total request count
-- Suspicious activity log
-- Rate limit status
-- Security configuration
 
 ## 🔐 Security Best Practices
 
 1. **Generate new API keys** in Supabase Dashboard
 2. **Never commit `.env` files** to version control
 3. **Rotate keys regularly** (recommended: every 90 days)
-4. **Monitor security status** using `get-security-status` tool
-5. **Review activity logs** for suspicious patterns
+4. **Use environment variables** for all sensitive configuration
 
 ## 🛡️ Security Configuration
 
@@ -118,22 +106,14 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
-### Optional Security Settings
-```bash
-MAX_REQUESTS_PER_MINUTE=100  # Default: 100
-ENABLE_SECURITY_MONITORING=true  # Default: true
-LOG_SUSPICIOUS_ACTIVITY=true  # Default: true
-```
 
 ## 📈 Version Comparison
 
 | Feature | v1.9.1 | v2.1.0 |
 |---------|--------|--------|
 | Authentication | ❌ Hardcoded | ✅ Environment Variables |
-| Rate Limiting | ❌ None | ✅ 100 req/min |
 | SQL Injection Protection | ❌ None | ✅ Full validation |
 | Path Traversal Prevention | ❌ None | ✅ Path validation |
-| Security Monitoring | ❌ None | ✅ Real-time |
 | Key Rotation | ❌ Not possible | ✅ Anytime |
 | Dependencies | ❌ Bloated | ✅ Optimized |
 
@@ -142,8 +122,6 @@ LOG_SUSPICIOUS_ACTIVITY=true  # Default: true
 ### Error: "Missing SUPABASE_URL environment variable"
 **Solution**: Set the required environment variables (see Step 2 above)
 
-### Error: "Request blocked by security monitor"
-**Solution**: You've exceeded the rate limit. Wait 1 minute and retry.
 
 ### Error: "Invalid path detected"
 **Solution**: Ensure your file paths don't contain `../` or other traversal patterns.
