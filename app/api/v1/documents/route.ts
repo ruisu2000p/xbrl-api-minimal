@@ -2,8 +2,10 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { successResponse, errorResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 // Supabase環境変数（wpwqxhyiglbtlaimrjrxプロジェクトを使用）
 const supabaseUrl = 'https://wpwqxhyiglbtlaimrjrx.supabase.co';
@@ -64,46 +66,41 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: `Database error: ${error.message}`,
-          status: 500
-        },
-        { status: 500 }
-      );
+      logger.error('Supabase error:', error);
+      return errorResponse(`Database error: ${error.message}`, {
+        code: 'DB_ERROR',
+        status: 500
+      });
     }
 
     // レスポンス作成
-    return NextResponse.json({
-      success: true,
-      data: data || [],
-      pagination: {
-        page,
-        per_page,
-        total: count || 0,
-        total_pages: Math.ceil((count || 0) / per_page)
-      },
-      filters: {
-        company_id,
-        company_name,
-        ticker_code,
-        fiscal_year,
-        file_type
-      },
-      status: 200
+    return successResponse(data || [], {
+      count: count || 0,
+      metadata: {
+        pagination: {
+          page,
+          per_page,
+          total: count || 0,
+          total_pages: Math.ceil((count || 0) / per_page)
+        },
+        filters: {
+          company_id,
+          company_name,
+          ticker_code,
+          fiscal_year,
+          file_type
+        }
+      }
     });
 
   } catch (error) {
-    console.error('API error:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    logger.error('API error:', error);
+    return errorResponse(
+      `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      {
+        code: 'INTERNAL_ERROR',
         status: 500
-      },
-      { status: 500 }
+      }
     );
   }
 }

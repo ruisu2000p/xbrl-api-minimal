@@ -2,10 +2,11 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/client';
-import { Company, ApiResponse, PaginationParams } from '@/lib/types';
-import crypto from 'crypto';
+import { Company, PaginationParams } from '@/lib/types';
+import { successResponse, errorResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 // GET /api/v1/companies - 企業一覧取得
 export async function GET(request: NextRequest) {
@@ -60,32 +61,30 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query
 
     if (error) {
-      console.error('Database error:', error)
-      return NextResponse.json<ApiResponse<null>>(
-        { success: false, error: 'Failed to fetch companies', status: 500 },
-        { status: 500 }
-      )
+      logger.error('Database error:', error)
+      return errorResponse('Failed to fetch companies', {
+        code: 'DB_ERROR',
+        status: 500
+      })
     }
 
     // レスポンス作成
-    const response = {
-      data: data as Company[],
-      pagination: {
-        page: params.page,
-        per_page: params.per_page,
-        total: count || 0,
-        total_pages: Math.ceil((count || 0) / params.per_page!)
-      },
-      status: 200
-    }
-
-    return NextResponse.json(response)
+    return successResponse(data as Company[], {
+      metadata: {
+        pagination: {
+          page: params.page,
+          per_page: params.per_page,
+          total: count || 0,
+          total_pages: Math.ceil((count || 0) / params.per_page!)
+        }
+      }
+    })
 
   } catch (error) {
-    console.error('API error:', error)
-    return NextResponse.json<ApiResponse<null>>(
-      { success: false, error: 'Internal server error', status: 500 },
-      { status: 500 }
-    )
+    logger.error('API error:', error)
+    return errorResponse('Internal server error', {
+      code: 'INTERNAL_ERROR',
+      status: 500
+    })
   }
 }
