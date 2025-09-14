@@ -692,57 +692,128 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
 
             {/* プラン一覧 */}
             <div className="grid gap-4 md:grid-cols-2">
-              {plans.map((plan) => {
-                const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly
-                const isCurrentPlan = currentSubscription?.plan_id === plan.id
-                const isSelected = selectedPlan === plan.id
+              {/* フリーミアムプラン */}
+              <div
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  selectedPlan === 'free'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                } ${currentSubscription?.plan_id === 'free' ? 'ring-2 ring-green-500' : ''}`}
+                onClick={() => setSelectedPlan('free')}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-lg">フリーミアムプラン</h3>
+                  {currentSubscription?.plan_id === 'free' && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                      現在のプラン
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-3">個人投資家や学生向けの基本機能</p>
+                <div className="mb-3">
+                  <span className="text-2xl font-bold">¥0</span>
+                  <span className="text-gray-500 text-sm ml-1">/月</span>
+                </div>
+                <ul className="text-sm space-y-1 mb-4">
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    100社の財務データアクセス
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    APIコール無制限
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    最新1期分のデータ
+                  </li>
+                </ul>
+                <div className="flex items-center justify-center">
+                  <input
+                    type="radio"
+                    name="plan"
+                    checked={selectedPlan === 'free'}
+                    onChange={() => setSelectedPlan('free')}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium">
+                    {currentSubscription?.plan_id === 'free' ? '選択中' : '選択'}
+                  </span>
+                </div>
+              </div>
 
-                return (
-                  <div
-                    key={plan.id}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
-                    onClick={() => setSelectedPlan(plan.id)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-lg">{plan.name}</h3>
-                      {isCurrentPlan && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                          現在のプラン
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
-                    <div className="mb-3">
-                      <span className="text-2xl font-bold">¥{price.toLocaleString()}</span>
-                      <span className="text-gray-500 text-sm ml-1">/{billingCycle === 'monthly' ? '月' : '年'}</span>
-                    </div>
-                    <ul className="text-sm space-y-1 mb-4">
-                      <li className="flex items-center">
-                        <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        {plan.requests_per_month.toLocaleString()}リクエスト/月
-                      </li>
-                    </ul>
-                    <div className="flex items-center justify-center">
-                      <input
-                        type="radio"
-                        name="plan"
-                        checked={isSelected}
-                        onChange={() => setSelectedPlan(plan.id)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm font-medium">
-                        {isCurrentPlan ? '選択中' : '選択'}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
+              {/* プロフェッショナルプラン */}
+              <div
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all relative ${
+                  selectedPlan === 'pro'
+                    ? 'border-purple-500 bg-purple-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                } ${currentSubscription?.plan_id === 'pro' ? 'ring-2 ring-green-500' : ''}`}
+                onClick={() => setSelectedPlan('pro')}
+              >
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                    おすすめ
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-lg">プロフェッショナルプラン</h3>
+                  {currentSubscription?.plan_id === 'pro' && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                      現在のプラン
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mb-3">プロ投資家・研究者向け</p>
+                <div className="mb-3">
+                  <span className="text-2xl font-bold">¥2,980</span>
+                  <span className="text-gray-500 text-sm ml-1">/月</span>
+                </div>
+                <ul className="text-sm space-y-1 mb-4">
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    全5,220社の財務データ
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    APIコール無制限
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    過去10年分のデータ
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    優先サポート
+                  </li>
+                </ul>
+                <div className="flex items-center justify-center">
+                  <input
+                    type="radio"
+                    name="plan"
+                    checked={selectedPlan === 'pro'}
+                    onChange={() => setSelectedPlan('pro')}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium">
+                    {currentSubscription?.plan_id === 'pro' ? '選択中' : '選択'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* プラン更新ボタン */}
