@@ -66,7 +66,6 @@ export interface UsageStats {
   total_requests: number;
   requests_today: number;
   requests_this_month: number;
-  rate_limit_remaining: number;
 }
 
 export interface DashboardData {
