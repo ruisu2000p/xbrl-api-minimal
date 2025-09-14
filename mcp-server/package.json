@@ -1,25 +1,21 @@
 {
-  "name": "shared-supabase-mcp-minimal",
-  "version": "2.1.0",
+  "name": "xbrl-mcp-server",
+  "version": "3.0.0",
   "type": "module",
   "bin": {
-    "shared-supabase-mcp-minimal": "index.js"
+    "xbrl-mcp-server": "index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.5",
     "@supabase/supabase-js": "^2.46.0",
-    "dotenv": "^17.2.2",
-    "minimist": "^1.2.8"
+    "node-fetch": "^3.3.2"
   },
-  "description": "Secure MCP server for XBRL financial data with environment-based configuration and security monitoring",
+  "description": "Simplified MCP server for XBRL financial data",
   "keywords": [
     "mcp",
-    "supabase",
     "xbrl",
     "financial-data",
-    "financial-analysis",
-    "japanese-companies",
-    "securities-reports"
+    "japanese-companies"
   ],
   "author": "ruisu2000",
   "license": "MIT",
