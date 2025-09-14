@@ -50,7 +50,7 @@ interface SubscriptionPlan {
 interface UserSubscription {
   id: string
   user_id: string
-  plan_id: string
+  plan_type: string // 'free' or 'pro'
   status: string
   billing_cycle: string
   current_period_start: string
@@ -178,13 +178,11 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
 
       if (subData && !subError) {
         setCurrentSubscription(subData)
-        setSelectedPlan(subData.plan_id)
+        // plan_typeを使用（'free' or 'pro'）
+        setSelectedPlan(subData.plan_type || 'free')
       } else {
         // サブスクリプションがない場合は無料プランを選択
-        const freePlan = plansData?.find((p: SubscriptionPlan) => p.name === 'Free')
-        if (freePlan) {
-          setSelectedPlan(freePlan.id)
-        }
+        setSelectedPlan('free')
       }
     } catch (err) {
       console.error('Error loading subscription data:', err)
@@ -263,14 +261,19 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     const supabase = createSupabaseClient()
 
     try {
+      // プラン名をplan_typeとして保存（UUIDではなく文字列として）
+      const subscriptionData = {
+        user_id: user.id,
+        plan_type: selectedPlan, // 'free' or 'pro'
+        billing_cycle: billingCycle,
+        status: 'active',
+        updated_at: new Date().toISOString()
+      }
+
       if (currentSubscription) {
         const { error } = await supabase
           .from('user_subscriptions')
-          .update({
-            plan_id: selectedPlan,
-            billing_cycle: billingCycle,
-            updated_at: new Date().toISOString()
-          })
+          .update(subscriptionData)
           .eq('user_id', user.id)
 
         if (error) throw error
@@ -278,10 +281,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
         const { error } = await supabase
           .from('user_subscriptions')
           .insert({
-            user_id: user.id,
-            plan_id: selectedPlan,
-            billing_cycle: billingCycle,
-            status: 'active',
+            ...subscriptionData,
             current_period_start: new Date().toISOString(),
             current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           })
@@ -292,6 +292,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
       setSuccess('プランが更新されました')
       await loadSubscriptionData()
     } catch (err: any) {
+      console.error('Subscription update error:', err)
       setError(err.message || 'プランの更新に失敗しました')
     } finally {
       setUpdateLoading(false)
@@ -698,12 +699,12 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                   selectedPlan === 'free'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
-                } ${currentSubscription?.plan_id === 'free' ? 'ring-2 ring-green-500' : ''}`}
+                } ${currentSubscription?.plan_type === 'free' ? 'ring-2 ring-green-500' : ''}`}
                 onClick={() => setSelectedPlan('free')}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-lg">フリーミアムプラン</h3>
-                  {currentSubscription?.plan_id === 'free' && (
+                  {currentSubscription?.plan_type === 'free' && (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                       現在のプラン
                     </span>
@@ -743,7 +744,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                     className="mr-2"
                   />
                   <span className="text-sm font-medium">
-                    {currentSubscription?.plan_id === 'free' ? '選択中' : '選択'}
+                    {currentSubscription?.plan_type === 'free' ? '選択中' : '選択'}
                   </span>
                 </div>
               </div>
@@ -754,7 +755,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                   selectedPlan === 'pro'
                     ? 'border-purple-500 bg-purple-50'
                     : 'border-gray-200 hover:border-gray-300'
-                } ${currentSubscription?.plan_id === 'pro' ? 'ring-2 ring-green-500' : ''}`}
+                } ${currentSubscription?.plan_type === 'pro' ? 'ring-2 ring-green-500' : ''}`}
                 onClick={() => setSelectedPlan('pro')}
               >
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -764,7 +765,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-lg">プロフェッショナルプラン</h3>
-                  {currentSubscription?.plan_id === 'pro' && (
+                  {currentSubscription?.plan_type === 'pro' && (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                       現在のプラン
                     </span>
@@ -810,7 +811,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                     className="mr-2"
                   />
                   <span className="text-sm font-medium">
-                    {currentSubscription?.plan_id === 'pro' ? '選択中' : '選択'}
+                    {currentSubscription?.plan_type === 'pro' ? '選択中' : '選択'}
                   </span>
                 </div>
               </div>
@@ -820,16 +821,16 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
             <div>
               <button
                 onClick={updateSubscription}
-                disabled={updateLoading || selectedPlan === currentSubscription?.plan_id}
+                disabled={updateLoading || selectedPlan === currentSubscription?.plan_type}
                 className={`w-full px-6 py-3 rounded-md text-white font-medium ${
-                  updateLoading || selectedPlan === currentSubscription?.plan_id
+                  updateLoading || selectedPlan === currentSubscription?.plan_type
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
                 {updateLoading ? '更新中...' : 'プランを変更'}
               </button>
-              {selectedPlan === currentSubscription?.plan_id && (
+              {selectedPlan === currentSubscription?.plan_type && (
                 <p className="text-sm text-gray-500 text-center mt-2">
                   既に選択されているプランです
                 </p>
