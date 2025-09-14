@@ -50,7 +50,7 @@ interface SubscriptionPlan {
 interface UserSubscription {
   id: string
   user_id: string
-  plan_type: string // 'free' or 'pro'
+  plan_id: string // UUID of the plan
   status: string
   billing_cycle: string
   current_period_start: string
@@ -178,11 +178,13 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
 
       if (subData && !subError) {
         setCurrentSubscription(subData)
-        // plan_typeを使用（'free' or 'pro'）
-        setSelectedPlan(subData.plan_type || 'free')
+        setSelectedPlan(subData.plan_id)
       } else {
         // サブスクリプションがない場合は無料プランを選択
-        setSelectedPlan('free')
+        const freePlan = plansData?.find((p: SubscriptionPlan) => p.name === 'Free')
+        if (freePlan) {
+          setSelectedPlan(freePlan.id)
+        }
       }
     } catch (err) {
       console.error('Error loading subscription data:', err)
@@ -261,19 +263,14 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     const supabase = createSupabaseClient()
 
     try {
-      // プラン名をplan_typeとして保存（UUIDではなく文字列として）
-      const subscriptionData = {
-        user_id: user.id,
-        plan_type: selectedPlan, // 'free' or 'pro'
-        billing_cycle: billingCycle,
-        status: 'active',
-        updated_at: new Date().toISOString()
-      }
-
       if (currentSubscription) {
         const { error } = await supabase
           .from('user_subscriptions')
-          .update(subscriptionData)
+          .update({
+            plan_id: selectedPlan,
+            billing_cycle: billingCycle,
+            updated_at: new Date().toISOString()
+          })
           .eq('user_id', user.id)
 
         if (error) throw error
@@ -281,7 +278,10 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
         const { error } = await supabase
           .from('user_subscriptions')
           .insert({
-            ...subscriptionData,
+            user_id: user.id,
+            plan_id: selectedPlan,
+            billing_cycle: billingCycle,
+            status: 'active',
             current_period_start: new Date().toISOString(),
             current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           })
@@ -693,144 +693,111 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
 
             {/* プラン一覧 */}
             <div className="grid gap-4 md:grid-cols-2">
-              {/* フリーミアムプラン */}
-              <div
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  selectedPlan === 'free'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                } ${currentSubscription?.plan_type === 'free' ? 'ring-2 ring-green-500' : ''}`}
-                onClick={() => setSelectedPlan('free')}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-lg">フリーミアムプラン</h3>
-                  {currentSubscription?.plan_type === 'free' && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                      現在のプラン
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600 mb-3">個人投資家や学生向けの基本機能</p>
-                <div className="mb-3">
-                  <span className="text-2xl font-bold">¥0</span>
-                  <span className="text-gray-500 text-sm ml-1">/月</span>
-                </div>
-                <ul className="text-sm space-y-1 mb-4">
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    100社の財務データアクセス
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    APIコール無制限
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    最新1期分のデータ
-                  </li>
-                </ul>
-                <div className="flex items-center justify-center">
-                  <input
-                    type="radio"
-                    name="plan"
-                    checked={selectedPlan === 'free'}
-                    onChange={() => setSelectedPlan('free')}
-                    className="mr-2"
-                  />
-                  <span className="text-sm font-medium">
-                    {currentSubscription?.plan_type === 'free' ? '選択中' : '選択'}
-                  </span>
-                </div>
-              </div>
+              {plans.map((plan) => {
+                const isFree = plan.name === 'Free'
+                const isPro = plan.name === 'Basic' // Basicが2980円のプラン
 
-              {/* プロフェッショナルプラン */}
-              <div
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all relative ${
-                  selectedPlan === 'pro'
-                    ? 'border-purple-500 bg-purple-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                } ${currentSubscription?.plan_type === 'pro' ? 'ring-2 ring-green-500' : ''}`}
-                onClick={() => setSelectedPlan('pro')}
-              >
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                    おすすめ
-                  </span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-lg">プロフェッショナルプラン</h3>
-                  {currentSubscription?.plan_type === 'pro' && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                      現在のプラン
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600 mb-3">プロ投資家・研究者向け</p>
-                <div className="mb-3">
-                  <span className="text-2xl font-bold">¥2,980</span>
-                  <span className="text-gray-500 text-sm ml-1">/月</span>
-                </div>
-                <ul className="text-sm space-y-1 mb-4">
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    全5,220社の財務データ
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    APIコール無制限
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    過去10年分のデータ
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    優先サポート
-                  </li>
-                </ul>
-                <div className="flex items-center justify-center">
-                  <input
-                    type="radio"
-                    name="plan"
-                    checked={selectedPlan === 'pro'}
-                    onChange={() => setSelectedPlan('pro')}
-                    className="mr-2"
-                  />
-                  <span className="text-sm font-medium">
-                    {currentSubscription?.plan_type === 'pro' ? '選択中' : '選択'}
-                  </span>
-                </div>
-              </div>
+                // フリーまたはBasicプランのみ表示
+                if (!isFree && !isPro) return null
+
+                const isCurrentPlan = currentSubscription?.plan_id === plan.id
+                const isSelected = selectedPlan === plan.id
+
+                return (
+                  <div
+                    key={plan.id}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all relative ${
+                      isSelected
+                        ? isPro ? 'border-purple-500 bg-purple-50' : 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
+                    onClick={() => setSelectedPlan(plan.id)}
+                  >
+                    {isPro && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                          おすすめ
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-lg">
+                        {isFree ? 'フリーミアムプラン' : 'プロフェッショナルプラン'}
+                      </h3>
+                      {isCurrentPlan && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                          現在のプラン
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {isFree ? '個人投資家や学生向けの基本機能' : 'プロ投資家・研究者向け'}
+                    </p>
+                    <div className="mb-3">
+                      <span className="text-2xl font-bold">
+                        ¥{billingCycle === 'monthly' ? plan.price_monthly.toLocaleString() : plan.price_yearly.toLocaleString()}
+                      </span>
+                      <span className="text-gray-500 text-sm ml-1">/{billingCycle === 'monthly' ? '月' : '年'}</span>
+                    </div>
+                    <ul className="text-sm space-y-1 mb-4">
+                      <li className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {isFree ? '100社の財務データアクセス' : '全5,220社の財務データ'}
+                      </li>
+                      <li className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        APIコール無制限
+                      </li>
+                      <li className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {isFree ? '最新1期分のデータ' : '過去10年分のデータ'}
+                      </li>
+                      {isPro && (
+                        <li className="flex items-center">
+                          <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          優先サポート
+                        </li>
+                      )}
+                    </ul>
+                    <div className="flex items-center justify-center">
+                      <input
+                        type="radio"
+                        name="plan"
+                        checked={isSelected}
+                        onChange={() => setSelectedPlan(plan.id)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm font-medium">
+                        {isCurrentPlan ? '選択中' : '選択'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
             {/* プラン更新ボタン */}
             <div>
               <button
                 onClick={updateSubscription}
-                disabled={updateLoading || selectedPlan === currentSubscription?.plan_type}
+                disabled={updateLoading || selectedPlan === currentSubscription?.plan_id}
                 className={`w-full px-6 py-3 rounded-md text-white font-medium ${
-                  updateLoading || selectedPlan === currentSubscription?.plan_type
+                  updateLoading || selectedPlan === currentSubscription?.plan_id
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
                 {updateLoading ? '更新中...' : 'プランを変更'}
               </button>
-              {selectedPlan === currentSubscription?.plan_type && (
+              {selectedPlan === currentSubscription?.plan_id && (
                 <p className="text-sm text-gray-500 text-center mt-2">
                   既に選択されているプランです
                 </p>
