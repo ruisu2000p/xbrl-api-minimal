@@ -1,22 +1,21 @@
-# XBRL財務データAPI + セキュアMCPサーバー
+# XBRL Financial API - Minimal Edition
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
 [![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-[![Security](https://img.shields.io/badge/Security-v2.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
+[![Security](https://img.shields.io/badge/Security-v2.1.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
 
-日本企業5,220社の有価証券報告書（XBRL/EDINET）データにアクセスするためのAPI + セキュアMCPサーバー
+日本企業5,220社の有価証券報告書（XBRL/EDINET）データにアクセスするためのAPI + Claude Desktop MCP統合
 
-## 🔒 重要: セキュリティアップデート v2.0.0
+## 🚀 最新バージョン v2.1.0
 
-**⚠️ v1.9.1以前のバージョンには重大なセキュリティ脆弱性があります。すぐにv2.0.0へアップグレードしてください。**
-
-### セキュリティ改善内容
-- ✅ **環境変数による認証** - ハードコードされたキーを削除
+### 主な特徴
+- ✅ **APIキー認証方式に統一** - セキュアで個別管理可能
 - ✅ **レート制限** - 100リクエスト/分
-- ✅ **SQLインジェクション防止** - 入力検証とサニタイゼーション
-- ✅ **パストラバーサル防止** - セキュアなファイルアクセス
-- ✅ **アクティビティ監視** - リアルタイムセキュリティログ
+- ✅ **Row Level Security** - データアクセス制御
+- ✅ **監査ログシステム** - 全アクティビティを記録
+- ✅ **Claude Desktop完全統合** - MCPツールで簡単アクセス
 
 ## 🌟 特徴
 
@@ -28,94 +27,86 @@
 
 ## 🚀 クイックスタート
 
-### 1. セキュアMCPサーバー（v2.0.0） 🔒
+### 1. APIキーの取得
 
-#### インストール
-```bash
-npm install -g shared-supabase-mcp-minimal@latest
-```
+1. [ダッシュボード](https://xbrl-api-minimal.vercel.app/dashboard)にアクセス
+2. Googleアカウントでログイン
+3. 「APIキー管理」から新規APIキーを発行
 
-#### 環境変数設定
-```bash
-# Windows (Command Prompt)
-set SUPABASE_URL=https://your-project.supabase.co
-set SUPABASE_ANON_KEY=your-anon-key-here
+### 2. Claude Desktop設定
 
-# Windows (PowerShell)
-$env:SUPABASE_URL = "https://your-project.supabase.co"
-$env:SUPABASE_ANON_KEY = "your-anon-key-here"
-
-# macOS/Linux
-export SUPABASE_URL=https://your-project.supabase.co
-export SUPABASE_ANON_KEY=your-anon-key-here
-```
-
-#### Claude Desktop設定
-`%APPDATA%\Claude\claude_desktop_config.json`:
+`.claude.json`に以下を追加：
 
 ```json
 {
   "mcpServers": {
-    "xbrl-financial-secure": {
+    "xbrl-financial": {
       "command": "npx",
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
-        "SUPABASE_URL": "https://your-project.supabase.co",
-        "SUPABASE_ANON_KEY": "your-anon-key-here"
+        "XBRL_API_KEY": "あなたのAPIキー",
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1"
       }
     }
   }
 }
 ```
 
-### 2. Web API エンドポイント
+### 3. 使用開始
 
-本番環境: https://xbrl-api-minimal.vercel.app
+Claude Desktopを再起動後、MCPツールが利用可能になります。
 
-#### 主要エンドポイント
-- `GET /api/v1/companies` - 企業一覧
-- `GET /api/v1/companies/{id}` - 企業詳細
-- `GET /api/v1/documents` - ドキュメント一覧
-- `GET /api/v1/financial-metrics/{company_id}` - 財務指標
+## 📚 API仕様
+
+### エンドポイント一覧
+
+| エンドポイント | メソッド | 説明 |
+|--------------|---------|------|
+| `/api/v1/config` | GET | API設定情報の取得 |
+| `/api/v1/companies` | GET | 企業リスト取得 |
+| `/api/v1/companies/{id}` | GET | 企業詳細情報 |
+| `/api/v1/documents` | GET | ドキュメント一覧 |
+| `/api/v1/financial-metrics/{company_id}` | GET | 財務指標取得 |
+
+### 認証
+
+すべてのAPIリクエストにはAPIキーが必要です：
+
+```bash
+curl -H "x-api-key: あなたのAPIキー" \
+  https://xbrl-api-minimal.vercel.app/api/v1/companies
+```
 
 ## 📊 利用可能なMCPツール
 
-### `query-my-data`
-Supabaseテーブルから財務データをクエリ（セキュリティ検証付き）
+- `search-companies` - 企業検索（名前/ティッカーコード）
+- `query-my-data` - データクエリ（柔軟な条件指定）
+- `get-storage-md` - Markdownドキュメント取得
+- `extract-financial-metrics` - 財務指標の自動抽出
+- `get-company-overview` - 企業概要の総合取得
 
-### `get-storage-md`
-Supabase StorageからMarkdownドキュメントを取得（パス検証付き）
+## 🔐 セキュリティ
 
-### `search-companies`
-企業名またはティッカーコードで検索（入力サニタイゼーション付き）
+### 実装済みのセキュリティ対策
+- ✅ APIキー認証による個別アクセス管理
+- ✅ Rate limiting (100リクエスト/分)
+- ✅ Row Level Security (RLS) によるデータアクセス制御
+- ✅ SQLインジェクション対策
+- ✅ 監査ログシステム
+- ✅ 自動セキュリティアップデート
 
-### `get-security-status` (NEW)
-セキュリティステータスと不審なアクティビティを監視
+### ベストプラクティス
+1. APIキーは90日ごとにローテーション
+2. GitHubにAPIキーをコミットしない
+3. 使用状況を定期的にモニタリング
 
-## 🔐 セキュリティベストプラクティス
+## 📊 料金プラン
 
-1. **新しいAPIキーを生成** - Supabaseダッシュボードで
-2. **`.env`ファイルをコミットしない** - バージョン管理から除外
-3. **定期的にキーをローテーション** - 推奨: 90日ごと
-4. **セキュリティステータスを監視** - `get-security-status`ツール使用
-5. **アクティビティログをレビュー** - 不審なパターンの検出
-
-## 📋 v1.xからv2.0への移行
-
-1. **最新版をインストール**
-   ```bash
-   npm install -g shared-supabase-mcp-minimal@latest
-   ```
-
-2. **環境変数を設定**（上記参照）
-
-3. **Claude Desktop設定を更新**（上記参照）
-
-4. **新しいAPIキーを生成**（Supabaseダッシュボード）
-
-5. **古いハードコードされたキーを無効化**
-
-詳細は[SECURITY_MIGRATION_GUIDE.md](./SECURITY_MIGRATION_GUIDE.md)を参照
+| プラン | 料金 | 特徴 |
+|--------|------|------|
+| **フリーミアム** | ¥0/月 | 100社データ、最新1期分、APIコール無制限 |
+| **プロフェッショナル** | ¥2,980/月 | 全5,220社、過去10年分、優先サポート |
+| **エンタープライズ** | お問い合わせ | カスタマイズ、SLA保証、専任サポート |
 
 ## 🛠️ 開発者向け情報
 
@@ -147,17 +138,23 @@ xbrl-api-minimal/
 └── SECURITY_MIGRATION_GUIDE.md  # セキュリティ移行ガイド
 ```
 
-## 📈 バージョン履歴
+## 🔄 更新履歴
 
-### v2.0.0 (2024-01-XX)
-- 🔒 環境変数による認証管理
-- 🛡️ セキュリティ監視機能追加
-- ⚡ レート制限実装
-- 🚫 不正パターン検出
-- 📊 セキュリティステータス確認ツール
+### v2.1.0 (2025-01-14)
+- APIキー認証方式に統一
+- セキュリティ改善（RLS、監査ログ）
+- Rate limiting実装
+- MCP設定の簡素化
 
-### v1.9.1 (非推奨)
-- ⚠️ ハードコードされた認証情報（セキュリティリスク）
+### v2.0.0 (2025-01-13)
+- 環境変数ベースの認証に移行
+- ハードコードされたキーを削除
+- セキュリティ強化
+
+### v1.0.0 (2025-01-10)
+- 初回リリース
+- 5,220社の財務データ対応
+- Claude Desktop MCP統合
 
 ## 🤝 コントリビューション
 
@@ -167,14 +164,12 @@ xbrl-api-minimal/
 
 MIT
 
-## 🔗 関連リンク
+## 🆘 サポート
 
-- [NPMパッケージ](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-- [GitHubリポジトリ](https://github.com/ruisu2000p/xbrl-api-minimal)
-- [Vercel本番環境](https://xbrl-api-minimal.vercel.app)
-- [Supabaseダッシュボード](https://app.supabase.com)
+- **Issues**: [GitHub Issues](https://github.com/ruisu2000p/xbrl-api-minimal/issues)
+- **ダッシュボード**: [https://xbrl-api-minimal.vercel.app/dashboard](https://xbrl-api-minimal.vercel.app/dashboard)
+- **NPMパッケージ**: [shared-supabase-mcp-minimal](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 
 ---
 
-**⚠️ 重要**: v1.9.1以前を使用している場合は、セキュリティ脆弱性に対処するため、直ちにアップグレードしてください。# Force rebuild
-# Settings page deployment
+**Made with ❤️ by [ruisu2000p](https://github.com/ruisu2000p)**
