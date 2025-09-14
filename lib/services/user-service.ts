@@ -206,7 +206,7 @@ export class UserService {
 
       // Update expiry if specified
       if (expiresAt) {
-        await supabaseManager.executeQuery(async (client) => {
+        await supabaseManager.executeQuery<any>(async (client) => {
           return await client
             .from('api_keys')
             .update({ expires_at: expiresAt })
@@ -331,11 +331,12 @@ export class UserService {
       }
 
       // Count total requests
-      const totalResult = await supabaseManager.executeQuery(async (client) => {
-        return await client
+      const totalResult = await supabaseManager.executeQuery<any[]>(async (client) => {
+        const result = await client
           .from('api_keys')
           .select('usage_count')
           .in('id', keyIds);
+        return result.data || [];
       });
 
       const total_requests = totalResult.reduce(
@@ -344,29 +345,31 @@ export class UserService {
       );
 
       // Count today's requests from security events
-      const todayResult = await supabaseManager.executeQuery(async (client) => {
-        return await client
+      const todayResult = await supabaseManager.executeQuery<number>(async (client) => {
+        const result = await client
           .from('security_events')
           .select('id', { count: 'exact' })
           .in('api_key_id', keyIds)
           .eq('event_type', 'auth_success')
           .gte('created_at', todayStart.toISOString());
+        return result.count || 0;
       });
 
       // Count this month's requests
-      const monthResult = await supabaseManager.executeQuery(async (client) => {
-        return await client
+      const monthResult = await supabaseManager.executeQuery<number>(async (client) => {
+        const result = await client
           .from('security_events')
           .select('id', { count: 'exact' })
           .in('api_key_id', keyIds)
           .eq('event_type', 'auth_success')
           .gte('created_at', monthStart.toISOString());
+        return result.count || 0;
       });
 
       return {
         total_requests,
-        requests_today: todayResult.count || 0,
-        requests_this_month: monthResult.count || 0,
+        requests_today: todayResult,
+        requests_this_month: monthResult,
       };
     } catch (error) {
       logger.error('Failed to get usage stats', { userId, error });
