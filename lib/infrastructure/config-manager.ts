@@ -80,15 +80,6 @@ class ConfigManager {
       return this.config;
     }
 
-    // Debug logging for Vercel environment
-    const env = this.getEnvironment();
-    if (env === 'production') {
-      console.log('Production environment detected. Checking environment variables...');
-      console.log('API_KEY_SECRET exists:', !!process.env.API_KEY_SECRET);
-      console.log('NODE_ENV:', process.env.NODE_ENV);
-      console.log('VERCEL:', process.env.VERCEL);
-    }
-
     this.config = {
       supabase: {
         url: this.getRequired('NEXT_PUBLIC_SUPABASE_URL'),
