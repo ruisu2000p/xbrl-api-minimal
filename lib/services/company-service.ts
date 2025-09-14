@@ -45,7 +45,11 @@ export class CompanyService {
       const { page = 1, per_page = 20, search, sector, fiscal_year } = params;
       const offset = (page - 1) * per_page;
 
-      const result = await supabaseManager.executeQuery(async (client) => {
+      const result = await supabaseManager.executeQuery<{
+        data: Company[] | null;
+        count: number | null;
+        error: any;
+      }>(async (client) => {
         let query = client
           .from('companies')
           .select('*', { count: 'exact' });
@@ -171,7 +175,7 @@ export class CompanyService {
     }
 
     try {
-      const files = await supabaseManager.executeQuery(async (client) => {
+      const files = await supabaseManager.executeQuery<any[]>(async (client) => {
         return await client
           .from('markdown_files_metadata')
           .select('*')
@@ -207,7 +211,7 @@ export class CompanyService {
 
     try {
       // Get file metadata
-      const metadata = await supabaseManager.executeQuery(async (client) => {
+      const metadata = await supabaseManager.executeQuery<any>(async (client) => {
         return await client
           .from('markdown_files_metadata')
           .select('storage_path')
@@ -268,7 +272,7 @@ export class CompanyService {
     }
 
     try {
-      const result = await supabaseManager.executeQuery(async (client) => {
+      const result = await supabaseManager.executeQuery<{ data: any[] | null }>(async (client) => {
         return await client
           .from('companies')
           .select('sector')
@@ -276,7 +280,7 @@ export class CompanyService {
           .order('sector');
       });
 
-      const sectors = [...new Set(result.map((r: any) => r.sector))];
+      const sectors = [...new Set((result.data || []).map((r: any) => r.sector))];
 
       // Cache for longer
       cacheManager.set(cacheKey, sectors, this.CACHE_TTL * 4);
@@ -301,7 +305,7 @@ export class CompanyService {
     }
 
     try {
-      const result = await supabaseManager.executeQuery(async (client) => {
+      const result = await supabaseManager.executeQuery<{ data: any[] | null }>(async (client) => {
         return await client
           .from('companies')
           .select('fiscal_year')
@@ -309,7 +313,7 @@ export class CompanyService {
           .order('fiscal_year', { ascending: false });
       });
 
-      const years = [...new Set(result.map((r: any) => r.fiscal_year))];
+      const years = [...new Set((result.data || []).map((r: any) => r.fiscal_year))];
 
       // Cache for longer
       cacheManager.set(cacheKey, years, this.CACHE_TTL * 4);
