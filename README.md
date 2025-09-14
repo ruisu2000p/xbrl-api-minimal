@@ -2,15 +2,20 @@
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
 [![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-[![Version](https://img.shields.io/badge/Version-3.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
+[![Version](https://img.shields.io/badge/Version-3.0.1-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-v3.0-blue)](https://modelcontextprotocol.io)
 
 日本企業4,000社以上、5年分の有価証券報告書（XBRL/EDINET）データにアクセスするためのシンプルなAPI + Claude Desktop MCP統合
 
-## 🚀 最新バージョン v3.0.0 - 大幅簡素化
+## 🚀 最新バージョン v3.0.1 - 品質改善
 
-### 主な変更点
+### 最新の改善（v3.0.1）
+- ✅ **本番用ロギングシステム** - console.logを環境対応のロガーに置き換え
+- ✅ **API レスポンス標準化** - 統一されたエラーハンドリング
+- ✅ **コード品質向上** - 共通ユーティリティによる重複削減
+
+### v3.0.0 主要変更点
 - ✅ **APIエンドポイントを60%削減** - 6つのコア機能のみに集約
 - ✅ **不要な依存関係を削除** - パッケージサイズ40%削減
 - ✅ **MCPツールを2つに簡素化** - 企業検索→文書取得のシンプルフロー
@@ -172,4 +177,4 @@ Issues and Pull Requests are welcome!
 
 ---
 
-**Version 3.0.0** - Simplified for better performance and maintainability
+**Version 3.0.1** - Improved logging and error handling for production readiness

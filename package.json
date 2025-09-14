@@ -1,6 +1,6 @@
 {
   "name": "xbrl-api-minimal",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "XBRL財務データAPI - 最小構成版",
   "mcp": {
     "package": "shared-supabase-mcp-minimal",
