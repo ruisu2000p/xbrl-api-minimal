@@ -32,7 +32,7 @@ export default function PricingPage() {
         '上場企業100社の財務データアクセス',
         '最新1期分の有価証券報告書',
         '基本的な財務指標の閲覧',
-        'APIコール: 100回/月',
+        'APIコール: 無制限',
         'Markdown形式でのデータ取得',
         'コミュニティサポート',
       ],
@@ -226,11 +226,10 @@ export default function PricingPage() {
             </details>
             <details className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700">
               <summary className="text-white font-semibold cursor-pointer">
-                APIの利用制限を超えた場合はどうなりますか？
+                APIの利用制限はありますか？
               </summary>
               <p className="text-gray-300 mt-3">
-                フリーミアムプランの場合、月間制限に達するとAPIコールがブロックされます。
-                プロプランへのアップグレードをご検討ください。
+                いいえ、両プランともAPIコールは無制限です。ただし、フリーミアムプランはアクセス可能な企業数と期間に制限があります。
               </p>
             </details>
             <details className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700">
