@@ -1,7 +1,7 @@
 {
   "name": "xbrl-api-minimal",
-  "version": "4.0.0",
-  "description": "XBRL財務データAPI - 商用版",
+  "version": "5.0.0",
+  "description": "XBRL財務データAPI - Supabase Edge Functions版",
   "mcp": {
     "package": "shared-supabase-mcp-minimal",
     "version": "2.1.0",

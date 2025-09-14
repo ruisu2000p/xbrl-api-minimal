@@ -93,10 +93,20 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
 
     try {
-      const response = await fetch('/api/dashboard/api-keys', {
+      const supabase = createSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        setError('認証が必要です')
+        return
+      }
+
+      // Supabase Edge Functionを呼び出す
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/keys_issue`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           name: keyName,
@@ -106,8 +116,8 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
 
       if (response.ok) {
         const data = await response.json()
-        if (data.apiKey) {
-          setGeneratedKey(data.apiKey)
+        if (data.api_key) {
+          setGeneratedKey(data.api_key)
           setShowKeyModal(true)
         }
         setKeyName('')
@@ -130,15 +140,24 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     }
 
     try {
-      const response = await fetch(`/api/dashboard/api-keys/${keyId}`, {
-        method: 'DELETE',
-      })
+      const supabase = createSupabaseClient()
 
-      if (response.ok) {
+      // APIキーを無効化（削除はせずにステータスを変更）
+      const { error } = await supabase
+        .from('api_keys')
+        .update({ is_active: false, status: 'revoked' })
+        .eq('id', keyId)
+        .eq('user_id', user.id)
+
+      if (!error) {
         router.refresh()
+      } else {
+        console.error('Delete error:', error)
+        setError('APIキーの削除に失敗しました')
       }
     } catch (err) {
       console.error('Delete error:', err)
+      setError('エラーが発生しました')
     }
   }
 
