@@ -1,7 +1,7 @@
 # XBRL Financial API - Minimal Edition v3.0
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
-[![NPM](https://img.shields.io/npm/v/xbrl-mcp-server)](https://www.npmjs.com/package/xbrl-mcp-server)
+[![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 [![Version](https://img.shields.io/badge/Version-3.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP Compatible](https://img.shields.io/badge/MCP-v3.0-blue)](https://modelcontextprotocol.io)
@@ -44,9 +44,26 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 ## 🛠️ Claude Desktop設定
 
-### MCPサーバー設定
+### 方法1: NPMパッケージを使用（推奨）
 
 `claude_desktop_config.json`に追加：
+
+```json
+{
+  "mcpServers": {
+    "xbrl-financial": {
+      "command": "npx",
+      "args": ["shared-supabase-mcp-minimal@latest"],
+      "env": {
+        "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
+        "SUPABASE_SERVICE_KEY": "your_service_key"
+      }
+    }
+  }
+}
+```
+
+### 方法2: ローカルサーバーを使用
 
 ```json
 {
