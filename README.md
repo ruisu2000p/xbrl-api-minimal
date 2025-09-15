@@ -38,16 +38,16 @@ npm install -g shared-supabase-mcp-minimal@latest
 #### 環境変数設定
 ```bash
 # Windows (Command Prompt)
-set SUPABASE_URL=https://your-project.supabase.co
-set SUPABASE_ANON_KEY=your-anon-key-here
+set SUPABASE_URL=https://wpwqxhyiglbtlaimrjrx.supabase.co
+set XBRL_API_KEY=your-api-key-here
 
 # Windows (PowerShell)
-$env:SUPABASE_URL = "https://your-project.supabase.co"
-$env:SUPABASE_ANON_KEY = "your-anon-key-here"
+$env:SUPABASE_URL = "https://wpwqxhyiglbtlaimrjrx.supabase.co"
+$env:XBRL_API_KEY = "your-api-key-here"
 
 # macOS/Linux
-export SUPABASE_URL=https://your-project.supabase.co
-export SUPABASE_ANON_KEY=your-anon-key-here
+export SUPABASE_URL=https://wpwqxhyiglbtlaimrjrx.supabase.co
+export XBRL_API_KEY=your-api-key-here
 ```
 
 #### Claude Desktop設定
@@ -56,17 +56,23 @@ export SUPABASE_ANON_KEY=your-anon-key-here
 ```json
 {
   "mcpServers": {
-    "xbrl-financial-secure": {
+    "xbrl-financial": {
       "command": "npx",
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
-        "SUPABASE_URL": "https://your-project.supabase.co",
-        "SUPABASE_ANON_KEY": "your-anon-key-here"
+        "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
+        "XBRL_API_KEY": "your-api-key-here"
       }
     }
   }
 }
 ```
+
+**⚠️ 重要**:
+- **必ず環境変数（`env`セクション）を設定してください**
+- `XBRL_API_KEY`には発行された**独自APIキー**を設定します（Supabase Anon Keyではありません）
+- APIキーは[https://xbrl-api-minimal.vercel.app](https://xbrl-api-minimal.vercel.app)から取得してください
+- Free/Basic/Pro/Enterpriseティアによってアクセス可能なデータ範囲が異なります
 
 ### 2. Web API エンドポイント
 

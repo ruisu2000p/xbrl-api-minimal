@@ -1,6 +1,6 @@
-# shared-supabase-mcp-minimal v2.0.0 🔒
+# shared-supabase-mcp-minimal v3.0.0 🚀
 
-**Secure MCP server for XBRL financial data with environment-based configuration**
+**Commercial XBRL Financial Data MCP Server - 286,742 documents from 1,100+ Japanese companies**
 
 [![npm version](https://badge.fury.io/js/shared-supabase-mcp-minimal.svg)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 [![Security Status](https://img.shields.io/badge/Security-Enhanced-green)](https://github.com/ruisu2000p/shared-supabase-mcp-minimal)

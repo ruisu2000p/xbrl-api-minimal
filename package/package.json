@@ -1,6 +1,6 @@
 {
   "name": "shared-supabase-mcp-minimal",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "type": "module",
   "bin": {
     "shared-supabase-mcp-minimal": "index.js"
@@ -11,7 +11,7 @@
     "dotenv": "^17.2.2",
     "minimist": "^1.2.8"
   },
-  "description": "Secure MCP server for XBRL financial data with environment-based configuration and security monitoring",
+  "description": "Commercial XBRL Financial Data MCP Server - v3.0 with 286,742 documents from 1,100+ Japanese companies",
   "keywords": [
     "mcp",
     "supabase",
