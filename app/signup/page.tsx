@@ -2,10 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signUp } from '@/app/actions/auth';
 
 export default function SignupPage() {
+  const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState('standard');
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -52,24 +57,51 @@ export default function SignupPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    // Validation
     if (formData.password !== formData.confirmPassword) {
-      alert('パスワードが一致しません');
+      setError('パスワードが一致しません');
       return;
     }
     if (!formData.agreeToTerms) {
-      alert('利用規約に同意してください');
+      setError('利用規約に同意してください');
       return;
     }
     if (!formData.understandInvestmentAdvice) {
-      alert('投資助言に関する注意事項をご確認ください');
+      setError('投資助言に関する注意事項をご確認ください');
+      return;
+    }
+    if (formData.password.length < 8) {
+      setError('パスワードは8文字以上で入力してください');
       return;
     }
 
-    // Form submission logic would go here
-    // For now, just show a success message
-    alert('アカウント作成リクエストを受け付けました');
+    setIsLoading(true);
+
+    try {
+      const result = await signUp({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        company: formData.company,
+        plan: selectedPlan,
+        billingPeriod: billingPeriod
+      });
+
+      if (result.success) {
+        // Redirect to dashboard or confirmation page
+        router.push('/dashboard');
+      } else {
+        setError(result.error || 'アカウント作成に失敗しました');
+      }
+    } catch (err) {
+      setError('アカウント作成中にエラーが発生しました');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getButtonText = () => {
@@ -228,6 +260,15 @@ export default function SignupPage() {
               <p className="text-gray-600">必要な情報を入力してください</p>
             </div>
 
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
+                <div className="flex items-center">
+                  <i className="ri-error-warning-line text-red-500 text-lg mr-3"></i>
+                  <p className="text-red-700 text-sm font-medium">{error}</p>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -363,10 +404,17 @@ export default function SignupPage() {
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={!formData.agreeToTerms || !formData.understandInvestmentAdvice}
-                  className="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap"
+                  disabled={!formData.agreeToTerms || !formData.understandInvestmentAdvice || isLoading}
+                  className="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap flex items-center justify-center"
                 >
-                  {getButtonText()}
+                  {isLoading ? (
+                    <>
+                      <i className="ri-loader-4-line animate-spin mr-2"></i>
+                      アカウントを作成中...
+                    </>
+                  ) : (
+                    getButtonText()
+                  )}
                 </button>
               </div>
 
