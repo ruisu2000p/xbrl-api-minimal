@@ -1,50 +1,51 @@
-<<<<<<< HEAD:package/README.md
-# shared-supabase-mcp-minimal v3.0.0 🚀
-=======
-# shared-supabase-mcp-minimal v2.1.0 🔒
->>>>>>> 49f3b05583674b8c9528708df26b94b85170a873:mcp-server/README.md
+# shared-supabase-mcp-minimal v3.0.1 🚀
 
 **Commercial XBRL Financial Data MCP Server - 286,742 documents from 1,100+ Japanese companies**
 
 [![npm version](https://badge.fury.io/js/shared-supabase-mcp-minimal.svg)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-[![Security Status](https://img.shields.io/badge/Security-Enhanced-green)](https://github.com/ruisu2000p/shared-supabase-mcp-minimal)
+[![Security Status](https://img.shields.io/badge/Security-Enhanced-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 
-## ⚠️ SECURITY UPDATE - v2.1.0
+## ⚠️ 重要な変更 - v3.0.1
 
-**IMPORTANT**: Version 2.1.0 includes critical security improvements and dependency optimizations. All versions prior to 2.0.0 have been deprecated due to hardcoded credentials vulnerability.
+**独自APIキーシステムを使用** - Supabase Anon Keyではなく、専用のXBRL APIキーを使用します
 
-### 🔒 Security Features
-- ✅ **Environment-based authentication** - No more hardcoded keys
-- ✅ **SQL injection protection** - Input validation and sanitization
-- ✅ **Path traversal prevention** - Secure file access
+### 🔒 セキュリティ機能
+- ✅ **独自APIキー認証** - ティア別アクセス制御
+- ✅ **環境変数ベース** - ハードコードなし
+- ✅ **SQLインジェクション対策** - 入力検証とサニタイゼーション
+- ✅ **パストラバーサル防止** - セキュアなファイルアクセス
+- ✅ **レート制限** - ティア別制限
 
-## 📋 Migration from v1.x to v2.1.0
+## 📋 インストールとセットアップ
 
-### Step 1: Install the latest version
+### ステップ1: 最新版をインストール
 ```bash
 npm install -g shared-supabase-mcp-minimal@latest
-# or use npx (recommended)
+# または npx を使用（推奨）
 npx shared-supabase-mcp-minimal@latest
 ```
 
-### Step 2: Set environment variables
+### ステップ2: APIキーを取得
+[https://xbrl-api-minimal.vercel.app](https://xbrl-api-minimal.vercel.app) からAPIキーを取得してください
+
+### ステップ3: 環境変数を設定
 ```bash
 # Windows (Command Prompt)
-set SUPABASE_URL=https://your-project.supabase.co
-set SUPABASE_ANON_KEY=your-anon-key-here
+set SUPABASE_URL=https://wpwqxhyiglbtlaimrjrx.supabase.co
+set XBRL_API_KEY=your-api-key-here
 
 # Windows (PowerShell)
-$env:SUPABASE_URL = "https://your-project.supabase.co"
-$env:SUPABASE_ANON_KEY = "your-anon-key-here"
+$env:SUPABASE_URL = "https://wpwqxhyiglbtlaimrjrx.supabase.co"
+$env:XBRL_API_KEY = "your-api-key-here"
 
 # macOS/Linux
-export SUPABASE_URL=https://your-project.supabase.co
-export SUPABASE_ANON_KEY=your-anon-key-here
+export SUPABASE_URL=https://wpwqxhyiglbtlaimrjrx.supabase.co
+export XBRL_API_KEY=your-api-key-here
 ```
 
-### Step 3: Update Claude Desktop configuration
+### ステップ4: Claude Desktop設定を更新
 
-Edit `%APPDATA%\Claude\claude_desktop_config.json`:
+`%APPDATA%\Claude\claude_desktop_config.json` を編集:
 
 ```json
 {
@@ -53,107 +54,92 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json`:
       "command": "npx",
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
-        "SUPABASE_URL": "https://your-project.supabase.co",
-        "SUPABASE_ANON_KEY": "your-anon-key-here"
+        "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
+        "XBRL_API_KEY": "your-api-key-here"
       }
     }
   }
 }
 ```
 
-## 🚀 Features
+**⚠️ 重要**:
+- `XBRL_API_KEY`には発行された**独自APIキー**を設定
+- Supabase Anon Keyではありません
+- Free/Basic/Pro/Enterpriseティアによってアクセス範囲が異なります
 
-- **4,231 Japanese companies** - Comprehensive financial data coverage
-- **5 years of data (FY2021-FY2025)** - Latest financial reports
-- **Markdown format** - Pre-converted from XBRL for easy reading
-- **Secure authentication** - Environment variable based (v2.0.0+)
-- **MCP protocol compliant** - Clean stdout, proper JSON-RPC communication
+## 🚀 特徴
 
-## 📊 Available Tools
+- **1,100社以上の日本企業** - 包括的な財務データカバレッジ
+- **4年分のデータ (2020-2024)** - 最新の有価証券報告書
+- **Markdown形式** - XBRLから変換済みで読みやすい
+- **独自APIキー認証** - ティア別アクセス制御
+- **MCPプロトコル準拠** - クリーンなstdout、適切なJSON-RPC通信
+
+## 📊 利用可能なツール
 
 ### `query-my-data`
-Query XBRL financial data from Supabase tables with security validation.
+Supabaseテーブルから財務データをクエリ（セキュリティ検証付き）
 
-**Parameters:**
-- `table` (required): Table name (companies, markdown_files_metadata)
-- `filters` (optional): Filter conditions with SQL injection protection
-- `select` (optional): Columns to select
-- `limit` (optional): Number of results to return
+**パラメータ:**
+- `table` (必須): テーブル名 (companies, markdown_files_metadata)
+- `filters` (任意): SQLインジェクション対策済みのフィルタ条件
+- `select` (任意): 選択するカラム
+- `limit` (任意): 返す結果数
 
 ### `get-storage-md`
-Retrieve Markdown documents from Supabase Storage with path validation.
+Supabase StorageからMarkdownドキュメントを取得（パス検証付き）
 
-**Parameters:**
-- `storage_path` (required): Secure path to the Markdown file
-- `max_bytes` (optional): Maximum bytes to retrieve (max: 1MB)
+**パラメータ:**
+- `storage_path` (必須): Markdownファイルへのセキュアなパス
+- `max_bytes` (任意): 取得する最大バイト数（最大: 1MB）
 
 ### `search-companies`
-Search companies by name or ticker code with input sanitization.
+企業名またはティッカーコードで検索（入力サニタイゼーション付き）
 
-**Parameters:**
-- `query` (required): Company name or ticker code
-- `limit` (optional): Number of results (default: 10)
+**パラメータ:**
+- `query` (必須): 企業名またはティッカーコード
+- `limit` (任意): 結果数（デフォルト: 10）
 
+### `extract-financial-metrics`
+財務指標を抽出
 
-## 🔐 Security Best Practices
+**パラメータ:**
+- `company_id` (必須): 企業ID
+- `storage_path` (必須): Markdownファイルパス
 
-1. **Generate new API keys** in Supabase Dashboard
-2. **Never commit `.env` files** to version control
-3. **Rotate keys regularly** (recommended: every 90 days)
-4. **Use environment variables** for all sensitive configuration
+### `get-company-overview`
+企業の包括的な概要を取得
 
-## 🛡️ Security Configuration
+**パラメータ:**
+- `company_id` (必須): 企業ID
+- `include_metrics` (任意): 財務指標を含むか
 
-### Environment Variables (Required)
-```bash
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
-```
+## 💰 料金プラン
 
+| プラン | アクセス範囲 | 特徴 |
+|--------|------------|------|
+| **Free** | 直近1年間のデータ | 基本的な財務データアクセス |
+| **Basic** | すべてのデータ | 全期間の財務データアクセス |
+| **Pro** | すべてのデータ + 高速 | 優先サポート、高レート制限 |
+| **Enterprise** | カスタム | 専用サポート、カスタム機能 |
 
-## 📈 Version Comparison
+## 🔐 セキュリティベストプラクティス
 
-| Feature | v1.9.1 | v2.1.0 |
-|---------|--------|--------|
-| Authentication | ❌ Hardcoded | ✅ Environment Variables |
-| SQL Injection Protection | ❌ None | ✅ Full validation |
-| Path Traversal Prevention | ❌ None | ✅ Path validation |
-| Key Rotation | ❌ Not possible | ✅ Anytime |
-| Dependencies | ❌ Bloated | ✅ Optimized |
+1. **APIキーを安全に管理** - 環境変数を使用
+2. **`.env`ファイルをコミットしない** - バージョン管理から除外
+3. **定期的にキーをローテーション** - 推奨: 90日ごと
+4. **アクティビティログをレビュー** - 不審なパターンの検出
 
-## 🆘 Troubleshooting
+## 📝 サポート
 
-### Error: "Missing SUPABASE_URL environment variable"
-**Solution**: Set the required environment variables (see Step 2 above)
+問題が発生した場合:
+1. [GitHub Issues](https://github.com/ruisu2000p/xbrl-api-minimal/issues)で報告
+2. [API Documentation](https://xbrl-api-minimal.vercel.app/docs)を確認
 
-
-### Error: "Invalid path detected"
-**Solution**: Ensure your file paths don't contain `../` or other traversal patterns.
-
-## 📝 Migration Checklist
-
-- [ ] Install v2.1.0 or later
-- [ ] Set environment variables
-- [ ] Update Claude Desktop config
-- [ ] Generate new API keys in Supabase
-- [ ] Test connection with `--healthcheck`
-- [ ] Invalidate old hardcoded keys
-
-## 🔗 Resources
-
-- [Security Migration Guide](https://github.com/ruisu2000p/shared-supabase-mcp-minimal/blob/main/SECURITY_MIGRATION_GUIDE.md)
-- [NPM Package](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-- [GitHub Repository](https://github.com/ruisu2000p/shared-supabase-mcp-minimal)
-- [Supabase Dashboard](https://app.supabase.com)
-
-## 📜 License
+## 📜 ライセンス
 
 MIT
 
-## 🤝 Contributing
-
-Security issues should be reported privately. For other issues and feature requests, please use GitHub Issues.
-
 ---
 
-**⚠️ IMPORTANT**: If you're using version 1.9.1 or earlier, please upgrade immediately to address the security vulnerability.
+© 2024 XBRL API Minimal. All rights reserved.

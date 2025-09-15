@@ -1,6 +1,6 @@
 {
-  "name": "xbrl-mcp-server",
-  "version": "3.0.0",
+  "name": "shared-supabase-mcp-minimal",
+  "version": "3.0.2",
   "type": "module",
   "bin": {
     "xbrl-mcp-server": "index.js"
