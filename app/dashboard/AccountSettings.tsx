@@ -7,9 +7,16 @@ import { getUserApiKeys, createApiKey, deleteApiKey } from '@/app/actions/auth';
 export default function AccountSettings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [email, setEmail] = useState('user@example.com');
-  const [apiKeys, setApiKeys] = useState([]);
+  const [apiKeys, setApiKeys] = useState<Array<{
+    id: string;
+    name: string;
+    key: string;
+    created: string;
+    lastUsed: string;
+    tier: string;
+  }>>([]);
   const [isLoadingKeys, setIsLoadingKeys] = useState(true);
-  const [keyError, setKeyError] = useState(null);
+  const [keyError, setKeyError] = useState<string | null>(null);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -28,9 +35,9 @@ export default function AccountSettings() {
     try {
       const result = await getUserApiKeys();
       if (result.success) {
-        setApiKeys(result.data);
+        setApiKeys(result.data || []);
       } else {
-        setKeyError(result.error);
+        setKeyError(result.error || 'APIキーの読み込みに失敗しました');
       }
     } catch (error) {
       setKeyError('APIキーの読み込みに失敗しました');
