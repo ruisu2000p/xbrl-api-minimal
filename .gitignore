@@ -118,6 +118,9 @@ scripts/generated/
 
 # API keys and secrets (extra protection)
 *secret*
-*key*
-*token*
+**/secrets/**
+**/tokens/**
 api-keys.txt
+# Exclude key files but not type definitions
+*.key
+!types/**/*.ts
