@@ -1,72 +1,59 @@
-# XBRL Financial Data API v5.0 - Commercial Edition
+# FIN - Financial Information next
 
-[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
-[![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fruisu2000p%2Fxbrl-api-minimal)
 [![Version](https://img.shields.io/badge/Version-5.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
-[![License: Commercial](https://img.shields.io/badge/License-Commercial-red)](LICENSE)
-[![MCP Compatible](https://img.shields.io/badge/MCP-v3.0-blue)](https://modelcontextprotocol.io)
+[![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-商用XBRL財務データAPIサービス - 日本の上場企業の有価証券報告書をMarkdown形式で提供
+XBRL財務データ分析プラットフォーム - 有価証券報告書の財務データをAI（Claude）で高度に分析
 
-## 🚀 v5.0.0 - 新アーキテクチャリリース
-
-### 主要アップデート
-- ✅ **Supabase Edge Functions移行** - Vercel APIレイヤーを削除し、直接的な通信を実現
-- ✅ **Row Level Security (RLS)** - データベースレベルでのセキュリティ強化
-- ✅ **パフォーマンス向上** - 不要な中継を排除し、レスポンス時間を短縮
-- ✅ **商用プラン設定** - 2,980円/月からの柔軟な価格設定
-- ✅ **HMAC-SHA256認証** - エンタープライズグレードのセキュリティ
-
-## 🌟 特徴
-
-- **286,742件**の財務文書を収録
-- **1,100社以上**の上場企業データ
-- **4年分のデータ** - 2020年〜2024年の財務情報
-- **Markdown形式**で即座に利用可能
-- **HMAC-SHA256**セキュア認証
-- **レート制限**対応（プラン別）
-- **キャッシュ**による高速レスポンス
-- **99.9% SLA**（Pro以上）
-
-## 💰 料金プラン
-
-| プラン | 月額 | アクセス | 
-|--------|------|--------------|
-| Free Trial | 無料 | 直近１年間 |
-| **Standard** | **¥2,980** | 無制限 | 
-
-
-## 🔧 技術スタック
-
-- **Frontend**: Next.js 14 (Vercel)
-- **Backend**: Supabase Edge Functions (Deno)
-- **Database**: Supabase (PostgreSQL)
-- **Storage**: Supabase Storage
-- **Security**: Row Level Security (RLS), HMAC-SHA256
-- **Monitoring**: Sentry
-- **CDN**: Cloudflare
-
-## 📦 インストール
+## 🚀 Quick Start
 
 ```bash
-# Clone repository
-git clone https://github.com/ruisu2000p/xbrl-api-minimal.git
-cd xbrl-api-minimal
-
-# Install dependencies
+# インストール
 npm install
 
-# Setup environment variables
-cp .env.example .env.local
-# Edit .env.local with your Supabase credentials
-
-# Run development server
+# 開発サーバー起動
 npm run dev
+
+# ビルド
+npm run build
+
+# 本番サーバー起動
+npm start
 ```
 
-## 🔑 環境変数
+## ✨ 主な機能
 
-```env
+- 📊 **財務データ分析** - XBRL形式の有価証券報告書を自動解析
+- 🤖 **AI分析** - Claude APIによる高度な財務分析とインサイト
+- 🔑 **APIキー管理** - セキュアなAPIキー発行・管理システム
+- 💳 **料金プラン** - フリーミアム/スタンダードプランに対応
+- 🎨 **モダンUI** - Next.js 14 + Tailwind CSSによる洗練されたデザイン
+
+### データ規模
+- **286,742件**の財務文書を収録
+- **1,100社以上**の上場企業データ
+- **2020年〜2024年**の財務情報
+
+## 📦 Tech Stack
+
+| カテゴリ | 技術 |
+|---------|------|
+| **Frontend** | Next.js 14, React 18, TypeScript 5.3 |
+| **Styling** | Tailwind CSS 3.4, Remixicon |
+| **Backend** | Supabase (PostgreSQL, Auth, Storage) |
+| **AI Integration** | Claude API (via MCP) |
+| **Deployment** | Vercel |
+| **Security** | RLS, HMAC-SHA256, crypto.randomBytes |
+
+## 🔧 セットアップ
+
+### 1. 環境変数の設定
+
+`.env.local`ファイルを作成：
+
+```bash
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
@@ -80,140 +67,136 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
 ```
 
-## 📚 API ドキュメント
+### 2. Supabaseプロジェクトの作成
 
-### 認証
-
-全てのAPIエンドポイントは認証が必要です：
+1. [Supabase](https://supabase.com)でプロジェクトを作成
+2. SQLエディタで以下を実行：
 
 ```bash
-curl -H "X-API-Key: your-api-key" \
-  https://api.xbrl-data.com/v1/companies
+# データベーススキーマの構築
+sql/master-setup.sql
 ```
 
-### 主要エンドポイント
+3. Storage bucketの作成：
+   - `markdown-files` (Public)
 
-#### 企業検索
+### 3. デプロイ
+
+#### Vercel（推奨）
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fruisu2000p%2Fxbrl-api-minimal)
+
+環境変数を設定後、自動デプロイされます。
+
+#### ローカル開発
+
 ```bash
-GET https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/search-companies?query=トヨタ
+# 依存関係のインストール
+npm install
+
+# 開発サーバー起動
+npm run dev
+
+# http://localhost:3000 でアクセス
 ```
 
-#### データクエリ
-```bash
-POST https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/query-my-data
+## 💰 料金プラン
+
+| プラン | 月額 | データアクセス | サポート |
+|--------|------|--------------|----------|
+| **フリーミアム** | 無料 | 直近1年間 | コミュニティ |
+| **スタンダード** | ¥2,980 | 全期間 | メール |
+
+## 📚 ドキュメント
+
+- [アーキテクチャ設計](./docs/architecture.md)
+- [API仕様書](./docs/api/)
+- [MCP統合ガイド](./docs/mcp/)
+- [デプロイメント手順](./docs/deploy/)
+
+## 🏗️ プロジェクト構造
+
+```
+xbrl-api-minimal/
+├── app/                # Next.js App Router
+│   ├── actions/       # Server Actions
+│   ├── api/           # API Routes
+│   ├── auth/          # 認証ページ
+│   └── dashboard/     # ダッシュボード
+├── components/        # Reactコンポーネント
+├── lib/              # 共通ライブラリ
+│   └── supabase/     # Supabaseクライアント
+├── types/            # TypeScript型定義
+├── public/           # 静的ファイル
+├── docs/             # ドキュメント
+├── sql/              # データベーススキーマ
+├── scripts/          # ユーティリティスクリプト
+├── supabase/         # Supabase設定
+└── config/           # アプリケーション設定
 ```
 
-#### Markdownファイル取得
-```bash
-GET https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/get-storage-md?path=FY2024/...
-
-詳細は [OpenAPI仕様書](public/openapi.yaml) を参照
-
-## 🧪 テスト
+## 🛠️ 開発コマンド
 
 ```bash
-# 全テスト実行
-npm test
+# 開発サーバー
+npm run dev
 
-# 統合テスト
-npm run test:integration
+# ビルド
+npm run build
 
-# セキュリティテスト
-npm run test:security
+# 本番起動
+npm start
 
-# CI用テスト
-npm run test:ci
+# TypeScriptチェック
+npm run type-check
+
+# ESLint
+npm run lint
+
+# フォーマット
+npm run format
+
+# クリーンアップ
+npm run clean
+
+# クリーンインストール
+npm run reinstall
 ```
-
-## 🚀 デプロイ
-
-```bash
-# Staging環境
-npm run deploy:staging
-
-# Production環境
-npm run deploy:production
-```
-
-## 📊 パフォーマンス
-
-- **レスポンス時間**: < 200ms (キャッシュヒット時)
-- **同時接続数**: 最大200
-- **稼働率**: 99.9% SLA (Pro以上)
-- **データ更新**: リアルタイム（Standard以上）
 
 ## 🔒 セキュリティ
 
-- HMAC-SHA256によるAPIキー認証
-- レート制限（プラン別）
-- SQLインジェクション対策
-- XSS対策
-- CORS設定
-- WAF (Web Application Firewall)
+- **SHA-256**によるAPIキーハッシュ化
+- **Row Level Security (RLS)** によるデータ保護
+- **レート制限**実装（100リクエスト/分）
+- **crypto.randomBytes**によるセキュアなキー生成
+- **HMAC署名**による通信検証
 
-## 📈 アーキテクチャ
+## 🤝 コントリビューション
 
-```
-┌─────────────┐            ┌──────────────────────────┐
-│   Client    │◀──────────▶│   Supabase Backend       │
-│  (Next.js)  │            │                          │
-└─────────────┘            │  ┌────────────────────┐ │
-       │                   │  │  Edge Functions    │ │
-       │                   │  │  (Deno Runtime)    │ │
-       ▼                   │  └────────────────────┘ │
-┌─────────────┐            │  ┌────────────────────┐ │
-│Claude MCP   │◀──────────▶│  │  PostgreSQL + RLS  │ │
-│             │            │  └────────────────────┘ │
-└─────────────┘            │  ┌────────────────────┐ │
-                           │  │  Storage           │ │
-                           │  └────────────────────┘ │
-                           └──────────────────────────┘
-```
+プルリクエストを歓迎します。大きな変更の場合は、まずissueを開いて変更内容を議論してください。
 
-## 🤝 Claude Desktop MCP 統合
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-Claude Desktopでの使用：
+## 📝 ライセンス
 
-```json
-{
-  "mcpServers": {
-    "xbrl-financial": {
-      "command": "npx",
-      "args": ["shared-supabase-mcp-minimal@latest"],
-      "env": {
-        "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
-        "XBRL_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
+MIT License - 詳細は[LICENSE](./LICENSE)を参照
 
-**⚠️ 重要**:
-- **必ず環境変数（`env`セクション）を設定してください**
-- `XBRL_API_KEY`には発行された**独自APIキー**を設定します（Supabase Anon Keyではありません）
-- APIキーは[https://xbrl-api-minimal.vercel.app](https://xbrl-api-minimal.vercel.app)から取得してください
-- Free/Basic/Pro/Enterpriseティアによってアクセス可能なデータ範囲が異なります
+## 📧 お問い合わせ
 
-## 📄 ライセンス
+- **GitHub Issues**: [issues](https://github.com/ruisu2000p/xbrl-api-minimal/issues)
+- **Email**: support@fin-next.com
 
-Commercial License - 詳細は[LICENSE](LICENSE)をご確認ください。
+## 🙏 謝辞
 
-## 🔗 リンク
-
-- [API Documentation](https://api.xbrl-data.com/docs)
-- [OpenAPI Specification](https://api.xbrl-data.com/openapi.yaml)
-- [Status Page](https://status.xbrl-data.com)
-- [Support](mailto:support@xbrl-data.com)
-- [NPM Package](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-
-## 🏆 実績
-
-- 286,742件の財務文書
-- 1,100社以上の企業データ
-- 99.9%の稼働率
-- 200ms以下のレスポンス時間
+- [Supabase](https://supabase.com) - Backend as a Service
+- [Vercel](https://vercel.com) - Deployment Platform
+- [Claude](https://claude.ai) - AI Analysis
+- [Next.js](https://nextjs.org) - React Framework
 
 ---
 
-© 2024 XBRL API Minimal. All rights reserved.
+Built with ❤️ by Financial Information next Team
