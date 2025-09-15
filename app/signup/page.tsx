@@ -67,7 +67,9 @@ export default function SignupPage() {
       return;
     }
 
-    console.log('Form submitted:', { ...formData, selectedPlan, billingPeriod });
+    // Form submission logic would go here
+    // For now, just show a success message
+    alert('アカウント作成リクエストを受け付けました');
   };
 
   const getButtonText = () => {
