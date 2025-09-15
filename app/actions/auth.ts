@@ -3,6 +3,8 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import crypto from 'crypto'
+import type { ApiKey, ApiKeyResponse } from '@/types/api-key'
 
 export async function signIn(email: string, password: string) {
   const supabase = await createSupabaseServerClient()
@@ -99,17 +101,13 @@ export async function signUp(userData: {
   if (data?.user) {
     // Create API key for the new user
     try {
-      // Use the same client for API key creation (relying on RLS policies)
       const keyPrefix = 'xbrl'
-      const keyBody = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-      const keySuffix = keyBody.slice(-4)
+      const keyBody = crypto.randomBytes(24).toString('hex')
       const fullKey = `${keyPrefix}_${keyBody}`
 
-      // Hash the API key for secure storage
-      const crypto = require('crypto')
       const hashedKey = crypto.createHash('sha256').update(fullKey).digest('hex')
 
-      await supabase
+      const { error: apiKeyError } = await supabase
         .from('api_keys')
         .insert({
           user_id: data.user.id,
@@ -119,9 +117,23 @@ export async function signUp(userData: {
           tier: userData.plan === 'freemium' ? 'free' : 'basic'
         })
 
+      if (apiKeyError) {
+        throw apiKeyError
+      }
+
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)
-      // Don't fail the signup for this
+      // Rollback user creation on failure
+      try {
+        const admin = await createSupabaseServerAdminClient()
+        await admin.auth.admin.deleteUser(data.user.id)
+      } catch (rollbackError) {
+        console.error('Failed to rollback user creation:', rollbackError)
+      }
+      return {
+        success: false,
+        error: 'APIキーの作成に失敗しました'
+      }
     }
 
     revalidatePath('/dashboard', 'layout')
@@ -156,7 +168,7 @@ export async function getUser() {
   return user
 }
 
-export async function getUserApiKeys() {
+export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -175,22 +187,24 @@ export async function getUserApiKeys() {
     return { success: false, error: error.message }
   }
 
+  const formattedKeys: ApiKey[] = apiKeys?.map(key => ({
+    id: key.id,
+    name: key.name,
+    key: `${key.key_hash.substring(0, 12)}...${key.key_hash.slice(-8)}`,
+    created: new Date(key.created_at).toLocaleDateString('ja-JP'),
+    lastUsed: key.last_used_at
+      ? new Date(key.last_used_at).toLocaleDateString('ja-JP')
+      : '未使用',
+    tier: key.tier as ApiKey['tier']
+  })) || []
+
   return {
     success: true,
-    data: apiKeys?.map(key => ({
-      id: key.id,
-      name: key.name,
-      key: `${key.key_hash.substring(0, 12)}...${key.key_hash.slice(-8)}`,
-      created: new Date(key.created_at).toLocaleDateString('ja-JP'),
-      lastUsed: key.last_used_at
-        ? new Date(key.last_used_at).toLocaleDateString('ja-JP')
-        : '未使用',
-      tier: key.tier
-    })) || []
+    data: formattedKeys
   }
 }
 
-export async function createApiKey(name: string) {
+export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   const supabase = await createSupabaseServerClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -201,11 +215,10 @@ export async function createApiKey(name: string) {
   try {
     // Generate API key
     const keyPrefix = 'xbrl'
-    const keyBody = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    const keyBody = crypto.randomBytes(24).toString('hex')
     const fullKey = `${keyPrefix}_${keyBody}`
 
     // Hash the API key for secure storage
-    const crypto = require('crypto')
     const hashedKey = crypto.createHash('sha256').update(fullKey).digest('hex')
 
     const { data, error } = await supabase
@@ -225,16 +238,18 @@ export async function createApiKey(name: string) {
     }
 
     // Return the plain text key only once for the user to save
+    const newKey: ApiKey = {
+      id: data.id,
+      name: data.name,
+      key: fullKey, // Return the actual key only this once
+      created: new Date(data.created_at).toLocaleDateString('ja-JP'),
+      lastUsed: '未使用',
+      tier: data.tier as ApiKey['tier']
+    }
+
     return {
       success: true,
-      data: {
-        id: data.id,
-        name: data.name,
-        key: fullKey, // Return the actual key only this once
-        created: new Date(data.created_at).toLocaleDateString('ja-JP'),
-        lastUsed: '未使用',
-        tier: data.tier
-      }
+      data: newKey
     }
   } catch (error) {
     return { success: false, error: 'Failed to create API key' }

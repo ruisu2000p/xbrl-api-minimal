@@ -3,18 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserApiKeys, createApiKey, deleteApiKey } from '@/app/actions/auth';
+import type { ApiKey } from '@/types/api-key';
 
 export default function AccountSettings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [email, setEmail] = useState('user@example.com');
-  const [apiKeys, setApiKeys] = useState<Array<{
-    id: string;
-    name: string;
-    key: string;
-    created: string;
-    lastUsed: string;
-    tier: string;
-  }>>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoadingKeys, setIsLoadingKeys] = useState(true);
   const [keyError, setKeyError] = useState<string | null>(null);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
@@ -34,8 +28,8 @@ export default function AccountSettings() {
     setKeyError(null);
     try {
       const result = await getUserApiKeys();
-      if (result.success) {
-        setApiKeys(result.data || []);
+      if (result.success && Array.isArray(result.data)) {
+        setApiKeys(result.data);
       } else {
         setKeyError(result.error || 'APIキーの読み込みに失敗しました');
       }
@@ -57,7 +51,7 @@ export default function AccountSettings() {
 
     try {
       const result = await createApiKey(newKeyName);
-      if (result.success && result.data) {
+      if (result.success && result.data && !Array.isArray(result.data)) {
         setApiKeys([...apiKeys, result.data]);
         setNewKeyName('');
         setShowNewKeyModal(false);
