@@ -19,7 +19,7 @@ export default function PricingSection() {
         '過去データは1年間のみ'
       ],
       buttonText: '無料で始める',
-      buttonStyle: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+      buttonStyle: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700',
       popular: false,
       icon: 'ri-seedling-line',
       gradient: 'from-gray-400 to-gray-500'
@@ -181,9 +181,11 @@ export default function PricingSection() {
               )}
 
               {/* CTA Button */}
-              <button className={`w-full py-4 rounded-xl font-semibold transition-all duration-300 cursor-pointer whitespace-nowrap shadow-lg hover:shadow-xl transform hover:-translate-y-1 ${plan.buttonStyle}`}>
-                {plan.buttonText}
-              </button>
+              <Link href="/signup">
+                <button className={`w-full py-4 rounded-xl font-semibold transition-all duration-300 cursor-pointer whitespace-nowrap shadow-lg hover:shadow-xl transform hover:-translate-y-1 ${plan.buttonStyle}`}>
+                  {plan.buttonText}
+                </button>
+              </Link>
 
               {/* Additional info */}
               <div className="text-center mt-6 text-sm text-gray-500">
