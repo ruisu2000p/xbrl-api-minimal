@@ -57,7 +57,7 @@ export default function AccountSettings() {
 
     try {
       const result = await createApiKey(newKeyName);
-      if (result.success) {
+      if (result.success && result.data) {
         setApiKeys([...apiKeys, result.data]);
         setNewKeyName('');
         setShowNewKeyModal(false);
