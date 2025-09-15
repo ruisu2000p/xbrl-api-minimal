@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="pt-8">
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
             <div className="text-sm text-gray-400">
-              © 2025 Financial Information next (FIN). All rights reserved.
+              © {new Date().getFullYear()} Financial Information next (FIN). All rights reserved.
             </div>
             <div className="flex items-center space-x-4">
               <a

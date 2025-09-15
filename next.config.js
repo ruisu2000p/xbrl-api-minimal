@@ -10,6 +10,18 @@ const nextConfig = {
     return `build-${Date.now()}`
   },
 
+  // 画像最適化設定
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'readdy.ai',
+        port: '',
+        pathname: '/api/search-image**',
+      },
+    ],
+  },
+
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
