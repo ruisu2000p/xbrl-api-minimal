@@ -2,7 +2,12 @@
 module.exports = {
   content: ["./{app,components,libs,pages,hooks}/**/*.{html,js,ts,jsx,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        pacifico: ['var(--font-pacifico)'],
+        inter: ['var(--font-inter)'],
+      },
+    },
   },
   plugins: [],
 }

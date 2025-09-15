@@ -12,7 +12,7 @@ export default function Header() {
               <i className="ri-bank-line text-white text-lg"></i>
             </div>
             <div>
-              <div className="font-['Pacifico'] text-xl text-gray-900">Financial Information next</div>
+              <div className="font-pacifico text-xl text-gray-900">Financial Information next</div>
               <div className="text-xs text-gray-500 font-medium">FIN</div>
             </div>
           </Link>
