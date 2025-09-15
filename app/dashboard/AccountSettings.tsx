@@ -388,20 +388,19 @@ export default function AccountSettings() {
                   </div>
                 </div>
               ))}
-                </div>
 
                 {apiKeys.length === 0 && (
-              <div className="text-center py-12">
-                <i className="ri-key-line text-gray-300 text-6xl mb-4"></i>
-                <h4 className="text-lg font-medium text-gray-500 mb-2">APIキーがありません</h4>
-                <p className="text-gray-400 mb-6">最初のAPIキーを作成して、財務データAPIの利用を開始しましょう。</p>
-                <button
-                  onClick={() => setShowNewKeyModal(true)}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  APIキーを作成
-                </button>
-              </div>
+                  <div className="text-center py-12">
+                    <i className="ri-key-line text-gray-300 text-6xl mb-4"></i>
+                    <h4 className="text-lg font-medium text-gray-500 mb-2">APIキーがありません</h4>
+                    <p className="text-gray-400 mb-6">最初のAPIキーを作成して、財務データAPIの利用を開始しましょう。</p>
+                    <button
+                      onClick={() => setShowNewKeyModal(true)}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      APIキーを作成
+                    </button>
+                  </div>
                 )}
               </div>
             )}
