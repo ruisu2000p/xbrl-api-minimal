@@ -1,35 +1,19 @@
-import { redirect } from 'next/navigation'
-import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
-import DashboardClient from './DashboardClient'
 
-export default async function DashboardPage() {
-  const supabase = await createSupabaseServerClient()
+import AccountSettings from './AccountSettings';
 
-  // 認証チェック
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/auth/login')
-  }
-
-  // APIキー情報を取得
-  const supabaseAdmin = await createSupabaseServerAdminClient()
-  const { data: apiKeys } = await supabaseAdmin
-    .from('api_keys')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-
+export default function DashboardPage() {
   return (
-    <DashboardClient
-      user={{
-        id: user.id,
-        email: user.email!,
-        name: user.user_metadata?.name,
-        company: user.user_metadata?.company,
-      }}
-      apiKeys={apiKeys || []}
-    />
-  )
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
+          <p className="text-gray-600 mt-2">アカウント設定と管理機能</p>
+        </div>
+
+        <div className="max-w-4xl mx-auto">
+          <AccountSettings />
+        </div>
+      </div>
+    </div>
+  );
 }
