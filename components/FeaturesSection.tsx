@@ -81,13 +81,10 @@ export default function FeaturesSection() {
                 </p>
 
                 {/* Premium indicator */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                     <span className="text-xs text-gray-500 font-medium">Premium Feature</span>
-                  </div>
-                  <div className={`text-transparent bg-gradient-to-r ${feature.gradient} bg-clip-text font-semibold text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
-                    詳細を見る →
                   </div>
                 </div>
               </div>
