@@ -1,8 +1,8 @@
-# XBRL Financial Data API v4.0 - Commercial Edition
+# XBRL Financial Data API v5.0 - Commercial Edition
 
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://xbrl-api-minimal.vercel.app)
 [![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
-[![Version](https://img.shields.io/badge/Version-4.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
+[![Version](https://img.shields.io/badge/Version-5.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 [![License: Commercial](https://img.shields.io/badge/License-Commercial-red)](LICENSE)
 [![MCP Compatible](https://img.shields.io/badge/MCP-v3.0-blue)](https://modelcontextprotocol.io)
 
@@ -30,12 +30,11 @@
 
 ## 💰 料金プラン
 
-| プラン | 月額 | APIコール/月 | 企業数 | サポート |
-|--------|------|--------------|--------|----------|
-| Free Trial | 無料 | 10,000 | 10社 | コミュニティ |
-| **Standard** | **¥2,980** | **100,000** | **1,000社** | **メール(24h)** |
-| Pro | ¥9,800 | 500,000 | 無制限 | 優先(4h) |
-| Enterprise | ¥50,000～ | 2,000,000 | 無制限 | 専用(1h) |
+| プラン | 月額 | アクセス | 
+|--------|------|--------------|
+| Free Trial | 無料 | 直近１年間 |
+| **Standard** | **¥2,980** | 無制限 | 
+
 
 ## 🔧 技術スタック
 
@@ -180,11 +179,21 @@ Claude Desktopでの使用：
   "mcpServers": {
     "xbrl-financial": {
       "command": "npx",
-      "args": ["shared-supabase-mcp-minimal"]
+      "args": ["shared-supabase-mcp-minimal@latest"],
+      "env": {
+        "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
+        "XBRL_API_KEY": "your-api-key-here"
+      }
     }
   }
 }
 ```
+
+**⚠️ 重要**:
+- **必ず環境変数（`env`セクション）を設定してください**
+- `XBRL_API_KEY`には発行された**独自APIキー**を設定します（Supabase Anon Keyではありません）
+- APIキーは[https://xbrl-api-minimal.vercel.app](https://xbrl-api-minimal.vercel.app)から取得してください
+- Free/Basic/Pro/Enterpriseティアによってアクセス可能なデータ範囲が異なります
 
 ## 📄 ライセンス
 
