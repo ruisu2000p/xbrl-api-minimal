@@ -1,33 +1,33 @@
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// import { NextRequest } from 'next/server'; // Not needed, using standard Request
+import { healthCheckService } from '@/lib/infrastructure/health-check';
+import { asyncHandler } from '@/lib/infrastructure/error-handler';
+import { successResponse, errorResponse } from '@/lib/utils/api-response';
 
-import { NextRequest, NextResponse } from 'next/server';
+/**
+ * GET /api/health - Health check endpoint
+ */
+export const GET = asyncHandler(async (request: Request) => {
+  // No authentication required for health check
+  const health = await healthCheckService.checkHealth();
 
-export async function GET(request: NextRequest) {
-  // 環境変数の存在確認（値は表示しない）
-  const envStatus = {
-    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-  };
+  if (health.status === 'unhealthy') {
+    return errorResponse('System unhealthy', {
+      status: 503,
+      details: health,
+    });
+  }
 
-  // 各ページの存在確認
-  const pages = {
-    '/auth/login': 'ログインページ',
-    '/auth/register': '登録ページ',
-    '/dashboard': 'ダッシュボード',
-    '/test-auth': 'テストページ'
-  };
+  return successResponse(health, {
+    status: health.status === 'degraded' ? 200 : 200,
+  });
+});
 
-  return NextResponse.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'xbrl-api-minimal',
-    environment: process.env.NODE_ENV || 'production',
-    env_configured: envStatus,
-    pages_available: pages,
-    api_version: 'v1',
-    message: 'XBRL API is running'
+/**
+ * GET /api/health/ready - Readiness probe (for k8s)
+ */
+export async function HEAD(request: Request) {
+  const isReady = await healthCheckService.isReady();
+  return new Response(null, {
+    status: isReady ? 200 : 503,
   });
 }

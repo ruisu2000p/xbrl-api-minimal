@@ -100,7 +100,7 @@ export default function SupportPage() {
     general: [
       {
         question: 'このサービスは何ができますか？',
-        answer: '日本企業の財務データを簡単に取得できるAPIサービスです。売上、利益、ROEなどの財務指標を時系列で分析できます。'
+        answer: '日本企業の有価証券報告書をMarkdown形式で簡単に取得できるAPIサービスです。4,000社以上、5年分のデータにアクセスできます。'
       },
       {
         question: 'どのような方に利用されていますか？',
@@ -112,7 +112,7 @@ export default function SupportPage() {
       },
       {
         question: 'APIの使用例やサンプルコードはありますか？',
-        answer: 'サンプルコードページで、財務分析、時系列分析などの実装例を6つの言語で提供しています。'
+        answer: 'サンプルコードページで、有価証券報告書データの取得や検索の実装例を提供しています。'
       }
     ]
   };

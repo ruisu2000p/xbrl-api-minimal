@@ -4,8 +4,8 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'XBRL財務データAPI - 20年分の有価証券報告書',
-  description: '日本の上場企業4,000社以上、20年分の財務データにアクセス',
+  title: 'XBRL財務データAPI - 5年分の有価証券報告書',
+  description: '日本の上場企業4,000社以上、5年分の財務データにアクセス',
 }
 
 export default function RootLayout({

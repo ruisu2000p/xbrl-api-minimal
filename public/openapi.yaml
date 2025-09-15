@@ -1,0 +1,576 @@
+openapi: 3.1.0
+info:
+  title: XBRL Financial Data API
+  description: |
+    商用XBRL財務データAPIサービス
+    日本の上場企業の有価証券報告書をMarkdown形式で提供
+  version: 4.0.0
+  contact:
+    email: support@xbrl-api.com
+  license:
+    name: Commercial License
+    url: https://xbrl-api.com/license
+
+servers:
+  - url: https://api.xbrl-data.com/v1
+    description: Production server
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  /companies:
+    get:
+      summary: 企業一覧を検索
+      operationId: searchCompanies
+      tags:
+        - Companies
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: ページ番号
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 1ページあたりの件数
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: 企業名または証券コードで検索
+        - name: sector
+          in: query
+          schema:
+            type: string
+          description: 業種でフィルタ
+        - name: fiscal_year
+          in: query
+          schema:
+            type: string
+          description: 会計年度でフィルタ
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Company'
+                  metadata:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /companies/{id}:
+    get:
+      summary: 企業詳細情報を取得
+      operationId: getCompanyById
+      tags:
+        - Companies
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 企業ID
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/CompanyDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /companies/{id}/documents:
+    get:
+      summary: 企業の文書一覧を取得
+      operationId: getCompanyDocuments
+      tags:
+        - Documents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 企業ID
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [PublicDoc, AuditDoc]
+          description: 文書タイプ
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+
+  /companies/{id}/documents/{fileName}:
+    get:
+      summary: 文書内容を取得
+      operationId: getDocumentContent
+      tags:
+        - Documents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 企業ID
+        - name: fileName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ファイル名
+      responses:
+        '200':
+          description: 成功
+          content:
+            text/markdown:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      content:
+                        type: string
+                      metadata:
+                        $ref: '#/components/schemas/DocumentMetadata'
+
+  /auth/register:
+    post:
+      summary: ユーザー登録
+      operationId: registerUser
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+                company:
+                  type: string
+                plan:
+                  type: string
+                  enum: [free, standard, pro, enterprise]
+                  default: free
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  /auth/login:
+    post:
+      summary: ログイン
+      operationId: login
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      session:
+                        type: object
+                        properties:
+                          access_token:
+                            type: string
+                          refresh_token:
+                            type: string
+                          expires_at:
+                            type: string
+                            format: date-time
+
+  /auth/api-keys:
+    get:
+      summary: APIキー一覧を取得
+      operationId: listApiKeys
+      tags:
+        - API Keys
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiKey'
+
+    post:
+      summary: APIキーを作成
+      operationId: createApiKey
+      tags:
+        - API Keys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                expires_in_days:
+                  type: integer
+                  minimum: 1
+                  maximum: 365
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      api_key:
+                        type: string
+                        description: 実際のAPIキー（この時だけ表示）
+                      key_data:
+                        $ref: '#/components/schemas/ApiKey'
+
+  /health:
+    get:
+      summary: ヘルスチェック
+      operationId: healthCheck
+      tags:
+        - System
+      security: []
+      responses:
+        '200':
+          description: システム正常
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: システム異常
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    Company:
+      type: object
+      properties:
+        id:
+          type: string
+        company_name:
+          type: string
+        ticker_code:
+          type: string
+        sector:
+          type: string
+        fiscal_year:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CompanyDetail:
+      allOf:
+        - $ref: '#/components/schemas/Company'
+        - type: object
+          properties:
+            storage_path:
+              type: string
+            document_type:
+              type: string
+            file_count:
+              type: integer
+            has_tables:
+              type: boolean
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        file_name:
+          type: string
+        document_type:
+          type: string
+          enum: [PublicDoc, AuditDoc]
+        size:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        has_tables:
+          type: boolean
+
+    DocumentMetadata:
+      type: object
+      properties:
+        company_id:
+          type: string
+        company_name:
+          type: string
+        fiscal_year:
+          type: string
+        document_type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        company:
+          type: string
+        plan:
+          type: string
+          enum: [free, standard, pro, enterprise]
+        created_at:
+          type: string
+          format: date-time
+
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+        usage_count:
+          type: integer
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        checks:
+          type: object
+          properties:
+            database:
+              $ref: '#/components/schemas/CheckResult'
+            storage:
+              $ref: '#/components/schemas/CheckResult'
+            auth:
+              $ref: '#/components/schemas/CheckResult'
+        metrics:
+          type: object
+          properties:
+            uptime:
+              type: integer
+            responseTime:
+              type: number
+
+    CheckResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pass, fail, warn]
+        message:
+          type: string
+        responseTime:
+          type: number
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+            timestamp:
+              type: string
+              format: date-time
+
+  responses:
+    Unauthorized:
+      description: 認証エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: リソースが見つからない
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    RateLimitExceeded:
+      description: レート制限超過
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: string
+            format: date-time
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

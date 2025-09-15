@@ -66,6 +66,9 @@ export default function Home() {
               </div>
             </div>
             <nav className="flex items-center gap-6">
+              <a href="/pricing" className="text-gray-300 hover:text-white transition-colors">
+                料金プラン
+              </a>
               <a href="/auth/login" className="text-gray-300 hover:text-white transition-colors">
                 ログイン
               </a>
@@ -133,7 +136,7 @@ export default function Home() {
               <div className="text-sm text-gray-400">対応範囲</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">20年分</div>
+              <div className="text-3xl font-bold text-white">5年分</div>
               <div className="text-sm text-gray-400">財務データ</div>
             </div>
             <div className="text-center">

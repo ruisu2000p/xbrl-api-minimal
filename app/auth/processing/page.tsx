@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
-export default function ProcessingPage() {
+function ProcessingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [message, setMessage] = useState('登録処理中です...')
@@ -106,5 +106,22 @@ export default function ProcessingPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ProcessingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+          <div className="mb-8">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">読み込み中...</h2>
+        </div>
+      </div>
+    }>
+      <ProcessingContent />
+    </Suspense>
   )
 }
