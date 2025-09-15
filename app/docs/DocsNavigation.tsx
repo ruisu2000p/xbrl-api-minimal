@@ -99,9 +99,9 @@ export default function DocsNavigation() {
         <p className="text-sm text-blue-700 mb-3">
           ご不明な点がございましたら、お気軽にお問い合わせください。
         </p>
-        <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap">
+        <a href="mailto:support@xbrl-api.com?subject=APIドキュメントについてのお問い合わせ" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap text-center block">
           サポートに連絡
-        </button>
+        </a>
       </div>
     </div>
   );
