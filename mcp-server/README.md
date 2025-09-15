@@ -1,11 +1,19 @@
-# shared-supabase-mcp-minimal v3.0.2 🚀
+# shared-supabase-mcp-minimal v3.1.0 🚀
 
 **XBRL Financial Data MCP Server - 286,742 documents from 1,100+ Japanese companies**
 
 [![npm version](https://badge.fury.io/js/shared-supabase-mcp-minimal.svg)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 [![Security Status](https://img.shields.io/badge/Security-Enhanced-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 
-## ⚠️ 重要な変更 - v3.0.1
+## ⚠️ 重要な変更 - v3.1.0
+
+### v3.1.0の改善点
+- ✅ **markdown_files_metadataを直接検索** - より高速で正確な検索
+- ✅ **柔軟な企業名検索** - 「株式会社」の位置を問わない検索
+- ✅ **デバッグログ追加** - 検索プロセスの可視化
+- ✅ **フォールバック検索** - companiesテーブルも自動で検索
+
+### v3.0.1の変更点
 
 **独自APIキーシステムを使用** - Supabase Anon Keyではなく、専用のXBRL APIキーを使用します
 
