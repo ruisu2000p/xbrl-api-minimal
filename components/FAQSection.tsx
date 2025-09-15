@@ -72,14 +72,6 @@ export default function FAQSection() {
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <p className="text-gray-600 mb-4">
-            他にご質問がございますか？
-          </p>
-          <a href="mailto:support@xbrl-api.com?subject=XBRL財務データAPIについてのお問い合わせ" className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer">
-            お問い合わせはこちら →
-          </a>
-        </div>
       </div>
     </section>
   );
