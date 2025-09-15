@@ -1,6 +1,45 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as crypto from "https://deno.land/std@0.177.0/crypto/mod.ts";
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error("Supabase service role environment variables are not set");
+}
+
+export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false }
+});
+
+const textEncoder = new TextEncoder();
+
+function decodeSecret(raw: string): Uint8Array {
+  try {
+    const binary = atob(raw);
+    return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  } catch {
+    return textEncoder.encode(raw);
+  }
+}
+
+const rawSecret =
+  Deno.env.get("KEY_DERIVE_SECRET") ??
+  Deno.env.get("KEY_PEPPER") ??
+  Deno.env.get("API_KEY_SECRET");
+
+if (!rawSecret) {
+  throw new Error("KEY_DERIVE_SECRET (or KEY_PEPPER/API_KEY_SECRET) environment variable must be set");
+}
+
+const hmacKeyPromise = crypto.subtle.importKey(
+  "raw",
+  decodeSecret(rawSecret),
+  { name: "HMAC", hash: "SHA-256" },
+  false,
+  ["sign"]
+);
+
 // CORS headers helper
 export function corsHeaders(origin = "*") {
   return {
@@ -22,48 +61,23 @@ export function preflight(req: Request) {
 export function genKey(prefix: string, size = 32): string {
   const bytes = new Uint8Array(size);
   crypto.getRandomValues(bytes);
-  const randomStr = [...bytes]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return `${prefix}_${randomStr}`;
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const chars = Array.from(bytes).map((b) => alphabet[b % alphabet.length]).join("");
+  return `${prefix}_${chars}`;
 }
 
 // Hash API key with HMAC-SHA256
 export async function hashKey(plain: string): Promise<string> {
-  const KEY_PEPPER = Deno.env.get("KEY_PEPPER");
-  const PEPPER_IS_BASE64 = true; // KEY_PEPPER is base64 encoded
-  
-  if (!KEY_PEPPER) {
-    throw new Error("KEY_PEPPER environment variable not set");
-  }
-  
   try {
-    const encoder = new TextEncoder();
-    
-    // Decode pepper from base64 if needed
-    const pepperData = PEPPER_IS_BASE64 
-      ? Uint8Array.from(atob(KEY_PEPPER), c => c.charCodeAt(0))
-      : encoder.encode(KEY_PEPPER);
-    
-    // Import pepper as HMAC key
-    const key = await crypto.subtle.importKey(
-      "raw",
-      pepperData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    
-    // Create HMAC
+    const key = await hmacKeyPromise;
     const signature = await crypto.subtle.sign(
       "HMAC",
       key,
-      encoder.encode(plain)
+      textEncoder.encode(plain)
     );
-    
-    // Convert to hex string
+
     return Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, "0"))
+      .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
   } catch (error) {
     console.error("HMAC generation error:", error);
@@ -74,7 +88,8 @@ export async function hashKey(plain: string): Promise<string> {
 // Mask API key for display
 export function maskKey(key: string): string {
   if (!key || key.length < 12) return key;
-  const prefix = key.substring(0, 8);
+  const parts = key.split("_");
+  const prefix = parts.length > 1 ? parts.slice(0, 2).join("_") : key.substring(0, 8);
   const suffix = key.substring(key.length - 4);
   return `${prefix}...${suffix}`;
 }
@@ -86,79 +101,110 @@ export async function authenticateApiKey(headers: Headers) {
     return { ok: false, status: 401, body: { error: "x-api-key required" } } as const;
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  const hashed = await hashKey(key);
 
-  // Extract prefix from API key
-  const prefix = key.split("_")[0] + "_" + key.split("_")[1];
-  const h = await hashKey(key);
-  
-  // Get key from database with rate limits
-  const { data, error } = await supabase
+  const { data: keyRecord, error } = await supabaseAdmin
     .from("api_keys")
     .select("id, user_id, is_active, rate_limit_per_minute, rate_limit_per_hour, rate_limit_per_day, expires_at")
-    .eq("key_prefix", prefix)
-    .eq("key_hash", h)
-    .limit(1);
+    .eq("key_hash", hashed)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
 
-  const rec = data?.[0];
-  if (error || !rec || !rec.is_active) {
+  if (error || !keyRecord) {
     return { ok: false, status: 403, body: { error: "Invalid API key" } } as const;
   }
 
   // Check expiration
-  if (rec.expires_at && new Date(rec.expires_at) < new Date()) {
+  if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) {
     return { ok: false, status: 403, body: { error: "API key expired" } } as const;
   }
 
+  const { data: subscription } = await supabaseAdmin
+    .from("subscriptions")
+    .select("plan_type, status, expires_at")
+    .eq("user_id", keyRecord.user_id)
+    .eq("status", "active")
+    .order("expires_at", { ascending: false, nullsLast: false })
+    .limit(1)
+    .maybeSingle();
+
+  const subscriptionActive = subscription && (!subscription.expires_at || new Date(subscription.expires_at) > new Date());
+  const plan = subscriptionActive ? subscription.plan_type : "free";
+
+  const rateLimits = {
+    perMin: keyRecord.rate_limit_per_minute ?? 0,
+    perHour: keyRecord.rate_limit_per_hour ?? 0,
+    perDay: keyRecord.rate_limit_per_day ?? 0,
+  };
+
   // Return success with rate limits
-  return { 
+  return {
     ok: true,
-    keyId: rec.id,
-    userId: rec.user_id,
-    plan: "free", // Can be enhanced with plan detection
-    rateLimits: {
-      perMin: rec.rate_limit_per_minute,
-      perHour: rec.rate_limit_per_hour,
-      perDay: rec.rate_limit_per_day,
-    }
+    keyId: keyRecord.id,
+    userId: keyRecord.user_id,
+    plan,
+    rateLimits
   } as const;
 }
 
 // Check rate limit (enhanced with atomic RPC)
 export async function checkRateLimit(keyId: string, limits: { perMin: number; perHour: number; perDay: number }) {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  const { data, error } = await supabaseAdmin.rpc("increment_usage_counters", { p_api_key_id: keyId });
 
-  // Call the atomic increment and get function
-  const { data, error } = await supabase.rpc("incr_usage_and_get", { p_key_id: keyId });
-  
   if (error) {
     console.error("Usage update error:", error);
     return { ok: false, status: 500, body: { error: "usage update failed" } } as const;
   }
 
-  const row = data?.[0] as { minute_count: number; hour_count: number; day_count: number; } | undefined;
-  if (!row) {
-    return { ok: false, status: 500, body: { error: "usage not found" } } as const;
-  }
+  const row = (data?.[0] ?? {}) as { minute_count?: number; hour_count?: number; day_count?: number };
+  const minuteCount = row.minute_count ?? 0;
+  const hourCount = row.hour_count ?? 0;
+  const dayCount = row.day_count ?? 0;
 
-  // Check against limits
-  if (limits.perMin && row.minute_count > limits.perMin) {
+  if (limits.perMin && minuteCount > limits.perMin) {
     return { ok: false, status: 429, body: { error: "Too Many Requests (per-minute)" } } as const;
   }
-  
-  if (limits.perHour && row.hour_count > limits.perHour) {
+
+  if (limits.perHour && hourCount > limits.perHour) {
     return { ok: false, status: 429, body: { error: "Too Many Requests (per-hour)" } } as const;
   }
-  
-  if (limits.perDay && row.day_count > limits.perDay) {
+
+  if (limits.perDay && dayCount > limits.perDay) {
     return { ok: false, status: 429, body: { error: "Daily quota exceeded" } } as const;
   }
 
-  return { ok: true } as const;
+  return { ok: true, counters: { minute: minuteCount, hour: hourCount, day: dayCount } } as const;
+}
+
+export async function recordUsage(params: {
+  keyId: string;
+  userId: string;
+  endpoint: string;
+  status: number;
+  latencyMs: number;
+  cost?: number | null;
+}) {
+  try {
+    const now = new Date().toISOString();
+    await Promise.all([
+      supabaseAdmin
+        .from("api_usage")
+        .insert({
+          api_key_id: params.keyId,
+          user_id: params.userId,
+          endpoint: params.endpoint,
+          status: params.status,
+          latency_ms: params.latencyMs,
+          cost: params.cost ?? null,
+          used_at: now
+        }),
+      supabaseAdmin
+        .from("api_keys")
+        .update({ last_used_at: now })
+        .eq("id", params.keyId)
+    ]);
+  } catch (error) {
+    console.error("Failed to record API usage", error);
+  }
 }

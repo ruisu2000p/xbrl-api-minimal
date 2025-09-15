@@ -1,6 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { corsHeaders } from '../_shared/cors.ts'
+import {
+  authenticateApiKey,
+  checkRateLimit,
+  preflight,
+  supabaseAdmin,
+  recordUsage
+} from '../_shared/utils.ts'
 
 interface SearchRequest {
   query: string
@@ -8,47 +14,26 @@ interface SearchRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const started = performance.now()
+
+  const pf = preflight(req)
+  if (pf) return pf
 
   try {
-    // Verify API key
-    const apiKey = req.headers.get('x-api-key')
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: 'API key required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const auth = await authenticateApiKey(req.headers)
+    if (!auth.ok) {
+      return new Response(JSON.stringify(auth.body), {
+        status: auth.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Verify API key and get user
-    const { data: keyData, error: keyError } = await supabase
-      .from('api_keys')
-      .select('id, user_id, tier, usage_count, usage_limit')
-      .eq('key_hash', await hashApiKey(apiKey))
-      .eq('is_active', true)
-      .single()
-
-    if (keyError || !keyData) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid API key' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Check usage limit
-    if (keyData.usage_limit && keyData.usage_count >= keyData.usage_limit) {
-      return new Response(
-        JSON.stringify({ error: 'Usage limit exceeded' }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const rateCheck = await checkRateLimit(auth.keyId, auth.rateLimits)
+    if (!rateCheck.ok) {
+      return new Response(JSON.stringify(rateCheck.body), {
+        status: rateCheck.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     // Parse request body
@@ -63,7 +48,7 @@ serve(async (req) => {
     }
 
     // Search companies
-    const { data: companies, error: searchError } = await supabase
+    const { data: companies, error: searchError } = await supabaseAdmin
       .from('companies')
       .select('*')
       .or(`company_name.ilike.%${query}%,ticker_code.ilike.%${query}%`)
@@ -73,26 +58,44 @@ serve(async (req) => {
       throw searchError
     }
 
-    // Update usage count
-    await supabase
-      .from('api_keys')
-      .update({
-        usage_count: keyData.usage_count + 1,
-        last_used_at: new Date().toISOString()
-      })
-      .eq('id', keyData.id)
+    const headers: Record<string, string> = {
+      ...corsHeaders,
+      'Content-Type': 'application/json'
+    }
 
-    // Return results
+    if (rateCheck.counters) {
+      const { counters } = rateCheck
+      if (auth.rateLimits.perMin) {
+        headers['X-RateLimit-Limit-Minute'] = String(auth.rateLimits.perMin)
+        headers['X-RateLimit-Remaining-Minute'] = String(Math.max(auth.rateLimits.perMin - counters.minute, 0))
+      }
+      if (auth.rateLimits.perHour) {
+        headers['X-RateLimit-Limit-Hour'] = String(auth.rateLimits.perHour)
+        headers['X-RateLimit-Remaining-Hour'] = String(Math.max(auth.rateLimits.perHour - counters.hour, 0))
+      }
+      if (auth.rateLimits.perDay) {
+        headers['X-RateLimit-Limit-Day'] = String(auth.rateLimits.perDay)
+        headers['X-RateLimit-Remaining-Day'] = String(Math.max(auth.rateLimits.perDay - counters.day, 0))
+      }
+      headers['X-Plan'] = auth.plan
+    }
+
+    const latency = Math.round(performance.now() - started)
+    recordUsage({
+      keyId: auth.keyId,
+      userId: auth.userId,
+      endpoint: 'search-companies',
+      status: 200,
+      latencyMs: latency
+    })
+
     return new Response(
       JSON.stringify({
         data: companies || [],
         count: companies?.length || 0,
-        usage: {
-          current: keyData.usage_count + 1,
-          limit: keyData.usage_limit
-        }
+        plan: auth.plan
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers }
     )
 
   } catch (error) {
@@ -103,12 +106,3 @@ serve(async (req) => {
     )
   }
 })
-
-// Hash API key using SHA-256
-async function hashApiKey(apiKey: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(apiKey)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}

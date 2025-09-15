@@ -3,23 +3,14 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
-
-// APIキーの生成
-function generateApiKey(): string {
-  const prefix = 'xbrl_live_';
-  const randomPart = crypto.randomBytes(24).toString('base64')
-    .replace(/\+/g, '0')
-    .replace(/\//g, '1')
-    .replace(/=/g, '');
-  return prefix + randomPart;
-}
-
-// APIキーのハッシュ化
-function hashApiKey(apiKey: string): string {
-  return crypto.createHash('sha256').update(apiKey).digest('base64');
-}
+import {
+  generateApiKey,
+  hashApiKey,
+  extractApiKeyPrefix,
+  extractApiKeySuffix,
+  maskApiKey
+} from '@/lib/security/apiKey';
 
 /**
  * POST /api/auth/issue-api-key
@@ -80,10 +71,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 新しいAPIキーを生成
-    const apiKey = generateApiKey();
+    const apiKey = generateApiKey('xbrl_live');
     const keyHash = hashApiKey(apiKey);
-    const keyPrefix = apiKey.substring(0, 16);
-    const keySuffix = apiKey.slice(-4);
+    const keyPrefix = extractApiKeyPrefix(apiKey);
+    const keySuffix = extractApiKeySuffix(apiKey);
 
     // ユーザーのプランを取得
     const userPlan = user.user_metadata?.plan || 'free';
@@ -146,7 +137,7 @@ export async function POST(request: NextRequest) {
       message: 'APIキーが正常に発行されました',
       apiKey: {
         key: apiKey, // この値は一度だけ表示される
-        displayKey: `${keyPrefix}...${keySuffix}`,
+        displayKey: maskApiKey(apiKey),
         id: savedKey.id,
         name: savedKey.name,
         createdAt: savedKey.created_at,

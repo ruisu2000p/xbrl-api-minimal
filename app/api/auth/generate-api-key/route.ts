@@ -4,8 +4,14 @@ export const revalidate = 0;
 
 // APIキー生成専用エンドポイント
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import {
+  generateApiKey,
+  hashApiKey,
+  extractApiKeyPrefix,
+  extractApiKeySuffix,
+  maskApiKey
+} from '@/lib/security/apiKey';
 
 // Supabase環境変数を関数内で取得
 function getSupabaseAdmin() {
@@ -21,21 +27,6 @@ function getSupabaseAdmin() {
     supabaseServiceKey,
     { auth: { persistSession: false } }
   );
-}
-
-// APIキーの生成
-function generateApiKey(): string {
-  const prefix = 'xbrl_live_';
-  const randomPart = crypto.randomBytes(24).toString('base64')
-    .replace(/\+/g, '0')
-    .replace(/\//g, '1')
-    .replace(/=/g, '');
-  return prefix + randomPart;
-}
-
-// APIキーのハッシュ化
-function hashApiKey(apiKey: string): string {
-  return crypto.createHash('sha256').update(apiKey).digest('base64');
 }
 
 export async function POST(request: NextRequest) {
@@ -83,10 +74,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 新しいAPIキーを生成
-    const apiKey = generateApiKey();
+    const apiKey = generateApiKey('xbrl_live');
     const keyHash = hashApiKey(apiKey);
-    const keyPrefix = apiKey.substring(0, 16);
-    const keySuffix = apiKey.slice(-4);
+    const keyPrefix = extractApiKeyPrefix(apiKey);
+    const keySuffix = extractApiKeySuffix(apiKey);
 
     // APIキーをデータベースに保存（nameカラムも含める）
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
@@ -127,6 +118,7 @@ export async function POST(request: NextRequest) {
       keyInfo: {
         prefix: keyPrefix,
         suffix: keySuffix,
+        masked: maskApiKey(apiKey),
         createdAt: new Date().toISOString()
       }
     }, { status: 201 });
