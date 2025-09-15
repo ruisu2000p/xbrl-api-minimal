@@ -1,6 +1,6 @@
-# shared-supabase-mcp-minimal v3.0.1 🚀
+# shared-supabase-mcp-minimal v3.0.2 🚀
 
-**Commercial XBRL Financial Data MCP Server - 286,742 documents from 1,100+ Japanese companies**
+**XBRL Financial Data MCP Server - 286,742 documents from 1,100+ Japanese companies**
 
 [![npm version](https://badge.fury.io/js/shared-supabase-mcp-minimal.svg)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 [![Security Status](https://img.shields.io/badge/Security-Enhanced-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
@@ -65,7 +65,7 @@ export XBRL_API_KEY=your-api-key-here
 **⚠️ 重要**:
 - `XBRL_API_KEY`には発行された**独自APIキー**を設定
 - Supabase Anon Keyではありません
-- Free/Basic/Pro/Enterpriseティアによってアクセス範囲が異なります
+- Free/Basicティアによってアクセス範囲が異なります
 
 ## 🚀 特徴
 
@@ -120,8 +120,6 @@ Supabase StorageからMarkdownドキュメントを取得（パス検証付き�
 |--------|------------|------|
 | **Free** | 直近1年間のデータ | 基本的な財務データアクセス |
 | **Basic** | すべてのデータ | 全期間の財務データアクセス |
-| **Pro** | すべてのデータ + 高速 | 優先サポート、高レート制限 |
-| **Enterprise** | カスタム | 専用サポート、カスタム機能 |
 
 ## 🔐 セキュリティベストプラクティス
 
