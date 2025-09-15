@@ -63,6 +63,7 @@ npm install -g shared-supabase-mcp-minimal
 
 ### Claude Desktop設定 (claude_desktop_config.json)
 
+#### 方法1: Anonキーを使用（推奨）
 ```json
 {
   "mcpServers": {
@@ -71,20 +72,48 @@ npm install -g shared-supabase-mcp-minimal
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
         "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
-        "XBRL_API_KEY": "your-api-key-here"
+        "SUPABASE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjQ1NDgsImV4cCI6MjA3MjE0MDU0OH0.rQZKk5V8qmiDhIHRy5YMlYt4l9ccVlX96xNLZV7iTHs"
       }
     }
   }
 }
 ```
 
+#### 方法2: 独自APIキーを使用
+```json
+{
+  "mcpServers": {
+    "xbrl-financial": {
+      "command": "npx",
+      "args": ["shared-supabase-mcp-minimal@latest"],
+      "env": {
+        "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
+        "XBRL_API_KEY": "xbrl_xxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+### 重要な注意事項
+⚠️ **環境変数について**:
+- `SUPABASE_URL`: Supabaseプロジェクトの公開URL（必須）
+- `SUPABASE_KEY`: Supabaseの公開用Anonキー（必須、`SUPABASE_ANON_KEY`ではなく`SUPABASE_KEY`を使用）
+- `XBRL_API_KEY`: ダッシュボードで発行された独自APIキー（xbrl_で始まる、オプション）
+- **注意**: MCPサーバーは`SUPABASE_KEY`という環境変数名を期待しています
+
 ### 設定方法
 1. Claude Desktopの設定ファイルを開く
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
    - Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`
-2. 上記のMCP設定を追加
-3. `XBRL_API_KEY`にダッシュボードで発行したAPIキーを設定
-4. Claude Desktopを再起動
+2. 上記のMCP設定をコピー＆ペースト
+3. 他のMCPサーバーと名前が重複していないか確認（`xbrl-financial`が重複していたら片方削除）
+4. Claude Desktopを完全に終了して再起動
+
+### トラブルシューティング
+- エラー「Unexpected token 'P'」が出る場合：環境変数が正しく設定されていません
+- サーバーが二重起動する場合：設定ファイルに同じサーバーが複数登録されています
+- 接続できない場合：`npx`コマンドが使えるか確認（`npx --version`を実行）
 
 ## 🔧 セットアップ
 
