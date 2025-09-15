@@ -12,8 +12,8 @@ export default function Header() {
               <i className="ri-bank-line text-white text-lg"></i>
             </div>
             <div>
-              <div className="font-['Pacifico'] text-xl text-gray-900">XBRL Financial API</div>
-              <div className="text-xs text-gray-500 font-medium">Next-Gen Data Platform</div>
+              <div className="font-['Pacifico'] text-xl text-gray-900">Financial Information next</div>
+              <div className="text-xs text-gray-500 font-medium">FIN</div>
             </div>
           </Link>
 
@@ -29,10 +29,10 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Link href="/auth/login" className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium">
+            <Link href="/login" className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium">
               ログイン
             </Link>
-            <Link href="/auth/register" className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 cursor-pointer whitespace-nowrap font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            <Link href="/signup" className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 cursor-pointer whitespace-nowrap font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
               <span className="relative z-10">無料で始める</span>
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
             </Link>
