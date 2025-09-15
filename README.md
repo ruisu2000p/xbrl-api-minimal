@@ -63,7 +63,7 @@ npm install -g shared-supabase-mcp-minimal
 
 ### Claude Desktop設定 (claude_desktop_config.json)
 
-#### 方法1: Anonキーを使用（推奨）
+#### 推奨: 独自APIキーを使用（セキュア）
 ```json
 {
   "mcpServers": {
@@ -71,15 +71,15 @@ npm install -g shared-supabase-mcp-minimal
       "command": "npx",
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
-        "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
-        "SUPABASE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjQ1NDgsImV4cCI6MjA3MjE0MDU0OH0.rQZKk5V8qmiDhIHRy5YMlYt4l9ccVlX96xNLZV7iTHs"
+        "XBRL_API_KEY": "xbrl_xxxxxxxxxxxxxxxxxxxxxxxx",
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1"
       }
     }
   }
 }
 ```
 
-#### 方法2: 独自APIキーを使用
+#### 代替: Supabase直接接続（開発用）
 ```json
 {
   "mcpServers": {
@@ -88,7 +88,7 @@ npm install -g shared-supabase-mcp-minimal
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
         "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
-        "XBRL_API_KEY": "xbrl_xxxxxxxxxxxxxxxxxxxxxxxx"
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjQ1NDgsImV4cCI6MjA3MjE0MDU0OH0.rQZKk5V8qmiDhIHRy5YMlYt4l9ccVlX96xNLZV7iTHs"
       }
     }
   }
@@ -97,10 +97,11 @@ npm install -g shared-supabase-mcp-minimal
 
 ### 重要な注意事項
 ⚠️ **環境変数について**:
-- `SUPABASE_URL`: Supabaseプロジェクトの公開URL（必須）
-- `SUPABASE_KEY`: Supabaseの公開用Anonキー（必須、`SUPABASE_ANON_KEY`ではなく`SUPABASE_KEY`を使用）
-- `XBRL_API_KEY`: ダッシュボードで発行された独自APIキー（xbrl_で始まる、オプション）
-- **注意**: MCPサーバーは`SUPABASE_KEY`という環境変数名を期待しています
+- `XBRL_API_KEY`: ダッシュボードで発行された独自APIキー（xbrl_で始まる）- **推奨**
+- `XBRL_API_URL`: API エンドポイント（デフォルト: https://xbrl-api-minimal.vercel.app/api/v1）
+- `SUPABASE_URL`: Supabaseプロジェクトの公開URL（開発用）
+- `SUPABASE_ANON_KEY`: Supabaseの公開用Anonキー（開発用、`SUPABASE_KEY`ではなく`SUPABASE_ANON_KEY`）
+- **セキュリティ**: 本番環境では`XBRL_API_KEY`を使用してください。これにより個別のレート制限とアクセス管理が可能です
 
 ### 設定方法
 1. Claude Desktopの設定ファイルを開く
