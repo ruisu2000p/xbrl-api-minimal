@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function FeaturesSection() {
   const features = [
@@ -99,10 +100,12 @@ export default function FeaturesSection() {
               <h3 className="text-2xl font-bold text-gray-900 mb-2">プロフェッショナル機能を体験</h3>
               <p className="text-gray-600">スタンダードプランを体験してみてください。</p>
             </div>
-            <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 cursor-pointer whitespace-nowrap shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-              <i className="ri-vip-crown-line mr-2"></i>
-              スタンダードを試す
-            </button>
+            <Link href="/pricing">
+              <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 cursor-pointer whitespace-nowrap shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                <i className="ri-vip-crown-line mr-2"></i>
+                スタンダードを試す
+              </button>
+            </Link>
           </div>
         </div>
       </div>
