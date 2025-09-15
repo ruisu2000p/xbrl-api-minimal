@@ -5,12 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { admin, type ApiKey } from './supabaseAdmin';
-
-// APIキー関連のユーティリティ関数（apiKey.tsが削除されたため直接定義）
-const hashApiKey = (key: string): string => {
-  // 簡易的なハッシュ化（本番環境では適切なハッシュ関数を使用）
-  return Buffer.from(key).toString('base64');
-};
+import { hashApiKey } from '@/lib/security/apiKey';
 
 const validateApiKeyFormat = (key: string): boolean => {
   // APIキーのフォーマット検証
