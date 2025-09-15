@@ -1,27 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getUserApiKeys, createApiKey, deleteApiKey } from '@/app/actions/auth';
 
 export default function AccountSettings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [email, setEmail] = useState('user@example.com');
-  const [apiKeys, setApiKeys] = useState([
-    {
-      id: '1',
-      name: 'Production API Key',
-      key: 'fin_live_sk_1234567890abcdef',
-      created: '2024-01-15',
-      lastUsed: '2時間前'
-    },
-    {
-      id: '2',
-      name: 'Development API Key',
-      key: 'fin_test_sk_abcdef1234567890',
-      created: '2024-01-10',
-      lastUsed: '1日前'
-    }
-  ]);
+  const [apiKeys, setApiKeys] = useState([]);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(true);
+  const [keyError, setKeyError] = useState(null);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -34,24 +22,61 @@ export default function AccountSettings() {
     status: 'アクティブ'
   };
 
-  const generateApiKey = () => {
-    if (!newKeyName.trim()) return;
-    
-    const newKey = {
-      id: Date.now().toString(),
-      name: newKeyName,
-      key: `fin_live_sk_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
-      created: new Date().toISOString().split('T')[0],
-      lastUsed: '未使用'
-    };
-    
-    setApiKeys([...apiKeys, newKey]);
-    setNewKeyName('');
-    setShowNewKeyModal(false);
+  const loadApiKeys = async () => {
+    setIsLoadingKeys(true);
+    setKeyError(null);
+    try {
+      const result = await getUserApiKeys();
+      if (result.success) {
+        setApiKeys(result.data);
+      } else {
+        setKeyError(result.error);
+      }
+    } catch (error) {
+      setKeyError('APIキーの読み込みに失敗しました');
+    } finally {
+      setIsLoadingKeys(false);
+    }
   };
 
-  const deleteApiKey = (id: string) => {
-    setApiKeys(apiKeys.filter(key => key.id !== id));
+  useEffect(() => {
+    if (activeTab === 'api') {
+      loadApiKeys();
+    }
+  }, [activeTab]);
+
+  const generateApiKey = async () => {
+    if (!newKeyName.trim()) return;
+
+    try {
+      const result = await createApiKey(newKeyName);
+      if (result.success) {
+        setApiKeys([...apiKeys, result.data]);
+        setNewKeyName('');
+        setShowNewKeyModal(false);
+        // Show the API key to user once
+        alert(`新しいAPIキーが作成されました:\n\n${result.data.key}\n\nこのキーは一度のみ表示されます。安全な場所に保存してください。`);
+      } else {
+        alert(`APIキーの作成に失敗しました: ${result.error}`);
+      }
+    } catch (error) {
+      alert('APIキーの作成中にエラーが発生しました');
+    }
+  };
+
+  const handleDeleteApiKey = async (id: string) => {
+    if (!confirm('このAPIキーを削除しますか？この操作は取り消せません。')) return;
+
+    try {
+      const result = await deleteApiKey(id);
+      if (result.success) {
+        setApiKeys(apiKeys.filter(key => key.id !== id));
+      } else {
+        alert(`APIキーの削除に失敗しました: ${result.error}`);
+      }
+    } catch (error) {
+      alert('APIキーの削除中にエラーが発生しました');
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -308,8 +333,25 @@ export default function AccountSettings() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              {apiKeys.map((key) => (
+            {isLoadingKeys ? (
+              <div className="text-center py-12">
+                <i className="ri-loader-4-line text-gray-400 text-4xl mb-4 animate-spin"></i>
+                <p className="text-gray-500">APIキーを読み込み中...</p>
+              </div>
+            ) : keyError ? (
+              <div className="text-center py-12">
+                <i className="ri-error-warning-line text-red-400 text-4xl mb-4"></i>
+                <p className="text-red-500 mb-4">{keyError}</p>
+                <button
+                  onClick={loadApiKeys}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  再読み込み
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {apiKeys.map((key) => (
                 <div key={key.id} className="border border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-colors">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -325,7 +367,7 @@ export default function AccountSettings() {
                         コピー
                       </button>
                       <button
-                        onClick={() => deleteApiKey(key.id)}
+                        onClick={() => handleDeleteApiKey(key.id)}
                         className="text-red-600 hover:text-red-700 text-sm cursor-pointer"
                       >
                         <i className="ri-delete-bin-line mr-1"></i>
@@ -346,9 +388,9 @@ export default function AccountSettings() {
                   </div>
                 </div>
               ))}
-            </div>
+                </div>
 
-            {apiKeys.length === 0 && (
+                {apiKeys.length === 0 && (
               <div className="text-center py-12">
                 <i className="ri-key-line text-gray-300 text-6xl mb-4"></i>
                 <h4 className="text-lg font-medium text-gray-500 mb-2">APIキーがありません</h4>
@@ -359,6 +401,8 @@ export default function AccountSettings() {
                 >
                   APIキーを作成
                 </button>
+              </div>
+                )}
               </div>
             )}
           </div>
