@@ -47,6 +47,45 @@ npm start
 | **Deployment** | Vercel |
 | **Security** | RLS, HMAC-SHA256, crypto.randomBytes |
 
+## 📦 NPMパッケージ
+
+### MCP Server for Claude
+[![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
+
+財務データ分析用のMCP（Model Context Protocol）サーバー:
+```bash
+npm install -g shared-supabase-mcp-minimal
+```
+
+詳細: [https://www.npmjs.com/package/shared-supabase-mcp-minimal](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
+
+## 🤖 MCP設定例
+
+### Claude Desktop設定 (claude_desktop_config.json)
+
+```json
+{
+  "mcpServers": {
+    "xbrl-financial": {
+      "command": "npx",
+      "args": ["shared-supabase-mcp-minimal@latest"],
+      "env": {
+        "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
+        "XBRL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### 設定方法
+1. Claude Desktopの設定ファイルを開く
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+   - Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`
+2. 上記のMCP設定を追加
+3. `XBRL_API_KEY`にダッシュボードで発行したAPIキーを設定
+4. Claude Desktopを再起動
+
 ## 🔧 セットアップ
 
 ### 1. 環境変数の設定
