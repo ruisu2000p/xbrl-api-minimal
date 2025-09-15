@@ -13,7 +13,7 @@ export default function SignupPage() {
     password: '',
     confirmPassword: '',
     company: '',
-    position: '',
+    plan: 'free',
     agreeToTerms: false,
     agreeToPrivacy: false,
     notInvestmentAdvice: false
@@ -72,7 +72,7 @@ export default function SignupPage() {
       submitData.append('email', formData.email);
       submitData.append('password', formData.password);
       submitData.append('company', formData.company);
-      submitData.append('position', formData.position);
+      submitData.append('plan', formData.plan);
       submitData.append('agreeToTerms', formData.agreeToTerms ? 'true' : 'false');
       submitData.append('agreeToPrivacy', formData.agreeToPrivacy ? 'true' : 'false');
       submitData.append('notInvestmentAdvice', formData.notInvestmentAdvice ? 'true' : 'false');
@@ -97,7 +97,7 @@ export default function SignupPage() {
           password: '',
           confirmPassword: '',
           company: '',
-          position: '',
+          plan: 'free',
           agreeToTerms: false,
           agreeToPrivacy: false,
           notInvestmentAdvice: false
@@ -122,7 +122,7 @@ export default function SignupPage() {
         <div className="max-w-2xl w-full space-y-8">
           <div className="text-center">
             <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              無料アカウントを作成
+              アカウント作成
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               すでにアカウントをお持ちの方は{' '}
@@ -225,43 +225,48 @@ export default function SignupPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
-                    役職
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    プラン選択 <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      id="position"
-                      name="position"
-                      value={formData.position}
-                      onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
-                      className="w-full px-4 py-3 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none bg-white cursor-pointer"
+                  <div className="space-y-3">
+                    <div
+                      onClick={() => setFormData(prev => ({ ...prev, plan: 'free' }))}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        formData.plan === 'free'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
                     >
-                      <option value="">役職を選択してください</option>
-                      <option value="代表取締役">代表取締役</option>
-                      <option value="取締役">取締役</option>
-                      <option value="執行役員">執行役員</option>
-                      <option value="部長">部長</option>
-                      <option value="課長">課長</option>
-                      <option value="係長">係長</option>
-                      <option value="主任">主任</option>
-                      <option value="マネージャー">マネージャー</option>
-                      <option value="チームリーダー">チームリーダー</option>
-                      <option value="営業部長">営業部長</option>
-                      <option value="財務部長">財務部長</option>
-                      <option value="経理部長">経理部長</option>
-                      <option value="人事部長">人事部長</option>
-                      <option value="総務部長">総務部長</option>
-                      <option value="企画部長">企画部長</option>
-                      <option value="開発部長">開発部長</option>
-                      <option value="マーケティング部長">マーケティング部長</option>
-                      <option value="コンサルタント">コンサルタント</option>
-                      <option value="アナリスト">アナリスト</option>
-                      <option value="専門職">専門職</option>
-                      <option value="一般職">一般職</option>
-                      <option value="その他">その他</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <i className="ri-arrow-down-s-line text-gray-400"></i>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-gray-900">フリーミアム</h4>
+                          <p className="text-sm text-gray-600 mt-1">直近1年間のデータアクセス</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-gray-900">¥0</p>
+                          <p className="text-xs text-gray-500">/月</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      onClick={() => setFormData(prev => ({ ...prev, plan: 'standard' }))}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        formData.plan === 'standard'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-gray-900">スタンダード</h4>
+                          <p className="text-sm text-gray-600 mt-1">全期間の財務データアクセス</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-gray-900">¥2,980</p>
+                          <p className="text-xs text-gray-500">/月</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
