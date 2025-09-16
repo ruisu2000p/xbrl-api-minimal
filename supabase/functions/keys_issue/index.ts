@@ -89,6 +89,7 @@ serve(async (req) => {
     const plainKey = genKey(keyPrefix);
     const keyHash = await hashKey(plainKey);
     const maskedKey = maskKey(plainKey);
+    const keyPrefixStored = plainKey.split("_").slice(0, 2).join("_");
 
     // Set expiration to 1 year from now
     const expiresAt = new Date();
@@ -99,7 +100,7 @@ serve(async (req) => {
       .from("api_keys")
       .insert({
         user_id: user.id,
-        key_prefix: plainKey.substring(0, plainKey.indexOf("_", 5)),
+        key_prefix: keyPrefixStored,
         key_hash: keyHash,
         key_suffix: plainKey.substring(plainKey.length - 4),
         masked_key: maskedKey,

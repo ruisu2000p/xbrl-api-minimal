@@ -9,6 +9,19 @@ export class UnifiedKeyHasher {
   private static readonly ENCODING = 'base64';
   private static readonly SALT_LENGTH = 16;
 
+  private static resolveSecret(): string {
+    const secret =
+      process.env.KEY_DERIVE_SECRET ??
+      process.env.API_KEY_SECRET ??
+      process.env.KEY_PEPPER;
+
+    if (!secret) {
+      throw new Error('KEY_DERIVE_SECRET (or API_KEY_SECRET/KEY_PEPPER) environment variable is not set');
+    }
+
+    return secret;
+  }
+
   /**
    * Generate a cryptographically secure salt
    */
@@ -20,10 +33,7 @@ export class UnifiedKeyHasher {
    * Hash API key using HMAC-SHA256 with salt
    */
   static async hashApiKey(apiKey: string): Promise<{ hash: string; salt: string }> {
-    const secret = process.env.API_KEY_SECRET;
-    if (!secret) {
-      throw new Error('API_KEY_SECRET environment variable is not set');
-    }
+    const secret = this.resolveSecret();
 
     const salt = this.generateSalt();
     const hmac = crypto.createHmac(this.ALGORITHM, secret);
@@ -41,10 +51,7 @@ export class UnifiedKeyHasher {
     storedHash: string,
     salt: string
   ): Promise<boolean> {
-    const secret = process.env.API_KEY_SECRET;
-    if (!secret) {
-      throw new Error('API_KEY_SECRET environment variable is not set');
-    }
+    const secret = this.resolveSecret();
 
     const hmac = crypto.createHmac(this.ALGORITHM, secret);
     hmac.update(apiKey + salt);

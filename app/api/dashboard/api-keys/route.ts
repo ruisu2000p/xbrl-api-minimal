@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
-import crypto from 'crypto'
-
-// APIキー生成関数
-function generateApiKey(): string {
-  const prefix = 'xbrl_'
-  const randomBytes = crypto.randomBytes(32).toString('base64url')
-  return `${prefix}${randomBytes}`
-}
-
-// APIキーのハッシュ化
-function hashApiKey(key: string): string {
-  return crypto.createHash('sha256').update(key).digest('hex')
-}
+import {
+  generateApiKey,
+  hashApiKey,
+  extractApiKeyPrefix,
+  extractApiKeySuffix,
+  maskApiKey
+} from '@/lib/security/apiKey'
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,8 +33,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 新しいAPIキーを生成
-    const apiKey = generateApiKey()
+    const apiKey = generateApiKey('xbrl_live')
     const keyHash = hashApiKey(apiKey)
+    const keyPrefix = extractApiKeyPrefix(apiKey)
+    const keySuffix = extractApiKeySuffix(apiKey)
 
     // Supabase Admin クライアントでAPIキーを保存
     const supabaseAdmin = await createSupabaseServerAdminClient()
@@ -52,8 +48,15 @@ export async function POST(request: NextRequest) {
         name,
         description,
         key_hash: keyHash,
+        key_prefix: keyPrefix,
+        key_suffix: keySuffix,
+        masked_key: maskApiKey(apiKey),
         tier,
         status: 'active',
+        is_active: true,
+        rate_limit_per_minute: tier === 'pro' ? 600 : tier === 'basic' ? 300 : 100,
+        rate_limit_per_hour: tier === 'pro' ? 10000 : tier === 'basic' ? 5000 : 2000,
+        rate_limit_per_day: tier === 'pro' ? 200000 : tier === 'basic' ? 100000 : 50000,
         created_at: new Date().toISOString(),
       })
       .select()

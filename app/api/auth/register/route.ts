@@ -5,8 +5,12 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import {
+  generateApiKey,
+  hashApiKey,
+  extractApiKeyPrefix
+} from '@/lib/security/apiKey';
 
 // Supabase環境変数の確認（ビルド時ではなく実行時に評価）
 function getSupabaseAdmin() {
@@ -26,21 +30,6 @@ function getSupabaseAdmin() {
     supabaseServiceKey,
     { auth: { persistSession: false } }
   );
-}
-
-// APIキーの生成
-function generateApiKey(): string {
-  const prefix = 'xbrl_live_';
-  const randomPart = crypto.randomBytes(24).toString('base64')
-    .replace(/\+/g, '0')
-    .replace(/\//g, '1')
-    .replace(/=/g, '');
-  return prefix + randomPart;
-}
-
-// APIキーのハッシュ化
-function hashApiKey(apiKey: string): string {
-  return crypto.createHash('sha256').update(apiKey).digest('base64');
 }
 
 export async function POST(request: NextRequest) {
@@ -126,9 +115,9 @@ export async function POST(request: NextRequest) {
     }
 
     // APIキーの生成と保存
-    const apiKey = generateApiKey();
+    const apiKey = generateApiKey('xbrl_live');
     const keyHash = hashApiKey(apiKey);
-    const keyPrefix = apiKey.substring(0, 16);
+    const keyPrefix = extractApiKeyPrefix(apiKey);
 
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
       .from('api_keys')

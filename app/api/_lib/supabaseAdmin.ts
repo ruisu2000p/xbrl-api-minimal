@@ -48,9 +48,12 @@ export interface ApiKey {
   user_id: string;
   name: string;
   key_prefix: string;
+  key_suffix: string;
   key_hash: string;
+  masked_key: string | null;
   scopes: string[];
   revoked: boolean;
+  is_active: boolean;
   created_at: string;
   last_used_at: string | null;
   expires_at: string | null;

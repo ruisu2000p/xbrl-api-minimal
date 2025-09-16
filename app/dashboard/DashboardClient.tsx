@@ -14,6 +14,7 @@ interface ApiKey {
   created_at: string
   last_used_at: string | null
   key_hash: string
+  masked_key?: string | null
   expires_at?: string | null
 }
 

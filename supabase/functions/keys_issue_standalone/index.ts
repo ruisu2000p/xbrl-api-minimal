@@ -1,79 +1,16 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// CORS headers
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, content-type, x-api-key",
-};
-
-// Generate random API key
-function generateApiKey(prefix: string = "xbrl_live", size: number = 32): string {
-  const bytes = new Uint8Array(size);
-  crypto.getRandomValues(bytes);
-  const randomStr = Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-  return `${prefix}_${randomStr}`;
-}
-
-// Hash API key with HMAC-SHA256
-async function hashKey(plain: string): Promise<string> {
-  const KEY_PEPPER = Deno.env.get("KEY_PEPPER");
-  
-  if (!KEY_PEPPER) {
-    throw new Error("KEY_PEPPER environment variable not set");
-  }
-  
-  try {
-    const encoder = new TextEncoder();
-    
-    // Decode pepper from base64
-    const pepperData = Uint8Array.from(atob(KEY_PEPPER), c => c.charCodeAt(0));
-    
-    // Import pepper as HMAC key
-    const key = await crypto.subtle.importKey(
-      "raw",
-      pepperData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    
-    // Create HMAC
-    const signature = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(plain)
-    );
-    
-    // Convert to hex string
-    return Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, "0"))
-      .join("");
-  } catch (error) {
-    console.error("HMAC generation error:", error);
-    throw new Error("Failed to generate HMAC");
-  }
-}
-
-// Mask API key for display
-function maskKey(key: string): string {
-  if (!key || key.length < 12) return key;
-  const prefix = key.substring(0, 8);
-  const suffix = key.substring(key.length - 4);
-  return `${prefix}****${suffix}`;
-}
+import {
+  corsHeaders,
+  genKey,
+  hashKey,
+  maskKey,
+  preflight,
+  supabaseAdmin
+} from "../_shared/utils.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { 
-      status: 204, 
-      headers: corsHeaders 
-    });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   try {
     // Parse request body
@@ -90,14 +27,8 @@ serve(async (req) => {
       }
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     // Check if user already has too many keys
-    const { data: existingKeys, error: countError } = await supabase
+    const { data: existingKeys, error: countError } = await supabaseAdmin
       .from("api_keys")
       .select("id")
       .eq("user_id", userId)
@@ -117,17 +48,17 @@ serve(async (req) => {
           status: 400,
           headers: { 
             "Content-Type": "application/json",
-            ...corsHeaders 
+            ...corsHeaders()
           }
         }
       );
     }
 
     // Generate new API key
-    const plainKey = generateApiKey("xbrl_live");
+    const plainKey = genKey("xbrl_live");
     const keyHash = await hashKey(plainKey);
     const maskedKey = maskKey(plainKey);
-    
+
     // Extract parts for storage
     const parts = plainKey.split("_");
     const keyPrefix = `${parts[0]}_${parts[1]}`;
@@ -138,7 +69,7 @@ serve(async (req) => {
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
     // Insert new API key
-    const { data: newKey, error: insertError } = await supabase
+    const { data: newKey, error: insertError } = await supabaseAdmin
       .from("api_keys")
       .insert({
         name: name,
@@ -161,13 +92,13 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: "Failed to create API key",
-          details: insertError.message 
+          details: insertError.message
         }),
-        { 
+        {
           status: 500,
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            ...corsHeaders 
+            ...corsHeaders()
           }
         }
       );
@@ -189,11 +120,11 @@ serve(async (req) => {
         },
         message: "Please save this API key securely. It will not be shown again."
       }),
-      { 
+      {
         status: 200,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          ...corsHeaders 
+          ...corsHeaders()
         }
       }
     );

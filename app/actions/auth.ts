@@ -3,7 +3,13 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import crypto from 'crypto'
+import {
+  generateApiKey,
+  hashApiKey,
+  extractApiKeyPrefix,
+  extractApiKeySuffix,
+  maskApiKey
+} from '@/lib/security/apiKey'
 import type { ApiKey, ApiKeyResponse } from '@/types/api-key'
 
 export async function signIn(email: string, password: string) {
@@ -25,7 +31,7 @@ export async function signIn(email: string, password: string) {
     // APIキー情報を取得（認証されたユーザーとして）
     const { data: apiKeys } = await supabase
       .from('api_keys')
-      .select('key_hash, name, status')
+      .select('masked_key, name, status')
       .eq('user_id', data.user.id)
       .eq('status', 'active')
       .limit(1)
@@ -42,7 +48,7 @@ export async function signIn(email: string, password: string) {
         company: data.user.user_metadata?.company || null,
         plan: data.user.user_metadata?.plan || 'beta',
         apiKey: apiKeys && apiKeys.length > 0
-          ? `${apiKeys[0].key_hash.substring(0, 12)}...${apiKeys[0].key_hash.slice(-4)}`
+          ? apiKeys[0].masked_key
           : null,
       }
     }
@@ -101,19 +107,25 @@ export async function signUp(userData: {
   if (data?.user) {
     // Create API key for the new user
     try {
-      const keyPrefix = 'xbrl'
-      const keyBody = crypto.randomBytes(24).toString('hex')
-      const fullKey = `${keyPrefix}_${keyBody}`
-
-      const hashedKey = crypto.createHash('sha256').update(fullKey).digest('hex')
+      const fullKey = generateApiKey('xbrl_live')
+      const hashedKey = hashApiKey(fullKey)
+      const keyPrefix = extractApiKeyPrefix(fullKey)
+      const keySuffix = extractApiKeySuffix(fullKey)
 
       const { error: apiKeyError } = await supabase
         .from('api_keys')
         .insert({
           user_id: data.user.id,
           key_hash: hashedKey,
+          key_prefix: keyPrefix,
+          key_suffix: keySuffix,
+          masked_key: maskApiKey(fullKey),
           name: 'Default API Key',
           status: 'active',
+          is_active: true,
+          rate_limit_per_minute: 100,
+          rate_limit_per_hour: 2000,
+          rate_limit_per_day: 50000,
           tier: userData.plan === 'freemium' ? 'free' : 'basic'
         })
 
@@ -178,7 +190,7 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
 
   const { data: apiKeys, error } = await supabase
     .from('api_keys')
-    .select('id, key_hash, name, status, tier, created_at, last_used_at')
+    .select('id, key_hash, masked_key, name, status, tier, created_at, last_used_at')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -190,7 +202,7 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   const formattedKeys: ApiKey[] = apiKeys?.map(key => ({
     id: key.id,
     name: key.name,
-    key: `${key.key_hash.substring(0, 12)}...${key.key_hash.slice(-8)}`,
+    key: key.masked_key ?? maskApiKey(key.key_hash ?? ''),
     created: new Date(key.created_at).toLocaleDateString('ja-JP'),
     lastUsed: key.last_used_at
       ? new Date(key.last_used_at).toLocaleDateString('ja-JP')
@@ -214,20 +226,25 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 
   try {
     // Generate API key
-    const keyPrefix = 'xbrl'
-    const keyBody = crypto.randomBytes(24).toString('hex')
-    const fullKey = `${keyPrefix}_${keyBody}`
-
-    // Hash the API key for secure storage
-    const hashedKey = crypto.createHash('sha256').update(fullKey).digest('hex')
+    const fullKey = generateApiKey('xbrl_live')
+    const hashedKey = hashApiKey(fullKey)
+    const keyPrefix = extractApiKeyPrefix(fullKey)
+    const keySuffix = extractApiKeySuffix(fullKey)
 
     const { data, error } = await supabase
       .from('api_keys')
       .insert({
         user_id: user.id,
         key_hash: hashedKey,
+        key_prefix: keyPrefix,
+        key_suffix: keySuffix,
+        masked_key: maskApiKey(fullKey),
         name: name || 'API Key',
         status: 'active',
+        is_active: true,
+        rate_limit_per_minute: 100,
+        rate_limit_per_hour: 2000,
+        rate_limit_per_day: 50000,
         tier: 'basic'
       })
       .select()
