@@ -17,16 +17,24 @@ function decodeSecret(raw: string): Buffer {
   return Buffer.from(raw, 'utf-8')
 }
 
-const rawSecret =
-  process.env.KEY_DERIVE_SECRET ??
-  process.env.KEY_PEPPER ??
-  process.env.API_KEY_SECRET
+// Lazy initialization of HMAC_SECRET to avoid build-time errors
+let HMAC_SECRET: Buffer | null = null
 
-if (!rawSecret) {
-  throw new Error('KEY_DERIVE_SECRET (or KEY_PEPPER/API_KEY_SECRET) must be set for API key hashing')
+function getHmacSecret(): Buffer {
+  if (HMAC_SECRET) return HMAC_SECRET
+
+  const rawSecret =
+    process.env.KEY_DERIVE_SECRET ??
+    process.env.KEY_PEPPER ??
+    process.env.API_KEY_SECRET
+
+  if (!rawSecret) {
+    throw new Error('KEY_DERIVE_SECRET (or KEY_PEPPER/API_KEY_SECRET) must be set for API key hashing')
+  }
+
+  HMAC_SECRET = decodeSecret(rawSecret)
+  return HMAC_SECRET
 }
-
-const HMAC_SECRET = decodeSecret(rawSecret)
 
 export function generateApiKey(prefix = 'xbrl_live', size = 32): string {
   const bytes = crypto.randomBytes(size)
@@ -35,7 +43,7 @@ export function generateApiKey(prefix = 'xbrl_live', size = 32): string {
 }
 
 export function hashApiKey(apiKey: string): string {
-  return crypto.createHmac('sha256', HMAC_SECRET).update(apiKey).digest('hex')
+  return crypto.createHmac('sha256', getHmacSecret()).update(apiKey).digest('hex')
 }
 
 export function maskApiKey(apiKey: string): string {
