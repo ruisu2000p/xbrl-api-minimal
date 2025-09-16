@@ -1,7 +1,7 @@
 # FIN - Financial Information next
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fruisu2000p%2Fxbrl-api-minimal)
-[![Version](https://img.shields.io/badge/Version-5.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
+[![Version](https://img.shields.io/badge/Version-6.0.0-green)](https://github.com/ruisu2000p/xbrl-api-minimal)
 [![NPM](https://img.shields.io/npm/v/shared-supabase-mcp-minimal)](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -32,9 +32,9 @@ npm start
 - 🎨 **モダンUI** - Next.js 14 + Tailwind CSSによる洗練されたデザイン
 
 ### データ規模
-- **286,742件**の財務文書を収録
+- **286,742件以上**の財務文書を収録
 - **1,100社以上**の上場企業データ
-- **2020年〜2024年**の財務情報
+- **FY2022年〜FY2025年**の財務情報
 
 ## 📦 Tech Stack
 
@@ -59,11 +59,23 @@ npm install -g shared-supabase-mcp-minimal
 
 詳細: [https://www.npmjs.com/package/shared-supabase-mcp-minimal](https://www.npmjs.com/package/shared-supabase-mcp-minimal)
 
+## 🔐 Gateway アーキテクチャ
+
+v6.0.0より、**Gateway-only アーキテクチャ**を採用しています。第三者は独自APIキー（fin_live_*）のみを使用し、Supabaseの認証情報に直接アクセスすることはありません。
+
+```
+Client (Claude Desktop)
+    ↓ [fin_live_* APIキー]
+Gateway Edge Function
+    ↓ [Service Role変換]
+Supabase (DB & Storage)
+```
+
 ## 🤖 MCP設定例
 
 ### Claude Desktop設定 (claude_desktop_config.json)
 
-#### 推奨: 独自APIキーを使用（セキュア）
+#### 推奨: Gateway経由（セキュア）
 ```json
 {
   "mcpServers": {
@@ -71,15 +83,15 @@ npm install -g shared-supabase-mcp-minimal
       "command": "npx",
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
-        "XBRL_API_KEY": "xbrl_xxxxxxxxxxxxxxxxxxxxxxxx",
-        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1"
+        "XBRL_API_KEY": "fin_live_xxxxxxxxxxxxxxxxxxxxxxxx",
+        "XBRL_API_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/gateway"
       }
     }
   }
 }
 ```
 
-#### 代替: Supabase直接接続（開発用）
+#### 代替: Supabase直接接続（開発用のみ）
 ```json
 {
   "mcpServers": {
@@ -97,11 +109,15 @@ npm install -g shared-supabase-mcp-minimal
 
 ### 重要な注意事項
 ⚠️ **環境変数について**:
-- `XBRL_API_KEY`: ダッシュボードで発行された独自APIキー（xbrl_で始まる）- **推奨**
-- `XBRL_API_URL`: API エンドポイント（デフォルト: https://xbrl-api-minimal.vercel.app/api/v1）
-- `SUPABASE_URL`: Supabaseプロジェクトの公開URL（開発用）
-- `SUPABASE_ANON_KEY`: Supabaseの公開用Anonキー（開発用、`SUPABASE_KEY`ではなく`SUPABASE_ANON_KEY`）
-- **セキュリティ**: 本番環境では`XBRL_API_KEY`を使用してください。これにより個別のレート制限とアクセス管理が可能です
+- `XBRL_API_KEY`: Gateway用APIキー（fin_live_で始まる）- **本番環境必須**
+- `XBRL_API_URL`: Gateway エンドポイント（https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/gateway）
+- `SUPABASE_URL`: Supabaseプロジェクトの公開URL（開発用のみ）
+- `SUPABASE_ANON_KEY`: Supabaseの公開用Anonキー（開発用のみ）
+- **セキュリティ**: 本番環境では必ず`XBRL_API_KEY`を使用してください。Gateway経由により：
+  - 個別のレート制限（デフォルト: 60回/分）
+  - アクセス管理とモニタリング
+  - APIキーの有効期限管理
+  - HMAC-SHA256によるセキュアなキー検証
 
 ### 設定方法
 1. Claude Desktopの設定ファイルを開く
@@ -195,12 +211,14 @@ xbrl-api-minimal/
 ├── components/        # Reactコンポーネント
 ├── lib/              # 共通ライブラリ
 │   └── supabase/     # Supabaseクライアント
+├── supabase/         # Supabase Edge Functions
+│   └── functions/
+│       └── gateway/   # Gateway Edge Function (v6.0.0+)
 ├── types/            # TypeScript型定義
 ├── public/           # 静的ファイル
 ├── docs/             # ドキュメント
 ├── sql/              # データベーススキーマ
 ├── scripts/          # ユーティリティスクリプト
-├── supabase/         # Supabase設定
 └── config/           # アプリケーション設定
 ```
 
@@ -234,11 +252,13 @@ npm run reinstall
 
 ## 🔒 セキュリティ
 
-- **SHA-256**によるAPIキーハッシュ化
+- **Gateway-only アーキテクチャ** - 第三者はSupabaseに直接アクセス不可
+- **HMAC-SHA256**によるAPIキーハッシュ化
 - **Row Level Security (RLS)** によるデータ保護
-- **レート制限**実装（100リクエスト/分）
+- **レート制限**実装（60リクエスト/分、ティアごとに調整可能）
 - **crypto.randomBytes**によるセキュアなキー生成
-- **HMAC署名**による通信検証
+- **OpenAPI 3.0**仕様準拠のAPI設計
+- **統一エラーレスポンス** - 一貫性のあるエラーハンドリング
 
 ## 🤝 コントリビューション
 
@@ -265,6 +285,16 @@ MIT License - 詳細は[LICENSE](./LICENSE)を参照
 - [Vercel](https://vercel.com) - Deployment Platform
 - [Claude](https://claude.ai) - AI Analysis
 - [Next.js](https://nextjs.org) - React Framework
+
+---
+
+## 🚀 最新アップデート（v6.0.0）
+
+- **Gateway-only アーキテクチャ** - セキュリティ強化のための統一APIゲートウェイ
+- **OpenAPI 3.0対応** - `/openapi.json`エンドポイントでAPI仕様を公開
+- **統一エラーレスポンス** - 一貫性のあるエラー処理
+- **透明なレート制限** - X-RateLimit-*ヘッダーで残り回数を表示
+- **286,000件以上のデータ** - 最新のFY2025データを追加
 
 ---
 
