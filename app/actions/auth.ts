@@ -112,7 +112,10 @@ export async function signUp(userData: {
       const keyPrefix = extractApiKeyPrefix(fullKey)
       const keySuffix = extractApiKeySuffix(fullKey)
 
-      const { error: apiKeyError } = await supabase
+      // Use admin client for API key creation
+      const adminClient = await createSupabaseServerAdminClient()
+      
+      const { error: apiKeyError } = await adminClient
         .from('api_keys')
         .insert({
           user_id: data.user.id,
@@ -123,15 +126,37 @@ export async function signUp(userData: {
           name: 'Default API Key',
           status: 'active',
           is_active: true,
+          environment: 'production',
+          permissions: {
+            endpoints: ['*'],
+            scopes: ['read:markdown', 'read:companies', 'read:documents'],
+            rate_limit: userData.plan === 'freemium' ? 1000 : userData.plan === 'standard' ? 10000 : 5000
+          },
+          metadata: {
+            created_via: 'signup',
+            user_email: userData.email,
+            plan: userData.plan,
+            created_at: new Date().toISOString()
+          },
           rate_limit_per_minute: 100,
           rate_limit_per_hour: 2000,
-          rate_limit_per_day: 50000,
-          tier: userData.plan === 'freemium' ? 'free' : 'basic'
+          rate_limit_per_day: userData.plan === 'freemium' ? 10000 : 50000,
+          tier: userData.plan === 'freemium' ? 'free' : userData.plan === 'standard' ? 'pro' : 'basic',
+          total_requests: 0,
+          successful_requests: 0,
+          failed_requests: 0,
+          created_by: data.user.id,
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
         })
 
       if (apiKeyError) {
         throw apiKeyError
       }
+
+      // Store the full API key temporarily for the user to see once
+      // This should be returned to the frontend once and never stored again
+      const tempApiKey = fullKey
 
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)
