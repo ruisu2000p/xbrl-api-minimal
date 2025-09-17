@@ -62,3 +62,50 @@ export function extractApiKeyPrefix(apiKey: string): string {
 export function extractApiKeySuffix(apiKey: string): string {
   return apiKey.slice(-4)
 }
+
+export type ApiKeyTier = 'free' | 'basic' | 'premium'
+
+export interface RateLimitConfig {
+  perMinute: number
+  perHour: number
+  perDay: number
+}
+
+const RATE_LIMITS_BY_TIER: Record<ApiKeyTier, RateLimitConfig> = {
+  free: { perMinute: 100, perHour: 2000, perDay: 50000 },
+  basic: { perMinute: 300, perHour: 5000, perDay: 100000 },
+  premium: { perMinute: 600, perHour: 10000, perDay: 200000 },
+}
+
+export function normalizeTier(tier?: string | null): ApiKeyTier {
+  if (!tier) return 'free'
+
+  const normalized = tier.toLowerCase()
+
+  if (['basic'].includes(normalized)) {
+    return 'basic'
+  }
+
+  if (['premium', 'pro', 'standard', 'enterprise'].includes(normalized)) {
+    return 'premium'
+  }
+
+  return 'free'
+}
+
+export function resolveTierLimits(tier?: string | null) {
+  const normalized = normalizeTier(tier)
+  return {
+    tier: normalized,
+    limits: RATE_LIMITS_BY_TIER[normalized],
+  }
+}
+
+export function deriveApiKeyMetadata(apiKey: string) {
+  return {
+    hash: hashApiKey(apiKey),
+    prefix: extractApiKeyPrefix(apiKey),
+    suffix: extractApiKeySuffix(apiKey),
+    masked: maskApiKey(apiKey),
+  }
+}

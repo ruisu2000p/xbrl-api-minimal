@@ -4,11 +4,10 @@ import { redirect } from 'next/navigation'
 import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import {
+  deriveApiKeyMetadata,
   generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix,
-  extractApiKeySuffix,
-  maskApiKey
+  maskApiKey,
+  resolveTierLimits,
 } from '@/lib/security/apiKey'
 import type { ApiKey, ApiKeyResponse } from '@/types/api-key'
 
@@ -109,23 +108,37 @@ export async function signUp(userData: {
     let fullApiKey: string | null = null
 
     try {
-      // Import unified API key functions
-      const { createApiKey } = await import('@/lib/security/unified-apikey')
-      const { UnifiedAuthManager } = await import('@/lib/security/auth-manager')
+      const admin = await createSupabaseServerAdminClient()
 
-      // Determine tier based on plan
-      const tier = userData.plan === 'freemium' ? 'free' :
-                   userData.plan === 'standard' ? 'premium' : 'basic'
+      const { tier, limits } = resolveTierLimits(userData.plan)
 
-      // Create API key using unified system
-      const { apiKey, keyId, masked } = await UnifiedAuthManager.createApiKey(
-        data.user.id,
-        'Default API Key',
-        tier
-      )
+      const generatedKey = generateApiKey('xbrl_live')
+      const keyMetadata = deriveApiKeyMetadata(generatedKey)
 
-      // Store the full API key to return once
-      fullApiKey = apiKey
+      const { error: insertError } = await admin
+        .from('api_keys')
+        .insert({
+          user_id: data.user.id,
+          name: 'Default API Key',
+          key_hash: keyMetadata.hash,
+          key_prefix: keyMetadata.prefix,
+          key_suffix: keyMetadata.suffix,
+          masked_key: keyMetadata.masked,
+          status: 'active',
+          is_active: true,
+          tier,
+          rate_limit_per_minute: limits.perMinute,
+          rate_limit_per_hour: limits.perHour,
+          rate_limit_per_day: limits.perDay
+        })
+        .select('id')
+        .single()
+
+      if (insertError) {
+        throw new Error(insertError.message)
+      }
+
+      fullApiKey = generatedKey
 
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)
@@ -185,7 +198,7 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
 
   const { data: apiKeys, error } = await supabase
     .from('api_keys')
-    .select('id, key_hash, masked_key, name, status, tier, created_at, last_used_at')
+    .select('id, key_hash, key_prefix, key_suffix, masked_key, name, status, tier, created_at, last_used_at')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -197,7 +210,10 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   const formattedKeys: ApiKey[] = apiKeys?.map(key => ({
     id: key.id,
     name: key.name,
-    key: key.masked_key ?? maskApiKey(key.key_hash ?? ''),
+    key: key.masked_key
+      ?? (key.key_prefix && key.key_suffix
+        ? `${key.key_prefix}...${key.key_suffix}`
+        : maskApiKey(key.key_hash ?? '')),
     created: new Date(key.created_at).toLocaleDateString('ja-JP'),
     lastUsed: key.last_used_at
       ? new Date(key.last_used_at).toLocaleDateString('ja-JP')
@@ -221,26 +237,26 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 
   try {
     // Generate API key
+    const { tier, limits } = resolveTierLimits(user.user_metadata?.plan as string | null)
+
     const fullKey = generateApiKey('xbrl_live')
-    const hashedKey = hashApiKey(fullKey)
-    const keyPrefix = extractApiKeyPrefix(fullKey)
-    const keySuffix = extractApiKeySuffix(fullKey)
+    const keyMetadata = deriveApiKeyMetadata(fullKey)
 
     const { data, error } = await supabase
       .from('api_keys')
       .insert({
         user_id: user.id,
-        key_hash: hashedKey,
-        key_prefix: keyPrefix,
-        key_suffix: keySuffix,
-        masked_key: maskApiKey(fullKey),
+        key_hash: keyMetadata.hash,
+        key_prefix: keyMetadata.prefix,
+        key_suffix: keyMetadata.suffix,
+        masked_key: keyMetadata.masked,
         name: name || 'API Key',
         status: 'active',
         is_active: true,
-        rate_limit_per_minute: 100,
-        rate_limit_per_hour: 2000,
-        rate_limit_per_day: 50000,
-        tier: 'basic'
+        rate_limit_per_minute: limits.perMinute,
+        rate_limit_per_hour: limits.perHour,
+        rate_limit_per_day: limits.perDay,
+        tier,
       })
       .select()
       .single()

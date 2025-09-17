@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
 import {
+  deriveApiKeyMetadata,
   generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix,
-  extractApiKeySuffix,
-  maskApiKey
+  resolveTierLimits,
 } from '@/lib/security/apiKey'
 
 export async function POST(request: NextRequest) {
@@ -23,7 +21,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, tier = 'free' } = body
+    const { name, description, tier: requestedTier } = body
+
+    const { tier, limits } = resolveTierLimits(requestedTier)
 
     if (!name) {
       return NextResponse.json(
@@ -34,9 +34,7 @@ export async function POST(request: NextRequest) {
 
     // 新しいAPIキーを生成
     const apiKey = generateApiKey('xbrl_live')
-    const keyHash = hashApiKey(apiKey)
-    const keyPrefix = extractApiKeyPrefix(apiKey)
-    const keySuffix = extractApiKeySuffix(apiKey)
+    const keyMetadata = deriveApiKeyMetadata(apiKey)
 
     // Supabase Admin クライアントでAPIキーを保存
     const supabaseAdmin = await createSupabaseServerAdminClient()
@@ -47,16 +45,16 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         name,
         description,
-        key_hash: keyHash,
-        key_prefix: keyPrefix,
-        key_suffix: keySuffix,
-        masked_key: maskApiKey(apiKey),
+        key_hash: keyMetadata.hash,
+        key_prefix: keyMetadata.prefix,
+        key_suffix: keyMetadata.suffix,
+        masked_key: keyMetadata.masked,
         tier,
         status: 'active',
         is_active: true,
-        rate_limit_per_minute: tier === 'pro' ? 600 : tier === 'basic' ? 300 : 100,
-        rate_limit_per_hour: tier === 'pro' ? 10000 : tier === 'basic' ? 5000 : 2000,
-        rate_limit_per_day: tier === 'pro' ? 200000 : tier === 'basic' ? 100000 : 50000,
+        rate_limit_per_minute: limits.perMinute,
+        rate_limit_per_hour: limits.perHour,
+        rate_limit_per_day: limits.perDay,
         created_at: new Date().toISOString(),
       })
       .select()
