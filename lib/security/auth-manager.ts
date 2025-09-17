@@ -26,6 +26,9 @@ export interface ApiKeyRecord {
   migration_status: 'pending' | 'in_progress' | 'completed';
   last_used_at?: string;
   usage_count: number;
+  status?: 'active' | 'revoked' | 'suspended' | 'expired';
+  is_active?: boolean;
+  expires_at?: string | null;
 }
 
 /**
@@ -99,6 +102,32 @@ export class UnifiedAuthManager {
         // Log failed authentication attempt
         await this.logSecurityEvent(keyRecord.id, 'auth_failure');
         return { success: false, error: 'Invalid API key' };
+      }
+
+      // Check API key status
+      if (keyRecord.status === 'revoked' || keyRecord.status === 'suspended') {
+        await this.logSecurityEvent(keyRecord.id, 'auth_failure_revoked', {
+          status: keyRecord.status
+        });
+        return { success: false, error: 'API key has been revoked' };
+      }
+
+      // Check if key is active
+      if (keyRecord.is_active === false) {
+        await this.logSecurityEvent(keyRecord.id, 'auth_failure_inactive');
+        return { success: false, error: 'API key is inactive' };
+      }
+
+      // Check expiration
+      if (keyRecord.expires_at) {
+        const expiresAt = new Date(keyRecord.expires_at);
+        const now = new Date();
+        if (now > expiresAt) {
+          await this.logSecurityEvent(keyRecord.id, 'auth_failure_expired', {
+            expired_at: keyRecord.expires_at
+          });
+          return { success: false, error: 'API key has expired' };
+        }
       }
 
       // Update usage statistics
