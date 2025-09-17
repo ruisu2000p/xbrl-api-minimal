@@ -84,10 +84,10 @@ XBRL財務データAPIシステムの新しいアーキテクチャでは、Verc
   - `keys_issue`: APIキー発行（既存を更新）
 
 ### 2. フロントエンドの変更
-- **DashboardClient.tsx**:
-  - Vercel API呼び出しを削除
-  - Supabase Client SDKを直接使用
-  - Edge Functions呼び出しに変更
+- **AccountSettings.tsx**:
+  - プロフィール、プラン、APIキー管理を単一のコンポーネントに整理
+  - Supabaseのサーバーアクションを直接呼び出し、ハンドラを集約
+  - 再利用されていないダッシュボード用UIを削除し、より軽量な実装へ刷新
 
 ### 3. セキュリティ強化
 - **RLSポリシー**: すべてのテーブルにRow Level Securityを適用
