@@ -86,13 +86,23 @@ export class SupabaseManager {
    * Execute database query with retry logic
    */
   async executeQuery<T>(
-    queryFn: (client: SupabaseClient) => Promise<any>,
+    queryFn: (
+      client: SupabaseClient
+    ) => Promise<{
+      data: T | null;
+      count?: number | null;
+      error?: { message: string } | null;
+    }>,
     options: {
       useServiceRole?: boolean;
       retries?: number;
       retryDelay?: number;
     } = {}
-  ): Promise<{ data: T; count?: number | null; error?: Error | null }> {
+  ): Promise<{
+    data: T | null;
+    count?: number | null;
+    error?: { message: string } | null;
+  }> {
     const { useServiceRole = false, retries = 3, retryDelay = 1000 } = options;
     const client = useServiceRole ? this.getServiceClient() : this.getClient();
 
@@ -108,9 +118,9 @@ export class SupabaseManager {
 
         // 完全なresultオブジェクトを返す（data, count含む）
         return {
-          data: result.data as T,
-          count: result.count || null,
-          error: null
+          data: result.data as T | null,
+          count: result.count ?? null,
+          error: null,
         };
       } catch (error) {
         lastError = error as Error;

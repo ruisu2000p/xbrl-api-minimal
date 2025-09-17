@@ -1,11 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { UnifiedKeyHasher } from './key-hasher';
-import {
-  verifyApiKey,
-  createApiKey,
-  maskApiKey,
-  parseIdSecretKey
-} from './unified-apikey';
+import { createApiKey } from './unified-apikey';
 import { logger } from '../utils/logger';
 
 export interface AuthResult {
@@ -107,9 +102,21 @@ export class UnifiedAuthManager {
       // Check API key status
       if (keyRecord.status === 'revoked' || keyRecord.status === 'suspended') {
         await this.logSecurityEvent(keyRecord.id, 'auth_failure_revoked', {
-          status: keyRecord.status
+          status: keyRecord.status,
         });
-        return { success: false, error: 'API key has been revoked' };
+        const statusMessage =
+          keyRecord.status === 'suspended' ? 'suspended' : 'revoked';
+        return {
+          success: false,
+          error: `API key has been ${statusMessage}`,
+        };
+      }
+
+      if (keyRecord.status === 'expired') {
+        await this.logSecurityEvent(keyRecord.id, 'auth_failure_expired_status', {
+          status: keyRecord.status,
+        });
+        return { success: false, error: 'API key has expired' };
       }
 
       // Check if key is active

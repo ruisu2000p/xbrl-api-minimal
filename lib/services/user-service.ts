@@ -77,7 +77,18 @@ export class UserService {
           .single();
       });
 
-      logger.info('User registered', { userId: result.data.id, email: result.data.email });
+      if (!result.data) {
+        throw new AppError(
+          ErrorCode.INTERNAL_ERROR,
+          'Failed to create user profile',
+          500
+        );
+      }
+
+      logger.info('User registered', {
+        userId: result.data.id,
+        email: result.data.email,
+      });
 
       return result.data;
     } catch (error) {
@@ -204,6 +215,14 @@ export class UserService {
         }
       );
       const keyData = keyResult.data;
+
+      if (!keyData) {
+        throw new AppError(
+          ErrorCode.DATABASE_ERROR,
+          'Failed to fetch API key metadata',
+          500
+        );
+      }
 
       // Update expiry if specified
       if (expiresAt) {
@@ -332,12 +351,11 @@ export class UserService {
       }
 
       // Count total requests
-      const totalResult = await supabaseManager.executeQuery<any[]>(async (client) => {
-        const response = await client
+      const totalResult = await supabaseManager.executeQuery<{ usage_count: number | null }[]>(async (client) => {
+        return await client
           .from('api_keys')
           .select('usage_count')
           .in('id', keyIds);
-        return response.data || [];
       });
 
       const total_requests = (totalResult.data || []).reduce(
@@ -346,7 +364,7 @@ export class UserService {
       );
 
       // Count today's requests from security events
-      const todayResult = await supabaseManager.executeQuery<any>(async (client) => {
+      const todayResult = await supabaseManager.executeQuery<{ id: string }[]>(async (client) => {
         return await client
           .from('security_events')
           .select('id', { count: 'exact' })
@@ -357,7 +375,7 @@ export class UserService {
       const requests_today = todayResult.count || 0;
 
       // Count this month's requests
-      const monthResult = await supabaseManager.executeQuery<any>(async (client) => {
+      const monthResult = await supabaseManager.executeQuery<{ id: string }[]>(async (client) => {
         return await client
           .from('security_events')
           .select('id', { count: 'exact' })
@@ -398,6 +416,14 @@ export class UserService {
           .select()
           .single();
       });
+
+      if (!result.data) {
+        throw new AppError(
+          ErrorCode.DATABASE_ERROR,
+          'Failed to update plan',
+          500
+        );
+      }
 
       logger.info('User plan updated', { userId, plan });
 
