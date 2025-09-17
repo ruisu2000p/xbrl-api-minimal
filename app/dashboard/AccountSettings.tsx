@@ -40,7 +40,8 @@ const PLAN_OPTIONS = [
     name: 'フリーミアム',
     price: '¥0/月',
     description: '個人投資家や検証用途向け',
-    highlights: ['直近1年間の財務データ', '月間5,000リクエスト', '標準サポート']
+    highlights: ['直近1年間の財務データ', '月間5,000リクエスト', '標準サポート'],
+    recommended: false
   },
   {
     id: 'standard',
