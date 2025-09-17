@@ -62,7 +62,7 @@ export class UserService {
       }
 
       // Create user profile
-      const user = await supabaseManager.executeQuery<User>(async (client) => {
+      const result = await supabaseManager.executeQuery<User>(async (client) => {
         return await client
           .from('users')
           .insert({
@@ -77,9 +77,9 @@ export class UserService {
           .single();
       });
 
-      logger.info('User registered', { userId: user.id, email: user.email });
+      logger.info('User registered', { userId: result.data.id, email: result.data.email });
 
-      return user;
+      return result.data;
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -141,7 +141,7 @@ export class UserService {
    */
   async getUserById(userId: string): Promise<User> {
     try {
-      const user = await supabaseManager.executeQuery<User>(async (client) => {
+      const result = await supabaseManager.executeQuery<User>(async (client) => {
         return await client
           .from('users')
           .select('*')
@@ -149,7 +149,7 @@ export class UserService {
           .single();
       });
 
-      if (!user) {
+      if (!result.data) {
         throw new AppError(
           ErrorCode.NOT_FOUND,
           'User not found',
@@ -157,7 +157,7 @@ export class UserService {
         );
       }
 
-      return user;
+      return result.data;
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -194,7 +194,7 @@ export class UserService {
       }
 
       // Get the created key data
-      const keyData = await supabaseManager.executeQuery<ApiKey>(
+      const keyResult = await supabaseManager.executeQuery<ApiKey>(
         async (client) => {
           return await client
             .from('api_keys')
@@ -203,6 +203,7 @@ export class UserService {
             .single();
         }
       );
+      const keyData = keyResult.data;
 
       // Update expiry if specified
       if (expiresAt) {
@@ -237,7 +238,7 @@ export class UserService {
    */
   async listApiKeys(userId: string): Promise<ApiKey[]> {
     try {
-      const keys = await supabaseManager.executeQuery<ApiKey[]>(
+      const result = await supabaseManager.executeQuery<ApiKey[]>(
         async (client) => {
           return await client
             .from('api_keys')
@@ -247,7 +248,7 @@ export class UserService {
         }
       );
 
-      return keys || [];
+      return result.data || [];
     } catch (error) {
       logger.error('Failed to list API keys', { userId, error });
       return [];
@@ -332,44 +333,44 @@ export class UserService {
 
       // Count total requests
       const totalResult = await supabaseManager.executeQuery<any[]>(async (client) => {
-        const result = await client
+        const response = await client
           .from('api_keys')
           .select('usage_count')
           .in('id', keyIds);
-        return result.data || [];
+        return response.data || [];
       });
 
-      const total_requests = totalResult.reduce(
+      const total_requests = (totalResult.data || []).reduce(
         (sum: number, key: any) => sum + (key.usage_count || 0),
         0
       );
 
       // Count today's requests from security events
-      const todayResult = await supabaseManager.executeQuery<number>(async (client) => {
-        const result = await client
+      const todayResult = await supabaseManager.executeQuery<any>(async (client) => {
+        return await client
           .from('security_events')
           .select('id', { count: 'exact' })
           .in('api_key_id', keyIds)
           .eq('event_type', 'auth_success')
           .gte('created_at', todayStart.toISOString());
-        return result.count || 0;
       });
+      const requests_today = todayResult.count || 0;
 
       // Count this month's requests
-      const monthResult = await supabaseManager.executeQuery<number>(async (client) => {
-        const result = await client
+      const monthResult = await supabaseManager.executeQuery<any>(async (client) => {
+        return await client
           .from('security_events')
           .select('id', { count: 'exact' })
           .in('api_key_id', keyIds)
           .eq('event_type', 'auth_success')
           .gte('created_at', monthStart.toISOString());
-        return result.count || 0;
       });
+      const requests_this_month = monthResult.count || 0;
 
       return {
         total_requests,
-        requests_today: todayResult,
-        requests_this_month: monthResult,
+        requests_today,
+        requests_this_month,
       };
     } catch (error) {
       logger.error('Failed to get usage stats', { userId, error });
@@ -386,7 +387,7 @@ export class UserService {
    */
   async updateUserPlan(userId: string, plan: string): Promise<User> {
     try {
-      const user = await supabaseManager.executeQuery<User>(async (client) => {
+      const result = await supabaseManager.executeQuery<User>(async (client) => {
         return await client
           .from('users')
           .update({
@@ -400,7 +401,7 @@ export class UserService {
 
       logger.info('User plan updated', { userId, plan });
 
-      return user;
+      return result.data;
     } catch (error) {
       logger.error('Failed to update user plan', { userId, plan, error });
       throw new AppError(
