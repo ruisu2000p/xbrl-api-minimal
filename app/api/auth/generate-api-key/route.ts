@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         name: 'Default API Key',  // NOT NULL制約のため必須
         key_prefix: keyPrefix,
+        key_suffix: keySuffix,  // suffixも保存
         key_hash: keyHash,
         is_active: true
       })

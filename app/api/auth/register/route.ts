@@ -9,7 +9,8 @@ import { createClient } from '@supabase/supabase-js';
 import {
   generateApiKey,
   hashApiKey,
-  extractApiKeyPrefix
+  extractApiKeyPrefix,
+  extractApiKeySuffix
 } from '@/lib/security/apiKey';
 
 // Supabase環境変数の確認（ビルド時ではなく実行時に評価）
@@ -118,6 +119,7 @@ export async function POST(request: NextRequest) {
     const apiKey = generateApiKey('xbrl_live');
     const keyHash = hashApiKey(apiKey);
     const keyPrefix = extractApiKeyPrefix(apiKey);
+    const keySuffix = extractApiKeySuffix(apiKey);
 
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
       .from('api_keys')
@@ -125,6 +127,7 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         name: 'Default API Key',  // NOT NULL制約のため必須
         key_prefix: keyPrefix,
+        key_suffix: keySuffix,  // suffixも保存
         key_hash: keyHash,
         is_active: true
       })
@@ -190,63 +193,5 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ユーザー情報の取得（デバッグ用）
-export async function GET(request: NextRequest) {
-  const email = request.nextUrl.searchParams.get('email');
-  
-  // Supabase Admin Clientを取得
-  const supabaseAdmin = getSupabaseAdmin();
-  if (!supabaseAdmin) {
-    return NextResponse.json(
-      { error: 'Server configuration error' },
-      { status: 500 }
-    );
-  }
-  
-  if (!email) {
-    // 全ユーザー数を返す
-    const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
-    return NextResponse.json(
-      { 
-        count: allUsers?.users?.length || 0, 
-        message: 'Supabase登録済みユーザー数',
-        users: allUsers?.users?.map(u => ({ email: u.email, created_at: u.created_at }))
-      },
-      { status: 200 }
-    );
-  }
-
-  // 特定ユーザーの情報を取得
-  const { data: users } = await supabaseAdmin.auth.admin.listUsers();
-  const user = users?.users?.find(u => u.email === email);
-  
-  if (!user) {
-    return NextResponse.json(
-      { success: false, error: 'ユーザーが見つかりません' },
-      { status: 404 }
-    );
-  }
-
-  // APIキー情報も取得
-  const { data: apiKeys } = await supabaseAdmin
-    .from('api_keys')
-    .select('key_prefix, key_suffix, name, is_active, created_at')
-    .eq('user_id', user.id)
-    .eq('is_active', true);
-
-  return NextResponse.json({
-    id: user.id,
-    email: user.email,
-    name: user.user_metadata?.name,
-    company: user.user_metadata?.company,
-    plan: user.user_metadata?.plan || 'beta',
-    created_at: user.created_at,
-    email_confirmed: !!user.email_confirmed_at,
-    api_keys: apiKeys?.map(k => ({
-      display: `${k.key_prefix}...${k.key_suffix}`,
-      name: k.name,
-      active: k.is_active,
-      created_at: k.created_at
-    }))
-  }, { status: 200 });
-}
+// GETメソッドは削除 - セキュリティ上の理由で無効化
+// ユーザー情報の取得には認証が必要なエンドポイントを使用してください

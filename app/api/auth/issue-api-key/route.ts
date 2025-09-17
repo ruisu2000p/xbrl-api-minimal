@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     // ユーザーのプランを取得
     const userPlan = user.user_metadata?.plan || 'free';
 
-    // APIキーをデータベースに保存
+    // APIキーをデータベースに保存（存在するカラムのみ使用）
     const { data: savedKey, error: saveError } = await supabaseAdmin
       .from('api_keys')
       .insert({
@@ -107,25 +107,13 @@ export async function POST(request: NextRequest) {
         key_hash: keyHash,
         is_active: true,
         status: 'active',
-        environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
-        permissions: {
-          endpoints: ['*'],
-          scopes: ['read:markdown', 'read:companies', 'read:documents'],
-          rate_limit: userPlan === 'pro' ? 10000 : userPlan === 'basic' ? 5000 : 1000
-        },
-        metadata: {
-          created_via: 'api_endpoint',
-          user_email: email,
-          plan: userPlan,
-          created_at: new Date().toISOString()
-        },
-        created_by: userId,
         tier: userPlan === 'pro' ? 'pro' : userPlan === 'basic' ? 'basic' : 'free',
-        total_requests: 0,
-        successful_requests: 0,
-        failed_requests: 0,
         created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        // Rate limitsはテーブル定義に従って設定
+        rate_limit_per_minute: userPlan === 'pro' ? 200 : userPlan === 'basic' ? 100 : 60,
+        rate_limit_per_hour: userPlan === 'pro' ? 10000 : userPlan === 'basic' ? 5000 : 1000,
+        rate_limit_per_day: userPlan === 'pro' ? 100000 : userPlan === 'basic' ? 50000 : 10000
       })
       .select()
       .single();

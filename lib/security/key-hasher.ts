@@ -49,12 +49,12 @@ export class UnifiedKeyHasher {
   static async verifyApiKey(
     apiKey: string,
     storedHash: string,
-    salt: string
+    salt?: string
   ): Promise<boolean> {
     const secret = this.resolveSecret();
 
     const hmac = crypto.createHmac(this.ALGORITHM, secret);
-    hmac.update(apiKey + salt);
+    hmac.update(apiKey + (salt || ''));
     const computedHash = hmac.digest(this.ENCODING);
 
     // Constant-time comparison to prevent timing attacks

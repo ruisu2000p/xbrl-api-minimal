@@ -50,17 +50,24 @@ export class UnifiedAuthManager {
       let keyRecord: ApiKeyRecord | null = null;
       let error: any = null;
 
-      // First try HMAC-SHA256 (current standard)
-      const hmacHash = await UnifiedKeyHasher.hashApiKey(apiKey);
-      const { data: hmacRecord, error: hmacError } = await this.supabase
+      // Import hashApiKey from apiKey.ts to ensure consistency
+      const { hashApiKey } = await import('../security/apiKey');
+
+      // First try simple HMAC (used by apiKey.ts)
+      const simpleHmacHash = hashApiKey(apiKey);
+      const { data: simpleHmacRecord, error: simpleHmacError } = await this.supabase
         .from('api_keys')
         .select('*')
-        .eq('key_hash', hmacHash)
+        .eq('key_hash', simpleHmacHash)
         .single();
 
-      if (hmacRecord) {
-        keyRecord = hmacRecord;
+      if (simpleHmacRecord) {
+        keyRecord = simpleHmacRecord;
       } else {
+        // Try HMAC with salt (UnifiedKeyHasher method)
+        // Note: This will fail because we don't know the salt beforehand
+        // We need to fetch by other means first
+
         // Fallback to Base64 (legacy)
         const base64Hash = Buffer.from(apiKey).toString('base64');
         const { data: base64Record, error: base64Error } = await this.supabase
@@ -72,7 +79,7 @@ export class UnifiedAuthManager {
         if (base64Record) {
           keyRecord = base64Record;
         } else {
-          error = hmacError || base64Error;
+          error = simpleHmacError || base64Error;
         }
       }
 
