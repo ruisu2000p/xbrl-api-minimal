@@ -46,12 +46,35 @@ export class UnifiedAuthManager {
         ? apiKey.split('.')
         : [null, apiKey];
 
-      // Find the API key record
-      const { data: keyRecord, error } = await this.supabase
+      // Try multiple hash methods to find the key
+      let keyRecord: ApiKeyRecord | null = null;
+      let error: any = null;
+
+      // First try HMAC-SHA256 (current standard)
+      const hmacHash = await UnifiedKeyHasher.hashApiKey(apiKey);
+      const { data: hmacRecord, error: hmacError } = await this.supabase
         .from('api_keys')
         .select('*')
-        .or(keyId ? `id.eq.${keyId}` : `key_hash.eq.${Buffer.from(apiKey).toString('base64')}`)
+        .eq('key_hash', hmacHash)
         .single();
+
+      if (hmacRecord) {
+        keyRecord = hmacRecord;
+      } else {
+        // Fallback to Base64 (legacy)
+        const base64Hash = Buffer.from(apiKey).toString('base64');
+        const { data: base64Record, error: base64Error } = await this.supabase
+          .from('api_keys')
+          .select('*')
+          .eq('key_hash', base64Hash)
+          .single();
+
+        if (base64Record) {
+          keyRecord = base64Record;
+        } else {
+          error = hmacError || base64Error;
+        }
+      }
 
       if (error || !keyRecord) {
         logger.warn('API key not found', { keyId });

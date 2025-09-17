@@ -31,6 +31,17 @@ function getSupabaseAdmin() {
 
 export async function POST(request: NextRequest) {
   try {
+    // 認証チェック: Authorizationヘッダーが必須
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+
     const body = await request.json();
     const { userId, email, plan = 'beta' } = body;
 
@@ -46,6 +57,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Supabase接続エラー: 環境変数が設定されていません' },
         { status: 500 }
+      );
+    }
+
+    // トークンを検証してユーザーを確認
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // リクエストのuserIdが認証されたユーザーと一致することを確認
+    if (user.id !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: User ID mismatch' },
+        { status: 403 }
       );
     }
 
@@ -137,8 +165,18 @@ export async function POST(request: NextRequest) {
 
 // APIキー情報の取得（デバッグ用）
 export async function GET(request: NextRequest) {
+  // 認証チェック: Authorizationヘッダーが必須
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized: Authentication required' },
+      { status: 401 }
+    );
+  }
+
+  const token = authHeader.substring(7);
   const userId = request.nextUrl.searchParams.get('userId');
-  
+
   if (!userId) {
     return NextResponse.json(
       { success: false, error: 'ユーザーIDが必要です' },
@@ -151,6 +189,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { success: false, error: 'Supabase接続エラー' },
       { status: 500 }
+    );
+  }
+
+  // トークンを検証してユーザーを確認
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user || user.id !== userId) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized' },
+      { status: 401 }
     );
   }
 

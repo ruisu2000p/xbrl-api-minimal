@@ -18,6 +18,17 @@ import {
  */
 export async function POST(request: NextRequest) {
   try {
+    // 認証チェック: Authorizationヘッダーが必須
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+
     const body = await request.json();
     const { email, userId, keyName } = body;
 
@@ -42,14 +53,20 @@ export async function POST(request: NextRequest) {
     
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
 
-    // ユーザー確認
-    const { data: users } = await supabaseAdmin.auth.admin.listUsers();
-    const user = users?.users?.find(u => u.id === userId && u.email === email);
-    
-    if (!user) {
+    // トークンを検証してユーザーを確認
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
       return NextResponse.json(
-        { success: false, error: 'ユーザーが見つかりません' },
-        { status: 404 }
+        { success: false, error: 'Unauthorized: Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // リクエストのuserId/emailが認証されたユーザーと一致することを確認
+    if (user.id !== userId || user.email !== email) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: User mismatch' },
+        { status: 403 }
       );
     }
 
@@ -168,6 +185,16 @@ export async function POST(request: NextRequest) {
  * ユーザーの既存APIキー一覧を取得
  */
 export async function GET(request: NextRequest) {
+  // 認証チェック: Authorizationヘッダーが必須
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized: Authentication required' },
+      { status: 401 }
+    );
+  }
+
+  const token = authHeader.substring(7);
   const email = request.nextUrl.searchParams.get('email');
   const userId = request.nextUrl.searchParams.get('userId');
 
@@ -184,6 +211,15 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     );
+
+    // トークンを検証してユーザーを確認
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user || user.id !== userId || user.email !== email) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
     // APIキー一覧を取得
     const { data: apiKeys, error } = await supabaseAdmin
