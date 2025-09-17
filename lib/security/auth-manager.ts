@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 import { UnifiedKeyHasher } from './key-hasher';
+import { maskApiKey } from './apiKey';
 import { logger } from '../utils/logger';
 
 export interface AuthResult {
@@ -15,12 +17,40 @@ export interface ApiKeyRecord {
   id: string;
   user_id: string;
   key_hash: string;
-  salt?: string;
-  hash_method: 'base64' | 'sha256-base64' | 'hmac-sha256';
+  salt?: string | null;
+  hash_method: 'base64' | 'sha256-base64' | 'hmac-sha256' | 'hmac-sha256-hex';
   migration_status: 'pending' | 'in_progress' | 'completed';
-  last_used_at?: string;
-  usage_count: number;
+  last_used_at?: string | null;
+  usage_count?: number | null;
+  name?: string | null;
+  status?: string | null;
+  tier?: string | null;
+  expires_at?: string | null;
+  metadata?: Record<string, any> | null;
+  masked_key?: string | null;
+  key_prefix?: string | null;
+  key_suffix?: string | null;
+  is_active?: boolean | null;
+  created_at?: string | null;
 }
+
+export interface ApiKeyCreateOptions {
+  name?: string;
+  description?: string;
+  status?: string;
+  tier?: string;
+  expiresAt?: string;
+  isActive?: boolean;
+  metadata?: Record<string, any>;
+  rateLimits?: {
+    perMinute?: number;
+    perHour?: number;
+    perDay?: number;
+  };
+  extraFields?: Record<string, any>;
+}
+
+type LegacyHashMethod = 'base64' | 'sha256-base64' | 'hmac-sha256-hex';
 
 /**
  * Unified Authentication Manager
@@ -37,75 +67,121 @@ export class UnifiedAuthManager {
    */
   static async authenticateApiKey(apiKey: string): Promise<AuthResult> {
     try {
-      // Extract the API key ID from the key (if formatted as id.secret)
+      if (!apiKey) {
+        return { success: false, error: 'Invalid API key' };
+      }
+
       const [keyId, keySecret] = apiKey.includes('.')
-        ? apiKey.split('.')
+        ? apiKey.split('.', 2)
         : [null, apiKey];
 
-      // Find the API key record
-      const { data: keyRecord, error } = await this.supabase
-        .from('api_keys')
-        .select('*')
-        .or(keyId ? `id.eq.${keyId}` : `key_hash.eq.${Buffer.from(apiKey).toString('base64')}`)
-        .single();
+      let keyRecord: ApiKeyRecord | null = null;
+      let lookupError: unknown = null;
 
-      if (error || !keyRecord) {
+      if (keyId) {
+        const { data, error } = await this.supabase
+          .from('api_keys')
+          .select('*')
+          .eq('id', keyId)
+          .maybeSingle();
+
+        if (error) {
+          lookupError = error;
+        } else {
+          keyRecord = (data as ApiKeyRecord) ?? null;
+        }
+      }
+
+      if (!keyRecord) {
+        const legacyMethods: LegacyHashMethod[] = [
+          'hmac-sha256-hex',
+          'sha256-base64',
+          'base64'
+        ];
+
+        for (const method of legacyMethods) {
+          try {
+            const hashValue = UnifiedKeyHasher.legacyHashValue(apiKey, method);
+            const { data } = await this.supabase
+              .from('api_keys')
+              .select('*')
+              .eq('key_hash', hashValue)
+              .maybeSingle();
+
+            if (data) {
+              keyRecord = data as ApiKeyRecord;
+              break;
+            }
+          } catch (error) {
+            lookupError = error;
+          }
+        }
+      }
+
+      if (!keyRecord) {
+        if (lookupError) {
+          logger.warn('API key lookup error', lookupError);
+        }
         logger.warn('API key not found', { keyId });
         return { success: false, error: 'Invalid API key' };
       }
 
-      // Verify based on hash method
+      const secret = keyId ? keySecret : apiKey;
+
+      if (!secret) {
+        return { success: false, error: 'Invalid API key format' };
+      }
+
       let isValid = false;
       let migrationNeeded = false;
+      const hashMethod = keyRecord.hash_method;
 
-      switch (keyRecord.hash_method) {
+      switch (hashMethod) {
         case 'hmac-sha256':
-          // New secure method
+          if (!keyRecord.salt) {
+            logger.error('Missing salt for HMAC-SHA256 key', { keyId: keyRecord.id });
+            return { success: false, error: 'Authentication configuration error' };
+          }
           isValid = await UnifiedKeyHasher.verifyApiKey(
-            keySecret || apiKey,
+            secret,
             keyRecord.key_hash,
             keyRecord.salt
           );
           break;
 
-        case 'base64':
+        case 'hmac-sha256-hex':
         case 'sha256-base64':
-          // Legacy methods - verify and mark for migration
+        case 'base64':
           isValid = await UnifiedKeyHasher.verifyLegacyHash(
-            apiKey,
+            secret,
             keyRecord.key_hash,
-            keyRecord.hash_method
+            hashMethod as LegacyHashMethod
           );
           migrationNeeded = true;
 
-          // Trigger async migration if valid
           if (isValid) {
-            this.migrateLegacyKeyAsync(keyRecord.id, apiKey, keyRecord.hash_method);
+            this.migrateLegacyKeyAsync(keyRecord.id, secret, hashMethod as LegacyHashMethod);
           }
           break;
 
         default:
-          logger.error('Unknown hash method', { hashMethod: keyRecord.hash_method });
+          logger.error('Unknown hash method', { hashMethod });
           return { success: false, error: 'Authentication configuration error' };
       }
 
       if (!isValid) {
-        // Log failed authentication attempt
         await this.logSecurityEvent(keyRecord.id, 'auth_failure');
         return { success: false, error: 'Invalid API key' };
       }
 
-      // Update usage statistics
       await this.updateUsageStats(keyRecord.id);
-
-      // Log successful authentication
       await this.logSecurityEvent(keyRecord.id, 'auth_success');
 
       return {
         success: true,
         userId: keyRecord.user_id,
         apiKeyId: keyRecord.id,
-        hashMethod: keyRecord.hash_method,
+        hashMethod,
         migrationNeeded
       };
     } catch (error) {
@@ -120,7 +196,7 @@ export class UnifiedAuthManager {
   private static async migrateLegacyKeyAsync(
     keyId: string,
     apiKey: string,
-    currentHashMethod: 'base64' | 'sha256-base64'
+    currentHashMethod: LegacyHashMethod
   ): Promise<void> {
     try {
       logger.info('Starting legacy key migration', { keyId, currentHashMethod });
@@ -219,38 +295,69 @@ export class UnifiedAuthManager {
    */
   static async createApiKey(
     userId: string,
-    name?: string
-  ): Promise<{ apiKey: string; keyId: string }> {
-    // Generate secure random key
-    const apiKey = UnifiedKeyHasher.generateApiKey();
+    name?: string,
+    options: ApiKeyCreateOptions = {}
+  ): Promise<{ apiKey: string; keyId: string; record: ApiKeyRecord }> {
+    const secret = UnifiedKeyHasher.generateApiKey();
+    const { hash, salt } = await UnifiedKeyHasher.hashApiKey(secret);
 
-    // Hash with HMAC-SHA256
-    const { hash, salt } = await UnifiedKeyHasher.hashApiKey(apiKey);
+    const keyId = randomUUID();
+    const apiKeyValue = `${keyId}.${secret}`;
+    const masked = maskApiKey(apiKeyValue);
+    const now = new Date().toISOString();
 
-    // Store in database
+    const insertData: Record<string, any> = {
+      id: keyId,
+      user_id: userId,
+      name: options.name ?? name ?? 'API Key',
+      description: options.description,
+      status: options.status ?? 'active',
+      tier: options.tier ?? 'free',
+      expires_at: options.expiresAt ?? null,
+      is_active: options.isActive ?? true,
+      metadata: options.metadata ?? {},
+      key_hash: hash,
+      salt,
+      hash_method: 'hmac-sha256',
+      migration_status: 'completed',
+      security_version: 2,
+      masked_key: masked,
+      key_prefix: keyId,
+      key_suffix: secret.slice(-4),
+      created_at: now,
+      last_security_audit: now
+    };
+
+    if (options.rateLimits) {
+      if (options.rateLimits.perMinute !== undefined) {
+        insertData.rate_limit_per_minute = options.rateLimits.perMinute;
+      }
+      if (options.rateLimits.perHour !== undefined) {
+        insertData.rate_limit_per_hour = options.rateLimits.perHour;
+      }
+      if (options.rateLimits.perDay !== undefined) {
+        insertData.rate_limit_per_day = options.rateLimits.perDay;
+      }
+    }
+
+    if (options.extraFields) {
+      Object.assign(insertData, options.extraFields);
+    }
+
     const { data, error } = await this.supabase
       .from('api_keys')
-      .insert({
-        user_id: userId,
-        name: name || 'API Key',
-        key_hash: hash,
-        salt,
-        hash_method: 'hmac-sha256',
-        migration_status: 'completed',
-        security_version: 2,
-        created_at: new Date().toISOString()
-      })
+      .insert(insertData)
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Failed to create API key: ${error.message}`);
+    if (error || !data) {
+      throw new Error(`Failed to create API key: ${error?.message ?? 'unknown error'}`);
     }
 
-    // Return the key in format: id.secret
     return {
-      apiKey: `${data.id}.${apiKey}`,
-      keyId: data.id
+      apiKey: apiKeyValue,
+      keyId,
+      record: data as ApiKeyRecord
     };
   }
 }

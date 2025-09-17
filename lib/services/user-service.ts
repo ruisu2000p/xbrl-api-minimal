@@ -62,7 +62,9 @@ export class UserService {
       }
 
       // Create user profile
-      const user = await supabaseManager.executeQuery<User>(async (client) => {
+      const { data: user } = await supabaseManager.executeQuery<{
+        data: User | null;
+      }>(async (client) => {
         return await client
           .from('users')
           .insert({
@@ -76,6 +78,14 @@ export class UserService {
           .select()
           .single();
       });
+
+      if (!user) {
+        throw new AppError(
+          ErrorCode.INTERNAL_ERROR,
+          'Failed to persist user profile',
+          500
+        );
+      }
 
       logger.info('User registered', { userId: user.id, email: user.email });
 
@@ -141,7 +151,9 @@ export class UserService {
    */
   async getUserById(userId: string): Promise<User> {
     try {
-      const user = await supabaseManager.executeQuery<User>(async (client) => {
+      const { data: user } = await supabaseManager.executeQuery<{
+        data: User | null;
+      }>(async (client) => {
         return await client
           .from('users')
           .select('*')
@@ -194,17 +206,26 @@ export class UserService {
       }
 
       // Get the created key data
-      const keyData = await supabaseManager.executeQuery<ApiKey>(
-        async (client) => {
-          return await client
-            .from('api_keys')
-            .select('*')
-            .eq('id', keyId)
-            .single();
-        }
-      );
+      const { data: keyRecord } = await supabaseManager.executeQuery<{
+        data: ApiKey | null;
+      }>(async (client) => {
+        return await client
+          .from('api_keys')
+          .select('*')
+          .eq('id', keyId)
+          .single();
+      });
+
+      if (!keyRecord) {
+        throw new AppError(
+          ErrorCode.DATABASE_ERROR,
+          'Failed to load API key metadata',
+          500
+        );
+      }
 
       // Update expiry if specified
+      let keyData = keyRecord;
       if (expiresAt) {
         await supabaseManager.executeQuery<any>(async (client) => {
           return await client
@@ -212,7 +233,7 @@ export class UserService {
             .update({ expires_at: expiresAt })
             .eq('id', keyId);
         });
-        keyData.expires_at = expiresAt;
+        keyData = { ...keyData, expires_at: expiresAt };
       }
 
       logger.info('API key created', { userId, keyId });
@@ -237,15 +258,15 @@ export class UserService {
    */
   async listApiKeys(userId: string): Promise<ApiKey[]> {
     try {
-      const keys = await supabaseManager.executeQuery<ApiKey[]>(
-        async (client) => {
-          return await client
-            .from('api_keys')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-        }
-      );
+      const { data: keys } = await supabaseManager.executeQuery<{
+        data: ApiKey[] | null;
+      }>(async (client) => {
+        return await client
+          .from('api_keys')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+      });
 
       return keys || [];
     } catch (error) {
@@ -331,15 +352,16 @@ export class UserService {
       }
 
       // Count total requests
-      const totalResult = await supabaseManager.executeQuery<any[]>(async (client) => {
-        const result = await client
+      const { data: totalRows } = await supabaseManager.executeQuery<{
+        data: { usage_count: number | null }[] | null;
+      }>(async (client) => {
+        return await client
           .from('api_keys')
           .select('usage_count')
           .in('id', keyIds);
-        return result.data || [];
       });
 
-      const total_requests = totalResult.reduce(
+      const total_requests = (totalRows || []).reduce(
         (sum: number, key: any) => sum + (key.usage_count || 0),
         0
       );
@@ -386,7 +408,9 @@ export class UserService {
    */
   async updateUserPlan(userId: string, plan: string): Promise<User> {
     try {
-      const user = await supabaseManager.executeQuery<User>(async (client) => {
+      const { data: user } = await supabaseManager.executeQuery<{
+        data: User | null;
+      }>(async (client) => {
         return await client
           .from('users')
           .update({
@@ -397,6 +421,14 @@ export class UserService {
           .select()
           .single();
       });
+
+      if (!user) {
+        throw new AppError(
+          ErrorCode.DATABASE_ERROR,
+          'Failed to update plan',
+          500
+        );
+      }
 
       logger.info('User plan updated', { userId, plan });
 

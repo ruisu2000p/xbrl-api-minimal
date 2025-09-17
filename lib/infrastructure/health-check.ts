@@ -80,7 +80,7 @@ export class HealthCheckService {
     const start = Date.now();
 
     try {
-      const result = await supabaseManager.executeQuery(
+      await supabaseManager.executeQuery(
         async (client) => {
           return await client
             .from('companies')

@@ -6,11 +6,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import {
-  generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix
-} from '@/lib/security/apiKey';
+import { UnifiedAuthManager } from '@/lib/security/auth-manager';
 
 // Supabase環境変数の確認（ビルド時ではなく実行時に評価）
 function getSupabaseAdmin() {
@@ -114,26 +110,37 @@ export async function POST(request: NextRequest) {
       console.error('Database user error:', dbUserError);
     }
 
-    // APIキーの生成と保存
-    const apiKey = generateApiKey('xbrl_live');
-    const keyHash = hashApiKey(apiKey);
-    const keyPrefix = extractApiKeyPrefix(apiKey);
+    let apiKey: string;
+    try {
+      const planTier = plan === 'pro' ? 'pro' : plan === 'basic' ? 'basic' : 'free';
+      const { apiKey: createdKey, record } = await UnifiedAuthManager.createApiKey(
+        userId,
+        'Default API Key',
+        {
+          tier: planTier,
+          status: 'active',
+          isActive: true,
+          metadata: {
+            created_via: 'register_endpoint',
+            user_email: email,
+            plan,
+            created_at: new Date().toISOString()
+          },
+          extraFields: {
+            created_by: userId
+          }
+        }
+      );
 
-    const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
-      .from('api_keys')
-      .insert({
-        user_id: userId,
-        name: 'Default API Key',  // NOT NULL制約のため必須
-        key_prefix: keyPrefix,
-        key_hash: keyHash,
-        is_active: true
-      })
-      .select()
-      .single();
+      apiKey = createdKey;
 
-    if (apiKeyError) {
+      console.log('✅ User registered with API key:', {
+        email,
+        userId,
+        apiKeyPrefix: record.key_prefix
+      });
+    } catch (apiKeyError) {
       console.error('API key creation error:', apiKeyError);
-      // Rollback user creation if API key generation fails
       try {
         await supabaseAdmin.from('users').delete().eq('id', userId);
       } catch (dbDeleteError) {
@@ -149,12 +156,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
-    console.log('✅ User registered with API key:', {
-      email,
-      userId,
-      apiKeyPrefix: keyPrefix
-    });
 
     // セッションの作成
     const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({

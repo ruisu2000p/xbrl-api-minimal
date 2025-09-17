@@ -1,5 +1,18 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { PostgrestError } from '@supabase/supabase-js';
 import { logger } from '../utils/logger';
+
+type SupabaseQueryResult = {
+  error?: PostgrestError | null;
+};
+
+function hasSupabaseError(result: unknown): result is SupabaseQueryResult {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    'error' in result
+  );
+}
 
 /**
  * Supabase Client Singleton
@@ -86,7 +99,7 @@ export class SupabaseManager {
    * Execute database query with retry logic
    */
   async executeQuery<T>(
-    queryFn: (client: SupabaseClient) => Promise<any>,
+    queryFn: (client: SupabaseClient) => Promise<T>,
     options: {
       useServiceRole?: boolean;
       retries?: number;
@@ -102,11 +115,11 @@ export class SupabaseManager {
       try {
         const result = await queryFn(client);
 
-        if (result.error) {
+        if (hasSupabaseError(result) && result.error) {
           throw new Error(result.error.message);
         }
 
-        return result.data as T;
+        return result;
       } catch (error) {
         lastError = error as Error;
         logger.warn(`Query attempt ${attempt} failed:`, error);

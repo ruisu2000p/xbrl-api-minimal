@@ -5,13 +5,8 @@ export const revalidate = 0;
 // APIキー生成専用エンドポイント
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import {
-  generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix,
-  extractApiKeySuffix,
-  maskApiKey
-} from '@/lib/security/apiKey';
+import { maskApiKey } from '@/lib/security/apiKey';
+import { UnifiedAuthManager } from '@/lib/security/auth-manager';
 
 // Supabase環境変数を関数内で取得
 function getSupabaseAdmin() {
@@ -73,41 +68,27 @@ export async function POST(request: NextRequest) {
       }, { status: 200 });
     }
 
-    // 新しいAPIキーを生成
-    const apiKey = generateApiKey('xbrl_live');
-    const keyHash = hashApiKey(apiKey);
-    const keyPrefix = extractApiKeyPrefix(apiKey);
-    const keySuffix = extractApiKeySuffix(apiKey);
-
-    // APIキーをデータベースに保存（nameカラムも含める）
-    const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
-      .from('api_keys')
-      .insert({
-        user_id: userId,
-        name: 'Default API Key',  // NOT NULL制約のため必須
-        key_prefix: keyPrefix,
-        key_hash: keyHash,
-        is_active: true
-      })
-      .select()
-      .single();
-
-    if (apiKeyError) {
-      console.error('API key creation error:', apiKeyError);
-      
-      // エラーの詳細を返す
-      return NextResponse.json({
-        success: false,
-        error: 'APIキーの作成に失敗しました',
-        details: apiKeyError.message,
-        code: apiKeyError.code
-      }, { status: 500 });
-    }
+    const { apiKey, record: apiKeyData } = await UnifiedAuthManager.createApiKey(
+      userId,
+      'Default API Key',
+      {
+        status: 'active',
+        isActive: true,
+        metadata: {
+          created_via: 'generate_endpoint',
+          user_email: email,
+          plan
+        },
+        extraFields: {
+          created_by: userId
+        }
+      }
+    );
 
     console.log('✅ API key generated successfully:', {
       email,
       userId,
-      keyPrefix
+      keyPrefix: apiKeyData.key_prefix
     });
 
     // 成功レスポンス
@@ -116,8 +97,8 @@ export async function POST(request: NextRequest) {
       message: 'APIキーが正常に生成されました',
       apiKey, // 平文のAPIキー（初回のみ）
       keyInfo: {
-        prefix: keyPrefix,
-        suffix: keySuffix,
+        prefix: apiKeyData.key_prefix,
+        suffix: apiKeyData.key_suffix,
         masked: maskApiKey(apiKey),
         createdAt: new Date().toISOString()
       }

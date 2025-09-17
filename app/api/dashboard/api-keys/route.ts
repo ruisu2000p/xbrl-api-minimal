@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
-import {
-  generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix,
-  extractApiKeySuffix,
-  maskApiKey
-} from '@/lib/security/apiKey'
+import { UnifiedAuthManager } from '@/lib/security/auth-manager'
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,49 +26,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 新しいAPIキーを生成
-    const apiKey = generateApiKey('xbrl_live')
-    const keyHash = hashApiKey(apiKey)
-    const keyPrefix = extractApiKeyPrefix(apiKey)
-    const keySuffix = extractApiKeySuffix(apiKey)
-
-    // Supabase Admin クライアントでAPIキーを保存
-    const supabaseAdmin = await createSupabaseServerAdminClient()
-
-    const { data: newKey, error: insertError } = await supabaseAdmin
-      .from('api_keys')
-      .insert({
-        user_id: user.id,
-        name,
-        description,
-        key_hash: keyHash,
-        key_prefix: keyPrefix,
-        key_suffix: keySuffix,
-        masked_key: maskApiKey(apiKey),
-        tier,
-        status: 'active',
-        is_active: true,
-        rate_limit_per_minute: tier === 'pro' ? 600 : tier === 'basic' ? 300 : 100,
-        rate_limit_per_hour: tier === 'pro' ? 10000 : tier === 'basic' ? 5000 : 2000,
-        rate_limit_per_day: tier === 'pro' ? 200000 : tier === 'basic' ? 100000 : 50000,
-        created_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('Failed to create API key:', insertError)
-      return NextResponse.json(
-        { error: 'APIキーの作成に失敗しました' },
-        { status: 500 }
-      )
+    const rateLimits = {
+      perMinute: tier === 'pro' ? 600 : tier === 'basic' ? 300 : 100,
+      perHour: tier === 'pro' ? 10000 : tier === 'basic' ? 5000 : 2000,
+      perDay: tier === 'pro' ? 200000 : tier === 'basic' ? 100000 : 50000
     }
 
-    // 生成されたキーを返す（この時だけ平文で返す）
+    const { apiKey, record } = await UnifiedAuthManager.createApiKey(
+      user.id,
+      name,
+      {
+        tier,
+        status: 'active',
+        metadata: {
+          created_via: 'dashboard',
+          created_at: new Date().toISOString()
+        },
+        rateLimits,
+        description,
+        extraFields: {
+          description,
+          created_by: user.id
+        }
+      }
+    )
+
     return NextResponse.json({
       success: true,
       apiKey,
-      keyData: newKey
+      keyData: record
     })
 
   } catch (error) {

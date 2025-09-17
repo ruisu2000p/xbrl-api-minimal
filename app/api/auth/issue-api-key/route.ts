@@ -4,13 +4,8 @@ export const revalidate = 0;
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import {
-  generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix,
-  extractApiKeySuffix,
-  maskApiKey
-} from '@/lib/security/apiKey';
+import { maskApiKey } from '@/lib/security/apiKey';
+import { UnifiedAuthManager } from '@/lib/security/auth-manager';
 
 /**
  * POST /api/auth/issue-api-key
@@ -70,66 +65,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 新しいAPIキーを生成
-    const apiKey = generateApiKey('xbrl_live');
-    const keyHash = hashApiKey(apiKey);
-    const keyPrefix = extractApiKeyPrefix(apiKey);
-    const keySuffix = extractApiKeySuffix(apiKey);
-
     // ユーザーのプランを取得
     const userPlan = user.user_metadata?.plan || 'free';
 
-    // APIキーをデータベースに保存
-    const { data: savedKey, error: saveError } = await supabaseAdmin
-      .from('api_keys')
-      .insert({
-        user_id: userId,
-        name: keyName || `API Key #${(count || 0) + 1}`,
-        key_prefix: keyPrefix,
-        key_suffix: keySuffix,
-        key_hash: keyHash,
-        is_active: true,
+    const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { apiKey, record } = await UnifiedAuthManager.createApiKey(
+      userId,
+      keyName || `API Key #${(count || 0) + 1}`,
+      {
+        tier: userPlan === 'pro' ? 'pro' : userPlan === 'basic' ? 'basic' : 'free',
         status: 'active',
-        environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
-        permissions: {
-          endpoints: ['*'],
-          scopes: ['read:markdown', 'read:companies', 'read:documents'],
-          rate_limit: userPlan === 'pro' ? 10000 : userPlan === 'basic' ? 5000 : 1000
-        },
+        expiresAt,
         metadata: {
           created_via: 'api_endpoint',
           user_email: email,
           plan: userPlan,
           created_at: new Date().toISOString()
         },
-        created_by: userId,
-        tier: userPlan === 'pro' ? 'pro' : userPlan === 'basic' ? 'basic' : 'free',
-        total_requests: 0,
-        successful_requests: 0,
-        failed_requests: 0,
-        created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-      })
-      .select()
-      .single();
-
-    if (saveError) {
-      console.error('API key save error:', saveError);
-      return NextResponse.json(
-        { 
-          error: 'APIキーの保存に失敗しました',
-          details: saveError.message
+        rateLimits: {
+          perMinute: userPlan === 'pro' ? 200 : userPlan === 'basic' ? 120 : 60,
+          perHour: userPlan === 'pro' ? 5000 : userPlan === 'basic' ? 2500 : 1000,
+          perDay: userPlan === 'pro' ? 100000 : userPlan === 'basic' ? 50000 : 10000
         },
-        { status: 500 }
-      );
-    }
+        extraFields: {
+          environment: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+          permissions: {
+            endpoints: ['*'],
+            scopes: ['read:markdown', 'read:companies', 'read:documents'],
+            rate_limit: userPlan === 'pro' ? 10000 : userPlan === 'basic' ? 5000 : 1000
+          },
+          created_by: userId,
+          total_requests: 0,
+          successful_requests: 0,
+          failed_requests: 0
+        }
+      }
+    );
 
     // 成功レスポンス
     console.log('✅ API key issued successfully:', {
       email,
       userId,
-      keyPrefix,
-      keyId: savedKey.id
+      keyPrefix: record.key_prefix,
+      keyId: record.id
     });
 
     return NextResponse.json({
@@ -138,10 +117,10 @@ export async function POST(request: NextRequest) {
       apiKey: {
         key: apiKey, // この値は一度だけ表示される
         displayKey: maskApiKey(apiKey),
-        id: savedKey.id,
-        name: savedKey.name,
-        createdAt: savedKey.created_at,
-        expiresAt: savedKey.expires_at
+        id: record.id,
+        name: record.name,
+        createdAt: record.created_at,
+        expiresAt: record.expires_at
       },
       user: {
         email,

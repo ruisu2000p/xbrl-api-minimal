@@ -18,6 +18,19 @@ export interface SecurityConfig {
   };
 }
 
+export interface SecurityContext {
+  userId: string;
+  apiKeyId: string;
+  migrationNeeded?: boolean;
+}
+
+interface SecurityApplyResult {
+  response?: NextResponse;
+  request: NextRequest;
+  context?: SecurityContext;
+  rateLimitHeaders?: Record<string, string>;
+}
+
 /**
  * Unified Security Middleware
  * Centralized security checks for all API endpoints
@@ -29,8 +42,12 @@ export class SecurityMiddleware {
   static async apply(
     request: NextRequest,
     config: SecurityConfig = { requireAuth: true }
-  ): Promise<NextResponse | null> {
+  ): Promise<SecurityApplyResult> {
     try {
+      let modifiedRequest = request;
+      let context: SecurityContext | undefined;
+      let rateLimitHeaders: Record<string, string> | undefined;
+
       // 1. IP-based rate limiting (for non-authenticated endpoints)
       if (config.ipRateLimit?.enabled) {
         const ipLimitResponse = await checkIpRateLimit(
@@ -42,7 +59,7 @@ export class SecurityMiddleware {
           logger.warn('IP rate limit exceeded', {
             ip: request.headers.get('x-forwarded-for') || 'unknown'
           });
-          return ipLimitResponse;
+          return { response: ipLimitResponse, request };
         }
       }
 
@@ -51,10 +68,13 @@ export class SecurityMiddleware {
         const apiKey = this.extractApiKey(request);
 
         if (!apiKey) {
-          return NextResponse.json(
-            { error: 'API key required' },
-            { status: 401 }
-          );
+          return {
+            response: NextResponse.json(
+              { error: 'API key required' },
+              { status: 401 }
+            ),
+            request
+          };
         }
 
         // Authenticate with unified auth manager
@@ -62,10 +82,13 @@ export class SecurityMiddleware {
 
         if (!authResult.success) {
           logger.warn('Authentication failed', { error: authResult.error });
-          return NextResponse.json(
-            { error: authResult.error || 'Authentication failed' },
-            { status: 401 }
-          );
+          return {
+            response: NextResponse.json(
+              { error: authResult.error || 'Authentication failed' },
+              { status: 401 }
+            ),
+            request
+          };
         }
 
         // Store auth context in headers for downstream use
@@ -73,7 +96,12 @@ export class SecurityMiddleware {
         headers.set('x-user-id', authResult.userId!);
         headers.set('x-api-key-id', authResult.apiKeyId!);
 
-        // Add migration warning header if needed
+        context = {
+          userId: authResult.userId!,
+          apiKeyId: authResult.apiKeyId!,
+          migrationNeeded: authResult.migrationNeeded
+        };
+
         if (authResult.migrationNeeded) {
           headers.set('x-security-warning', 'api-key-migration-needed');
           logger.info('Legacy API key detected, migration initiated', {
@@ -81,44 +109,50 @@ export class SecurityMiddleware {
           });
         }
 
+        modifiedRequest = await this.cloneRequestWithHeaders(request, headers);
+
         // 3. User-based rate limiting
         if (config.rateLimit?.enabled !== false) {
           // Get user's plan from database
           const planType = await this.getUserPlan(authResult.userId!);
 
-          const rateLimitResponse = await checkRateLimit(
+          const rateLimitResult = await checkRateLimit(
             request,
             authResult.apiKeyId!,
             planType
           );
 
-          if (rateLimitResponse) {
+          if (rateLimitResult.blocked && rateLimitResult.response) {
             logger.warn('User rate limit exceeded', {
               userId: authResult.userId,
               apiKeyId: authResult.apiKeyId
             });
-            return rateLimitResponse;
+            return {
+              response: rateLimitResult.response,
+              request: modifiedRequest,
+              context,
+              rateLimitHeaders: rateLimitResult.headers
+            };
           }
+
+          rateLimitHeaders = rateLimitResult.headers;
         }
-
-        // Create new request with updated headers
-        const modifiedRequest = new NextRequest(request.url, {
-          headers,
-          method: request.method,
-          body: request.body
-        });
-
-        // Continue to next handler
-        return null;
       }
 
-      return null;
+      return {
+        request: modifiedRequest,
+        context,
+        rateLimitHeaders
+      };
     } catch (error) {
       logger.error('Security middleware error', error);
-      return NextResponse.json(
-        { error: 'Internal security error' },
-        { status: 500 }
-      );
+      return {
+        response: NextResponse.json(
+          { error: 'Internal security error' },
+          { status: 500 }
+        ),
+        request
+      };
     }
   }
 
@@ -162,20 +196,75 @@ export class SecurityMiddleware {
    * Create middleware wrapper for easy integration
    */
   static withSecurity(
-    handler: (req: NextRequest) => Promise<NextResponse>,
+    handler: (req: NextRequest, context?: SecurityContext) => Promise<NextResponse>,
     config: SecurityConfig = { requireAuth: true }
   ) {
     return async (request: NextRequest): Promise<NextResponse> => {
-      // Apply security checks
-      const securityResponse = await this.apply(request, config);
+      const result = await this.apply(request, config);
 
-      // If security check failed, return error response
-      if (securityResponse) {
-        return securityResponse;
+      if (result.response) {
+        if (result.rateLimitHeaders) {
+          Object.entries(result.rateLimitHeaders).forEach(([key, value]) => {
+            result.response!.headers.set(key, value);
+          });
+        }
+
+        if (result.context?.migrationNeeded) {
+          result.response.headers.set('x-security-warning', 'api-key-migration-needed');
+        }
+
+        if (result.context?.userId) {
+          result.response.headers.set('x-user-id', result.context.userId);
+        }
+
+        if (result.context?.apiKeyId) {
+          result.response.headers.set('x-api-key-id', result.context.apiKeyId);
+        }
+
+        return result.response;
       }
 
-      // Otherwise, proceed with the handler
-      return handler(request);
+      const handlerResponse = await handler(result.request, result.context);
+
+      if (result.rateLimitHeaders) {
+        Object.entries(result.rateLimitHeaders).forEach(([key, value]) => {
+          handlerResponse.headers.set(key, value);
+        });
+      }
+
+      if (result.context?.migrationNeeded) {
+        handlerResponse.headers.set('x-security-warning', 'api-key-migration-needed');
+      }
+
+      if (result.context?.userId) {
+        handlerResponse.headers.set('x-user-id', result.context.userId);
+      }
+
+      if (result.context?.apiKeyId) {
+        handlerResponse.headers.set('x-api-key-id', result.context.apiKeyId);
+      }
+
+      return handlerResponse;
     };
+  }
+
+  private static async cloneRequestWithHeaders(
+    request: NextRequest,
+    headers: Headers
+  ): Promise<NextRequest> {
+    if (request.method === 'GET' || request.method === 'HEAD') {
+      return new NextRequest(request.url, {
+        method: request.method,
+        headers
+      });
+    }
+
+    const body = await request.clone().arrayBuffer();
+
+    return new NextRequest(request.url, {
+      method: request.method,
+      headers,
+      body
+    });
   }
 }

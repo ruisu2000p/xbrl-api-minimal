@@ -35,6 +35,12 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   }
 };
 
+export interface RateLimitCheckResult {
+  blocked: boolean;
+  response?: NextResponse;
+  headers?: Record<string, string>;
+}
+
 /**
  * レート制限チェック
  */
@@ -42,7 +48,7 @@ export async function checkRateLimit(
   request: NextRequest,
   apiKeyId: string,
   planType: string
-): Promise<NextResponse | null> {
+): Promise<RateLimitCheckResult> {
   const now = Date.now();
   const config = RATE_LIMITS[planType] || RATE_LIMITS.free;
   
@@ -69,33 +75,40 @@ export async function checkRateLimit(
     // レート制限超過をログに記録
     await logRateLimitExceeded(apiKeyId, limitData.count, config.maxRequests);
     
-    return NextResponse.json(
+    const retryAfter = Math.ceil((limitData.resetTime - now) / 1000);
+    const response = NextResponse.json(
       {
         error: 'Rate limit exceeded',
-        message: `Too many requests. Please retry after ${Math.ceil((limitData.resetTime - now) / 1000)} seconds`,
+        message: `Too many requests. Please retry after ${retryAfter} seconds`,
         limit: config.maxRequests,
         windowMs: config.windowMs,
-        retryAfter: Math.ceil((limitData.resetTime - now) / 1000)
+        retryAfter
       },
-      { 
+      {
         status: 429,
         headers: {
           'X-RateLimit-Limit': config.maxRequests.toString(),
           'X-RateLimit-Remaining': Math.max(0, config.maxRequests - limitData.count).toString(),
           'X-RateLimit-Reset': new Date(limitData.resetTime).toISOString(),
-          'Retry-After': Math.ceil((limitData.resetTime - now) / 1000).toString()
+          'Retry-After': retryAfter.toString()
         }
       }
     );
+
+    return {
+      blocked: true,
+      response
+    };
   }
-  
-  // レート制限情報をヘッダーに追加
-  const response = NextResponse.next();
-  response.headers.set('X-RateLimit-Limit', config.maxRequests.toString());
-  response.headers.set('X-RateLimit-Remaining', Math.max(0, config.maxRequests - limitData.count).toString());
-  response.headers.set('X-RateLimit-Reset', new Date(limitData.resetTime).toISOString());
-  
-  return null; // 制限内
+
+  return {
+    blocked: false,
+    headers: {
+      'X-RateLimit-Limit': config.maxRequests.toString(),
+      'X-RateLimit-Remaining': Math.max(0, config.maxRequests - limitData.count).toString(),
+      'X-RateLimit-Reset': new Date(limitData.resetTime).toISOString()
+    }
+  };
 }
 
 /**

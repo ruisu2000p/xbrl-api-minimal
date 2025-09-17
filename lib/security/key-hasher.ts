@@ -29,6 +29,29 @@ export class UnifiedKeyHasher {
     return crypto.randomBytes(this.SALT_LENGTH).toString('hex');
   }
 
+  private static legacyHmacHex(apiKey: string): string {
+    const secret = this.resolveSecret();
+    return crypto.createHmac(this.ALGORITHM, secret).update(apiKey).digest('hex');
+  }
+
+  static legacyHashValue(
+    apiKey: string,
+    hashMethod: 'base64' | 'sha256-base64' | 'hmac-sha256-hex'
+  ): string {
+    switch (hashMethod) {
+      case 'base64':
+        return Buffer.from(apiKey).toString('base64');
+      case 'sha256-base64':
+        return crypto.createHash('sha256')
+          .update(apiKey)
+          .digest('base64');
+      case 'hmac-sha256-hex':
+        return this.legacyHmacHex(apiKey);
+      default:
+        throw new Error(`Unsupported legacy hash method: ${hashMethod}`);
+    }
+  }
+
   /**
    * Hash API key using HMAC-SHA256 with salt
    */
@@ -70,20 +93,19 @@ export class UnifiedKeyHasher {
   static async verifyLegacyHash(
     apiKey: string,
     storedHash: string,
-    hashMethod: 'base64' | 'sha256-base64'
+    hashMethod: 'base64' | 'sha256-base64' | 'hmac-sha256-hex'
   ): Promise<boolean> {
     switch (hashMethod) {
       case 'base64':
         // Legacy Base64 encoding (most vulnerable)
-        const base64Hash = Buffer.from(apiKey).toString('base64');
-        return storedHash === base64Hash;
+        return storedHash === this.legacyHashValue(apiKey, 'base64');
 
       case 'sha256-base64':
         // Legacy SHA256 + Base64
-        const sha256Hash = crypto.createHash('sha256')
-          .update(apiKey)
-          .digest('base64');
-        return storedHash === sha256Hash;
+        return storedHash === this.legacyHashValue(apiKey, 'sha256-base64');
+
+      case 'hmac-sha256-hex':
+        return storedHash === this.legacyHashValue(apiKey, 'hmac-sha256-hex');
 
       default:
         return false;
@@ -96,7 +118,7 @@ export class UnifiedKeyHasher {
   static async migrateLegacyKey(
     apiKey: string,
     currentHash: string,
-    hashMethod: 'base64' | 'sha256-base64'
+    hashMethod: 'base64' | 'sha256-base64' | 'hmac-sha256-hex'
   ): Promise<{ hash: string; salt: string } | null> {
     // First verify the key with legacy method
     const isValid = await this.verifyLegacyHash(apiKey, currentHash, hashMethod);

@@ -118,16 +118,15 @@ export class CompanyService {
 
     try {
       // Get company details
-      const company = await supabaseManager.executeQuery<Company>(
-        async (client) => {
-          const result = await client
-            .from('companies')
-            .select('*')
-            .eq('id', id)
-            .single();
-          return result;
-        }
-      );
+      const { data: company } = await supabaseManager.executeQuery<{
+        data: Company | null;
+      }>(async (client) => {
+        return await client
+          .from('companies')
+          .select('*')
+          .eq('id', id)
+          .single();
+      });
 
       if (!company) {
         throw new AppError(
@@ -175,7 +174,9 @@ export class CompanyService {
     }
 
     try {
-      const files = await supabaseManager.executeQuery<any[]>(async (client) => {
+      const { data: files } = await supabaseManager.executeQuery<{
+        data: any[] | null;
+      }>(async (client) => {
         return await client
           .from('markdown_files_metadata')
           .select('*')
@@ -211,7 +212,9 @@ export class CompanyService {
 
     try {
       // Get file metadata
-      const metadata = await supabaseManager.executeQuery<any>(async (client) => {
+      const { data: metadata } = await supabaseManager.executeQuery<{
+        data: { storage_path: string | null } | null;
+      }>(async (client) => {
         return await client
           .from('markdown_files_metadata')
           .select('storage_path')

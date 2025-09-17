@@ -4,13 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { admin, type ApiKey } from './supabaseAdmin';
-import { hashApiKey } from '@/lib/security/apiKey';
+import { admin, getAdminClient, type ApiKey } from './supabaseAdmin';
+import { UnifiedAuthManager } from '@/lib/security/auth-manager';
+import { isValidApiKeyFormat } from '@/lib/security/apiKey';
 
-const validateApiKeyFormat = (key: string): boolean => {
-  // APIキーのフォーマット検証
-  return /^[a-zA-Z0-9_-]{20,}$/.test(key);
-};
+const validateApiKeyFormat = (key: string): boolean => isValidApiKeyFormat(key);
 
 const isKeyExpired = (expiresAt: string | null): boolean => {
   if (!expiresAt) return false;
@@ -21,6 +19,7 @@ export interface AuthResult {
   ok: true;
   key: ApiKey;
   userId: string;
+  migrationNeeded?: boolean;
 }
 
 export interface AuthError {
@@ -60,15 +59,21 @@ export async function authByApiKey(req: NextRequest): Promise<AuthResult | AuthE
       };
     }
 
-    // APIキーをハッシュ化
-    const keyHash = hashApiKey(apiKey);
+    const authResult = await UnifiedAuthManager.authenticateApiKey(apiKey);
 
-    // データベースでAPIキーを検索（現在のテーブル構造に対応）
-    const { data, error } = await admin
+    if (!authResult.success || !authResult.apiKeyId) {
+      return {
+        ok: false,
+        error: authResult.error || 'Invalid API key',
+        status: 401,
+      };
+    }
+
+    const supabaseAdmin = admin ?? getAdminClient();
+    const { data, error } = await supabaseAdmin
       .from('api_keys')
       .select('*')
-      .eq('key_hash', keyHash)
-      .limit(1)
+      .eq('id', authResult.apiKeyId)
       .maybeSingle();
 
     if (error) {
@@ -134,6 +139,7 @@ export async function authByApiKey(req: NextRequest): Promise<AuthResult | AuthE
       ok: true,
       key: data as ApiKey,
       userId: data.user_id,
+      migrationNeeded: authResult.migrationNeeded,
     };
   } catch (error) {
     console.error('Auth error:', error);

@@ -90,7 +90,7 @@ export const DOCUMENT_TYPES = {
 // Regex Patterns
 export const PATTERNS = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  API_KEY: /^xbrl_[a-zA-Z0-9]{32}$/,
+  API_KEY: /^(?:[0-9a-fA-F-]{36}\.[A-Za-z0-9]{16,}|xbrl_[A-Za-z0-9]{16,})$/,
   COMPANY_ID: /^S[0-9A-Z]{7}$/,
   TICKER_CODE: /^\d{4}$/,
 } as const;

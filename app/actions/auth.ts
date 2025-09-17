@@ -3,13 +3,8 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import {
-  generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix,
-  extractApiKeySuffix,
-  maskApiKey
-} from '@/lib/security/apiKey'
+import { maskApiKey } from '@/lib/security/apiKey'
+import { UnifiedAuthManager } from '@/lib/security/auth-manager'
 import type { ApiKey, ApiKeyResponse } from '@/types/api-key'
 
 export async function signIn(email: string, password: string) {
@@ -105,59 +100,55 @@ export async function signUp(userData: {
   }
 
   if (data?.user) {
-    // Create API key for the new user
+    let tempApiKey: string | null = null
     try {
-      const fullKey = generateApiKey('xbrl_live')
-      const hashedKey = hashApiKey(fullKey)
-      const keyPrefix = extractApiKeyPrefix(fullKey)
-      const keySuffix = extractApiKeySuffix(fullKey)
+      const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      const planTier = userData.plan === 'freemium'
+        ? 'free'
+        : userData.plan === 'standard'
+          ? 'pro'
+          : 'basic'
 
-      // Use admin client for API key creation
-      const adminClient = await createSupabaseServerAdminClient()
-      
-      const { error: apiKeyError } = await adminClient
-        .from('api_keys')
-        .insert({
-          user_id: data.user.id,
-          key_hash: hashedKey,
-          key_prefix: keyPrefix,
-          key_suffix: keySuffix,
-          masked_key: maskApiKey(fullKey),
-          name: 'Default API Key',
+      const rateLimits = {
+        perMinute: 100,
+        perHour: 2000,
+        perDay: userData.plan === 'freemium' ? 10000 : 50000
+      }
+
+      const { apiKey } = await UnifiedAuthManager.createApiKey(
+        data.user.id,
+        'Default API Key',
+        {
+          tier: planTier,
           status: 'active',
-          is_active: true,
-          environment: 'production',
-          permissions: {
-            endpoints: ['*'],
-            scopes: ['read:markdown', 'read:companies', 'read:documents'],
-            rate_limit: userData.plan === 'freemium' ? 1000 : userData.plan === 'standard' ? 10000 : 5000
-          },
+          expiresAt,
           metadata: {
             created_via: 'signup',
             user_email: userData.email,
             plan: userData.plan,
             created_at: new Date().toISOString()
           },
-          rate_limit_per_minute: 100,
-          rate_limit_per_hour: 2000,
-          rate_limit_per_day: userData.plan === 'freemium' ? 10000 : 50000,
-          tier: userData.plan === 'freemium' ? 'free' : userData.plan === 'standard' ? 'pro' : 'basic',
-          total_requests: 0,
-          successful_requests: 0,
-          failed_requests: 0,
-          created_by: data.user.id,
-          created_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-        })
+          rateLimits,
+          extraFields: {
+            environment: 'production',
+            permissions: {
+              endpoints: ['*'],
+              scopes: ['read:markdown', 'read:companies', 'read:documents'],
+              rate_limit: userData.plan === 'freemium'
+                ? 1000
+                : userData.plan === 'standard'
+                  ? 10000
+                  : 5000
+            },
+            total_requests: 0,
+            successful_requests: 0,
+            failed_requests: 0,
+            created_by: data.user.id
+          }
+        }
+      )
 
-      if (apiKeyError) {
-        throw apiKeyError
-      }
-
-      // Store the full API key temporarily for the user to see once
-      // This should be returned to the frontend once and never stored again
-      const tempApiKey = fullKey
-
+      tempApiKey = apiKey
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)
       // Rollback user creation on failure
@@ -182,7 +173,8 @@ export async function signUp(userData: {
         email: data.user.email!,
         name: userData.name,
         company: userData.company || null,
-        plan: userData.plan
+        plan: userData.plan,
+        apiKey: tempApiKey
       }
     }
   }
@@ -250,43 +242,36 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   }
 
   try {
-    // Generate API key
-    const fullKey = generateApiKey('xbrl_live')
-    const hashedKey = hashApiKey(fullKey)
-    const keyPrefix = extractApiKeyPrefix(fullKey)
-    const keySuffix = extractApiKeySuffix(fullKey)
-
-    const { data, error } = await supabase
-      .from('api_keys')
-      .insert({
-        user_id: user.id,
-        key_hash: hashedKey,
-        key_prefix: keyPrefix,
-        key_suffix: keySuffix,
-        masked_key: maskApiKey(fullKey),
-        name: name || 'API Key',
+    const { apiKey, record } = await UnifiedAuthManager.createApiKey(
+      user.id,
+      name || 'API Key',
+      {
+        tier: 'basic',
         status: 'active',
-        is_active: true,
-        rate_limit_per_minute: 100,
-        rate_limit_per_hour: 2000,
-        rate_limit_per_day: 50000,
-        tier: 'basic'
-      })
-      .select()
-      .single()
+        metadata: {
+          created_via: 'user_dashboard',
+          created_at: new Date().toISOString()
+        },
+        rateLimits: {
+          perMinute: 100,
+          perHour: 2000,
+          perDay: 50000
+        },
+        extraFields: {
+          created_by: user.id
+        }
+      }
+    )
 
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    // Return the plain text key only once for the user to save
     const newKey: ApiKey = {
-      id: data.id,
-      name: data.name,
-      key: fullKey, // Return the actual key only this once
-      created: new Date(data.created_at).toLocaleDateString('ja-JP'),
+      id: record.id,
+      name: record.name ?? name,
+      key: apiKey, // Return the actual key only this once
+      created: record.created_at
+        ? new Date(record.created_at).toLocaleDateString('ja-JP')
+        : new Date().toLocaleDateString('ja-JP'),
       lastUsed: '未使用',
-      tier: data.tier as ApiKey['tier']
+      tier: (record.tier as ApiKey['tier']) ?? 'basic'
     }
 
     return {
