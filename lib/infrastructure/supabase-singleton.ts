@@ -1,5 +1,13 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../utils/logger';
+
+export interface SupabaseQueryResult<T> {
+  data: T | null;
+  count?: number | null;
+  error: PostgrestError | null;
+  status?: number;
+  statusText?: string;
+}
 
 /**
  * Supabase Client Singleton
@@ -86,13 +94,15 @@ export class SupabaseManager {
    * Execute database query with retry logic
    */
   async executeQuery<T>(
-    queryFn: (client: SupabaseClient) => Promise<any>,
+    queryFn: (
+      client: SupabaseClient
+    ) => Promise<SupabaseQueryResult<T>>,
     options: {
       useServiceRole?: boolean;
       retries?: number;
       retryDelay?: number;
     } = {}
-  ): Promise<{ data: T; count?: number | null; error?: Error | null }> {
+  ): Promise<SupabaseQueryResult<T>> {
     const { useServiceRole = false, retries = 3, retryDelay = 1000 } = options;
     const client = useServiceRole ? this.getServiceClient() : this.getClient();
 
@@ -103,14 +113,15 @@ export class SupabaseManager {
         const result = await queryFn(client);
 
         if (result.error) {
-          throw new Error(result.error.message);
+          throw result.error;
         }
 
         // 完全なresultオブジェクトを返す（data, count含む）
         return {
-          data: result.data as T,
-          count: result.count || null,
-          error: null
+          ...result,
+          data: result.data as T | null,
+          count: result.count ?? null,
+          error: null,
         };
       } catch (error) {
         lastError = error as Error;
