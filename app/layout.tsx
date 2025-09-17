@@ -43,6 +43,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning={true}>
+      <head>
+        <link
+          href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css"
+          rel="stylesheet"
+        />
+      </head>
       <body
         className={`${inter.variable} ${pacifico.variable} antialiased`}
       >

@@ -106,57 +106,26 @@ export async function signUp(userData: {
 
   if (data?.user) {
     // Create API key for the new user
+    let fullApiKey: string | null = null
+
     try {
-      const fullKey = generateApiKey('xbrl_live')
-      const hashedKey = hashApiKey(fullKey)
-      const keyPrefix = extractApiKeyPrefix(fullKey)
-      const keySuffix = extractApiKeySuffix(fullKey)
+      // Import unified API key functions
+      const { createApiKey } = await import('@/lib/security/unified-apikey')
+      const { UnifiedAuthManager } = await import('@/lib/security/auth-manager')
 
-      // Use admin client for API key creation
-      const adminClient = await createSupabaseServerAdminClient()
-      
-      const { error: apiKeyError } = await adminClient
-        .from('api_keys')
-        .insert({
-          user_id: data.user.id,
-          key_hash: hashedKey,
-          key_prefix: keyPrefix,
-          key_suffix: keySuffix,
-          masked_key: maskApiKey(fullKey),
-          name: 'Default API Key',
-          status: 'active',
-          is_active: true,
-          environment: 'production',
-          permissions: {
-            endpoints: ['*'],
-            scopes: ['read:markdown', 'read:companies', 'read:documents'],
-            rate_limit: userData.plan === 'freemium' ? 1000 : userData.plan === 'standard' ? 10000 : 5000
-          },
-          metadata: {
-            created_via: 'signup',
-            user_email: userData.email,
-            plan: userData.plan,
-            created_at: new Date().toISOString()
-          },
-          rate_limit_per_minute: 100,
-          rate_limit_per_hour: 2000,
-          rate_limit_per_day: userData.plan === 'freemium' ? 10000 : 50000,
-          tier: userData.plan === 'freemium' ? 'free' : userData.plan === 'standard' ? 'pro' : 'basic',
-          total_requests: 0,
-          successful_requests: 0,
-          failed_requests: 0,
-          created_by: data.user.id,
-          created_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-        })
+      // Determine tier based on plan
+      const tier = userData.plan === 'freemium' ? 'free' :
+                   userData.plan === 'standard' ? 'premium' : 'basic'
 
-      if (apiKeyError) {
-        throw apiKeyError
-      }
+      // Create API key using unified system
+      const { apiKey, keyId, masked } = await UnifiedAuthManager.createApiKey(
+        data.user.id,
+        'Default API Key',
+        tier
+      )
 
-      // Store the full API key temporarily for the user to see once
-      // This should be returned to the frontend once and never stored again
-      const tempApiKey = fullKey
+      // Store the full API key to return once
+      fullApiKey = apiKey
 
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)
@@ -183,7 +152,8 @@ export async function signUp(userData: {
         name: userData.name,
         company: userData.company || null,
         plan: userData.plan
-      }
+      },
+      apiKey: fullApiKey // Return the API key once for the user to save
     }
   }
 

@@ -24,85 +24,7 @@ export class CompanyService {
   /**
    * Search companies with advanced filtering
    */
-  async searchCompanies(params: CompanySearchParams): Promise<{
-    data: Company[];
-    pagination: {
-      page: number;
-      per_page: number;
-      total: number;
-      total_pages: number;
-    };
-  }> {
-    const cacheKey = `companies:search:${JSON.stringify(params)}`;
-
-    // Try cache first
-    const cached = cacheManager.get<any>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    try {
-      const { page = 1, per_page = 20, search, sector, fiscal_year } = params;
-      const offset = (page - 1) * per_page;
-
-      const result = await supabaseManager.executeQuery<{
-        data: Company[] | null;
-        count: number | null;
-        error: any;
-      }>(async (client) => {
-        let query = client
-          .from('companies')
-          .select('*', { count: 'exact' });
-
-        // Apply filters
-        if (search) {
-          query = query.or(`company_name.ilike.%${search}%,ticker_code.ilike.%${search}%`);
-        }
-
-        if (sector) {
-          query = query.eq('sector', sector);
-        }
-
-        if (fiscal_year) {
-          query = query.eq('fiscal_year', fiscal_year);
-        }
-
-        // Apply pagination and sorting
-        query = query
-          .range(offset, offset + per_page - 1)
-          .order('company_name', { ascending: true });
-
-        return await query;
-      });
-
-      const response = {
-        data: result.data || [],
-        pagination: {
-          page,
-          per_page,
-          total: result.count || 0,
-          total_pages: Math.ceil((result.count || 0) / per_page),
-        },
-      };
-
-      // Cache the result
-      cacheManager.set(cacheKey, response, this.CACHE_TTL);
-
-      logger.info('Companies searched', {
-        count: response.data.length,
-        params,
-      });
-
-      return response;
-    } catch (error) {
-      logger.error('Failed to search companies', error);
-      throw new AppError(
-        ErrorCode.DATABASE_ERROR,
-        'Failed to search companies',
-        500
-      );
-    }
-  }
+  async searchCompanies(params: CompanySearchParams): Promise<{\n    data: Company[];\n    pagination: {\n      page: number;\n      per_page: number;\n      total: number;\n      total_pages: number;\n    };\n  }> {\n    const cacheKey = `companies:search:${JSON.stringify(params)}`;\n\n    // Try cache first\n    const cached = cacheManager.get<any>(cacheKey);\n    if (cached) {\n      return cached;\n    }\n\n    try {\n      const { page = 1, per_page = 20, search, sector, fiscal_year } = params;\n      const offset = (page - 1) * per_page;\n\n      const result = await supabaseManager.executeQuery<Company[]>(async (client) => {\n        let query = client\n          .from('companies')\n          .select('*', { count: 'exact' });\n\n        // Apply filters\n        if (search) {\n          query = query.or(`company_name.ilike.%${search}%,ticker_code.ilike.%${search}%`);\n        }\n\n        if (sector) {\n          query = query.eq('sector', sector);\n        }\n\n        if (fiscal_year) {\n          query = query.eq('fiscal_year', fiscal_year);\n        }\n\n        // Apply pagination and sorting\n        query = query\n          .range(offset, offset + per_page - 1)\n          .order('company_name', { ascending: true });\n\n        return await query;\n      });\n\n      const response = {\n        data: result.data || [],\n        pagination: {\n          page,\n          per_page,\n          total: result.count || 0,\n          total_pages: Math.ceil((result.count || 0) / per_page),\n        },\n      };\n\n      // Cache the result\n      cacheManager.set(cacheKey, response, this.CACHE_TTL);\n\n      logger.info('Companies searched', {\n        count: response.data.length,\n        params,\n      });\n\n      return response;\n    } catch (error) {\n      logger.error('Failed to search companies', error);\n      throw new AppError(\n        ErrorCode.DATABASE_ERROR,\n        'Failed to search companies',\n        500\n      );\n    }\n  }
 
   /**
    * Get company by ID
@@ -175,7 +97,7 @@ export class CompanyService {
     }
 
     try {
-      const files = await supabaseManager.executeQuery<any[]>(async (client) => {
+      const result = await supabaseManager.executeQuery<any[]>(async (client) => {
         return await client
           .from('markdown_files_metadata')
           .select('*')
@@ -184,9 +106,9 @@ export class CompanyService {
       });
 
       // Cache the result
-      cacheManager.set(cacheKey, files || [], this.CACHE_TTL);
+      cacheManager.set(cacheKey, result.data || [], this.CACHE_TTL);
 
-      return files || [];
+      return result.data || [];
     } catch (error) {
       logger.error('Failed to get company files', { companyId, error });
       return [];
@@ -262,35 +184,7 @@ export class CompanyService {
   /**
    * Get available sectors
    */
-  async getSectors(): Promise<string[]> {
-    const cacheKey = 'sectors:all';
-
-    // Try cache first
-    const cached = cacheManager.get<string[]>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    try {
-      const result = await supabaseManager.executeQuery<{ data: any[] | null }>(async (client) => {
-        return await client
-          .from('companies')
-          .select('sector')
-          .not('sector', 'is', null)
-          .order('sector');
-      });
-
-      const sectors = [...new Set((result.data || []).map((r: any) => r.sector))];
-
-      // Cache for longer
-      cacheManager.set(cacheKey, sectors, this.CACHE_TTL * 4);
-
-      return sectors;
-    } catch (error) {
-      logger.error('Failed to get sectors', error);
-      return [];
-    }
-  }
+  async getSectors(): Promise<string[]> {\n    const cacheKey = 'sectors:all';\n\n    // Try cache first\n    const cached = cacheManager.get<string[]>(cacheKey);\n    if (cached) {\n      return cached;\n    }\n\n    try {\n      const result = await supabaseManager.executeQuery<{ sector: string }[]>(async (client) => {\n        return await client\n          .from('companies')\n          .select('sector')\n          .not('sector', 'is', null)\n          .order('sector');\n      });\n\n      const sectors = [...new Set((result.data || []).map((r) => r.sector))];\n\n      // Cache for longer\n      cacheManager.set(cacheKey, sectors, this.CACHE_TTL * 4);\n\n      return sectors;\n    } catch (error) {\n      logger.error('Failed to get sectors', error);\n      return [];\n    }\n  }
 
   /**
    * Get available fiscal years
@@ -305,7 +199,7 @@ export class CompanyService {
     }
 
     try {
-      const result = await supabaseManager.executeQuery<{ data: any[] | null }>(async (client) => {
+      const result = await supabaseManager.executeQuery<{ fiscal_year: string }[]>(async (client) => {
         return await client
           .from('companies')
           .select('fiscal_year')
@@ -313,7 +207,7 @@ export class CompanyService {
           .order('fiscal_year', { ascending: false });
       });
 
-      const years = [...new Set((result.data || []).map((r: any) => r.fiscal_year))];
+      const years = [...new Set((result.data || []).map((r) => r.fiscal_year))];
 
       // Cache for longer
       cacheManager.set(cacheKey, years, this.CACHE_TTL * 4);

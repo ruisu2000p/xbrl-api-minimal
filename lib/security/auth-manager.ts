@@ -1,5 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { UnifiedKeyHasher } from './key-hasher';
+import {
+  verifyApiKey,
+  createApiKey,
+  maskApiKey,
+  parseIdSecretKey
+} from './unified-apikey';
 import { logger } from '../utils/logger';
 
 export interface AuthResult {
@@ -219,13 +225,11 @@ export class UnifiedAuthManager {
    */
   static async createApiKey(
     userId: string,
-    name?: string
-  ): Promise<{ apiKey: string; keyId: string }> {
-    // Generate secure random key
-    const apiKey = UnifiedKeyHasher.generateApiKey();
-
-    // Hash with HMAC-SHA256
-    const { hash, salt } = await UnifiedKeyHasher.hashApiKey(apiKey);
+    name?: string,
+    tier: 'free' | 'basic' | 'premium' = 'free'
+  ): Promise<{ apiKey: string; keyId: string; masked: string }> {
+    // Generate new API key using unified system
+    const { apiKey, hash, salt, masked } = await createApiKey('xbrl_live', 32);
 
     // Store in database
     const { data, error } = await this.supabase
@@ -238,6 +242,7 @@ export class UnifiedAuthManager {
         hash_method: 'hmac-sha256',
         migration_status: 'completed',
         security_version: 2,
+        tier,
         created_at: new Date().toISOString()
       })
       .select()
@@ -247,10 +252,17 @@ export class UnifiedAuthManager {
       throw new Error(`Failed to create API key: ${error.message}`);
     }
 
-    // Return the key in format: id.secret
+    // Log API key creation
+    await this.logSecurityEvent(data.id, 'api_key_created', {
+      tier,
+      masked
+    });
+
+    // Return the full API key (only returned once at creation)
     return {
-      apiKey: `${data.id}.${apiKey}`,
-      keyId: data.id
+      apiKey,
+      keyId: data.id,
+      masked
     };
   }
 }
