@@ -85,7 +85,46 @@ export class SupabaseManager {
   /**
    * Execute database query with retry logic
    */
-  async executeQuery<T>(\n    queryFn: (client: SupabaseClient) => Promise<any>,\n    options: {\n      useServiceRole?: boolean;\n      retries?: number;\n      retryDelay?: number;\n    } = {}\n  ): Promise<{ data: T; count?: number | null; error?: Error | null }> {\n    const { useServiceRole = false, retries = 3, retryDelay = 1000 } = options;\n    const client = useServiceRole ? this.getServiceClient() : this.getClient();\n\n    let lastError: Error | null = null;\n\n    for (let attempt = 1; attempt <= retries; attempt++) {\n      try {\n        const result = await queryFn(client);\n\n        if (result.error) {\n          throw new Error(result.error.message);\n        }\n\n        // 完全なresultオブジェクトを返す（data, count含む）\n        return {\n          data: result.data as T,\n          count: result.count || null,\n          error: null\n        };\n      } catch (error) {\n        lastError = error as Error;\n        logger.warn(`Query attempt ${attempt} failed:`, error);\n\n        if (attempt < retries) {\n          await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));\n        }\n      }\n    }\n\n    logger.error('All query attempts failed', lastError);\n    throw lastError;\n  }
+  async executeQuery<T>(
+    queryFn: (client: SupabaseClient) => Promise<any>,
+    options: {
+      useServiceRole?: boolean;
+      retries?: number;
+      retryDelay?: number;
+    } = {}
+  ): Promise<{ data: T; count?: number | null; error?: Error | null }> {
+    const { useServiceRole = false, retries = 3, retryDelay = 1000 } = options;
+    const client = useServiceRole ? this.getServiceClient() : this.getClient();
+
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const result = await queryFn(client);
+
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+
+        // 完全なresultオブジェクトを返す（data, count含む）
+        return {
+          data: result.data as T,
+          count: result.count || null,
+          error: null
+        };
+      } catch (error) {
+        lastError = error as Error;
+        logger.warn(`Query attempt ${attempt} failed:`, error);
+
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+        }
+      }
+    }
+
+    logger.error('All query attempts failed', lastError);
+    throw lastError;
+  }
 
   /**
    * Storage operations wrapper
