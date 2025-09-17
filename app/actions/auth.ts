@@ -109,23 +109,42 @@ export async function signUp(userData: {
     let fullApiKey: string | null = null
 
     try {
-      // Import unified API key functions
-      const { createApiKey } = await import('@/lib/security/unified-apikey')
-      const { UnifiedAuthManager } = await import('@/lib/security/auth-manager')
+      const admin = await createSupabaseServerAdminClient()
 
-      // Determine tier based on plan
-      const tier = userData.plan === 'freemium' ? 'free' :
-                   userData.plan === 'standard' ? 'premium' : 'basic'
+      const tier = userData.plan === 'freemium' ? 'free'
+        : userData.plan === 'standard' ? 'premium'
+        : 'basic'
 
-      // Create API key using unified system
-      const { apiKey, keyId, masked } = await UnifiedAuthManager.createApiKey(
-        data.user.id,
-        'Default API Key',
-        tier
-      )
+      const generatedKey = generateApiKey('xbrl_live')
+      const keyHash = hashApiKey(generatedKey)
+      const keyPrefix = extractApiKeyPrefix(generatedKey)
+      const keySuffix = extractApiKeySuffix(generatedKey)
+      const maskedKey = maskApiKey(generatedKey)
 
-      // Store the full API key to return once
-      fullApiKey = apiKey
+      const { error: insertError } = await admin
+        .from('api_keys')
+        .insert({
+          user_id: data.user.id,
+          name: 'Default API Key',
+          key_hash: keyHash,
+          key_prefix: keyPrefix,
+          key_suffix: keySuffix,
+          masked_key: maskedKey,
+          status: 'active',
+          is_active: true,
+          tier,
+          rate_limit_per_minute: 100,
+          rate_limit_per_hour: 2000,
+          rate_limit_per_day: 50000
+        })
+        .select('id')
+        .single()
+
+      if (insertError) {
+        throw new Error(insertError.message)
+      }
+
+      fullApiKey = generatedKey
 
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)

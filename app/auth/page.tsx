@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthFormData, FormErrors, User } from '@/lib/types';
+type AuthFormData = {
+  name: string
+  email: string
+  password: string
+  confirmPassword: string
+  company: string
+  plan: string
+}
+
+type FormErrors = Record<string, string>;
 
 export default function AuthPage() {
   const router = useRouter();

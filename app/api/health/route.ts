@@ -1,33 +1,73 @@
-// import { NextRequest } from 'next/server'; // Not needed, using standard Request
-import { healthCheckService } from '@/lib/infrastructure/health-check';
-import { asyncHandler } from '@/lib/infrastructure/error-handler';
-import { successResponse, errorResponse } from '@/lib/utils/api-response';
+const REQUIRED_ENV_VARS = [
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+];
 
-/**
- * GET /api/health - Health check endpoint
- */
-export const GET = asyncHandler(async (request: Request) => {
-  // No authentication required for health check
-  const health = await healthCheckService.checkHealth();
+const STARTED_AT = Date.now();
 
-  if (health.status === 'unhealthy') {
-    return errorResponse('System unhealthy', {
-      status: 503,
-      details: health,
-    });
+type CheckStatus = 'pass' | 'warn' | 'fail';
+
+function evaluateEnvironment(): { status: CheckStatus; missing: string[] } {
+  const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+
+  if (missing.length === 0) {
+    return { status: 'pass', missing };
   }
 
-  return successResponse(health, {
-    status: health.status === 'degraded' ? 200 : 200,
-  });
-});
+  if (missing.length === REQUIRED_ENV_VARS.length) {
+    return { status: 'fail', missing };
+  }
 
-/**
- * GET /api/health/ready - Readiness probe (for k8s)
- */
-export async function HEAD(request: Request) {
-  const isReady = await healthCheckService.isReady();
-  return new Response(null, {
-    status: isReady ? 200 : 503,
-  });
+  return { status: 'warn', missing };
+}
+
+function buildHealthPayload() {
+  const envCheck = evaluateEnvironment();
+
+  const uptimeSeconds = Math.round(process.uptime());
+  const memoryUsage = process.memoryUsage();
+
+  const overallStatus: 'healthy' | 'degraded' | 'unhealthy' =
+    envCheck.status === 'fail'
+      ? 'unhealthy'
+      : envCheck.status === 'warn'
+        ? 'degraded'
+        : 'healthy';
+
+  return {
+    status: overallStatus,
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version ?? 'unknown',
+    checks: {
+      environment: {
+        status: envCheck.status,
+        missing: envCheck.missing,
+      },
+      process: {
+        status: 'pass' as const,
+        uptimeSeconds,
+        startedAt: new Date(STARTED_AT).toISOString(),
+        memoryUsage: {
+          rss: memoryUsage.rss,
+          heapTotal: memoryUsage.heapTotal,
+          heapUsed: memoryUsage.heapUsed,
+          external: memoryUsage.external,
+        },
+      },
+    },
+  };
+}
+
+export async function GET() {
+  const health = buildHealthPayload();
+  const statusCode = health.status === 'unhealthy' ? 503 : 200;
+
+  return Response.json(health, { status: statusCode });
+}
+
+export async function HEAD() {
+  const envCheck = evaluateEnvironment();
+  const ready = envCheck.status !== 'fail';
+
+  return new Response(null, { status: ready ? 200 : 503 });
 }
