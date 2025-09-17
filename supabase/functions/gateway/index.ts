@@ -1,9 +1,36 @@
 // supabase/functions/gateway/index.ts
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-const HMAC_SECRET  = Deno.env.get('KEY_DERIVE_SECRET')!;              // 独自キーのハッシュ用シークレット
+const RAW_HMAC_SECRET =
+  Deno.env.get('KEY_DERIVE_SECRET') ??
+  Deno.env.get('KEY_PEPPER') ??
+  Deno.env.get('API_KEY_SECRET');
+
+if (!RAW_HMAC_SECRET) {
+  throw new Error('KEY_DERIVE_SECRET (or KEY_PEPPER/API_KEY_SECRET) environment variable must be set');
+}
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+const textEncoder = new TextEncoder();
+
+function decodeSecret(raw: string): Uint8Array {
+  try {
+    const binary = atob(raw);
+    return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  } catch {
+    return textEncoder.encode(raw);
+  }
+}
+
+const hmacKeyPromise = crypto.subtle.importKey(
+  'raw',
+  decodeSecret(RAW_HMAC_SECRET),
+  { name: 'HMAC', hash: 'SHA-256' },
+  false,
+  ['sign']
+);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -202,10 +229,9 @@ const supa = (path: string, init?: RequestInit) =>
   });
 
 // HMAC-SHA256（16進文字列）
-async function hmacSHA256(secret: string, msg: string) {
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg));
+async function hmacSHA256(msg: string) {
+  const key = await hmacKeyPromise;
+  const sig = await crypto.subtle.sign('HMAC', key, textEncoder.encode(msg));
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
@@ -265,7 +291,7 @@ Deno.serve(async (req) => {
     }
 
     // 1) APIキー照合（ハッシュ比較）- シンプル版
-    const keyHash = await hmacSHA256(HMAC_SECRET, clientKey);
+    const keyHash = await hmacSHA256(clientKey);
     console.log(`[DEBUG] Generated key hash: ${keyHash.substring(0, 10)}...`);
     const kRes = await supa(
       `/rest/v1/api_keys?select=*&key_hash=eq.${keyHash}&status=eq.active&limit=1`
