@@ -40,6 +40,26 @@ const hmacKeyPromise = crypto.subtle.importKey(
   ["sign"]
 );
 
+type ApiKeyRow = {
+  id: string;
+  user_id: string;
+  is_active?: boolean | null;
+  status?: string | null;
+  rate_limit_per_minute?: number | null;
+  rate_limit_per_hour?: number | null;
+  rate_limit_per_day?: number | null;
+  expires_at?: string | null;
+};
+
+const isColumnMissingError = (
+  error: { code?: string; message?: string; details?: string } | null,
+): boolean => {
+  if (!error) return false;
+  if (error.code === "42703") return true;
+  const msg = `${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
+  return msg.includes("column") && msg.includes("does not exist");
+};
+
 // CORS headers helper
 export function corsHeaders(origin = "*") {
   return {
@@ -103,24 +123,42 @@ export async function authenticateApiKey(headers: Headers) {
 
   const hashed = await hashKey(key);
 
-  const { data: keyRecord, error } = await supabaseAdmin
+  let { data: keyRecord, error } = await supabaseAdmin
     .from("api_keys")
-    .select("id, user_id, is_active, rate_limit_per_minute, rate_limit_per_hour, rate_limit_per_day, expires_at")
+    .select("id, user_id, is_active, status, rate_limit_per_minute, rate_limit_per_hour, rate_limit_per_day, expires_at")
     .eq("key_hash", hashed)
-    .eq("is_active", true)
     .limit(1)
-    .maybeSingle();
+    .maybeSingle<ApiKeyRow>();
+
+  if (error && isColumnMissingError(error)) {
+    const fallback = await supabaseAdmin
+      .from("api_keys")
+      .select("*")
+      .eq("key_hash", hashed)
+      .limit(1)
+      .maybeSingle<ApiKeyRow>();
+
+    keyRecord = fallback.data ?? undefined;
+    error = fallback.error;
+  }
 
   if (error || !keyRecord) {
     return { ok: false, status: 403, body: { error: "Invalid API key" } } as const;
   }
 
-  // Check expiration
+  if (keyRecord.is_active === false) {
+    return { ok: false, status: 403, body: { error: "API key disabled" } } as const;
+  }
+
+  if (keyRecord.status && keyRecord.status !== "active") {
+    return { ok: false, status: 403, body: { error: "API key inactive" } } as const;
+  }
+
   if (keyRecord.expires_at && new Date(keyRecord.expires_at) < new Date()) {
     return { ok: false, status: 403, body: { error: "API key expired" } } as const;
   }
 
-  const { data: subscription } = await supabaseAdmin
+  const { data: subscription, error: subscriptionError } = await supabaseAdmin
     .from("subscriptions")
     .select("plan_type, status, expires_at")
     .eq("user_id", keyRecord.user_id)
@@ -129,16 +167,19 @@ export async function authenticateApiKey(headers: Headers) {
     .limit(1)
     .maybeSingle();
 
-  const subscriptionActive = subscription && (!subscription.expires_at || new Date(subscription.expires_at) > new Date());
+  const subscriptionActive =
+    !subscriptionError &&
+    subscription &&
+    (!subscription.expires_at || new Date(subscription.expires_at) > new Date());
+
   const plan = subscriptionActive ? subscription.plan_type : "free";
 
   const rateLimits = {
-    perMin: keyRecord.rate_limit_per_minute ?? 0,
+    perMin: keyRecord.rate_limit_per_minute ?? 60,
     perHour: keyRecord.rate_limit_per_hour ?? 0,
     perDay: keyRecord.rate_limit_per_day ?? 0,
   };
 
-  // Return success with rate limits
   return {
     ok: true,
     keyId: keyRecord.id,
@@ -150,14 +191,25 @@ export async function authenticateApiKey(headers: Headers) {
 
 // Check rate limit (enhanced with atomic RPC)
 export async function checkRateLimit(keyId: string, limits: { perMin: number; perHour: number; perDay: number }) {
+  const noLimits = !limits.perMin && !limits.perHour && !limits.perDay;
+  if (noLimits) {
+    return { ok: true, counters: { minute: 0, hour: 0, day: 0 }, skipped: true } as const;
+  }
+
   const { data, error } = await supabaseAdmin.rpc("increment_usage_counters", { p_api_key_id: keyId });
 
   if (error) {
+    const message = `${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
+    if (message.includes("increment_usage_counters") || message.includes("does not exist") || error.code === "42883") {
+      console.warn("increment_usage_counters RPC missing. Skipping rate limit enforcement for this request.");
+      return { ok: true, counters: { minute: 0, hour: 0, day: 0 }, skipped: true } as const;
+    }
+
     console.error("Usage update error:", error);
     return { ok: false, status: 500, body: { error: "usage update failed" } } as const;
   }
 
-  const row = (data?.[0] ?? {}) as { minute_count?: number; hour_count?: number; day_count?: number };
+  const row = (Array.isArray(data) ? data[0] : data) ?? {} as { minute_count?: number; hour_count?: number; day_count?: number };
   const minuteCount = row.minute_count ?? 0;
   const hourCount = row.hour_count ?? 0;
   const dayCount = row.day_count ?? 0;

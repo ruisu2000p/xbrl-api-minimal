@@ -1,26 +1,50 @@
 // supabase/functions/gateway/index.ts
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-const HMAC_SECRET  = Deno.env.get('KEY_DERIVE_SECRET')!;              // 独自キーのハッシュ用シークレット
+import { corsHeaders as sharedCorsHeaders } from '../_shared/cors.ts'
+import {
+  authenticateApiKey,
+  checkRateLimit,
+  maskKey,
+  recordUsage,
+  supabaseAdmin,
+} from '../_shared/utils.ts'
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const SUPABASE_ANON_KEY =
+  Deno.env.get('SUPABASE_ANON_KEY') ??
+  Deno.env.get('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+
+const FUNCTION_ROUTE =
+  (Deno.env.get('GATEWAY_FUNCTION_ROUTE') ?? 'gateway').replace(/^\/+|\/+$/g, '') || 'gateway';
+
+const API_VERSION = '1.0.0';
+
+if (!SUPABASE_ANON_KEY) {
+  throw new Error('SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY) must be configured');
+}
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-api-key, x-client-info, apikey, content-type',
+  ...sharedCorsHeaders,
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 }
+
+const functionAliases = new Set([
+  FUNCTION_ROUTE,
+  'gateway',
+  'gateway-simple',
+]);
 
 // OpenAPI仕様
 const OPENAPI_SPEC = {
   openapi: "3.0.3",
   info: {
     title: "XBRL Gateway API",
-    version: "1.0.0",
+    version: API_VERSION,
     description: "Financial data API gateway with custom authentication"
   },
   servers: [{
-    url: "https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/gateway"
+    url: `${SUPABASE_URL}/functions/v1/${FUNCTION_ROUTE}`
   }],
   components: {
     securitySchemes: {
@@ -182,190 +206,217 @@ function errorResponse(
       status: statusMap[type],
       headers: {
         ...corsHeaders,
-        'content-type': 'application/json',
+        'Content-Type': 'application/json',
         ...(headers || {})
       }
     }
   );
 }
 
-// 内部Supabase呼び出し（service_roleで固定）
-const supa = (path: string, init?: RequestInit) =>
-  fetch(`${SUPABASE_URL}${path}`, {
-    ...init,
-    headers: {
-      ...(init?.headers || {}),
-      Authorization: `Bearer ${SERVICE_ROLE}`,
-      apikey: SERVICE_ROLE,
-      'content-type': 'application/json'
-    }
-  });
-
-// HMAC-SHA256（16進文字列）
-async function hmacSHA256(secret: string, msg: string) {
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-// 簡易レート制限（DB集計版）
-// 本番は Upstash Redis などのKV推奨。ここでは最小実装。
-async function checkRateLimit(apiKeyId: string, perMinute: number) {
-  const now = new Date();
-  const from = new Date(now.getTime() - 60_000).toISOString();
-  const q = `/rest/v1/api_usage?select=count&id=neq.null&api_key_id=eq.${apiKeyId}&used_at=gte.${from}`;
-  const r = await supa(q);
-  if (!r.ok) return { ok: false, status: 500 };
-  const [{ count }] = await r.json();
-  if (Number(count) >= perMinute) return { ok: false, status: 429 };
-  return { ok: true, status: 200 };
-}
-
 Deno.serve(async (req) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  const t0 = performance.now();
+  const started = performance.now();
 
   try {
-    // URLパスの正規化（MCPサーバーのスペースバグ対応）
-    const u = new URL(req.url);
-    const rawPath = u.pathname;
-    const normalizedPath = rawPath
-      .replace(/%20/g, ' ')           // %20をスペースに
-      .replace(/\s+/g, ' ')           // 複数スペースを1個に
-      .replace(/\s*\/+\s*/g, '/')     // " / " を "/" に
-      .replace(/\/+/g, '/')           // 複数スラッシュを1個に
-      .replace(/\/+$/, '');           // 末尾スラッシュ除去
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders });
+    }
 
-    // 0) 入力：ヘッダ
-    const clientKey = req.headers.get('x-api-key') ?? '';
-    console.log(`[DEBUG] Received API key: ${clientKey ? `${clientKey.substring(0, 8)}...` : 'NONE'}`);
-    console.log(`[DEBUG] Original path: ${rawPath}`);
-    console.log(`[DEBUG] Normalized path: ${normalizedPath}`);
-    console.log(`[DEBUG] Request method: ${req.method}`);
+    const url = new URL(req.url);
+    const rawPath = url.pathname;
+    const normalizedFullPath = rawPath
+      .replace(/%20/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/\s*\/+\s*/g, '/')
+      .replace(/\/+/g, '/')
+      .replace(/\/+$/, '');
 
-    // OpenAPIエンドポイントは認証不要
-    if (normalizedPath.includes('openapi')) {
+    const pathSegments = normalizedFullPath.split('/').filter(Boolean);
+    let routeSegments = pathSegments;
+
+    if (routeSegments[0] === 'functions' && routeSegments[1] === 'v1') {
+      routeSegments = routeSegments.slice(2);
+    }
+
+    if (routeSegments.length && functionAliases.has(routeSegments[0])) {
+      routeSegments = routeSegments.slice(1);
+    }
+
+    const subPath = routeSegments.length ? `/${routeSegments.join('/')}` : '/';
+    const routeKey = subPath === '/' ? '/config' : subPath;
+    const routeKeyLower = routeKey.toLowerCase();
+    const normalizedForLog = normalizedFullPath || '/';
+
+    if (
+      routeKeyLower === '/openapi.json' ||
+      routeKeyLower === '/openapi' ||
+      normalizedForLog.toLowerCase().includes('openapi')
+    ) {
       return new Response(JSON.stringify(OPENAPI_SPEC, null, 2), {
         status: 200,
         headers: {
           ...corsHeaders,
-          'content-type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
     }
+
+    const clientKey = req.headers.get('x-api-key') ?? '';
+    console.log(`[DEBUG] Received API key: ${clientKey ? maskKey(clientKey) : 'NONE'}`);
+    console.log(`[DEBUG] Original path: ${rawPath}`);
+    console.log(`[DEBUG] Normalized path: ${routeKey} (full: ${normalizedForLog})`);
+    console.log(`[DEBUG] Request method: ${req.method}`);
 
     if (!clientKey) {
       console.log('[DEBUG] No API key provided');
       return errorResponse('unauthorized', 'API key required');
     }
 
-    // 1) APIキー照合（ハッシュ比較）- シンプル版
-    const keyHash = await hmacSHA256(HMAC_SECRET, clientKey);
-    console.log(`[DEBUG] Generated key hash: ${keyHash.substring(0, 10)}...`);
-    const kRes = await supa(
-      `/rest/v1/api_keys?select=*&key_hash=eq.${keyHash}&status=eq.active&limit=1`
-    );
-
-    if (!kRes.ok) {
-      console.error('API key lookup failed:', await kRes.text());
-      return errorResponse('server_error', 'Auth backend error', {
-        debug: `Query failed with status ${kRes.status}`
+    const auth = await authenticateApiKey(req.headers);
+    if (!auth.ok) {
+      console.log('[DEBUG] API key authentication failed');
+      return new Response(JSON.stringify(auth.body), {
+        status: auth.status,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       });
     }
 
-    const keyRows = await kRes.json();
-    const keyRow = keyRows[0];
-    console.log(`[DEBUG] Found ${keyRows.length} matching keys`);
-
-    if (!keyRow) {
-      console.log(`[DEBUG] Invalid API key - no match for hash: ${keyHash.substring(0, 10)}...`);
-      return errorResponse('forbidden', 'Invalid API key', {
-        debug: `Key hash: ${keyHash.substring(0, 8)}...`
+    const rateCheck = await checkRateLimit(auth.keyId, auth.rateLimits);
+    if (!rateCheck.ok) {
+      console.log('[DEBUG] Rate limit exceeded or unavailable');
+      return new Response(JSON.stringify(rateCheck.body), {
+        status: rateCheck.status,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       });
     }
 
-    console.log(`[DEBUG] API key validation successful, keyRow.id: ${keyRow.id}`);
-
-    // 1.1 期限・ステータス（シンプル化）
-    if (keyRow.expires_at && new Date(keyRow.expires_at) < new Date()) {
-      return errorResponse('forbidden', 'API key expired');
-    }
-
-    // 2) レート制限（一時的に無効化）
-    // const rl = await checkRateLimit(keyRow.id, keyRow.rate_limit_per_minute ?? 60);
-    console.log('Rate limiting temporarily disabled for debugging');
-
-    // 3) ルーティング（必要に応じて増やす）
-    const url = new URL(req.url);
-    const pathname = normalizedPath;  // 正規化されたパスを使用
-
-    let resBody: string | undefined;
+    let body = '';
     let status = 200;
     let endpoint = 'gateway/config';
 
-    // スペースバグも考慮したルーティング（gateway/config, gateway /config の両方に対応）
-    // MCPサーバーは "gateway /config" を送信するので、正規化後も対応
-    if (pathname === '/gateway/config' || pathname === '/gateway' || pathname.includes('config')) {
-      // MCP config エンドポイント - MCP互換形式で返す
-      // MCPパッケージは { supabaseUrl, supabaseAnonKey } を期待
-      resBody = JSON.stringify({
-        version: 1,
-        supabaseUrl: SUPABASE_URL,
-        supabaseAnonKey: SERVICE_ROLE  // GatewayがService Roleで処理
-      });
-      status = 200;
-      endpoint = 'gateway/config';
-    } else if (pathname.endsWith('/companies')) {
-      endpoint = 'gateway/companies';
-      const limit = url.searchParams.get('limit') ?? '10';
-      const select = url.searchParams.get('select') ?? '*';
-      // 既存のcompaniesテーブルからデータ取得
-      const r = await supa(`/rest/v1/companies?select=${select}&limit=${limit}`);
-      resBody = await r.text();
-      status = r.status;
-    } else if (pathname.endsWith('/metadata')) {
-      endpoint = 'gateway/metadata';
-      const limit = url.searchParams.get('limit') ?? '10';
-      const select = url.searchParams.get('select') ?? '*';
-      // メタデータテーブルからデータ取得
-      const r = await supa(`/rest/v1/markdown_files_metadata?select=${select}&limit=${limit}`);
-      resBody = await r.text();
-      status = r.status;
-    } else {
-      // ヘルスチェック
-      resBody = JSON.stringify({
-        ok: true,
-        message: 'Gateway alive',
-        version: '1.0.0',
-        endpoints: ['/config', '/companies', '/metadata'],
-        timestamp: new Date().toISOString()
-      });
-      status = 200;
-      endpoint = 'gateway/ping';
+    switch (routeKeyLower) {
+      case '/config': {
+        body = JSON.stringify({
+          version: 1,
+          supabaseUrl: SUPABASE_URL,
+          supabaseAnonKey: SUPABASE_ANON_KEY,
+        });
+        endpoint = 'gateway/config';
+        break;
+      }
+      case '/companies': {
+        endpoint = 'gateway/companies';
+        const limit = url.searchParams.get('limit') ?? '10';
+        const select = url.searchParams.get('select') ?? '*';
+        const parsedLimit = Number.parseInt(limit, 10);
+        const safeLimit = Number.isNaN(parsedLimit)
+          ? 10
+          : Math.min(Math.max(parsedLimit, 1), 100);
+        const { data, error } = await supabaseAdmin
+          .from('companies')
+          .select(select)
+          .limit(safeLimit);
+
+        if (error) {
+          console.error('Companies query failed:', error);
+          return errorResponse('server_error', 'Failed to load companies');
+        }
+
+        body = JSON.stringify(data ?? []);
+        break;
+      }
+      case '/metadata': {
+        endpoint = 'gateway/metadata';
+        const limit = url.searchParams.get('limit') ?? '10';
+        const select = url.searchParams.get('select') ?? '*';
+        const parsedLimit = Number.parseInt(limit, 10);
+        const safeLimit = Number.isNaN(parsedLimit)
+          ? 10
+          : Math.min(Math.max(parsedLimit, 1), 100);
+        const { data, error } = await supabaseAdmin
+          .from('markdown_files_metadata')
+          .select(select)
+          .limit(safeLimit);
+
+        if (error) {
+          console.error('Metadata query failed:', error);
+          return errorResponse('server_error', 'Failed to load metadata');
+        }
+
+        body = JSON.stringify(data ?? []);
+        break;
+      }
+      default: {
+        body = JSON.stringify({
+          ok: true,
+          message: 'Gateway alive',
+          version: API_VERSION,
+          endpoints: ['/config', '/companies', '/metadata', '/openapi.json'],
+          timestamp: new Date().toISOString(),
+        });
+        endpoint = 'gateway/ping';
+        break;
+      }
     }
 
-    // 4) 監査ログ（一時的に無効化）
-    console.log(`Request processed: ${endpoint}, pathname: ${pathname}, status: ${status}, latency: ${Math.round(performance.now() - t0)}ms`);
+    const latency = Math.round(performance.now() - started);
+    const headers: Record<string, string> = {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'X-API-Version': API_VERSION,
+      'X-Plan': auth.plan,
+    };
 
-    return new Response(resBody, {
-      status,
-      headers: {
-        ...corsHeaders,
-        'content-type': 'application/json',
-        // レート制限ヘッダ（親切設計）
-        'x-ratelimit-limit': String(keyRow.rate_limit_per_minute ?? 60),
-        'x-ratelimit-remaining': String(Math.max(0, (keyRow.rate_limit_per_minute ?? 60) - 1)),
-        'x-api-version': '1.0.0'
+    if (rateCheck.counters) {
+      const { counters } = rateCheck;
+      if (auth.rateLimits.perMin) {
+        headers['X-RateLimit-Limit-Minute'] = String(auth.rateLimits.perMin);
+        headers['X-RateLimit-Remaining-Minute'] = String(
+          Math.max(auth.rateLimits.perMin - counters.minute, 0),
+        );
       }
-    });
+      if (auth.rateLimits.perHour) {
+        headers['X-RateLimit-Limit-Hour'] = String(auth.rateLimits.perHour);
+        headers['X-RateLimit-Remaining-Hour'] = String(
+          Math.max(auth.rateLimits.perHour - counters.hour, 0),
+        );
+      }
+      if (auth.rateLimits.perDay) {
+        headers['X-RateLimit-Limit-Day'] = String(auth.rateLimits.perDay);
+        headers['X-RateLimit-Remaining-Day'] = String(
+          Math.max(auth.rateLimits.perDay - counters.day, 0),
+        );
+      }
+    }
 
+    if ((rateCheck as { skipped?: boolean }).skipped) {
+      headers['X-RateLimit-Notice'] = 'not_enforced';
+    }
+
+    recordUsage({
+      keyId: auth.keyId,
+      userId: auth.userId,
+      endpoint,
+      status,
+      latencyMs: latency,
+    }).catch((err) => console.error('Usage logging failed:', err));
+
+    console.log(
+      `Request processed: ${endpoint}, route: ${routeKeyLower}, status: ${status}, latency: ${latency}ms`,
+    );
+
+    return new Response(body, {
+      status,
+      headers,
+    });
   } catch (error) {
     console.error('Gateway error:', error);
-    return errorResponse('server_error', error.message);
+    const message = error instanceof Error ? error.message : 'Unexpected error';
+    return errorResponse('server_error', message);
   }
 });
