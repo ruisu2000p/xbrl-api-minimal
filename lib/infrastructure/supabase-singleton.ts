@@ -1,5 +1,13 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '../utils/logger';
+
+export interface SupabaseQueryResult<T> {
+  data: T | null;
+  count?: number | null;
+  error: PostgrestError | null;
+  status?: number;
+  statusText?: string;
+}
 
 /**
  * Supabase Client Singleton
@@ -88,21 +96,13 @@ export class SupabaseManager {
   async executeQuery<T>(
     queryFn: (
       client: SupabaseClient
-    ) => Promise<{
-      data: T | null;
-      count?: number | null;
-      error?: { message: string } | null;
-    }>,
+    ) => Promise<SupabaseQueryResult<T>>,
     options: {
       useServiceRole?: boolean;
       retries?: number;
       retryDelay?: number;
     } = {}
-  ): Promise<{
-    data: T | null;
-    count?: number | null;
-    error?: { message: string } | null;
-  }> {
+  ): Promise<SupabaseQueryResult<T>> {
     const { useServiceRole = false, retries = 3, retryDelay = 1000 } = options;
     const client = useServiceRole ? this.getServiceClient() : this.getClient();
 
@@ -113,11 +113,12 @@ export class SupabaseManager {
         const result = await queryFn(client);
 
         if (result.error) {
-          throw new Error(result.error.message);
+          throw result.error;
         }
 
         // 完全なresultオブジェクトを返す（data, count含む）
         return {
+          ...result,
           data: result.data as T | null,
           count: result.count ?? null,
           error: null,
