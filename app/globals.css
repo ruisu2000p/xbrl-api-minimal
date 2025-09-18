@@ -1,4 +1,2 @@
 /* Remixicon is loaded via layout.tsx */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
