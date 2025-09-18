@@ -11,8 +11,7 @@ export async function signUpWithEmail(email: string, password: string, metadata?
       password,
       options: {
         data: metadata,
-        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/processing?next=/dashboard` : undefined,
-        shouldCreateUser: true
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/processing?next=/dashboard` : undefined
       }
     })
 
