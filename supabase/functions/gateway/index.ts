@@ -261,19 +261,19 @@ Deno.serve(async (req) => {
     }
 
     const clientKey = req.headers.get('x-api-key') ?? '';
-    console.log(`[DEBUG] Received API key: ${clientKey ? maskKey(clientKey) : 'NONE'}`);
-    console.log(`[DEBUG] Original path: ${rawPath}`);
-    console.log(`[DEBUG] Normalized path: ${routeKey} (full: ${normalizedForLog})`);
-    console.log(`[DEBUG] Request method: ${req.method}`);
+    // console.log(`[DEBUG] Received API key: ${clientKey ? maskKey(clientKey) : 'NONE'}`);
+    // console.log(`[DEBUG] Original path: ${rawPath}`);
+    // console.log(`[DEBUG] Normalized path: ${routeKey} (full: ${normalizedForLog})`);
+    // console.log(`[DEBUG] Request method: ${req.method}`);
 
     if (!clientKey) {
-      console.log('[DEBUG] No API key provided');
+      // console.log('[DEBUG] No API key provided');
       return errorResponse('unauthorized', 'API key required');
     }
 
     const auth = await authenticateApiKey(req.headers);
     if (!auth.ok) {
-      console.log('[DEBUG] API key authentication failed');
+      // console.log('[DEBUG] API key authentication failed');
       return new Response(JSON.stringify(auth.body), {
         status: auth.status,
         headers: {
@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
 
     const rateCheck = await checkRateLimit(auth.keyId, auth.rateLimits);
     if (!rateCheck.ok) {
-      console.log('[DEBUG] Rate limit exceeded or unavailable');
+      // console.log('[DEBUG] Rate limit exceeded or unavailable');
       return new Response(JSON.stringify(rateCheck.body), {
         status: rateCheck.status,
         headers: {
@@ -323,7 +323,7 @@ Deno.serve(async (req) => {
           .limit(safeLimit);
 
         if (error) {
-          console.error('Companies query failed:', error);
+          // console.error('Companies query failed:', error);
           return errorResponse('server_error', 'Failed to load companies');
         }
 
@@ -344,7 +344,7 @@ Deno.serve(async (req) => {
           .limit(safeLimit);
 
         if (error) {
-          console.error('Metadata query failed:', error);
+          // console.error('Metadata query failed:', error);
           return errorResponse('server_error', 'Failed to load metadata');
         }
 
@@ -404,18 +404,18 @@ Deno.serve(async (req) => {
       endpoint,
       status,
       latencyMs: latency,
-    }).catch((err) => console.error('Usage logging failed:', err));
+    }).catch(() => {
+      // Usage logging failed
+    });
 
-    console.log(
-      `Request processed: ${endpoint}, route: ${routeKeyLower}, status: ${status}, latency: ${latency}ms`,
-    );
+    // Request processed: endpoint, route: routeKeyLower, status: status, latency: latencyMs
 
     return new Response(body, {
       status,
       headers,
     });
   } catch (error) {
-    console.error('Gateway error:', error);
+    // console.error('Gateway error:', error);
     const message = error instanceof Error ? error.message : 'Unexpected error';
     return errorResponse('server_error', message);
   }
