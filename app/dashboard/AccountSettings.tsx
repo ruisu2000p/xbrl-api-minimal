@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserApiKeys, createApiKey, deleteApiKey } from '@/app/actions/auth';
 import type { ApiKey } from '@/types/api-key';
+import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -393,16 +394,13 @@ function ApiKeyTab({
                       <span>作成日: {key.created}</span>
                       <span>最終使用: {key.lastUsed}</span>
                     </div>
-                    <code className="block break-all rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-800">{key.key}</code>
+                    <ApiKeyDisplay
+                      apiKey={key.key}
+                      keyId={key.id}
+                      onCopy={onCopy}
+                    />
                   </div>
                   <div className="flex flex-col gap-2 md:items-end">
-                    <button
-                      onClick={() => onCopy(key.key)}
-                      className="flex items-center space-x-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                    >
-                      <i className="ri-file-copy-line"></i>
-                      <span>コピー</span>
-                    </button>
                     <button
                       onClick={() => onDelete(key.id)}
                       className="flex items-center space-x-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
