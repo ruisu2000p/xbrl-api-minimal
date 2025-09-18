@@ -35,10 +35,12 @@ export async function GET(request: NextRequest) {
     const companyName = searchParams.get('company_name')
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    // Query companies from Supabase
+    // Query distinct companies from markdown_files_metadata
     let query = serviceClient
-      .from('company_master')
-      .select('*')
+      .from('markdown_files_metadata')
+      .select('company_id, company_name, fiscal_year')
+      .not('company_name', 'is', null)
+      .order('company_name')
 
     if (companyName) {
       query = query.ilike('company_name', `%${companyName}%`)
@@ -104,17 +106,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { company_name, doc_id, fiscal_year } = body
 
-    // Build query
+    // Build query from markdown_files_metadata
     let query = serviceClient
-      .from('company_master')
-      .select('*')
+      .from('markdown_files_metadata')
+      .select('company_id, company_name, fiscal_year')
+      .not('company_name', 'is', null)
+      .order('company_name')
 
     if (company_name) {
       query = query.ilike('company_name', `%${company_name}%`)
     }
 
     if (doc_id) {
-      query = query.eq('doc_id', doc_id)
+      query = query.eq('company_id', doc_id)
     }
 
     if (fiscal_year) {
