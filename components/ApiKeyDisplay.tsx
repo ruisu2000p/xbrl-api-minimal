@@ -87,7 +87,7 @@ export default function ApiKeyDisplay({ apiKey, keyId, onCopy }: ApiKeyDisplayPr
             }
             ${isShortFormat ? 'opacity-50 cursor-not-allowed' : ''}
           `}
-          disabled={isShortFormat}
+          disabled={isShortFormat ? true : false}
           title={isShortFormat ? '完全なAPIキーは発行時のみ確認可能です' : 'APIキーをコピー'}
         >
           <i className={`ri-${copied ? 'check' : 'file-copy'}-line`}></i>
