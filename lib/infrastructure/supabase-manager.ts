@@ -1,6 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 
 /**
  * Unified Supabase Manager
@@ -102,6 +101,7 @@ export class SupabaseManager {
    */
   async createSSRClient() {
     const { url, anonKey } = this.checkEnvironmentVariables();
+    const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
 
     return createServerClient(url, anonKey, {
@@ -127,6 +127,7 @@ export class SupabaseManager {
    */
   async createAdminSSRClient() {
     const { url, serviceKey } = this.checkServiceEnvironmentVariables();
+    const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
 
     return createServerClient(url, serviceKey, {
