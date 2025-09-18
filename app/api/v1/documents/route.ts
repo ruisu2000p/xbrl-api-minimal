@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
-import { hashApiKey } from '@/lib/security/apiKey'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,19 +16,16 @@ export async function GET(request: NextRequest) {
     // Create service client
     const serviceClient = supabaseManager.getServiceClient()
 
-    // Hash the API key before verification
-    const keyHash = hashApiKey(apiKey)
-
-    // Verify API key hash
-    const { data: isValid, error: keyError } = await serviceClient
-      .rpc('verify_api_key_hash', {
-        key_hash: keyHash
+    // Verify API key (Supabase handles hashing)
+    const { data: authResult, error: keyError } = await serviceClient
+      .rpc('verify_api_key_with_secret', {
+        api_key: apiKey
       })
 
-    if (keyError || !isValid) {
-      console.error('API key verification failed:', keyError)
+    if (keyError || !authResult?.valid) {
+      console.error('API key verification failed:', keyError || authResult?.error)
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { error: authResult?.error || 'Invalid API key' },
         { status: 401 }
       )
     }
@@ -107,18 +103,15 @@ export async function POST(request: NextRequest) {
     // Create service client
     const serviceClient = supabaseManager.getServiceClient()
 
-    // Hash the API key before verification
-    const keyHash = hashApiKey(apiKey)
-
-    // Verify API key hash
-    const { data: isValid, error: keyError } = await serviceClient
-      .rpc('verify_api_key_hash', {
-        key_hash: keyHash
+    // Verify API key (Supabase handles hashing)
+    const { data: authResult, error: keyError } = await serviceClient
+      .rpc('verify_api_key_with_secret', {
+        api_key: apiKey
       })
 
-    if (keyError || !isValid) {
+    if (keyError || !authResult?.valid) {
       return NextResponse.json(
-        { error: 'Invalid API key' },
+        { error: authResult?.error || 'Invalid API key' },
         { status: 401 }
       )
     }
