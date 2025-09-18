@@ -192,6 +192,7 @@ async function logRateLimitExceeded(
   limit: number
 ) {
   try {
+    const supabase = supabaseManager.getServiceClient();
     await supabase.from('rate_limit_violations').insert({
       api_key_id: apiKeyId,
       attempted_requests: attemptedCount,
@@ -199,7 +200,7 @@ async function logRateLimitExceeded(
       violation_time: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Failed to log rate limit violation:', error);
+    // エラーをログに記録しない（機密情報保護）
   }
 }
 
