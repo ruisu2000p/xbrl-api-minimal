@@ -45,7 +45,7 @@ npm start
 | **Backend** | Supabase (PostgreSQL, Auth, Storage) |
 | **AI Integration** | Claude API (via MCP) |
 | **Deployment** | Vercel |
-| **Security** | RLS, HMAC-SHA256, crypto.randomBytes |
+| **Security** | RLS, bcrypt (パスワードハッシュ), Supabase完結型認証 |
 
 ## 📦 NPMパッケージ
 
@@ -144,12 +144,11 @@ NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Security
-API_KEY_SECRET=your-api-key-secret-minimum-32-chars
-
 # Application
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
+
+# 注: API_KEY_SECRETは不要になりました（bcrypt移行済み）
 ```
 
 ### 2. Supabaseプロジェクトの作成
@@ -252,12 +251,12 @@ npm run reinstall
 
 ## 🔒 セキュリティ
 
-- **Gateway-only アーキテクチャ** - 第三者はSupabaseに直接アクセス不可
-- **HMAC-SHA256**によるAPIキーハッシュ化
+- **Supabase完結型認証** - APIキーの生成・検証はすべてSupabase側で実行
+- **bcryptハッシュ化** - 業界標準の強固なパスワードハッシュアルゴリズム
 - **Row Level Security (RLS)** によるデータ保護
-- **レート制限**実装（60リクエスト/分、ティアごとに調整可能）
-- **crypto.randomBytes**によるセキュアなキー生成
-- **OpenAPI 3.0**仕様準拠のAPI設計
+- **レート制限**実装（ティアごとに調整可能：Free 100/分、Basic 300/分、Pro 600/分）
+- **pgcrypto拡張**によるセキュアなランダムキー生成
+- **Service Role Key** - サーバー間通信のみで使用、クライアントには非公開
 - **統一エラーレスポンス** - 一貫性のあるエラーハンドリング
 
 ## 🤝 コントリビューション
@@ -288,12 +287,12 @@ MIT License - 詳細は[LICENSE](./LICENSE)を参照
 
 ---
 
-## 🚀 最新アップデート（v6.0.0）
+## 🚀 最新アップデート（v7.0.0）
 
-- **Gateway-only アーキテクチャ** - セキュリティ強化のための統一APIゲートウェイ
-- **OpenAPI 3.0対応** - `/openapi.json`エンドポイントでAPI仕様を公開
-- **統一エラーレスポンス** - 一貫性のあるエラー処理
-- **透明なレート制限** - X-RateLimit-*ヘッダーで残り回数を表示
+- **bcrypt認証システム** - Supabase完結型のセキュアなAPIキー管理
+- **API_KEY_SECRET廃止** - Vercel側でのシークレット管理が不要に
+- **改善されたセキュリティ** - bcryptによる強固なハッシュ化
+- **APIエンドポイント追加** - `/api/v1/companies`と`/api/v1/documents`
 - **286,000件以上のデータ** - 最新のFY2025データを追加
 
 ---

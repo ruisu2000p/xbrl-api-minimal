@@ -1,7 +1,7 @@
 {
   "name": "xbrl-api-minimal",
-  "version": "6.0.0",
-  "description": "XBRL財務データAPI - Supabase Edge Functions版",
+  "version": "7.0.0",
+  "description": "XBRL財務データAPI - bcrypt認証システム完全移行版",
   "mcp": {
     "package": "shared-supabase-mcp-minimal",
     "version": "3.2.0",
