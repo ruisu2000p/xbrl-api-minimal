@@ -168,12 +168,17 @@ export async function GET(request: NextRequest) {
 
     // エラーログ記録
     if (logParams.keyId) {
-      await serviceClient.rpc('log_api_usage', {
-        ...logParams,
-        p_status_code: 500,
-        p_latency_ms: Date.now() - startTime,
-        p_error_message: error instanceof Error ? error.message : 'Unknown error'
-      })
+      try {
+        const serviceClient = supabaseManager.getServiceClient()
+        await serviceClient.rpc('log_api_usage', {
+          ...logParams,
+          p_status_code: 500,
+          p_latency_ms: Date.now() - startTime,
+          p_error_message: error instanceof Error ? error.message : 'Unknown error'
+        })
+      } catch (logError) {
+        console.error('Failed to log error:', logError)
+      }
     }
 
     return NextResponse.json(
@@ -329,12 +334,17 @@ export async function POST(request: NextRequest) {
     console.error('Companies search API error:', error)
 
     if (logParams.keyId) {
-      await serviceClient.rpc('log_api_usage', {
-        ...logParams,
-        p_status_code: 500,
-        p_latency_ms: Date.now() - startTime,
-        p_error_message: error instanceof Error ? error.message : 'Unknown error'
-      })
+      try {
+        const serviceClient = supabaseManager.getServiceClient()
+        await serviceClient.rpc('log_api_usage', {
+          ...logParams,
+          p_status_code: 500,
+          p_latency_ms: Date.now() - startTime,
+          p_error_message: error instanceof Error ? error.message : 'Unknown error'
+        })
+      } catch (logError) {
+        console.error('Failed to log error:', logError)
+      }
     }
 
     return NextResponse.json(
