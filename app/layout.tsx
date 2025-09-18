@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { Inter, Pacifico } from "next/font/google";
 import "./globals.css";
+
+const pacifico = Pacifico({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-pacifico',
+})
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "FIN - Financial Information next | XBRL財務データ分析プラットフォーム",
@@ -29,14 +42,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" suppressHydrationWarning>
+    <html lang="ja" suppressHydrationWarning={true}>
       <head>
         <link
           href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css"
           rel="stylesheet"
         />
       </head>
-      <body className="font-inter antialiased bg-white text-gray-900">
+      <body
+        className={`${inter.variable} ${pacifico.variable} antialiased`}
+      >
         {children}
       </body>
     </html>

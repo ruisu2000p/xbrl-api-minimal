@@ -48,7 +48,7 @@ export default function SearchDemo() {
 }`;
 
   return (
-    <section id="demo" className="py-24 bg-gradient-to-b from-slate-50 to-white relative overflow-hidden">
+    <section className="py-24 bg-gradient-to-b from-slate-50 to-white relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl"></div>
@@ -199,6 +199,33 @@ export default function SearchDemo() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Features highlight */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            <div className="text-center p-6 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <i className="ri-robot-2-line text-white text-xl"></i>
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2">AI分析</h3>
+              <p className="text-gray-600 text-sm">Claude Desktopスタイルの直感的なインターフェース</p>
+            </div>
+
+            <div className="text-center p-6 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <i className="ri-database-2-line text-white text-xl"></i>
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2">豊富なデータ</h3>
+              <p className="text-gray-600 text-sm">5年分の有価証券報告書データへのアクセス</p>
+            </div>
+
+            <div className="text-center p-6 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <i className="ri-speed-line text-white text-xl"></i>
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2">Claudeによる分析</h3>
+              <p className="text-gray-600 text-sm">データ取得を気軽に行えます。</p>
             </div>
           </div>
         </div>

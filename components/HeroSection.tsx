@@ -4,10 +4,7 @@ import Link from 'next/link';
 
 export default function HeroSection() {
   return (
-    <section
-      id="hero"
-      className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900"
-    >
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -45,20 +42,18 @@ export default function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-6 mb-16 justify-center">
             <Link
-              href="#demo"
-              prefetch={false}
+              href="/signup"
               className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 rounded-xl text-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 cursor-pointer whitespace-nowrap text-center shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
             >
-              <span className="relative z-10">インタラクティブデモを見る</span>
+              <span className="relative z-10">無料トライアル開始</span>
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
             </Link>
             <Link
-              href="#features"
-              prefetch={false}
+              href="/demo"
               className="group border-2 border-blue-400/50 text-blue-100 px-10 py-4 rounded-xl text-lg font-semibold hover:bg-blue-400/10 hover:border-blue-400 transition-all duration-300 cursor-pointer whitespace-nowrap text-center backdrop-blur-sm"
             >
-              <i className="ri-compass-3-line mr-2"></i>
-              主要機能を確認
+              <i className="ri-play-circle-line mr-2"></i>
+              ライブデモ
             </Link>
           </div>
 
