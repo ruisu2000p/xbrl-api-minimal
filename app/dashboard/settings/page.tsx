@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSupabaseClient } from '@/lib/supabase/client'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
 interface UserProfile {
   id: string
@@ -63,7 +63,7 @@ export default function SettingsPage() {
   }, [])
 
   const loadUserProfile = async () => {
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -100,7 +100,7 @@ export default function SettingsPage() {
     setError('')
     setSuccess('')
 
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       // プロファイル情報を更新
@@ -144,7 +144,7 @@ export default function SettingsPage() {
     setError('')
     setSuccess('')
 
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       const { error } = await supabase.auth.updateUser({
@@ -171,7 +171,7 @@ export default function SettingsPage() {
   }
 
   const loadSubscriptionData = async () => {
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       // プラン一覧を取得
@@ -219,7 +219,7 @@ export default function SettingsPage() {
     setError('')
     setSuccess('')
 
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       if (currentSubscription) {

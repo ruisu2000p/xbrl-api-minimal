@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 import {
   generateApiKey,
   hashApiKey,
@@ -10,7 +10,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await supabaseManager.createSSRClient()
 
     // 認証チェック
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const keySuffix = extractApiKeySuffix(apiKey)
 
     // Supabase Admin クライアントでAPIキーを保存
-    const supabaseAdmin = await createSupabaseServerAdminClient()
+    const supabaseAdmin = await supabaseManager.createAdminSSRClient()
 
     const { data: newKey, error: insertError } = await supabaseAdmin
       .from('api_keys')
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await supabaseManager.createSSRClient()
 
     // 認証チェック
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabaseAdmin = await createSupabaseServerAdminClient()
+    const supabaseAdmin = await supabaseManager.createAdminSSRClient()
 
     // ユーザーのAPIキーを取得
     const { data: apiKeys, error } = await supabaseAdmin
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient()
+    const supabase = await supabaseManager.createSSRClient()
 
     // 認証チェック
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -155,7 +155,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const supabaseAdmin = await createSupabaseServerAdminClient()
+    const supabaseAdmin = await supabaseManager.createAdminSSRClient()
 
     // APIキーを無効化（削除ではなくstatusを変更）
     const { error } = await supabaseAdmin

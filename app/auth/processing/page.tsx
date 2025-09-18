@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createSupabaseClient } from '@/lib/supabase/client'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
 function ProcessingContent() {
   const router = useRouter()
@@ -19,7 +19,7 @@ function ProcessingContent() {
 
     // セッション交換を試みる
     const handleAuth = async () => {
-      const supabase = createSupabaseClient()
+      const supabase = supabaseManager.getAnonClient()
 
       // URLにコードが含まれている場合、セッション交換を試みる
       const hashParams = new URLSearchParams(window.location.hash.substring(1))

@@ -1,7 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createSupabaseServerClient, createSupabaseServerAdminClient } from '@/lib/supabase/server'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 import { revalidatePath } from 'next/cache'
 import {
   generateApiKey,
@@ -13,7 +13,7 @@ import {
 import type { ApiKey, ApiKeyResponse } from '@/types/api-key'
 
 export async function signIn(email: string, password: string) {
-  const supabase = await createSupabaseServerClient()
+  const supabase = await supabaseManager.createSSRClient()
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -61,7 +61,7 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
-  const supabase = await createSupabaseServerClient()
+  const supabase = await supabaseManager.createSSRClient()
 
   const { error } = await supabase.auth.signOut()
 
@@ -81,7 +81,7 @@ export async function signUp(userData: {
   plan: string;
   billingPeriod: string;
 }) {
-  const supabase = await createSupabaseServerClient()
+  const supabase = await supabaseManager.createSSRClient()
 
   // Create user account
   const { data, error } = await supabase.auth.signUp({
@@ -109,7 +109,7 @@ export async function signUp(userData: {
     let fullApiKey: string | null = null
 
     try {
-      const admin = await createSupabaseServerAdminClient()
+      const admin = await supabaseManager.createAdminSSRClient()
 
       const tier = userData.plan === 'freemium' ? 'free'
         : userData.plan === 'standard' ? 'premium'
@@ -150,7 +150,7 @@ export async function signUp(userData: {
       console.error('Failed to create API key:', apiKeyError)
       // Rollback user creation on failure
       try {
-        const admin = await createSupabaseServerAdminClient()
+        const admin = await supabaseManager.createAdminSSRClient()
         await admin.auth.admin.deleteUser(data.user.id)
       } catch (rollbackError) {
         console.error('Failed to rollback user creation:', rollbackError)
@@ -183,7 +183,7 @@ export async function signUp(userData: {
 }
 
 export async function getUser() {
-  const supabase = await createSupabaseServerClient()
+  const supabase = await supabaseManager.createSSRClient()
 
   const { data: { user }, error } = await supabase.auth.getUser()
 
@@ -195,7 +195,7 @@ export async function getUser() {
 }
 
 export async function getUserApiKeys(): Promise<ApiKeyResponse> {
-  const supabase = await createSupabaseServerClient()
+  const supabase = await supabaseManager.createSSRClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
@@ -231,7 +231,7 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
 }
 
 export async function createApiKey(name: string): Promise<ApiKeyResponse> {
-  const supabase = await createSupabaseServerClient()
+  const supabase = await supabaseManager.createSSRClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
@@ -288,7 +288,7 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 }
 
 export async function deleteApiKey(keyId: string) {
-  const supabase = await createSupabaseServerClient()
+  const supabase = await supabaseManager.createSSRClient()
 
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {

@@ -1,8 +1,8 @@
-import { createSupabaseClient } from '@/lib/supabase/client'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
 // Sign up with email
 export async function signUpWithEmail(email: string, password: string, metadata?: any) {
-  const supabase = createSupabaseClient()
+  const supabase = supabaseManager.getAnonClient()
 
   try {
     // 登録を試みる
@@ -116,7 +116,7 @@ export async function signUpWithEmail(email: string, password: string, metadata?
 
 // Sign in with email
 export async function signInWithEmail(email: string, password: string) {
-  const supabase = createSupabaseClient()
+  const supabase = supabaseManager.getAnonClient()
   
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -128,21 +128,21 @@ export async function signInWithEmail(email: string, password: string) {
 
 // Sign out
 export async function signOut() {
-  const supabase = createSupabaseClient()
+  const supabase = supabaseManager.getAnonClient()
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }
 
 // Get current user
 export async function getCurrentUser() {
-  const supabase = createSupabaseClient()
+  const supabase = supabaseManager.getAnonClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user
 }
 
 // Send password reset email
 export async function sendPasswordResetEmail(email: string) {
-  const supabase = createSupabaseClient()
+  const supabase = supabaseManager.getAnonClient()
   
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/reset-password`,
@@ -153,7 +153,7 @@ export async function sendPasswordResetEmail(email: string) {
 
 // Update password
 export async function updatePassword(newPassword: string) {
-  const supabase = createSupabaseClient()
+  const supabase = supabaseManager.getAnonClient()
   
   const { error } = await supabase.auth.updateUser({
     password: newPassword

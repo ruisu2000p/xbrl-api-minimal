@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
-import { createSupabaseClient } from '@/lib/supabase/client'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
 interface ApiKey {
   id: string
@@ -94,7 +94,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
 
     try {
-      const supabase = createSupabaseClient()
+      const supabase = supabaseManager.getAnonClient()
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
@@ -141,7 +141,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     }
 
     try {
-      const supabase = createSupabaseClient()
+      const supabase = supabaseManager.getAnonClient()
 
       // APIキーを無効化（削除はせずにステータスを変更）
       const { error } = await supabase
@@ -167,7 +167,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
   }
 
   const loadSubscriptionData = async () => {
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       // プラン一覧を取得
@@ -210,7 +210,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
     setSuccess('')
 
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       const { error: updateError } = await supabase.auth.updateUser({
@@ -246,7 +246,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
     setSuccess('')
 
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       const { error } = await supabase.auth.updateUser({
@@ -274,7 +274,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
     setSuccess('')
 
-    const supabase = createSupabaseClient()
+    const supabase = supabaseManager.getAnonClient()
 
     try {
       if (currentSubscription) {
