@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { hashApiKey } from '@/lib/security/apiKey'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,13 +17,16 @@ export async function GET(request: NextRequest) {
     // Create service client
     const serviceClient = supabaseManager.getServiceClient()
 
-    // Verify API key
-    const { data: keyData, error: keyError } = await serviceClient
+    // Hash the API key before verification
+    const keyHash = hashApiKey(apiKey)
+
+    // Verify API key hash
+    const { data: isValid, error: keyError } = await serviceClient
       .rpc('verify_api_key_hash', {
-        api_key: apiKey
+        key_hash: keyHash
       })
 
-    if (keyError || !keyData) {
+    if (keyError || !isValid) {
       console.error('API key verification failed:', keyError)
       return NextResponse.json(
         { error: 'Invalid API key' },
@@ -103,13 +107,16 @@ export async function POST(request: NextRequest) {
     // Create service client
     const serviceClient = supabaseManager.getServiceClient()
 
-    // Verify API key
-    const { data: keyData, error: keyError } = await serviceClient
+    // Hash the API key before verification
+    const keyHash = hashApiKey(apiKey)
+
+    // Verify API key hash
+    const { data: isValid, error: keyError } = await serviceClient
       .rpc('verify_api_key_hash', {
-        api_key: apiKey
+        key_hash: keyHash
       })
 
-    if (keyError || !keyData) {
+    if (keyError || !isValid) {
       return NextResponse.json(
         { error: 'Invalid API key' },
         { status: 401 }
