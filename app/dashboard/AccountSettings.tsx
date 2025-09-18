@@ -55,16 +55,14 @@ const PLAN_OPTIONS = [
   }
 ] as const;
 
-const BILLING_HISTORY = [
-  { date: '2024-01-15', amount: '¥2,980', status: '支払い済み' },
-  { date: '2023-12-15', amount: '¥2,980', status: '支払い済み' },
-  { date: '2023-11-15', amount: '¥2,980', status: '支払い済み' }
-];
+// 請求履歴は実際のデータを取得するか、空の状態で表示
+const BILLING_HISTORY: Array<{date: string; amount: string; status: string}> = [];
 
+// プロフィールの初期値（実際のユーザー情報で上書きされる）
 const INITIAL_PROFILE: ProfileState = {
-  email: 'user@example.com',
-  name: '田中太郎',
-  company: '株式会社サンプル'
+  email: '',
+  name: '',
+  company: ''
 };
 
 interface ProfileTabProps {
@@ -239,17 +237,21 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
 
       <div className="space-y-4 rounded-2xl border border-gray-200 p-6">
         <h4 className="text-sm font-semibold text-gray-900">請求履歴</h4>
-        <ul className="space-y-3 text-sm text-gray-600">
-          {BILLING_HISTORY.map((item) => (
-            <li key={item.date} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
-              <span>{item.date}</span>
-              <div className="flex items-center space-x-4">
-                <span className="font-medium text-gray-900">{item.amount}</span>
-                <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">{item.status}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {BILLING_HISTORY.length > 0 ? (
+          <ul className="space-y-3 text-sm text-gray-600">
+            {BILLING_HISTORY.map((item) => (
+              <li key={item.date} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
+                <span>{item.date}</span>
+                <div className="flex items-center space-x-4">
+                  <span className="font-medium text-gray-900">{item.amount}</span>
+                  <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">{item.status}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500">請求履歴はありません</p>
+        )}
       </div>
 
       <div className="flex justify-end">
