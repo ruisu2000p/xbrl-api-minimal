@@ -18,7 +18,7 @@
 
 3. **NEXT_PUBLIC_SUPABASE_ANON_KEY** (必須)
    ```
-   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjQ1NDgsImV4cCI6MjA3MjE0MDU0OH0.2SrZynFcQR3Sctenuar5jPHiORC4EFm7BDmW36imiDU
+   <your-jwt-token-here>
    ```
    - 説明: Supabase匿名キー
 

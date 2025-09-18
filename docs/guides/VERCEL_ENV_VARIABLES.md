@@ -7,25 +7,25 @@
 ### 1. KEY_DERIVE_SECRET
 APIキーのハッシュ化に使用される秘密鍵
 ```
-KEY_DERIVE_SECRET=19d1c60d6abc3ee7699476b8b8474c447684638f509372ab9ee5f23c98f0f654
+KEY_DERIVE_SECRET=your-secret-key-here-minimum-32-chars-long
 ```
 
 ### 2. SUPABASE_SERVICE_ROLE_KEY
 Supabaseのサービスロールキー（Supabaseダッシュボードから取得）
 ```
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjU2NDU0OCwiZXhwIjoyMDcyMTQwNTQ4fQ.z9gZrHoEJRvQJGzxbiKzXJzUUGnFEfIJdGSqSZBvS2E
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key-here
 ```
 
 ### 3. NEXT_PUBLIC_SUPABASE_URL
 Supabaseプロジェクトの公開URL
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://wpwqxhyiglbtlaimrjrx.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 ```
 
 ### 4. NEXT_PUBLIC_SUPABASE_ANON_KEY
 Supabaseの公開用アノンキー
 ```
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjQ1NDgsImV4cCI6MjA3MjE0MDU0OH0.rQZKk5V8qmiDhIHRy5YMlYt4l9ccVlX96xNLZV7iTHs
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 ```
 
 ## 設定方法

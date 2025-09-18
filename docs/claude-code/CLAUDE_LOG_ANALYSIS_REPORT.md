@@ -61,7 +61,7 @@ Uncaught Exception: Error: EPIPE: broken pipe, write
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
         "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
-        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "SUPABASE_ANON_KEY": "<your-jwt-token-here>",
         "XBRL_API_KEY": "xbrl_fre_mfj56b8h_...",
         "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app/api/v1"
       }

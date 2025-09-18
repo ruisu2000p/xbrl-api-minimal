@@ -32,7 +32,7 @@ Claude CodeでもXBRL財務データMCPサーバーを使用できるように�
       ],
       "env": {
         "SUPABASE_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co",
-        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjQ1NDgsImV4cCI6MjA3MjE0MDU0OH0.2SrZynFcQR3Sctenuar5jPHiORC4EFm7BDmW36imiDU"
+        "SUPABASE_ANON_KEY": "<your-jwt-token-here>"
       }
     }
   }
