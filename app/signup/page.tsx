@@ -92,6 +92,10 @@ export default function SignupPage() {
       });
 
       if (result.success) {
+        // APIキーが作成された場合は表示
+        if (result.apiKey) {
+          alert(`アカウントが作成されました！\n\nAPIキー: ${result.apiKey}\n\n※このキーは二度と表示されません。必ず保存してください。`);
+        }
         // Redirect to dashboard or confirmation page
         router.push('/dashboard');
       } else {
@@ -102,7 +106,7 @@ export default function SignupPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  };;
 
   const getButtonText = () => {
     const plan = plans.find(p => p.id === selectedPlan);
