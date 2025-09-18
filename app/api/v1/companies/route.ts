@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
     // Create service client for API key validation
     const serviceClient = supabaseManager.getServiceClient()
 
-    // Verify API key (Supabase handles hashing)
+    // Verify API key with bcrypt (Supabase handles everything)
     const { data: authResult, error: keyError } = await serviceClient
-      .rpc('verify_api_key_with_secret', {
-        api_key: apiKey
+      .rpc('verify_api_key_bcrypt', {
+        p_api_key: apiKey
       })
 
     if (keyError || !authResult?.valid) {
@@ -87,10 +87,10 @@ export async function POST(request: NextRequest) {
     // Create service client
     const serviceClient = supabaseManager.getServiceClient()
 
-    // Verify API key (Supabase handles hashing)
+    // Verify API key with bcrypt (Supabase handles everything)
     const { data: authResult, error: keyError } = await serviceClient
-      .rpc('verify_api_key_with_secret', {
-        api_key: apiKey
+      .rpc('verify_api_key_bcrypt', {
+        p_api_key: apiKey
       })
 
     if (keyError || !authResult?.valid) {

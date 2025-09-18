@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
-import {
-  generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix,
-  extractApiKeySuffix,
-  maskApiKey
-} from '@/lib/security/apiKey'
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,38 +25,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 新しいAPIキーを生成
-    const apiKey = generateApiKey('xbrl_live')
-    const keyHash = hashApiKey(apiKey)
-    const keyPrefix = extractApiKeyPrefix(apiKey)
-    const keySuffix = extractApiKeySuffix(apiKey)
-
-    // Supabase Admin クライアントでAPIキーを保存
+    // Supabase Admin クライアントでbcrypt APIキーを生成
     const supabaseAdmin = await supabaseManager.createAdminSSRClient()
 
-    const { data: newKey, error: insertError } = await supabaseAdmin
-      .from('api_keys')
-      .insert({
-        user_id: user.id,
-        name,
-        description,
-        key_hash: keyHash,
-        key_prefix: keyPrefix,
-        key_suffix: keySuffix,
-        masked_key: maskApiKey(apiKey),
-        tier,
-        status: 'active',
-        is_active: true,
-        rate_limit_per_minute: tier === 'pro' ? 600 : tier === 'basic' ? 300 : 100,
-        rate_limit_per_hour: tier === 'pro' ? 10000 : tier === 'basic' ? 5000 : 2000,
-        rate_limit_per_day: tier === 'pro' ? 200000 : tier === 'basic' ? 100000 : 50000,
-        created_at: new Date().toISOString(),
+    // Supabaseの関数でAPIキーを生成（bcrypt版）
+    const { data: result, error: createError } = await supabaseAdmin
+      .rpc('create_api_key_bcrypt', {
+        p_user_id: user.id,
+        p_name: name,
+        p_description: description,
+        p_tier: tier
       })
-      .select()
-      .single()
 
-    if (insertError) {
-      console.error('Failed to create API key:', insertError)
+    if (createError || !result?.success) {
+      console.error('Failed to create API key:', createError)
       return NextResponse.json(
         { error: 'APIキーの作成に失敗しました' },
         { status: 500 }
@@ -73,8 +48,8 @@ export async function POST(request: NextRequest) {
     // 生成されたキーを返す（この時だけ平文で返す）
     return NextResponse.json({
       success: true,
-      apiKey,
-      keyData: newKey
+      apiKey: result.api_key,
+      keyData: result.key_info
     })
 
   } catch (error) {
