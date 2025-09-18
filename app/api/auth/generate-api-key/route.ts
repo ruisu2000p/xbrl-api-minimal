@@ -4,7 +4,6 @@ export const revalidate = 0;
 
 // APIキー生成専用エンドポイント
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import {
   generateApiKey,
   hashApiKey,
@@ -12,32 +11,16 @@ import {
   extractApiKeySuffix,
   maskApiKey
 } from '@/lib/security/apiKey';
+import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
-// Supabase環境変数を関数内で取得
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return null;
-  }
-  
-  return createClient(
-    supabaseUrl,
-    supabaseServiceKey,
-    { auth: { persistSession: false } }
-  );
-}
 
 export async function POST(request: NextRequest) {
   try {
     // 認証チェック: Authorizationヘッダーが必須
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Authentication required' },
-        { status: 401 }
-      );
+      return createApiResponse.unauthorized('Authentication required');
     }
 
     const token = authHeader.substring(7);
@@ -46,35 +29,31 @@ export async function POST(request: NextRequest) {
     const { userId, email, plan = 'beta' } = body;
 
     if (!userId || !email) {
-      return NextResponse.json(
-        { success: false, error: 'ユーザー情報が不足しています' },
-        { status: 400 }
+      return createApiResponse.error(
+        ErrorCodes.MISSING_REQUIRED_FIELD,
+        'ユーザー情報が不足しています'
       );
     }
 
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Supabase接続エラー: 環境変数が設定されていません' },
-        { status: 500 }
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = supabaseManager.createTemporaryAdminClient();
+    } catch (error) {
+      return createApiResponse.internalError(
+        error,
+        'Supabase接続エラー'
       );
     }
 
     // トークンを検証してユーザーを確認
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized: Invalid token' },
-        { status: 401 }
-      );
+      return createApiResponse.unauthorized('Invalid token');
     }
 
     // リクエストのuserIdが認証されたユーザーと一致することを確認
     if (user.id !== userId) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: User ID mismatch' },
-        { status: 403 }
-      );
+      return createApiResponse.forbidden('User ID mismatch');
     }
 
     // 既存のアクティブなAPIキーを確認
@@ -84,21 +63,18 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .eq('is_active', true);
 
-    if (fetchError) {
-      console.error('Fetch API keys error:', fetchError);
-    }
+    // エラーはログに記録しない（機密情報保護）
 
     // 既にAPIキーがある場合は新規作成しない
     if (existingKeys && existingKeys.length > 0) {
-      return NextResponse.json({
-        success: false,
+      return createApiResponse.success({
         message: '既にAPIキーが存在します',
         hasExistingKey: true,
         keyInfo: {
           prefix: existingKeys[0].key_prefix,
           createdAt: existingKeys[0].created_at
         }
-      }, { status: 200 });
+      });
     }
 
     // 新しいAPIキーを生成
@@ -122,26 +98,18 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (apiKeyError) {
-      console.error('API key creation error:', apiKeyError);
-      
-      // エラーの詳細を返す
-      return NextResponse.json({
-        success: false,
-        error: 'APIキーの作成に失敗しました',
-        details: apiKeyError.message,
-        code: apiKeyError.code
-      }, { status: 500 });
+      return createApiResponse.internalError(
+        apiKeyError,
+        'APIキーの作成に失敗しました'
+      );
     }
 
-    console.log('✅ API key generated successfully:', {
-      email,
-      userId,
-      keyPrefix
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ API key generated successfully');
+    }
 
     // 成功レスポンス
-    return NextResponse.json({
-      success: true,
+    const response = createApiResponse.success({
       message: 'APIキーが正常に生成されました',
       apiKey, // 平文のAPIキー（初回のみ）
       keyInfo: {
@@ -150,16 +118,15 @@ export async function POST(request: NextRequest) {
         masked: maskApiKey(apiKey),
         createdAt: new Date().toISOString()
       }
-    }, { status: 201 });
+    });
+    // 201 Created status for POST
+    response.status = 201;
+    return response;
 
   } catch (error) {
-    console.error('Generate API key error:', error);
-    return NextResponse.json(
-      { 
-        error: 'サーバーエラーが発生しました',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
+    return createApiResponse.internalError(
+      error,
+      'サーバーエラーが発生しました'
     );
   }
 }
@@ -169,37 +136,33 @@ export async function GET(request: NextRequest) {
   // 認証チェック: Authorizationヘッダーが必須
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized: Authentication required' },
-      { status: 401 }
-    );
+    return createApiResponse.unauthorized('Authentication required');
   }
 
   const token = authHeader.substring(7);
   const userId = request.nextUrl.searchParams.get('userId');
 
   if (!userId) {
-    return NextResponse.json(
-      { success: false, error: 'ユーザーIDが必要です' },
-      { status: 400 }
+    return createApiResponse.error(
+      ErrorCodes.MISSING_REQUIRED_FIELD,
+      'ユーザーIDが必要です'
     );
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
-  if (!supabaseAdmin) {
-    return NextResponse.json(
-      { success: false, error: 'Supabase接続エラー' },
-      { status: 500 }
+  let supabaseAdmin;
+  try {
+    supabaseAdmin = supabaseManager.createTemporaryAdminClient();
+  } catch (error) {
+    return createApiResponse.internalError(
+      error,
+      'Supabase接続エラー'
     );
   }
 
   // トークンを検証してユーザーを確認
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user || user.id !== userId) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
+    return createApiResponse.unauthorized();
   }
 
   // ユーザーのAPIキー情報を取得
@@ -210,13 +173,13 @@ export async function GET(request: NextRequest) {
     .eq('is_active', true);
 
   if (error) {
-    return NextResponse.json(
-      { success: false, error: 'APIキー情報の取得に失敗しました' },
-      { status: 500 }
+    return createApiResponse.internalError(
+      error,
+      'APIキー情報の取得に失敗しました'
     );
   }
 
-  return NextResponse.json({
+  return createApiResponse.success({
     hasApiKey: apiKeys && apiKeys.length > 0,
     apiKeys: apiKeys?.map(k => ({
       display: `${k.key_prefix}...${k.key_suffix}`,
@@ -226,5 +189,5 @@ export async function GET(request: NextRequest) {
       expiresAt: k.expires_at,
       rateLimit: k.rate_limit_per_day
     }))
-  }, { status: 200 });
+  });
 }

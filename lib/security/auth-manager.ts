@@ -1,7 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import { UnifiedKeyHasher } from './key-hasher';
 import { createApiKey } from './unified-apikey';
 import { logger } from '../utils/logger';
+import { supabaseManager } from '../infrastructure/supabase-manager';
 
 export interface AuthResult {
   success: boolean;
@@ -31,10 +31,9 @@ export interface ApiKeyRecord {
  * Handles all API key authentication with backward compatibility
  */
 export class UnifiedAuthManager {
-  private static supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  private static get supabase() {
+    return supabaseManager.getServiceClient();
+  }
 
   /**
    * Authenticate API key with automatic migration support

@@ -5,33 +5,15 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import {
   generateApiKey,
   hashApiKey,
   extractApiKeyPrefix,
   extractApiKeySuffix
 } from '@/lib/security/apiKey';
+import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
-// Supabase環境変数の確認（ビルド時ではなく実行時に評価）
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('Missing environment variables:', {
-      NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
-      SUPABASE_SERVICE_ROLE_KEY: !!supabaseServiceKey
-    });
-    return null;
-  }
-
-  return createClient(
-    supabaseUrl,
-    supabaseServiceKey,
-    { auth: { persistSession: false } }
-  );
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,26 +22,27 @@ export async function POST(request: NextRequest) {
 
     // バリデーション
     if (!email || !password || !name) {
-      return NextResponse.json(
-        { success: false, error: '必須項目が入力されていません' },
-        { status: 400 }
+      return createApiResponse.error(
+        ErrorCodes.MISSING_REQUIRED_FIELD,
+        '必須項目が入力されていません'
       );
     }
 
     // パスワードの長さチェック
     if (password.length < 8) {
-      return NextResponse.json(
-        { success: false, error: 'パスワードは8文字以上にしてください' },
-        { status: 400 }
-      );
+      return createApiResponse.validationError({
+        password: ['パスワードは8文字以上にしてください']
+      });
     }
 
     // Supabase Admin Clientを取得
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = supabaseManager.getServiceClient();
+    } catch (error) {
+      return createApiResponse.internalError(
+        error,
+        'Server configuration error'
       );
     }
 
@@ -68,9 +51,9 @@ export async function POST(request: NextRequest) {
     const existingUser = existingUsers?.users?.find(u => u.email === email);
     
     if (existingUser) {
-      return NextResponse.json(
-        { success: false, error: 'このメールアドレスは既に登録されています' },
-        { status: 409 }
+      return createApiResponse.error(
+        ErrorCodes.ALREADY_EXISTS,
+        'このメールアドレスは既に登録されています'
       );
     }
 
@@ -153,11 +136,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('✅ User registered with API key:', {
-      email,
-      userId,
-      apiKeyPrefix: keyPrefix
-    });
+    // セキュリティのため、機密情報はログに出力しない
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ User registered successfully:', { userId });
+    }
 
     // セッションの作成
     const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({

@@ -5,44 +5,21 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-
   // Create SSR Supabase client
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  );
+  const supabase = await supabaseManager.createSSRClient();
   try {
     const body = await request.json();
     const { email, password } = body;
 
     // バリデーション
     if (!email || !password) {
-      return NextResponse.json(
-        { success: false, error: 'メールアドレスとパスワードを入力してください' },
-        { status: 400 }
+      return createApiResponse.error(
+        ErrorCodes.MISSING_REQUIRED_FIELD,
+        'メールアドレスとパスワードを入力してください'
       );
     }
 
@@ -53,34 +30,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError || !authData.user) {
-      return NextResponse.json(
-        { success: false, error: 'メールアドレスまたはパスワードが正しくありません' },
-        { status: 401 }
+      return createApiResponse.error(
+        ErrorCodes.INVALID_CREDENTIALS,
+        'メールアドレスまたはパスワードが正しくありません'
       );
     }
 
     // ユーザーのAPIキー情報を取得
-    const supabaseAdmin = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Server Componentからの呼び出し
-            }
-          },
-        },
-        auth: { persistSession: false }
-      }
-    );
+    const supabaseAdmin = await supabaseManager.createAdminSSRClient();
 
     const { data: apiKeys } = await supabaseAdmin
       .from('api_keys')
@@ -90,8 +47,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     // レスポンスの作成 - SSRクライアントがCookieを自動管理
-    return NextResponse.json({
-      success: true,
+    return createApiResponse.success({
       message: 'ログインに成功しました',
       user: {
         id: authData.user.id,
@@ -105,63 +61,37 @@ export async function POST(request: NextRequest) {
         createdAt: authData.user.created_at
       },
       session: authData.session
-    }, { status: 200 });
+    });
 
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json(
-      { success: false, error: 'サーバーエラーが発生しました' },
-      { status: 500 }
+    return createApiResponse.internalError(
+      error,
+      'サーバーエラーが発生しました'
     );
   }
 }
 
 // セッション確認用（オプション）
 export async function GET(request: NextRequest) {
-  const cookieStore = await cookies();
-
   // Create SSR Supabase client
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Server Componentからの呼び出し
-          }
-        },
-      },
-    }
-  );
+  const supabase = await supabaseManager.createSSRClient();
 
   // Supabaseでセッションを検証
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return NextResponse.json(
-      { authenticated: false },
-      { status: 200 }
-    );
+    return createApiResponse.success({
+      authenticated: false
+    });
   }
 
-  return NextResponse.json(
-    { 
-      authenticated: true,
-      message: 'セッションは有効です',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name
-      }
-    },
-    { status: 200 }
-  );
+  return createApiResponse.success({
+    authenticated: true,
+    message: 'セッションは有効です',
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.user_metadata?.name
+    }
+  });
 }
