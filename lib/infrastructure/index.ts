@@ -3,11 +3,11 @@
  * All infrastructure components in one place
  */
 
-// Supabase Singleton
+// Supabase Manager
 export {
   SupabaseManager,
   supabaseManager
-} from './supabase-singleton';
+} from './supabase-manager';
 
 // Configuration Manager
 export {

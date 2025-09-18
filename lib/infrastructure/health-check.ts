@@ -1,4 +1,4 @@
-import { supabaseManager } from './supabase-singleton';
+import { supabaseManager } from './supabase-manager';
 import { configManager } from './config-manager';
 import { logger } from '../utils/logger';
 
@@ -80,16 +80,12 @@ export class HealthCheckService {
     const start = Date.now();
 
     try {
-      const result = await supabaseManager.executeQuery(
-        async (client) => {
-          return await client
-            .from('companies')
-            .select('count')
-            .limit(1)
-            .single();
-        },
-        { retries: 1 }
-      );
+      const client = supabaseManager.getServiceClient();
+      const result = await client
+        .from('companies')
+        .select('count')
+        .limit(1)
+        .single();
 
       const responseTime = Date.now() - start;
 
@@ -122,13 +118,13 @@ export class HealthCheckService {
     const start = Date.now();
 
     try {
-      const result = await supabaseManager.storageOperation(
-        'list',
-        'markdown-files',
-        '',
-        undefined,
-        { limit: 1 }
-      );
+      const client = supabaseManager.getServiceClient();
+      const { data, error } = await client
+        .storage
+        .from('markdown-files')
+        .list('', { limit: 1 });
+
+      if (error) throw error;
 
       const responseTime = Date.now() - start;
 
@@ -154,7 +150,7 @@ export class HealthCheckService {
 
     try {
       // Simple auth check - verify service can be reached
-      const client = supabaseManager.getClient();
+      const client = supabaseManager.getAnonClient();
       const { error } = await client.auth.getSession();
 
       const responseTime = Date.now() - start;
