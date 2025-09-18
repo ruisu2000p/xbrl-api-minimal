@@ -475,7 +475,7 @@ export default function AccountSettings() {
       setPlanMessage({ type: 'success', text: `既に${currentPlan.name}プランをご利用中です。` });
     } else {
       // 選択したプラン情報を取得
-      const newPlan = PLANS.find(p => p.id === selectedPlan);
+      const newPlan = PLAN_OPTIONS.find(p => p.id === selectedPlan);
       if (newPlan) {
         // 現在のプランを更新
         setCurrentPlan({
