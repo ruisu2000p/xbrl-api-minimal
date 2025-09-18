@@ -115,9 +115,9 @@ export async function signUp(userData: {
         : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
         : 'basic'
 
-      // Use the Supabase function with bcrypt
+      // Use the O(1) optimized Supabase function
       const { data: result, error: createError } = await admin
-        .rpc('create_api_key_bcrypt', {
+        .rpc('create_api_key_complete_v2', {
           p_user_id: data.user.id,
           p_name: 'Default API Key',
           p_description: `${userData.plan} plan - Auto created`,

@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
     // Supabase Admin クライアントでbcrypt APIキーを生成
     const supabaseAdmin = await supabaseManager.createAdminSSRClient()
 
-    // Supabaseの関数でAPIキーを生成（bcrypt版）
+    // O(1)化されたAPIキー生成関数を使用（public_id埋め込み方式）
     const { data: result, error: createError } = await supabaseAdmin
-      .rpc('create_api_key_bcrypt', {
+      .rpc('create_api_key_complete_v2', {
         p_user_id: user.id,
         p_name: name,
         p_description: description,
