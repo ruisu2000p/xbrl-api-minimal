@@ -112,53 +112,35 @@ export async function signUp(userData: {
       const admin = await supabaseManager.createAdminSSRClient()
 
       const tier = userData.plan === 'freemium' ? 'free'
-        : userData.plan === 'standard' ? 'premium'
+        : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
         : 'basic'
 
-      const generatedKey = generateApiKey('xbrl_live')
-      const keyHash = hashApiKey(generatedKey)
-      const keyPrefix = extractApiKeyPrefix(generatedKey)
-      const keySuffix = extractApiKeySuffix(generatedKey)
-      const maskedKey = maskApiKey(generatedKey)
-
-      const { error: insertError } = await admin
-        .from('api_keys')
-        .insert({
-          user_id: data.user.id,
-          name: 'Default API Key',
-          key_hash: keyHash,
-          key_prefix: keyPrefix,
-          key_suffix: keySuffix,
-          masked_key: maskedKey,
-          status: 'active',
-          is_active: true,
-          tier,
-          rate_limit_per_minute: 100,
-          rate_limit_per_hour: 2000,
-          rate_limit_per_day: 50000
+      // Use the Supabase function with bcrypt
+      const { data: result, error: createError } = await admin
+        .rpc('create_api_key_bcrypt', {
+          p_user_id: data.user.id,
+          p_name: 'Default API Key',
+          p_description: `${userData.plan} plan - Auto created`,
+          p_tier: tier
         })
-        .select('id')
-        .single()
 
-      if (insertError) {
-        throw new Error(insertError.message)
+      if (createError) {
+        console.error('API Key creation error:', createError)
+        throw new Error(`API Key creation failed: ${createError.message}`)
       }
 
-      fullApiKey = generatedKey
+      if (!result?.success) {
+        console.error('API Key creation failed:', result)
+        throw new Error('APIキーの作成に失敗しました')
+      }
+
+      fullApiKey = result.api_key
 
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)
-      // Rollback user creation on failure
-      try {
-        const admin = await supabaseManager.createAdminSSRClient()
-        await admin.auth.admin.deleteUser(data.user.id)
-      } catch (rollbackError) {
-        console.error('Failed to rollback user creation:', rollbackError)
-      }
-      return {
-        success: false,
-        error: 'APIキーの作成に失敗しました'
-      }
+      // APIキー作成に失敗してもユーザーは作成済みなので続行
+      console.warn('User created but API key creation failed. User can create API key later from dashboard.')
+      // ユーザー削除はしない - ダッシュボードから後でAPIキーを作成可能
     }
 
     revalidatePath('/dashboard', 'layout')
