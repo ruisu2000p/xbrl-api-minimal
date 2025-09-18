@@ -27,7 +27,8 @@ const TABS: Array<{ id: TabId; label: string; icon: string }> = [
   { id: 'api', label: 'APIキー', icon: 'ri-key-line' }
 ];
 
-const CURRENT_PLAN = {
+// デフォルトの現在プラン
+const DEFAULT_CURRENT_PLAN = {
   id: 'standard',
   name: 'スタンダード',
   price: '¥2,980/月',
@@ -136,7 +137,7 @@ function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
 }
 
 interface PlanTabProps {
-  currentPlan: typeof CURRENT_PLAN;
+  currentPlan: typeof DEFAULT_CURRENT_PLAN;
   selectedPlan: string;
   message: Message;
   onSelectPlan: (planId: string) => void;
@@ -425,7 +426,8 @@ export default function AccountSettings() {
   const [profile, setProfile] = useState<ProfileState>(INITIAL_PROFILE);
   const [profileMessage, setProfileMessage] = useState<Message>(null);
 
-  const [selectedPlan, setSelectedPlan] = useState<string>(CURRENT_PLAN.id);
+  const [selectedPlan, setSelectedPlan] = useState<string>(DEFAULT_CURRENT_PLAN.id);
+  const [currentPlan, setCurrentPlan] = useState(DEFAULT_CURRENT_PLAN);
   const [planMessage, setPlanMessage] = useState<Message>(null);
 
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -469,12 +471,24 @@ export default function AccountSettings() {
   }, []);
 
   const handlePlanUpdate = useCallback(() => {
-    if (selectedPlan === CURRENT_PLAN.id) {
-      setPlanMessage({ type: 'success', text: '既にスタンダードプランをご利用中です。' });
+    if (selectedPlan === currentPlan.id) {
+      setPlanMessage({ type: 'success', text: `既に${currentPlan.name}プランをご利用中です。` });
     } else {
-      setPlanMessage({ type: 'success', text: 'プラン変更のリクエストを受け付けました。' });
+      // 選択したプラン情報を取得
+      const newPlan = PLANS.find(p => p.id === selectedPlan);
+      if (newPlan) {
+        // 現在のプランを更新
+        setCurrentPlan({
+          id: newPlan.id,
+          name: newPlan.name,
+          price: newPlan.price,
+          nextBilling: '2024-02-15', // 今は固定値
+          status: 'アクティブ'
+        });
+        setPlanMessage({ type: 'success', text: 'プラン変更のリクエストを受け付けました。' });
+      }
     }
-  }, [selectedPlan]);
+  }, [selectedPlan, currentPlan]);
 
   const handleCreateKey = useCallback(async () => {
     if (newKeyName.trim().length === 0) return;
@@ -576,7 +590,7 @@ export default function AccountSettings() {
 
         {activeTab === 'plan' && (
           <PlanTab
-            currentPlan={CURRENT_PLAN}
+            currentPlan={currentPlan}
             selectedPlan={selectedPlan}
             message={planMessage}
             onSelectPlan={handlePlanSelect}
