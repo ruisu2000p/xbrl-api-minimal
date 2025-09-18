@@ -8,13 +8,17 @@ export const revalidate = 0;
  */
 
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/app/api/_lib/supabaseAuth';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
-    
-    if (!user) {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },
         { status: 401 }
