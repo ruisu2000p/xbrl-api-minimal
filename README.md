@@ -83,7 +83,7 @@ Supabase (DB & Storage)
       "command": "npx",
       "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
-        "XBRL_API_KEY": "fin_live_xxxxxxxxxxxxxxxxxxxxxxxx",
+        "XBRL_API_KEY": "xbrl_live_xxxxxxxxxxxxxxxxxxxxxxxx",
         "XBRL_API_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/gateway"
       }
     }
