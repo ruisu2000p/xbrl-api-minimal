@@ -108,20 +108,23 @@ export async function POST(request: NextRequest) {
       console.log('✅ API key generated successfully');
     }
 
-    // 成功レスポンス
-    const response = createApiResponse.success({
-      message: 'APIキーが正常に生成されました',
-      apiKey, // 平文のAPIキー（初回のみ）
-      keyInfo: {
-        prefix: keyPrefix,
-        suffix: keySuffix,
-        masked: maskApiKey(apiKey),
-        createdAt: new Date().toISOString()
+    // 成功レスポンス（201 Createdステータス）
+    return NextResponse.json({
+      success: true,
+      data: {
+        message: 'APIキーが正常に生成されました',
+        apiKey, // 平文のAPIキー（初回のみ）
+        keyInfo: {
+          prefix: keyPrefix,
+          suffix: keySuffix,
+          masked: maskApiKey(apiKey),
+          createdAt: new Date().toISOString()
+        }
+      },
+      metadata: {
+        timestamp: new Date().toISOString()
       }
-    });
-    // 201 Created status for POST
-    response.status = 201;
-    return response;
+    }, { status: 201 });
 
   } catch (error) {
     return createApiResponse.internalError(
