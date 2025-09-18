@@ -43,14 +43,6 @@ export class SupabaseManager {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     // 連携に影響されない独自の環境変数名を使用
     const serviceKey = process.env.XBRL_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    // デバッグ用ログ（本番では削除する）
-    console.log('Environment check:', {
-      hasUrl: !!url,
-      hasXbrlKey: !!process.env.XBRL_SUPABASE_SERVICE_KEY,
-      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      hasServiceKeyFinal: !!serviceKey
-    });
 
     if (!url || !serviceKey) {
       throw new Error('Supabase Service環境変数が設定されていません: NEXT_PUBLIC_SUPABASE_URL, XBRL_SUPABASE_SERVICE_KEY');
