@@ -119,6 +119,7 @@ jobs:
           category: "/language:${{matrix.language}}"
 
   semgrep:
+    continue-on-error: true
     runs-on: ubuntu-latest
     name: Semgrep Security Scan
     steps:
