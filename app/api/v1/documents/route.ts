@@ -89,19 +89,19 @@ export async function GET(request: NextRequest) {
       .from('markdown_files_metadata')
       .select('*')
 
-    if (companyId) {
-      query = query.eq('company_id', companyId)
+    if (validatedParams.companyId) {
+      query = query.eq('company_id', validatedParams.companyId)
     }
 
-    if (fiscalYear) {
-      query = query.eq('fiscal_year', fiscalYear)
+    if (validatedParams.fiscalYear) {
+      query = query.eq('fiscal_year', validatedParams.fiscalYear)
     }
 
-    if (fileType) {
-      query = query.eq('file_type', fileType)
+    if (validatedParams.fileType) {
+      query = query.eq('file_type', validatedParams.fileType)
     }
 
-    query = query.limit(limit).order('created_at', { ascending: false })
+    query = query.limit(validatedParams.limit).order('created_at', { ascending: false })
 
     const { data: documents, error: documentsError } = await query
 

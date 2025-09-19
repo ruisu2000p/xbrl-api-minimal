@@ -88,7 +88,7 @@ class ConfigManager {
       },
 
       security: {
-        apiKeySecret: this.getRequired('API_KEY_SECRET', this.generateDefaultSecret()),
+        apiKeySecret: this.getRequiredInProduction('API_KEY_SECRET'),
         jwtSecret: this.getOptional('JWT_SECRET'),
         encryptionKey: this.getOptional('ENCRYPTION_KEY'),
       },
@@ -167,6 +167,39 @@ class ConfigManager {
    */
   private getOptional(key: string, defaultValue: string = ''): string {
     return process.env[key] || defaultValue;
+  }
+
+  /**
+   * Get required environment variable in production
+   * Generates default in development/test but throws in production
+   */
+  private getRequiredInProduction(key: string): string {
+    const value = process.env[key];
+
+    if (!value) {
+      const env = this.getEnvironment();
+
+      if (env === 'production') {
+        // In production, this is a critical error
+        this.validationErrors.push(`CRITICAL: Missing required environment variable in production: ${key}`);
+        throw new Error(`${key} must be set in production environment for security reasons`);
+      } else {
+        // In development/test, generate a default but warn
+        const defaultValue = this.generateDefaultSecret();
+        this.validationErrors.push(`WARNING: ${key} not set, using generated default (not suitable for production)`);
+        return defaultValue;
+      }
+    }
+
+    // Additional validation for API_KEY_SECRET
+    if (key === 'API_KEY_SECRET' && value.length < 32) {
+      this.validationErrors.push(`${key} must be at least 32 characters long`);
+      if (this.getEnvironment() === 'production') {
+        throw new Error(`${key} is too short for production use (minimum 32 characters)`);
+      }
+    }
+
+    return value;
   }
 
   /**

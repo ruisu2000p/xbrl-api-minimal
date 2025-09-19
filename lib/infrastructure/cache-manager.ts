@@ -1,277 +1,423 @@
-import { logger } from '../utils/logger';
-import { configManager } from './config-manager';
-
 /**
  * Cache Manager
- * In-memory cache with TTL support
+ * APIキーメタデータとその他のデータのキャッシュ管理
  */
 
+import { centralLogger } from './logger-config'
+import crypto from 'crypto'
+
 interface CacheEntry<T> {
-  data: T;
-  expiry: number;
-  hits: number;
+  data: T
+  expiresAt: number
+  hits: number
+  createdAt: number
+}
+
+interface CacheStats {
+  totalEntries: number
+  hitRate: number
+  memoryUsage: number
+  oldestEntry: number
+  newestEntry: number
+}
+
+interface CacheConfig {
+  maxEntries: number
+  defaultTtl: number
+  gcInterval: number
+  maxMemoryMB: number
 }
 
 export class CacheManager {
-  private static instance: CacheManager;
-  private cache: Map<string, CacheEntry<any>>;
-  private defaultTTL: number = 300000; // 5 minutes
-  private maxSize: number = 1000;
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private static instance: CacheManager
+  private cache: Map<string, CacheEntry<any>> = new Map()
+  private hits: number = 0
+  private misses: number = 0
+  private gcInterval: NodeJS.Timeout | null = null
+  private config: CacheConfig
 
   private constructor() {
-    this.cache = new Map();
-    this.startCleanup();
+    this.config = {
+      maxEntries: parseInt(process.env.CACHE_MAX_ENTRIES || '10000', 10),
+      defaultTtl: parseInt(process.env.CACHE_DEFAULT_TTL || '300000', 10), // 5分
+      gcInterval: parseInt(process.env.CACHE_GC_INTERVAL || '60000', 10), // 1分
+      maxMemoryMB: parseInt(process.env.CACHE_MAX_MEMORY_MB || '100', 10)
+    }
+
+    this.startGarbageCollection()
   }
 
   static getInstance(): CacheManager {
     if (!CacheManager.instance) {
-      CacheManager.instance = new CacheManager();
+      CacheManager.instance = new CacheManager()
     }
-    return CacheManager.instance;
+    return CacheManager.instance
   }
 
   /**
-   * Get cached value
-   */
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-
-    if (!entry) {
-      return null;
-    }
-
-    // Check if expired
-    if (Date.now() > entry.expiry) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    // Update hit count
-    entry.hits++;
-
-    logger.debug(`Cache hit for key: ${key}`);
-    return entry.data as T;
-  }
-
-  /**
-   * Set cached value
+   * データをキャッシュに保存
    */
   set<T>(key: string, data: T, ttl?: number): void {
-    // Check cache size limit
-    if (this.cache.size >= this.maxSize) {
-      this.evictLRU();
-    }
+    const expiresAt = Date.now() + (ttl || this.config.defaultTtl)
 
-    const expiry = Date.now() + (ttl || this.defaultTTL);
+    // メモリ使用量チェック
+    if (this.cache.size >= this.config.maxEntries) {
+      this.evictOldest()
+    }
 
     this.cache.set(key, {
       data,
-      expiry,
+      expiresAt,
       hits: 0,
-    });
+      createdAt: Date.now()
+    })
 
-    logger.debug(`Cached key: ${key}, TTL: ${ttl || this.defaultTTL}ms`);
+    centralLogger.debug('Cache set', { key, ttl, expiresAt })
   }
 
   /**
-   * Delete cached value
+   * データをキャッシュから取得
+   */
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key)
+
+    if (!entry) {
+      this.misses++
+      centralLogger.debug('Cache miss', { key })
+      return null
+    }
+
+    if (entry.expiresAt < Date.now()) {
+      this.cache.delete(key)
+      this.misses++
+      centralLogger.debug('Cache expired', { key })
+      return null
+    }
+
+    entry.hits++
+    this.hits++
+    centralLogger.debug('Cache hit', { key, hits: entry.hits })
+
+    return entry.data as T
+  }
+
+  /**
+   * データがキャッシュに存在するかチェック
+   */
+  has(key: string): boolean {
+    const entry = this.cache.get(key)
+    if (!entry) return false
+
+    if (entry.expiresAt < Date.now()) {
+      this.cache.delete(key)
+      return false
+    }
+
+    return true
+  }
+
+  /**
+   * キャッシュからデータを削除
    */
   delete(key: string): boolean {
-    return this.cache.delete(key);
+    const result = this.cache.delete(key)
+    centralLogger.debug('Cache delete', { key, success: result })
+    return result
   }
 
   /**
-   * Clear specific pattern
+   * キーのパターンでデータを削除
    */
-  clearPattern(pattern: string): number {
-    const regex = new RegExp(pattern);
-    let cleared = 0;
+  deletePattern(pattern: string): number {
+    const regex = new RegExp(pattern)
+    let count = 0
 
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
-        this.cache.delete(key);
-        cleared++;
+        this.cache.delete(key)
+        count++
       }
     }
 
-    logger.info(`Cleared ${cleared} cache entries matching pattern: ${pattern}`);
-    return cleared;
+    centralLogger.debug('Cache pattern delete', { pattern, count })
+    return count
   }
 
   /**
-   * Clear all cache
+   * キャッシュをクリア
    */
   clear(): void {
-    const size = this.cache.size;
-    this.cache.clear();
-    logger.info(`Cleared ${size} cache entries`);
+    this.cache.clear()
+    this.hits = 0
+    this.misses = 0
+    centralLogger.info('Cache cleared')
   }
 
   /**
-   * Get cache statistics
+   * 期限切れエントリを削除
    */
-  getStats(): {
-    size: number;
-    maxSize: number;
-    hitRate: number;
-    memoryUsage: number;
-  } {
-    let totalHits = 0;
-    let totalRequests = 0;
+  private evictExpired(): number {
+    const now = Date.now()
+    let count = 0
 
-    for (const entry of this.cache.values()) {
-      totalHits += entry.hits;
-      totalRequests += entry.hits + 1;
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt < now) {
+        this.cache.delete(key)
+        count++
+      }
     }
 
-    const hitRate = totalRequests > 0 ? totalHits / totalRequests : 0;
+    return count
+  }
 
-    // Estimate memory usage
-    const memoryUsage = this.estimateMemoryUsage();
+  /**
+   * 最も古いエントリを削除（LRU）
+   */
+  private evictOldest(): void {
+    let oldestKey: string | null = null
+    let oldestTime = Date.now()
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.createdAt < oldestTime) {
+        oldestTime = entry.createdAt
+        oldestKey = key
+      }
+    }
+
+    if (oldestKey) {
+      this.cache.delete(oldestKey)
+      centralLogger.debug('Cache evicted oldest', { key: oldestKey })
+    }
+  }
+
+  /**
+   * ガベージコレクションの開始
+   */
+  private startGarbageCollection(): void {
+    this.gcInterval = setInterval(() => {
+      const evicted = this.evictExpired()
+      const memoryUsage = this.getMemoryUsage()
+
+      if (evicted > 0) {
+        centralLogger.debug('Cache garbage collection', { evicted, memoryUsage })
+      }
+
+      // メモリ使用量が制限を超えた場合の緊急削除
+      if (memoryUsage > this.config.maxMemoryMB) {
+        this.emergencyCleanup()
+      }
+    }, this.config.gcInterval)
+  }
+
+  /**
+   * 緊急クリーンアップ
+   */
+  private emergencyCleanup(): void {
+    const targetSize = Math.floor(this.cache.size * 0.5)
+    const toDelete: string[] = []
+
+    // ヒット数の少ないエントリから削除
+    const entries = Array.from(this.cache.entries())
+      .sort(([, a], [, b]) => a.hits - b.hits)
+
+    for (let i = 0; i < entries.length - targetSize; i++) {
+      toDelete.push(entries[i][0])
+    }
+
+    toDelete.forEach(key => this.cache.delete(key))
+
+    centralLogger.warn('Emergency cache cleanup', {
+      deleted: toDelete.length,
+      remaining: this.cache.size
+    })
+  }
+
+  /**
+   * メモリ使用量を概算（MB）
+   */
+  private getMemoryUsage(): number {
+    const entrySize = 1024 // 1エントリあたりの概算サイズ（バイト）
+    return (this.cache.size * entrySize) / (1024 * 1024)
+  }
+
+  /**
+   * キャッシュ統計を取得
+   */
+  getStats(): CacheStats {
+    const entries = Array.from(this.cache.values())
+    const createdTimes = entries.map(e => e.createdAt)
 
     return {
-      size: this.cache.size,
-      maxSize: this.maxSize,
-      hitRate,
-      memoryUsage,
-    };
-  }
-
-  /**
-   * Cache wrapper for async functions
-   */
-  async cached<T>(
-    key: string,
-    fn: () => Promise<T>,
-    ttl?: number
-  ): Promise<T> {
-    // Check cache first
-    const cached = this.get<T>(key);
-    if (cached !== null) {
-      return cached;
-    }
-
-    // Execute function and cache result
-    try {
-      const result = await fn();
-      this.set(key, result, ttl);
-      return result;
-    } catch (error) {
-      logger.error(`Failed to cache key: ${key}`, error);
-      throw error;
+      totalEntries: this.cache.size,
+      hitRate: this.hits + this.misses > 0 ? this.hits / (this.hits + this.misses) : 0,
+      memoryUsage: this.getMemoryUsage(),
+      oldestEntry: createdTimes.length > 0 ? Math.min(...createdTimes) : 0,
+      newestEntry: createdTimes.length > 0 ? Math.max(...createdTimes) : 0
     }
   }
 
   /**
-   * Decorator for caching method results
+   * クリーンアップ
    */
-  static cache(ttl?: number) {
-    return function (
-      target: any,
-      propertyKey: string,
-      descriptor: PropertyDescriptor
-    ) {
-      const originalMethod = descriptor.value;
-      const cacheManager = CacheManager.getInstance();
+  cleanup(): void {
+    if (this.gcInterval) {
+      clearInterval(this.gcInterval)
+      this.gcInterval = null
+    }
+    this.clear()
+  }
+}
 
-      descriptor.value = async function (...args: any[]) {
-        const cacheKey = `${target.constructor.name}.${propertyKey}:${JSON.stringify(args)}`;
+/**
+ * APIキー特化のキャッシュマネージャー
+ */
+export class ApiKeyCache {
+  private static instance: ApiKeyCache
+  private cacheManager: CacheManager
+  private readonly KEY_PREFIX = 'apikey:'
+  private readonly METADATA_PREFIX = 'meta:'
+  private readonly VALIDATION_PREFIX = 'valid:'
 
-        return cacheManager.cached(
-          cacheKey,
-          () => originalMethod.apply(this, args),
-          ttl
-        );
-      };
+  private constructor() {
+    this.cacheManager = CacheManager.getInstance()
+  }
 
-      return descriptor;
-    };
+  static getInstance(): ApiKeyCache {
+    if (!ApiKeyCache.instance) {
+      ApiKeyCache.instance = new ApiKeyCache()
+    }
+    return ApiKeyCache.instance
   }
 
   /**
-   * Evict least recently used entry
+   * APIキーメタデータをキャッシュ
    */
-  private evictLRU(): void {
-    let lruKey: string | null = null;
-    let minHits = Infinity;
-
-    for (const [key, entry] of this.cache.entries()) {
-      if (entry.hits < minHits) {
-        minHits = entry.hits;
-        lruKey = key;
-      }
-    }
-
-    if (lruKey) {
-      this.cache.delete(lruKey);
-      logger.debug(`Evicted LRU cache entry: ${lruKey}`);
-    }
+  setKeyMetadata(apiKey: string, metadata: any, ttl?: number): void {
+    const key = this.METADATA_PREFIX + this.hashKey(apiKey)
+    this.cacheManager.set(key, metadata, ttl || 300000) // 5分
   }
 
   /**
-   * Start cleanup interval
+   * APIキーメタデータを取得
    */
-  private startCleanup(): void {
-    // Only run cleanup in production
-    if (!configManager.isProduction()) {
-      return;
-    }
-
-    // Cleanup every minute
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 60000);
+  getKeyMetadata(apiKey: string): any | null {
+    const key = this.METADATA_PREFIX + this.hashKey(apiKey)
+    return this.cacheManager.get(key)
   }
 
   /**
-   * Cleanup expired entries
+   * APIキー検証結果をキャッシュ
    */
-  private cleanup(): void {
-    const now = Date.now();
-    let cleaned = 0;
-
-    for (const [key, entry] of this.cache.entries()) {
-      if (now > entry.expiry) {
-        this.cache.delete(key);
-        cleaned++;
-      }
-    }
-
-    if (cleaned > 0) {
-      logger.debug(`Cleaned up ${cleaned} expired cache entries`);
-    }
+  setValidationResult(apiKey: string, isValid: boolean, ttl?: number): void {
+    const key = this.VALIDATION_PREFIX + this.hashKey(apiKey)
+    this.cacheManager.set(key, { isValid, timestamp: Date.now() }, ttl || 60000) // 1分
   }
 
   /**
-   * Estimate memory usage
+   * APIキー検証結果を取得
    */
-  private estimateMemoryUsage(): number {
-    let totalSize = 0;
-
-    for (const [key, entry] of this.cache.entries()) {
-      // Rough estimation
-      totalSize += key.length * 2; // Key string
-      totalSize += JSON.stringify(entry.data).length * 2; // Data
-      totalSize += 24; // Entry overhead
-    }
-
-    return totalSize;
+  getValidationResult(apiKey: string): { isValid: boolean; timestamp: number } | null {
+    const key = this.VALIDATION_PREFIX + this.hashKey(apiKey)
+    return this.cacheManager.get(key)
   }
 
   /**
-   * Stop cleanup interval
+   * 特定のAPIキーに関連するキャッシュを削除
    */
-  stop(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
+  invalidateKey(apiKey: string): void {
+    const hashedKey = this.hashKey(apiKey)
+    this.cacheManager.delete(this.METADATA_PREFIX + hashedKey)
+    this.cacheManager.delete(this.VALIDATION_PREFIX + hashedKey)
+  }
+
+  /**
+   * すべてのAPIキーキャッシュを削除
+   */
+  invalidateAll(): void {
+    this.cacheManager.deletePattern('^(meta:|valid:)')
+  }
+
+  /**
+   * APIキーをハッシュ化（セキュリティのため）
+   */
+  private hashKey(apiKey: string): string {
+    return crypto.createHash('sha256').update(apiKey).digest('hex').substring(0, 16)
+  }
+
+  /**
+   * キャッシュ統計を取得
+   */
+  getStats(): {
+    metadata: number
+    validation: number
+    overall: CacheStats
+  } {
+    const allKeys = Array.from((this.cacheManager as any).cache.keys())
+    const metadataCount = allKeys.filter(k => k.startsWith(this.METADATA_PREFIX)).length
+    const validationCount = allKeys.filter(k => k.startsWith(this.VALIDATION_PREFIX)).length
+
+    return {
+      metadata: metadataCount,
+      validation: validationCount,
+      overall: this.cacheManager.getStats()
     }
   }
 }
 
-// Export singleton instance
-export const cacheManager = CacheManager.getInstance();
+/**
+ * Get-or-Set パターンのヘルパー
+ */
+export async function getCached<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttl?: number
+): Promise<T> {
+  const cache = CacheManager.getInstance()
 
-// Export cache decorator
-export const cache = CacheManager.cache;
+  // キャッシュから取得を試行
+  const cached = cache.get<T>(key)
+  if (cached !== null) {
+    return cached
+  }
+
+  // キャッシュにない場合は取得してキャッシュ
+  try {
+    const data = await fetcher()
+    cache.set(key, data, ttl)
+    return data
+  } catch (error) {
+    centralLogger.error('Failed to fetch data for cache', error, { key })
+    throw error
+  }
+}
+
+/**
+ * APIキー専用のGet-or-Set
+ */
+export async function getCachedApiKeyData<T>(
+  apiKey: string,
+  fetcher: () => Promise<T>,
+  ttl?: number
+): Promise<T> {
+  const cache = ApiKeyCache.getInstance()
+
+  // キャッシュから取得を試行
+  const cached = cache.getKeyMetadata(apiKey)
+  if (cached !== null) {
+    return cached as T
+  }
+
+  // キャッシュにない場合は取得してキャッシュ
+  try {
+    const data = await fetcher()
+    cache.setKeyMetadata(apiKey, data, ttl)
+    return data
+  } catch (error) {
+    centralLogger.error('Failed to fetch API key data for cache', error)
+    throw error
+  }
+}
+
+// シングルトンインスタンスをエクスポート
+export const cacheManager = CacheManager.getInstance()
+export const apiKeyCache = ApiKeyCache.getInstance()

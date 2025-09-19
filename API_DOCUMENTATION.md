@@ -16,6 +16,16 @@ https://xbrl-api-minimal.vercel.app/api
 X-API-Key: xbrl_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
+### エラーハンドリング
+APIのエラーレスポンスは統一されたフォーマットで返されます。詳細なエラーコードとその対処法については、[エラーコードリファレンス](./docs/ERROR_CODES.md)を参照してください。
+
+### レート制限
+APIキーのティアに応じたレート制限が適用されます：
+- **Free**: 10リクエスト/分
+- **Basic**: 100リクエスト/分
+- **Premium**: 1000リクエスト/分
+- **Enterprise**: 10000リクエスト/分
+
 ## エンドポイント
 
 ### 1. 企業検索
