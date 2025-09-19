@@ -80,28 +80,6 @@ export default function FeaturesSectionWithVideo() {
           <div className="grid md:grid-cols-2">
             {/* Left side - Feature Details */}
             <div className="p-12">
-              <div className="flex items-center mb-6">
-                <div className={`w-14 h-14 bg-gradient-to-br ${features[activeFeature].gradient} rounded-2xl flex items-center justify-center shadow-lg`}>
-                  <i className={`${features[activeFeature].icon} text-white text-2xl`}></i>
-                </div>
-                <h3 className="text-3xl font-bold text-gray-900 ml-4">
-                  {features[activeFeature].title}
-                </h3>
-              </div>
-
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                {features[activeFeature].description}
-              </p>
-
-              <ul className="space-y-4 mb-8">
-                {features[activeFeature].highlights.map((highlight, idx) => (
-                  <li key={idx} className="flex items-start">
-                    <i className="ri-check-double-line text-green-500 text-xl mr-3 mt-1"></i>
-                    <span className="text-gray-700">{highlight}</span>
-                  </li>
-                ))}
-              </ul>
-
               <div className="flex space-x-4">
                 {features[activeFeature].videoDemo && (
                   <button
