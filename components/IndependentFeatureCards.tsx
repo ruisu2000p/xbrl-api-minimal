@@ -112,7 +112,7 @@ export default function IndependentFeatureCards() {
                         onClick={() => setActiveVideo(activeVideo === index ? null : index)}
                         className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl"
                       >
-                        <i className={activeVideo === index ? "ri-image-line" : "ri-play-circle-line"} className="text-xl mr-2"></i>
+                        <i className={`${activeVideo === index ? "ri-image-line" : "ri-play-circle-line"} text-xl mr-2`}></i>
                         {activeVideo === index ? 'イメージに戻す' : 'デモ動画を見る'}
                       </button>
                     )}
