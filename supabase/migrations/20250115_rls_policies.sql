@@ -73,15 +73,27 @@ CREATE POLICY "Anyone can view active plans" ON subscription_plans
 ALTER TABLE api_usage_logs ENABLE ROW LEVEL SECURITY;
 
 -- api_usage_logs: ユーザーは自分のAPIキーの使用ログのみ表示可能
+-- Note: This policy may already exist from previous migrations
 DROP POLICY IF EXISTS "Users can view own API usage logs" ON api_usage_logs;
-CREATE POLICY "Users can view own API usage logs" ON api_usage_logs
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM api_keys
-      WHERE api_keys.id = api_usage_logs.api_key_id
-      AND api_keys.user_id = auth.uid()
-    )
-  );
+
+-- Check if policy exists before creating
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'api_usage_logs'
+    AND policyname = 'Users can view own API usage logs'
+  ) THEN
+    CREATE POLICY "Users can view own API usage logs" ON api_usage_logs
+      FOR SELECT USING (
+        EXISTS (
+          SELECT 1 FROM api_keys
+          WHERE api_keys.id = api_usage_logs.api_key_id
+          AND api_keys.user_id = auth.uid()
+        )
+      );
+  END IF;
+END$$;
 
 -- 7. Storage RLSポリシーの注意事項
 -- Storage のRLSポリシーは Supabase Dashboard から設定する必要があります
