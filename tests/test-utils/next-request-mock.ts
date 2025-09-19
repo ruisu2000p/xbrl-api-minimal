@@ -27,9 +27,9 @@ export class MockNextRequest {
     // Filter out invalid header values
     const headers = new Headers()
     if (init.headers) {
-      const headerInit = init.headers as HeadersInit
+      const headerInit = init.headers
       if (headerInit instanceof Headers) {
-        headerInit.forEach((value, key) => {
+        headerInit.forEach((value: string, key: string) => {
           try {
             headers.append(key, value)
           } catch (e) {
@@ -37,15 +37,15 @@ export class MockNextRequest {
           }
         })
       } else if (Array.isArray(headerInit)) {
-        headerInit.forEach(([key, value]) => {
+        (headerInit as [string, string][]).forEach(([key, value]) => {
           try {
             headers.append(key, value)
           } catch (e) {
             // Skip invalid header values
           }
         })
-      } else {
-        Object.entries(headerInit).forEach(([key, value]) => {
+      } else if (typeof headerInit === 'object') {
+        Object.entries(headerInit as Record<string, string>).forEach(([key, value]) => {
           try {
             headers.append(key, value)
           } catch (e) {
