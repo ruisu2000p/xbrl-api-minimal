@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 import { revalidatePath } from 'next/cache'
 import {
@@ -11,53 +12,82 @@ import {
   extractApiKeySuffix,
   maskApiKey
 } from '@/lib/security/unified-apikey'
+import { checkRateLimit } from '@/lib/security/csrf'
+import {
+  emailSchema,
+  passwordSchema,
+  apiKeyNameSchema,
+  sanitizeInput,
+  sanitizeError
+} from '@/lib/security/input-validation'
 import type { ApiKey, ApiKeyResponse } from '@/types/api-key'
 
 export async function signIn(email: string, password: string) {
-  const supabase = await supabaseManager.createSSRClient()
+  try {
+    // Validate inputs
+    const validatedEmail = emailSchema.parse(email)
+    const validatedPassword = passwordSchema.parse(password)
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) {
-    return {
-      success: false,
-      error: error.message
-    }
-  }
-
-  if (data?.user) {
-    // APIキー情報を取得（認証されたユーザーとして）
-    const { data: apiKeys } = await supabase
-      .from('api_keys')
-      .select('masked_key, name, status')
-      .eq('user_id', data.user.id)
-      .eq('status', 'active')
-      .limit(1)
-
-    // ページを再検証
-    revalidatePath('/dashboard', 'layout')
-
-    return {
-      success: true,
-      user: {
-        id: data.user.id,
-        email: data.user.email!,
-        name: data.user.user_metadata?.name || '',
-        company: data.user.user_metadata?.company || null,
-        plan: data.user.user_metadata?.plan || 'beta',
-        apiKey: apiKeys && apiKeys.length > 0
-          ? apiKeys[0].masked_key
-          : null,
+    // Rate limiting
+    const headersList = headers()
+    const clientIp = headersList.get('x-forwarded-for') || 'unknown'
+    if (!checkRateLimit(`signin:${clientIp}`, 5, 300000)) { // 5 attempts per 5 minutes
+      return {
+        success: false,
+        error: 'Too many login attempts. Please try again later.'
       }
     }
-  }
 
-  return {
-    success: false,
-    error: 'ログインに失敗しました'
+    const supabase = await supabaseManager.createSSRClient()
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: validatedEmail,
+      password: validatedPassword,
+    })
+
+    if (error) {
+      return {
+        success: false,
+        error: sanitizeError(error)
+      }
+    }
+
+    if (data?.user) {
+      // Get API key information for authenticated user
+      const { data: apiKeys } = await supabase
+        .from('api_keys')
+        .select('masked_key, name, status')
+        .eq('user_id', data.user.id)
+        .eq('status', 'active')
+        .limit(1)
+
+      // Revalidate page
+      revalidatePath('/dashboard', 'layout')
+
+      return {
+        success: true,
+        user: {
+          id: data.user.id,
+          email: data.user.email!,
+          name: sanitizeInput(data.user.user_metadata?.name || ''),
+          company: sanitizeInput(data.user.user_metadata?.company || ''),
+          plan: data.user.user_metadata?.plan || 'beta',
+          apiKey: apiKeys && apiKeys.length > 0
+            ? apiKeys[0].masked_key
+            : null,
+        }
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Login failed'
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: sanitizeError(error)
+    }
   }
 }
 
@@ -139,9 +169,9 @@ export async function signUp(userData: {
 
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)
-      // APIキー作成に失敗してもユーザーは作成済みなので続行
+      // Continue even if API key creation fails since user is already created
       console.warn('User created but API key creation failed. User can create API key later from dashboard.')
-      // ユーザー削除はしない - ダッシュボードから後でAPIキーを作成可能
+      // Do not delete user - API key can be created later from dashboard
     }
 
     revalidatePath('/dashboard', 'layout')
@@ -161,7 +191,7 @@ export async function signUp(userData: {
 
   return {
     success: false,
-    error: 'アカウント作成に失敗しました'
+    error: 'Account creation failed'
   }
 }
 

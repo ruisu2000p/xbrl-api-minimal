@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import {
+  companyIdSchema,
+  fiscalYearSchema,
+  documentTypeSchema,
+  paginationSchema,
+  sanitizeError,
+  validatePath
+} from '@/lib/security/input-validation'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
   try {
