@@ -43,7 +43,7 @@ export function generateApiKey(prefix = 'xbrl_live', size = 32): string {
 }
 
 export function hashApiKey(apiKey: string): string {
-  return crypto.createHmac('sha256', getHmacSecret()).update(apiKey).digest('hex')
+  return crypto.createHmac('sha256', Uint8Array.from(getHmacSecret())).update(apiKey).digest('hex')
 }
 
 export function maskApiKey(apiKey: string): string {
