@@ -34,14 +34,19 @@ describe('/api/health', () => {
   })
 
   it('should handle missing dependencies gracefully', async () => {
-    // Supabaseクライアントが利用できない場合のテスト
-    jest.doMock('@/lib/supabase/client', () => {
-      throw new Error('Supabase connection failed')
-    })
+    // 環境変数を一時的に削除
+    const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL
 
-    const request = new NextRequest('http://localhost:3000/api/health')
-    
-    // エラーが発生してもレスポンスが返されることを確認
-    await expect(GET()).resolves.toBeDefined()
+    const response = await GET()
+
+    // ステータスコードが503（Service Unavailable）であることを確認
+    expect(response.status).toBe(503)
+
+    const data = await response.json()
+    expect(data.status).toBe('unhealthy')
+
+    // 環境変数を復元
+    process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl
   })
 })

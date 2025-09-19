@@ -5,6 +5,14 @@
 
 import '@testing-library/jest-dom'
 
+// Mock isomorphic-dompurify
+jest.mock('isomorphic-dompurify', () => ({
+  __esModule: true,
+  default: {
+    sanitize: jest.fn((input: string) => input), // Pass through in tests
+  },
+}))
+
 // Mock environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
