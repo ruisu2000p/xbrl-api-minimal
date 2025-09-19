@@ -1,0 +1,35 @@
+name: Deploy Migrations to Staging
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: wpwqxhyiglbtlaimrjrx
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to Supabase project
+        run: |
+          supabase link --project-ref $SUPABASE_PROJECT_ID
+
+      - name: Deploy migrations with reset
+        run: |
+          # Reset database to baseline state (WARNING: This will delete all data in preview)
+          # supabase db reset --linked
+          
+          # Or push migrations without checking remote versions
+          supabase db push --linked --include-all || true
