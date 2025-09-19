@@ -1,0 +1,26 @@
+name: "CodeQL config"
+
+# Disable the default queries
+disable-default-queries: false
+
+# Specify the languages to analyze
+languages:
+  - javascript
+  - typescript
+
+# Paths to ignore during the analysis
+paths-ignore:
+  - node_modules
+  - .next
+  - out
+  - build
+  - dist
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+
+# Additional queries to run
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
