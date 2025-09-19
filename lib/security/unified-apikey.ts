@@ -77,7 +77,7 @@ export async function verifyApiKey(
 
   // Check if it's a legacy hex hash (SHA256 without salt)
   if (/^[a-f0-9]{64}$/i.test(storedHash)) {
-    const legacyHash = crypto.createHmac('sha256', getHmacSecret())
+    const legacyHash = crypto.createHmac('sha256', Uint8Array.from(getHmacSecret()))
       .update(apiKey)
       .digest('hex');
     const isValid = storedHash === legacyHash;

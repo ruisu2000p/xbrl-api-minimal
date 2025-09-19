@@ -307,10 +307,10 @@ export class EncryptionManager {
     // キャッシュに保存（サイズ制限付き）
     if (this.keyCache.size >= this.MAX_CACHE_SIZE) {
       const firstKey = this.keyCache.keys().next().value
-      this.keyCache.delete(firstKey)
+      if (firstKey !== undefined) { this.keyCache.delete(firstKey) }
     }
 
-    this.keyCache.set(cacheKey, Buffer.from(key))
+    this.keyCache.set(cacheKey, key)
 
     // TTL後にキャッシュから削除
     setTimeout(() => {

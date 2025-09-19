@@ -58,9 +58,11 @@ export class UnifiedKeyHasher {
     const computedHash = hmac.digest(this.ENCODING);
 
     // Constant-time comparison to prevent timing attacks
+    const storedBuffer = Buffer.from(storedHash, this.ENCODING);
+    const computedBuffer = Buffer.from(computedHash, this.ENCODING);
     return crypto.timingSafeEqual(
-      Buffer.from(storedHash, this.ENCODING),
-      Buffer.from(computedHash, this.ENCODING)
+      Uint8Array.from(storedBuffer),
+      Uint8Array.from(computedBuffer)
     );
   }
 
