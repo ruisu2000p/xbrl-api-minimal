@@ -27,17 +27,26 @@ interface KeyMetadata {
 
 export class EnhancedApiKeyValidator {
   private readonly hmacSecret: string
+    private rateLimitStore: Record<string, { count: number; resetTime: number }> = {};
 
+   
   constructor() {
+        if (process.env.NODE_ENV === 'production' && !process.env.API_KEY_SECRET) {
+      throw new Error('API_KEY_SECRET must be set in production')
+    }
+
     // Use environment variable or generate secure random secret
     this.hmacSecret = process.env.API_KEY_SECRET || crypto.randomBytes(32).toString('hex')
-
-    if (!process.env.API_KEY_SECRET) {
-      console.warn('[Security] API_KEY_SECRET not set, using generated secret')
+        if (!process.env.API_KEY_SECRET) {
+      console.warn('[Security] API_KEY_SECRET not set; using generated secret for non-production environments')
     }
-  }
+
+
+        
 
   /**
+    
+
    * Compute HMAC-SHA256 hash of API key
    */
   private async computeHMAC(apiKey: string): Promise<string> {
@@ -180,10 +189,37 @@ export class EnhancedApiKeyValidator {
 
     const limit = limits[tier as keyof typeof limits] || limits.free
 
-    // TODO: Implement actual rate limiting with Redis
+       const now = Date.now();
+    // Initialize record for this API key if it doesn't exist
+    let record = this.rateLimitStore[apiKeyId];
+    if (!record) {
+      record = { count: 0, resetTime: now + 60_000 };
+      this.rateLimitStore[apiKeyId] = record;
+    }
+
+    // Reset the counter if the reset time has passed
+    if (now > record.resetTime) {
+      record.count = 0;
+      record.resetTime = now + 60_000;
+    }
+
+    // Deny request if limit exceeded
+    if (record.count >= limit.perMinute) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetTime: record.resetTime
+      };
+    }
+
+    // Increment count and allow
+    record.count++;
     return {
       allowed: true,
-      remaining: limit.perMinute,
+      remaining: limit.perMinute - record.count,
+      resetTime: record.resetTime
+    };
+
       resetTime: Date.now() + 60000
     }
   }
