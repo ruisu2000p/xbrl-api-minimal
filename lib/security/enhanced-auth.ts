@@ -68,7 +68,7 @@ export class EnhancedApiKeyValidator {
     const bufferA = Buffer.from(a)
     const bufferB = Buffer.from(b)
 
-    return crypto.timingSafeEqual(bufferA, bufferB)
+    return crypto.timingSafeEqual(Uint8Array.from(bufferA), Uint8Array.from(bufferB))
   }
 
   /**

@@ -46,7 +46,7 @@ export class ServerActionsCSRF {
         return false;
       }
 
-      if (!timingSafeEqual(submittedBuffer, cookieBuffer)) {
+      if (!timingSafeEqual(Uint8Array.from(submittedBuffer), Uint8Array.from(cookieBuffer))) {
         console.error('CSRF token mismatch');
         return false;
       }
@@ -129,7 +129,7 @@ export class ServerActionsCSRF {
         return false;
       }
 
-      return timingSafeEqual(expectedBuffer, signatureBuffer);
+      return timingSafeEqual(Uint8Array.from(expectedBuffer), Uint8Array.from(signatureBuffer));
     } catch (error) {
       console.error('Token validation error:', error);
       return false;
@@ -175,7 +175,7 @@ export class ServerActionsCSRF {
         return false;
       }
 
-      if (!timingSafeEqual(tokenBuffer, cookieBuffer)) {
+      if (!timingSafeEqual(Uint8Array.from(tokenBuffer), Uint8Array.from(cookieBuffer))) {
         return false;
       }
 

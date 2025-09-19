@@ -69,7 +69,7 @@ export class CSRFProtection {
         return { valid: false, reason: 'SIGNATURE_INVALID' };
       }
 
-      if (!timingSafeEqual(expected, actual)) {
+      if (!timingSafeEqual(Uint8Array.from(expected), Uint8Array.from(actual))) {
         return { valid: false, reason: 'SIGNATURE_INVALID' };
       }
 
