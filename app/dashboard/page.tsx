@@ -12,14 +12,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // 新規アカウント作成後の場合、セッションストレージからAPIキーを取得
-    if (searchParams.get('newAccount') === 'true') {
-      const storedKey = sessionStorage.getItem('newApiKey');
-      if (storedKey) {
-        setNewApiKey(storedKey);
-        setShowApiKeyModal(true);
-        // 一度表示したら削除
-        sessionStorage.removeItem('newApiKey');
-      }
+    const isNewAccount = searchParams.get('newAccount') === 'true';
+
+    if (isNewAccount) {
+      // 少し遅延を入れて、ページが完全に読み込まれてからモーダルを表示
+      const timer = setTimeout(() => {
+        const storedKey = sessionStorage.getItem('newApiKey');
+        if (storedKey) {
+          setNewApiKey(storedKey);
+          setShowApiKeyModal(true);
+          // 一度表示したら削除
+          sessionStorage.removeItem('newApiKey');
+
+          // URLパラメータもクリア（リロード時に再表示されないように）
+          window.history.replaceState({}, '', '/dashboard');
+        }
+      }, 500); // 0.5秒後に表示
+
+      return () => clearTimeout(timer);
     }
   }, [searchParams]);
 

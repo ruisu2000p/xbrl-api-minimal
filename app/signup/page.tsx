@@ -92,15 +92,14 @@ export default function SignupPage() {
       });
 
       if (result.success) {
-        // APIキーが作成された場合はダッシュボードで表示するためにパラメータ付きでリダイレクト
+        // APIキーが作成された場合はセッションストレージに保存
         if (result.apiKey) {
-          // APIキーをセッションストレージに保存（一度だけ表示）
+          // APIキーをセッションストレージに保存（ダッシュボードで表示）
           sessionStorage.setItem('newApiKey', result.apiKey);
-          router.push('/dashboard?newAccount=true');
-        } else {
-          // APIキーが生成されなかった場合は直接ダッシュボードへ
-          router.push('/dashboard');
         }
+        // すぐにダッシュボードへリダイレクト（ローディング表示のまま）
+        router.push('/dashboard?newAccount=true');
+        return; // これ以降の処理をスキップ
       } else {
         setError(result.error || 'アカウント作成に失敗しました');
       }
