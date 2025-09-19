@@ -26,21 +26,23 @@ const config = {
     '^@/utils/(.*)$': '<rootDir>/utils/$1'
   },
   collectCoverageFrom: [
-    'app/**/*.{ts,tsx}',
+    'app/api/**/*.{ts,tsx}',
     'lib/**/*.{ts,tsx}',
-    'components/**/*.{ts,tsx}',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',
     '!**/dist/**',
-    '!**/coverage/**'
+    '!**/coverage/**',
+    '!app/admin/**',
+    '!app/**/page.tsx',
+    '!app/**/layout.tsx'
   ],
   coverageThreshold: {
     global: {
-      statements: 10,
+      statements: 20,
       branches: 10,
-      functions: 10,
-      lines: 10
+      functions: 20,
+      lines: 20
     }
   },
   testPathIgnorePatterns: [

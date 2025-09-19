@@ -1,1 +1,0 @@
--- Migration already applied on remote database
