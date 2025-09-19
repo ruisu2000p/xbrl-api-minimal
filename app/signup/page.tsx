@@ -443,15 +443,14 @@ export default function SignupPage() {
         </div>
 
       </div>
-    </div>
 
-    {/* APIキーモーダル */}
-    {showApiKeyModal && generatedApiKey && (
-      <ApiKeyModal
-        apiKey={generatedApiKey}
-        onClose={() => setShowApiKeyModal(false)}
-      />
-    )}
+      {/* APIキーモーダル */}
+      {showApiKeyModal && generatedApiKey && (
+        <ApiKeyModal
+          apiKey={generatedApiKey}
+          onClose={() => setShowApiKeyModal(false)}
+        />
+      )}
     </div>
   );
 }
