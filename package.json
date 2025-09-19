@@ -10,26 +10,35 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:turbo": "next dev --turbo",
     "build": "next build",
+    "build:analyze": "ANALYZE=true npm run build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "clean": "rimraf .next node_modules",
     "clean:cache": "rimraf .next",
     "clean:deps": "rimraf node_modules package-lock.json",
     "reinstall": "npm run clean:deps && npm install",
     "test": "jest",
     "test:ci": "jest --ci --coverage",
+    "test:watch": "jest --watch",
     "test:integration": "jest --testPathPattern=integration",
     "test:security": "jest --testPathPattern=security",
     "test:security:input": "jest --testPathPattern=security/input-validation",
     "test:security:sql": "jest --testPathPattern=security/sql-injection",
     "test:security:path": "jest --testPathPattern=security/path-traversal",
+    "performance:lighthouse": "lhci autorun",
+    "performance:bundle": "npm run build:analyze",
     "deploy:staging": "sh scripts/deploy.sh staging",
     "deploy:production": "sh scripts/deploy.sh production",
     "db:migrate": "npx supabase db push",
-    "health:check": "curl http://localhost:3000/api/health"
+    "health:check": "curl http://localhost:3000/api/health",
+    "precommit": "npm run lint:fix && npm run format && npm run type-check",
+    "prepare": "husky install || true"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -44,6 +53,8 @@
     "zod": "^4.1.9"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.13.0",
+    "@next/bundle-analyzer": "^14.2.32",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
@@ -52,11 +63,27 @@
     "autoprefixer": "^10.4.21",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.1.3",
+    "lint-staged": "^15.2.10",
     "postcss": "^8.5.6",
     "prettier": "^3.2.5",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.4.3",
     "typescript": "5.3.3"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
