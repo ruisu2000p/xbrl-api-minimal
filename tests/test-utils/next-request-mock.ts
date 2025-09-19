@@ -2,6 +2,41 @@
  * Mock utilities for NextRequest in tests
  */
 
+// Helper function to safely convert HeadersInit to Headers
+function toHeaders(init?: HeadersInit): Headers {
+  const headers = new Headers();
+  if (!init) return headers;
+
+  if (init instanceof Headers) {
+    init.forEach((value: string, key: string) => {
+      try {
+        headers.set(key, value);
+      } catch (e) {
+        // Skip invalid header values
+      }
+    });
+  } else if (Array.isArray(init)) {
+    (init as Array<[string, string]>).forEach(([key, value]: [string, string]) => {
+      try {
+        headers.set(key, value);
+      } catch (e) {
+        // Skip invalid header values
+      }
+    });
+  } else {
+    Object.entries(init as Record<string, string>).forEach(
+      ([key, value]: [string, string]) => {
+        try {
+          headers.set(key, value);
+        } catch (e) {
+          // Skip invalid header values
+        }
+      }
+    );
+  }
+  return headers;
+}
+
 export class MockNextRequest {
   public url: string
   public nextUrl: URL
@@ -24,37 +59,8 @@ export class MockNextRequest {
     }
     this.method = init.method || 'GET'
 
-    // Filter out invalid header values
-    const headers = new Headers()
-    if (init.headers) {
-      const headerInit = init.headers
-      if (headerInit instanceof Headers) {
-        headerInit.forEach((value: string, key: string) => {
-          try {
-            headers.append(key, value)
-          } catch (e) {
-            // Skip invalid header values
-          }
-        })
-      } else if (Array.isArray(headerInit)) {
-        (headerInit as [string, string][]).forEach(([key, value]) => {
-          try {
-            headers.append(key, value)
-          } catch (e) {
-            // Skip invalid header values
-          }
-        })
-      } else if (typeof headerInit === 'object') {
-        Object.entries(headerInit as Record<string, string>).forEach(([key, value]) => {
-          try {
-            headers.append(key, value)
-          } catch (e) {
-            // Skip invalid header values
-          }
-        })
-      }
-    }
-    this.headers = headers
+    // Use the helper function to safely handle HeadersInit
+    this.headers = toHeaders(init.headers)
     this.body = init.body
 
     // Mock properties for NextRequest compatibility
