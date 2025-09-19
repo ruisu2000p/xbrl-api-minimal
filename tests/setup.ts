@@ -119,6 +119,7 @@ jest.mock('@supabase/ssr', () => ({
       update: jest.fn().mockReturnThis(),
       delete: jest.fn().mockReturnThis(),
     })),
+    rpc: jest.fn(),
   })),
   createServerClient: jest.fn(() => ({
     auth: {
@@ -137,6 +138,7 @@ jest.mock('@supabase/ssr', () => ({
       update: jest.fn().mockReturnThis(),
       delete: jest.fn().mockReturnThis(),
     })),
+    rpc: jest.fn(),
   })),
 }))
 

@@ -19,9 +19,9 @@ describe('/api/v1/companies', () => {
       const request = new NextRequest('http://localhost:3000/api/v1/companies')
       const response = await GET(request)
 
-      expect(response.status).toBe(401)
-      
-      const data = await response.json()
+      expect((response as any).status).toBe(401)
+
+      const data = await (response as any).json()
       expect(data).toMatchObject({
         error: 'API key required',
         code: 'MISSING_API_KEY'
@@ -36,9 +36,9 @@ describe('/api/v1/companies', () => {
       })
       const response = await GET(request)
 
-      expect(response.status).toBe(401)
+      expect((response as any).status).toBe(401)
       
-      const data = await response.json()
+      const data = await (response as any).json()
       expect(data).toMatchObject({
         error: 'Invalid API key format',
         code: 'INVALID_API_KEY_FORMAT'
@@ -60,7 +60,7 @@ describe('/api/v1/companies', () => {
       })
 
       const response = await GET(request)
-      expect(response.status).not.toBe(401)
+      expect((response as any).status).not.toBe(401)
     })
   })
 
@@ -92,9 +92,9 @@ describe('/api/v1/companies', () => {
       })
 
       const response = await GET(request)
-      expect(response.status).toBe(200)
+      expect((response as any).status).toBe(200)
 
-      const data = await response.json()
+      const data = await (response as any).json()
       expect(data.companies).toHaveLength(1)
       expect(data.companies[0].company_name).toContain('トヨタ')
     })
@@ -120,7 +120,7 @@ describe('/api/v1/companies', () => {
       })
 
       const response = await GET(request)
-      expect(response.status).toBe(200)
+      expect((response as any).status).toBe(200)
 
       // fiscal_yearフィルターが適用されていることを確認
       expect(mockSupabase.from().select().eq).toHaveBeenCalledWith(
@@ -140,9 +140,9 @@ describe('/api/v1/companies', () => {
       })
 
       const response = await GET(request)
-      expect(response.status).toBe(400)
+      expect((response as any).status).toBe(400)
 
-      const data = await response.json()
+      const data = await (response as any).json()
       expect(data).toMatchObject({
         error: 'Invalid limit parameter',
         code: 'INVALID_LIMIT'
@@ -184,9 +184,9 @@ describe('/api/v1/companies', () => {
       })
 
       const response = await GET(request)
-      expect(response.status).toBe(200)
+      expect((response as any).status).toBe(200)
 
-      const data = await response.json()
+      const data = await (response as any).json()
       expect(data).toMatchObject({
         companies: expect.arrayContaining([
           expect.objectContaining({
@@ -224,9 +224,9 @@ describe('/api/v1/companies', () => {
       })
 
       const response = await GET(request)
-      expect(response.status).toBe(500)
+      expect((response as any).status).toBe(500)
 
-      const data = await response.json()
+      const data = await (response as any).json()
       expect(data).toMatchObject({
         error: 'Internal server error',
         code: 'DATABASE_ERROR'
@@ -247,9 +247,9 @@ describe('/api/v1/companies', () => {
       })
 
       const response = await GET(request)
-      expect(response.status).toBe(429)
+      expect((response as any).status).toBe(429)
 
-      const data = await response.json()
+      const data = await (response as any).json()
       expect(data).toMatchObject({
         error: 'Rate limit exceeded',
         code: 'RATE_LIMITED'

@@ -36,7 +36,9 @@ describe('/api/health', () => {
   it('should handle missing dependencies gracefully', async () => {
     // 環境変数を一時的に削除
     const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const originalKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     delete process.env.NEXT_PUBLIC_SUPABASE_URL
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     const response = await GET()
 
@@ -47,6 +49,7 @@ describe('/api/health', () => {
     expect(data.status).toBe('unhealthy')
 
     // 環境変数を復元
-    process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl
+    if (originalUrl) process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl
+    if (originalKey) process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey
   })
 })
