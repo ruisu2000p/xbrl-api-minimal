@@ -8,6 +8,7 @@ function toHeaders(init?: HeadersInit): Headers {
   if (!init) return headers;
 
   if (init instanceof Headers) {
+    // Headers.forEach has value,key order (opposite of Map)
     init.forEach((value: string, key: string) => {
       try {
         headers.set(key, value);

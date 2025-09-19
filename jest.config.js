@@ -1,6 +1,5 @@
 /** @type {import('jest').Config} */
 const config = {
-  preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/tests', '<rootDir>/app', '<rootDir>/lib'],
   testMatch: [
@@ -13,9 +12,9 @@ const config = {
         jsx: 'react',
         esModuleInterop: true,
         moduleResolution: 'node',
-        skipLibCheck: true
-      },
-      transpileOnly: true
+        skipLibCheck: true,
+        allowSyntheticDefaultImports: true
+      }
     }]
   },
   moduleNameMapper: {

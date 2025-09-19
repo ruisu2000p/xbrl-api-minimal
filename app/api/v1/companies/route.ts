@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 import { SecureInputValidator, ValidationError } from '@/lib/security/input-validator'
 import { SecurityMiddleware } from '@/lib/middleware/security-middleware'
@@ -7,7 +7,7 @@ import { withSecurity } from '@/lib/middleware/security-middleware'
 // このルートは動的である必要があります（request.headersを使用）
 export const dynamic = 'force-dynamic'
 
-async function handleGetRequest(request: NextRequest) {
+async function handleGetRequest(request: Request) {
   const startTime = Date.now()
   let authResult: any = null
   let logParams: any = {}
@@ -73,7 +73,8 @@ async function handleGetRequest(request: NextRequest) {
     }
 
     // 🛡️ 安全な入力パラメータ取得と検証
-    const searchParams = request.nextUrl.searchParams
+    const url = new URL(request.url)
+    const searchParams = url.searchParams
 
     // セキュア入力検証
     const limit = SecureInputValidator.validateNumeric(
@@ -261,7 +262,7 @@ async function handleGetRequest(request: NextRequest) {
   }
 }
 
-async function handlePostRequest(request: NextRequest) {
+async function handlePostRequest(request: Request) {
   const startTime = Date.now()
 
   try {
