@@ -154,8 +154,14 @@ describe('Security: Input Validation', () => {
 
         const headers = new Headers(request.headers)
         const authHeader = headers.get('Authorization')
-        expect(authHeader).toContain(key.replace('Bearer ', ''))
-        // Should be rejected by API key validation
+
+        // Some invalid keys (like those with null bytes) may cause the header to be null
+        if (key.includes(String.fromCharCode(0))) {
+          expect(authHeader).toBeNull()
+        } else {
+          expect(authHeader).toBe(`Bearer ${key}`)
+        }
+        // Should be rejected by API key validation in actual implementation
       })
     })
 
