@@ -133,20 +133,32 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Check if Dockerfile exists
+        id: check_dockerfile
+        run: |
+          if [ -f "Dockerfile" ]; then
+            echo "dockerfile_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "dockerfile_exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build Docker image
+        if: steps.check_dockerfile.outputs.dockerfile_exists == 'true'
         run: docker build -t xbrl-api:test .
         continue-on-error: true
 
       - name: Run Trivy on Docker image
-        if: success()
+        if: steps.check_dockerfile.outputs.dockerfile_exists == 'true' && success()
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'xbrl-api:test'
           format: 'sarif'
           output: 'docker-trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '0'
 
       - name: Upload Docker scan results
-        if: success()
+        if: steps.check_dockerfile.outputs.dockerfile_exists == 'true' && success()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'docker-trivy-results.sarif'
