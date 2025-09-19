@@ -6,10 +6,11 @@ import { revalidatePath } from 'next/cache'
 import {
   generateApiKey,
   hashApiKey,
+  createApiKey as generateNewApiKey,
   extractApiKeyPrefix,
   extractApiKeySuffix,
   maskApiKey
-} from '@/lib/security/apiKey'
+} from '@/lib/security/unified-apikey'
 import type { ApiKey, ApiKeyResponse } from '@/types/api-key'
 
 export async function signIn(email: string, password: string) {
@@ -221,9 +222,9 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   }
 
   try {
-    // Generate API key with new format
-    const fullKey = generateApiKey('xbrl_live')
-    const hashedKey = await hashApiKey(fullKey)  // Added await here
+    // Generate API key with new format using generateNewApiKey function
+    const result = await generateNewApiKey('xbrl_live')
+    const fullKey = result.apiKey
     const keyPrefix = extractApiKeyPrefix(fullKey)
     const keySuffix = extractApiKeySuffix(fullKey)
 
@@ -236,8 +237,8 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
       .insert({
         id: uuid, // Use the UUID as the ID
         user_id: user.id,
-        key_hash: hashedKey.hash,  // Use hashedKey.hash instead of hashedKey
-        salt: hashedKey.salt,      // Add salt field
+        key_hash: result.hash,     // Use result.hash from createApiKey
+        salt: result.salt,         // Use result.salt from createApiKey
         key_prefix: keyPrefix,
         key_suffix: keySuffix,
         masked_key: maskApiKey(fullKey),
