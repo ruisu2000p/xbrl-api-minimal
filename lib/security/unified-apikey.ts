@@ -29,11 +29,17 @@ export interface ApiKeyVerificationResult {
  * Generate a new API key with secure random characters
  */
 export function generateApiKey(prefix = 'xbrl_live', size = 32): string {
+  // Generate UUID v4 for the public ID
+  const uuid = crypto.randomUUID();
+  
+  // Generate random secret
   const bytes = crypto.randomBytes(size);
   const chars = Array.from(bytes)
     .map((b) => BASE62[b % BASE62.length])
     .join('');
-  return `${prefix}_${chars}`;
+  
+  // New format: xbrl_live_v1_{uuid}_{secret}
+  return `${prefix}_v1_${uuid}_${chars}`;
 }
 
 /**

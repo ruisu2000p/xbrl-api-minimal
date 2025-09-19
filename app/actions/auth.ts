@@ -221,15 +221,20 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   }
 
   try {
-    // Generate API key
+    // Generate API key with new format
     const fullKey = generateApiKey('xbrl_live')
     const hashedKey = hashApiKey(fullKey)
     const keyPrefix = extractApiKeyPrefix(fullKey)
     const keySuffix = extractApiKeySuffix(fullKey)
+    
+    // Extract UUID from the new format: xbrl_live_v1_{uuid}_{secret}
+    const keyParts = fullKey.split('_');
+    const uuid = keyParts[3]; // UUID is the 4th part (index 3)
 
     const { data, error } = await supabase
       .from('api_keys')
       .insert({
+        id: uuid, // Use the UUID as the ID
         user_id: user.id,
         key_hash: hashedKey,
         key_prefix: keyPrefix,
@@ -241,7 +246,7 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
         rate_limit_per_minute: 100,
         rate_limit_per_hour: 2000,
         rate_limit_per_day: 50000,
-        tier: 'basic'
+        tier: 'free' // Default to free tier
       })
       .select()
       .single()
