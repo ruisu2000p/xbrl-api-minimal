@@ -227,6 +227,9 @@ export async function POST(request: NextRequest) {
 /**
  * 認証処理
  */
+// このルートは動的である必要があります（request.headersとrequest.urlを使用）
+export const dynamic = 'force-dynamic'
+
 async function authenticateRequest(
   request: NextRequest,
   requireAdmin: boolean = false

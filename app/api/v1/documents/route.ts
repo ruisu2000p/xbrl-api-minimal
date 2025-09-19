@@ -5,6 +5,9 @@ import { PathSecurity, SecurityError } from '@/lib/security/path-security'
 import { SQLInjectionShield } from '@/lib/security/sql-injection-shield'
 import { z } from 'zod'
 
+// このルートは動的である必要があります（request.headersを使用）
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Get API key from header

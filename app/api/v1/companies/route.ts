@@ -4,6 +4,9 @@ import { SecureInputValidator, ValidationError } from '@/lib/security/input-vali
 import { SecurityMiddleware } from '@/lib/middleware/security-middleware'
 import { withSecurity } from '@/lib/middleware/security-middleware'
 
+// このルートは動的である必要があります（request.headersを使用）
+export const dynamic = 'force-dynamic'
+
 async function handleGetRequest(request: NextRequest) {
   const startTime = Date.now()
   let authResult: any = null

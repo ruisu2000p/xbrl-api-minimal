@@ -3,7 +3,7 @@ const path = require('path')
 
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: false, // SWCミニファイを一時的に無効化
+  swcMinify: true, // SWCミニファイを有効化（次期バージョンでは必須）
 
   // ビルドIDを強制的に変更してキャッシュを無効化
   generateBuildId: async () => {
@@ -32,6 +32,7 @@ const nextConfig = {
   
   // パフォーマンス最適化
   experimental: {
+    optimizeCss: false, // CSS最適化を無効化してcrittersエラーを回避
     // サーバーコンポーネントの最適化
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },

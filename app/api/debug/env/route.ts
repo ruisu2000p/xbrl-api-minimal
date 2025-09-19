@@ -1,6 +1,9 @@
 // デバッグ用: 環境変数の確認 - 本番環境では無効化
 import { NextRequest, NextResponse } from 'next/server';
 
+// このルートは動的である必要があります（request.headersを使用）
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   // 本番環境では完全に無効化
   if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {

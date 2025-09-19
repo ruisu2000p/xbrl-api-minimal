@@ -5,6 +5,8 @@ import { RedirectValidator } from '@/lib/security/redirect-validator'
 import { OAuthSecurityValidator } from '@/lib/auth/oauth-security'
 import crypto from 'crypto'
 
+// このルートは動的である必要があります（request.urlを使用）
+export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
   const requestId = crypto.randomUUID()

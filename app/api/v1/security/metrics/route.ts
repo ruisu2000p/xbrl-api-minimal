@@ -8,6 +8,8 @@ import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 import { getSecurityMetrics, assessSecurityThreat } from '@/lib/security/security-monitor';
 import { withSecurity } from '@/lib/middleware/security-middleware';
 
+// このルートは動的である必要があります（request.headersを使用）
+export const dynamic = 'force-dynamic'
 async function handleGetRequest(request: NextRequest) {
   try {
     // API key validation
