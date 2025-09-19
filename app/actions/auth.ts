@@ -223,10 +223,10 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   try {
     // Generate API key with new format
     const fullKey = generateApiKey('xbrl_live')
-    const hashedKey = hashApiKey(fullKey)
+    const hashedKey = await hashApiKey(fullKey)  // Added await here
     const keyPrefix = extractApiKeyPrefix(fullKey)
     const keySuffix = extractApiKeySuffix(fullKey)
-    
+
     // Extract UUID from the new format: xbrl_live_v1_{uuid}_{secret}
     const keyParts = fullKey.split('_');
     const uuid = keyParts[3]; // UUID is the 4th part (index 3)
@@ -236,7 +236,8 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
       .insert({
         id: uuid, // Use the UUID as the ID
         user_id: user.id,
-        key_hash: hashedKey,
+        key_hash: hashedKey.hash,  // Use hashedKey.hash instead of hashedKey
+        salt: hashedKey.salt,      // Add salt field
         key_prefix: keyPrefix,
         key_suffix: keySuffix,
         masked_key: maskApiKey(fullKey),
