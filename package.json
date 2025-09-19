@@ -41,7 +41,8 @@
     "next": "^14.2.32",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "zod": "^4.1.9"
+    "zod": "^4.1.9",
+    "bcrypt": "^6.0.0"
   },
   "devDependencies": {
     "@jest/globals": "^30.1.2",

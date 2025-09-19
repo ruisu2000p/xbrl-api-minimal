@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import bcrypt from 'bcrypt'
 
 const BASE62 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
@@ -43,7 +44,10 @@ export function generateApiKey(prefix = 'xbrl_live', size = 32): string {
 }
 
 export function hashApiKey(apiKey: string): string {
-  return crypto.createHmac('sha256', Uint8Array.from(getHmacSecret())).update(apiKey).digest('hex')
+  // Use bcrypt to hash API key with generated salt
+  // Cost factor of 12 is considered secure; can be adjusted via env/config if desired
+  const saltRounds = 12;
+  return bcrypt.hashSync(apiKey, saltRounds);
 }
 
 export function maskApiKey(apiKey: string): string {
