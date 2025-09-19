@@ -298,11 +298,11 @@ export class EncryptionManager {
     // キャッシュチェック
     if (this.keyCache.has(cacheKey)) {
       const cached = this.keyCache.get(cacheKey)!
-      return Buffer.from(cached)
+      return Buffer.from(cached.buffer || cached)
     }
 
     // キー導出
-    const key = crypto.pbkdf2Sync(password, salt, iterations, keyLength, 'sha256')
+    const key = crypto.pbkdf2Sync(password, Uint8Array.from(salt), iterations, keyLength, 'sha256')
 
     // キャッシュに保存（サイズ制限付き）
     if (this.keyCache.size >= this.MAX_CACHE_SIZE) {
