@@ -34,7 +34,7 @@ const config = {
     '!**/dist/**',
     '!**/coverage/**'
   ],
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       statements: 70,
       branches: 60,
