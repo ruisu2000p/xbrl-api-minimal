@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic';
 import Header from '../components/Header';
 import HeroSection from '../components/HeroSection';
-import FeaturesSectionWithVideo from '../components/FeaturesSectionWithVideo';
+import IndependentFeatureCards from '../components/IndependentFeatureCards';
 import FAQSection from '../components/FAQSection';
 import Footer from '../components/Footer';
 
@@ -21,7 +21,7 @@ export default function Home() {
       <Header />
       <HeroSection />
       <SearchDemo />
-      <FeaturesSectionWithVideo />
+      <IndependentFeatureCards />
       <FAQSection />
       <Footer />
     </div>
