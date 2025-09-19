@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import VideoPlayer from './VideoPlayer';
 
 export default function SearchDemo() {
   const [searchTerm, setSearchTerm] = useState('トヨタ自動車');
   const [isLoading, setIsLoading] = useState(false);
   const [showResponse, setShowResponse] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
 
   const handleSearch = () => {
     setIsLoading(true);
@@ -90,6 +92,13 @@ export default function SearchDemo() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setShowVideo(!showVideo)}
+                    className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center space-x-2"
+                  >
+                    <i className={showVideo ? "ri-image-line" : "ri-play-circle-line"} className="text-white"></i>
+                    <span className="text-white text-sm font-medium">{showVideo ? "デモ非表示" : "デモ表示"}</span>
+                  </button>
                   <div className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
                     <span className="text-white text-sm font-medium">XBRL Financial API</span>
                   </div>
@@ -168,15 +177,39 @@ export default function SearchDemo() {
                         <pre className="text-green-400 leading-relaxed text-xs">{sampleResponse}</pre>
                       </div>
 
-                      {/* Analysis */}
-                      <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <i className="ri-lightbulb-line text-orange-600"></i>
-                          <span className="font-semibold text-orange-800">分析結果</span>
+                      {/* Analysis with Video Toggle */}
+                      <div className="mt-6">
+                        <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                              <i className="ri-lightbulb-line text-orange-600"></i>
+                              <span className="font-semibold text-orange-800">分析結果</span>
+                            </div>
+                            <button
+                              onClick={() => setShowVideo(!showVideo)}
+                              className="flex items-center space-x-2 px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                            >
+                              <i className={showVideo ? "ri-image-line" : "ri-play-circle-line"}></i>
+                              <span>{showVideo ? "画像に戻す" : "動画で見る"}</span>
+                            </button>
+                          </div>
+                          {!showVideo ? (
+                            <p className="text-gray-700 text-sm leading-relaxed">
+                              トヨタ自動車の財務データを取得しました。ROE 9.2%、時価総額28.4兆円の優良企業です。ESGスコアも8.4と高く、持続可能な経営を行っています。
+                            </p>
+                          ) : (
+                            <div className="mt-3 rounded-lg overflow-hidden">
+                              <VideoPlayer
+                                videoUrl="/videos/demo.mp4"
+                                autoPlay={false}
+                                controls={true}
+                                muted={true}
+                                width="100%"
+                                height="300"
+                              />
+                            </div>
+                          )}
                         </div>
-                        <p className="text-gray-700 text-sm leading-relaxed">
-                          トヨタ自動車の財務データを取得しました。ROE 9.2%、時価総額28.4兆円の優良企業です。ESGスコアも8.4と高く、持続可能な経営を行っています。
-                        </p>
                       </div>
                     </div>
                   </div>
