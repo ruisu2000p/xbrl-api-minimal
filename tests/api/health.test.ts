@@ -12,12 +12,12 @@ describe('/api/health', () => {
     const response = await GET()
 
     expect(response.status).toBe(200)
-    
+
     const data = await response.json()
     expect(data).toMatchObject({
       status: 'healthy',
       timestamp: expect.any(String),
-      environment: 'test'
+      version: expect.any(String)
     })
   })
 
