@@ -141,6 +141,7 @@ export class PathSecurity {
       .replace(/[<>'"]/g, '')
       .replace(/javascript:/gi, '')
       .replace(/data:/gi, '')
+      .replace(/vbscript:/gi, '')
       .slice(0, 500); // URLパス長制限
 
     return sanitized;
