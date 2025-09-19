@@ -80,7 +80,7 @@ export class EncryptionManager {
     const key = this.deriveKey(password, salt, iterations, keyLength)
 
     // 暗号化
-    const cipher = crypto.createCipheriv(algorithm, key, iv)
+    const cipher = crypto.createCipheriv(algorithm, Uint8Array.from(key), Uint8Array.from(iv))
 
     let encrypted = cipher.update(data, 'utf8', 'base64')
     encrypted += cipher.final('base64')
@@ -147,10 +147,10 @@ export class EncryptionManager {
 
     try {
       // 復号化
-      const decipher: crypto.DecipherGCM = crypto.createDecipheriv(algorithm, key, ivBuffer) as crypto.DecipherGCM
+      const decipher: crypto.DecipherGCM = crypto.createDecipheriv(algorithm, Uint8Array.from(key), Uint8Array.from(ivBuffer)) as crypto.DecipherGCM
 
       // 認証タグを設定（GCMモード）
-      decipher.setAuthTag(tagBuffer)
+      decipher.setAuthTag(Uint8Array.from(tagBuffer))
 
       let decrypted = decipher.update(encrypted, 'base64', 'utf8')
       decrypted += decipher.final('utf8')
