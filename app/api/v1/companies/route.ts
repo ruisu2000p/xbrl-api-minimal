@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { SecureInputValidator, ValidationError } from '@/lib/validators/secure-input-validator'
+import { SQLInjectionShield } from '@/lib/security/sql-injection-shield'
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
@@ -94,20 +96,61 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // クエリパラメータ取得
+    // セキュアな入力検証とサニタイゼーション
     const searchParams = request.nextUrl.searchParams
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 200) // 最大200件
-    const cursor = searchParams.get('cursor')
-    const fiscalYear = searchParams.get('fiscal_year')
-    const nameFilter = searchParams.get('name_filter')
+    let validatedParams: {
+      limit: number
+      cursor: string | null
+      fiscalYear: string | null
+      nameFilter: string
+    }
 
-    // ページング対応企業リスト取得
+    try {
+      // 数値パラメータの安全な検証
+      validatedParams = {
+        limit: SecureInputValidator.validateNumericInput(
+          searchParams.get('limit'),
+          1,
+          200,
+          50
+        ),
+        cursor: SecureInputValidator.validateCursor(searchParams.get('cursor')),
+        fiscalYear: SecureInputValidator.validateFiscalYear(searchParams.get('fiscal_year')),
+        nameFilter: SecureInputValidator.sanitizeTextInput(searchParams.get('name_filter'), 100)
+      }
+
+      // SQLインジェクション検証
+      if (validatedParams.nameFilter) {
+        const injectionCheck = SQLInjectionShield.validateInput(validatedParams.nameFilter, 'filter')
+        if (!injectionCheck.valid) {
+          throw new ValidationError(`Invalid filter: ${injectionCheck.reason}`)
+        }
+        validatedParams.nameFilter = injectionCheck.sanitized || ''
+      }
+    } catch (error) {
+      // 入力検証エラーログ
+      console.warn('Input validation failed:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        params: Object.fromEntries(searchParams.entries()),
+        ip: request.headers.get('x-forwarded-for')
+      })
+
+      return NextResponse.json(
+        {
+          error: 'Invalid request parameters',
+          message: error instanceof ValidationError ? error.message : 'Validation failed'
+        },
+        { status: 400 }
+      )
+    }
+
+    // ページング対応企業リスト取得（検証済みパラメータ使用）
     const { data: paginatedResult, error: companiesError } = await serviceClient
       .rpc('get_companies_list_paginated', {
-        p_limit: limit,
-        p_cursor: cursor,
-        p_fiscal_year: fiscalYear,
-        p_name_filter: nameFilter
+        p_limit: validatedParams.limit,
+        p_cursor: validatedParams.cursor,
+        p_fiscal_year: validatedParams.fiscalYear,
+        p_name_filter: validatedParams.nameFilter
       })
 
     if (companiesError) {
@@ -122,7 +165,11 @@ export async function GET(request: NextRequest) {
       })
 
       return NextResponse.json(
-        { error: 'Failed to fetch companies', details: companiesError.message },
+        {
+          error: 'Failed to fetch companies',
+          // 本番環境では詳細エラーを隠蔽
+          details: process.env.NODE_ENV === 'development' ? companiesError.message : undefined
+        },
         { status: 500 }
       )
     }

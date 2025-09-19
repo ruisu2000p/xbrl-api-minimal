@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
-import {
-  companyIdSchema,
-  fiscalYearSchema,
-  documentTypeSchema,
-  paginationSchema,
-  sanitizeError,
-  validatePath
-} from '@/lib/security/input-validation'
+import { SecureInputValidator, ValidationError } from '@/lib/validators/secure-input-validator'
+import { PathSecurity, SecurityError } from '@/lib/security/path-security'
+import { SQLInjectionShield } from '@/lib/security/sql-injection-shield'
 import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
@@ -39,12 +34,55 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get query parameters
+    // Secure input validation and sanitization
     const searchParams = request.nextUrl.searchParams
-    const companyId = searchParams.get('company_id')
-    const fiscalYear = searchParams.get('fiscal_year')
-    const fileType = searchParams.get('file_type')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    let validatedParams: {
+      companyId: string | null
+      fiscalYear: string | null
+      fileType: string | null
+      limit: number
+    }
+
+    try {
+      validatedParams = {
+        companyId: searchParams.get('company_id') ?
+          SecureInputValidator.sanitizeTextInput(searchParams.get('company_id'), 20) : null,
+        fiscalYear: SecureInputValidator.validateFiscalYear(searchParams.get('fiscal_year')),
+        fileType: SecureInputValidator.validateDocumentType(searchParams.get('file_type')),
+        limit: SecureInputValidator.validateNumericInput(
+          searchParams.get('limit'),
+          1,
+          100,
+          20
+        )
+      }
+
+      // Validate company ID format if provided
+      if (validatedParams.companyId && !SecureInputValidator.validateCompanyId(validatedParams.companyId)) {
+        throw new ValidationError('Invalid company ID format')
+      }
+
+      // SQL injection check for company ID
+      if (validatedParams.companyId) {
+        const injectionCheck = SQLInjectionShield.validateInput(validatedParams.companyId, 'filter')
+        if (!injectionCheck.valid) {
+          throw new ValidationError(`Invalid company ID: ${injectionCheck.reason}`)
+        }
+      }
+    } catch (error) {
+      console.warn('Input validation failed:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        params: Object.fromEntries(searchParams.entries())
+      })
+
+      return NextResponse.json(
+        {
+          error: 'Invalid request parameters',
+          message: error instanceof ValidationError ? error.message : 'Validation failed'
+        },
+        { status: 400 }
+      )
+    }
 
     // Query documents from markdown_files_metadata
     let query = serviceClient
