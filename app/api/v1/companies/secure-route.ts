@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { APISecurityMiddleware } from '@/lib/middleware/api-security-middleware';
 import { NoSQLInjectionProtection } from '@/lib/security/nosql-injection-protection';
 import { XSSProtectionEnhanced } from '@/lib/security/xss-protection-enhanced';
-import { createClient } from '@/lib/supabase/server';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
 export async function GET(request: NextRequest) {
   return APISecurityMiddleware.secureAPIRoute(request, async (req) => {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       }
 
       // 4. Supabaseクライアント作成
-      const supabase = createClient();
+      const supabase = supabaseManager.getServiceClient();
 
       // 5. セキュアなクエリ構築
       let query = supabase
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       // カーソルベースのページネーション情報
       if (filters.cursor && Array.isArray(sanitizedData) && sanitizedData.length > 0) {
         const lastItem = sanitizedData[sanitizedData.length - 1];
-        paginationInfo['nextCursor'] = lastItem.id;
+        (paginationInfo as any).nextCursor = lastItem.id;
       }
 
       // 9. セキュアなレスポンス構築
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
       const sanitizedData = XSSProtectionEnhanced.sanitizeForOutput(body);
 
       // Supabaseに挿入
-      const supabase = createClient();
+      const supabase = supabaseManager.getServiceClient();
       const { data, error } = await supabase
         .from('markdown_files_metadata')
         .insert(sanitizedData)
@@ -243,7 +243,7 @@ async function authenticateRequest(
     return { valid: false };
   }
 
-  const supabase = createClient();
+  const supabase = supabaseManager.getServiceClient();
 
   // APIキー検証（RPC関数使用）
   const { data, error } = await supabase

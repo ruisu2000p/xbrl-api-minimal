@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
     const state = searchParams.get('state')
-    const next = searchParams.get('next') ?? '/dashboard'
+    let next = searchParams.get('next') ?? '/dashboard'
 
     // 🛡️ リダイレクトURL検証を最優先実行
     const redirectValidation = RedirectValidator.validateRedirectUrl(next, request.url)

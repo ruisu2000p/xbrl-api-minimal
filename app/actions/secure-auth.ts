@@ -8,7 +8,7 @@
 import { ServerActionsCSRF } from '@/lib/security/server-actions-csrf';
 import { XSSProtectionEnhanced } from '@/lib/security/xss-protection-enhanced';
 import { NoSQLInjectionProtection } from '@/lib/security/nosql-injection-protection';
-import { createClient } from '@/lib/supabase/server';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { randomBytes, createHash } from 'crypto';
@@ -61,7 +61,7 @@ export async function createApiKeySecure(formData: FormData) {
     }
 
     // 5. セッション認証確認
-    const supabase = createClient();
+    const supabase = supabaseManager.getServiceClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -162,7 +162,7 @@ export async function deleteApiKeySecure(formData: FormData) {
     }
 
     // 認証確認
-    const supabase = createClient();
+    const supabase = supabaseManager.getServiceClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -305,7 +305,7 @@ async function logSecurityEvent(event: {
   error?: string;
 }): Promise<void> {
   try {
-    const supabase = createClient();
+    const supabase = supabaseManager.getServiceClient();
 
     await supabase
       .from('security_logs')

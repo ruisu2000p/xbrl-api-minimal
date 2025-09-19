@@ -147,10 +147,10 @@ export class EncryptionManager {
 
     try {
       // 復号化
-      const decipher = crypto.createDecipheriv(algorithm, key, ivBuffer)
+      const decipher: crypto.DecipherGCM = crypto.createDecipheriv(algorithm, key, ivBuffer) as crypto.DecipherGCM
 
       // 認証タグを設定（GCMモード）
-      (decipher as any).setAuthTag(tagBuffer)
+      decipher.setAuthTag(tagBuffer)
 
       let decrypted = decipher.update(encrypted, 'base64', 'utf8')
       decrypted += decipher.final('utf8')

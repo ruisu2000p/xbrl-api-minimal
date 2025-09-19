@@ -33,10 +33,8 @@ export interface AppConfig {
   rateLimit: {
     windowMs: number;
     maxRequests: {
-      free: number;
+      freemium: number;
       standard: number;
-      pro: number;
-      enterprise: number;
     };
   };
 
@@ -104,10 +102,8 @@ class ConfigManager {
       rateLimit: {
         windowMs: parseInt(this.getOptional('RATE_LIMIT_WINDOW_MS', '60000'), 10),
         maxRequests: {
-          free: parseInt(this.getOptional('RATE_LIMIT_FREE', '10'), 10),
-          standard: parseInt(this.getOptional('RATE_LIMIT_STANDARD', '60'), 10),
-          pro: parseInt(this.getOptional('RATE_LIMIT_PRO', '300'), 10),
-          enterprise: parseInt(this.getOptional('RATE_LIMIT_ENTERPRISE', '1000'), 10),
+          freemium: parseInt(this.getOptional('RATE_LIMIT_FREEMIUM', '10'), 10),
+          standard: parseInt(this.getOptional('RATE_LIMIT_STANDARD', '100'), 10),
         },
       },
 

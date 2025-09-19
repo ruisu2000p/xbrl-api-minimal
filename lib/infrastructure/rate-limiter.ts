@@ -54,10 +54,12 @@ export class RateLimiter {
    */
   async checkLimit(
     identifier: string,
-    tier: 'free' | 'basic' | 'premium' | 'enterprise' = 'free'
+    tier: 'freemium' | 'standard' = 'freemium'
   ): Promise<RateLimitResult> {
     const config = configManager.getConfig()
     const windowMs = config.rateLimit.windowMs
+
+    // 直接configからmaxRequestsを取得
     const maxRequests = config.rateLimit.maxRequests[tier]
 
     try {
@@ -319,14 +321,14 @@ export class RateLimiter {
  */
 export function createRateLimitMiddleware(
   keyExtractor: (req: any) => string | Promise<string>,
-  tierExtractor?: (req: any) => 'free' | 'basic' | 'premium' | 'enterprise' | Promise<'free' | 'basic' | 'premium' | 'enterprise'>
+  tierExtractor?: (req: any) => 'freemium' | 'standard' | Promise<'freemium' | 'standard'>
 ) {
   const limiter = RateLimiter.getInstance()
 
   return async (req: any, res: any, next?: any) => {
     try {
       const identifier = await keyExtractor(req)
-      const tier = tierExtractor ? await tierExtractor(req) : 'free'
+      const tier = tierExtractor ? await tierExtractor(req) : 'freemium'
 
       const result = await limiter.checkLimit(identifier, tier)
 

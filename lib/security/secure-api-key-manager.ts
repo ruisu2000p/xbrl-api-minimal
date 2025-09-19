@@ -443,12 +443,11 @@ export class SecureApiKeyManager {
         user_agent: this.getUserAgent()
       })
 
-    // 最終使用時刻と使用回数を更新
+    // 最終使用時刻を更新（使用回数は自動的にトリガーで更新される）
     await this.supabase
       .from('api_keys')
       .update({
-        last_used_at: new Date().toISOString(),
-        usage_count: this.supabase.sql`usage_count + 1`
+        last_used_at: new Date().toISOString()
       })
       .eq('id', keyId)
   }

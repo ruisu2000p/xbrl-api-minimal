@@ -64,7 +64,7 @@ export class OAuthSecurityValidator {
       delete stateData.signature;
 
       const expectedSignature = this.generateSignature(stateData);
-      if (!this.timingSafeEqual(signature, expectedSignature)) {
+      if (!signature || !this.timingSafeEqual(signature, expectedSignature)) {
         return {
           isValid: false,
           error: 'State signature verification failed',

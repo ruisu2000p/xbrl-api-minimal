@@ -171,7 +171,7 @@ export class RedirectSecurityMonitor {
 
       // State改ざん検出
       const tamperingCount = ipEvents.filter(e => e.type === 'STATE_TAMPERING').length;
-      if (tamperingCount >= this.ALERT_THRESHOLDS.STATE_TAMPERING_PER_HOUR) {
+      if (tamperingCount >= RedirectSecurityMonitor.ALERT_THRESHOLDS.STATE_TAMPERING_PER_HOUR) {
         await this.sendAlert({
           level: 'HIGH',
           type: 'STATE_TAMPERING_ATTACK',
@@ -189,7 +189,7 @@ export class RedirectSecurityMonitor {
         e => e.type === 'OPEN_REDIRECT' && e.timestamp.getTime() > oneMinuteAgo
       ).length;
 
-      if (recentRedirects >= this.ALERT_THRESHOLDS.OPEN_REDIRECT_ATTEMPTS_PER_MINUTE) {
+      if (recentRedirects >= RedirectSecurityMonitor.ALERT_THRESHOLDS.OPEN_REDIRECT_ATTEMPTS_PER_MINUTE) {
         await this.sendAlert({
           level: 'HIGH',
           type: 'OPEN_REDIRECT_SPIKE',
@@ -205,7 +205,7 @@ export class RedirectSecurityMonitor {
 
     // ドメイン別の攻撃パターン
     const trends = await this.analyzeRedirectTrends();
-    if (trends.xssAttempts > this.ALERT_THRESHOLDS.XSS_ATTEMPTS_PER_HOUR) {
+    if (trends.xssAttempts > RedirectSecurityMonitor.ALERT_THRESHOLDS.XSS_ATTEMPTS_PER_HOUR) {
       await this.sendAlert({
         level: 'MEDIUM',
         type: 'XSS_URL_ATTACK',
@@ -273,7 +273,7 @@ export class RedirectSecurityMonitor {
     this.ipEvents.forEach((events, ip) => {
       const recentEvents = events.filter(e => e.timestamp.getTime() > oneHourAgo);
 
-      if (recentEvents.length > this.ALERT_THRESHOLDS.FAILED_VALIDATIONS_PER_IP_PER_HOUR) {
+      if (recentEvents.length > RedirectSecurityMonitor.ALERT_THRESHOLDS.FAILED_VALIDATIONS_PER_IP_PER_HOUR) {
         patterns.push({
           type: 'SUSPICIOUS_IP_ACTIVITY',
           ipAddress: ip,
@@ -294,7 +294,7 @@ export class RedirectSecurityMonitor {
           .filter(Boolean)
       );
 
-      if (targetDomains.size > this.ALERT_THRESHOLDS.SUSPICIOUS_DOMAINS_PER_IP_PER_HOUR) {
+      if (targetDomains.size > RedirectSecurityMonitor.ALERT_THRESHOLDS.SUSPICIOUS_DOMAINS_PER_IP_PER_HOUR) {
         patterns.push({
           type: 'MULTI_DOMAIN_ATTACK',
           ipAddress: ip,

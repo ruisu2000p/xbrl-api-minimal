@@ -352,7 +352,7 @@ export class ApiKeyCache {
     validation: number
     overall: CacheStats
   } {
-    const allKeys = Array.from((this.cacheManager as any).cache.keys())
+    const allKeys = Array.from((this.cacheManager as any).cache.keys()) as string[]
     const metadataCount = allKeys.filter(k => k.startsWith(this.METADATA_PREFIX)).length
     const validationCount = allKeys.filter(k => k.startsWith(this.VALIDATION_PREFIX)).length
 
