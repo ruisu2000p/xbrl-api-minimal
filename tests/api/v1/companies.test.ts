@@ -14,6 +14,16 @@ describe('/api/v1/companies', () => {
     jest.clearAllMocks()
   })
 
+  afterEach(() => {
+    // リソースクリーンアップ
+    jest.clearAllTimers()
+  })
+
+  afterAll(() => {
+    // 非同期リソースの完全クリーンアップ
+    jest.restoreAllMocks()
+  })
+
   describe('Authentication', () => {
     it('should reject request without API key', async () => {
       const request = new NextRequest('http://localhost:3000/api/v1/companies')
@@ -31,13 +41,13 @@ describe('/api/v1/companies', () => {
     it('should reject request with invalid API key format', async () => {
       const request = new NextRequest('http://localhost:3000/api/v1/companies', {
         headers: {
-          'Authorization': 'Bearer invalid_key'
+          'X-API-Key': 'invalid_key'
         }
       })
       const response = await GET(request)
 
       expect((response as any).status).toBe(401)
-      
+
       const data = await (response as any).json()
       expect(data).toMatchObject({
         error: 'Invalid API key format',
@@ -48,7 +58,7 @@ describe('/api/v1/companies', () => {
     it('should accept valid API key', async () => {
       const request = new NextRequest('http://localhost:3000/api/v1/companies', {
         headers: {
-          'Authorization': `Bearer ${validApiKey}`
+          'X-API-Key': validApiKey
         }
       })
 
@@ -71,7 +81,7 @@ describe('/api/v1/companies', () => {
       
       const request = new NextRequest(url, {
         headers: {
-          'Authorization': `Bearer ${validApiKey}`
+          'X-API-Key': validApiKey
         }
       })
 
@@ -105,7 +115,7 @@ describe('/api/v1/companies', () => {
       
       const request = new NextRequest(url, {
         headers: {
-          'Authorization': `Bearer ${validApiKey}`
+          'X-API-Key': validApiKey
         }
       })
 
@@ -135,7 +145,7 @@ describe('/api/v1/companies', () => {
       
       const request = new NextRequest(url, {
         headers: {
-          'Authorization': `Bearer ${validApiKey}`
+          'X-API-Key': validApiKey
         }
       })
 
@@ -144,8 +154,8 @@ describe('/api/v1/companies', () => {
 
       const data = await (response as any).json()
       expect(data).toMatchObject({
-        error: 'Invalid limit parameter',
-        code: 'INVALID_LIMIT'
+        error: 'Value out of range (1-200)',
+        code: 'NUMBER_OUT_OF_RANGE'
       })
     })
   })
@@ -188,18 +198,20 @@ describe('/api/v1/companies', () => {
 
       const data = await (response as any).json()
       expect(data).toMatchObject({
-        companies: expect.arrayContaining([
+        success: true,
+        data: expect.arrayContaining([
           expect.objectContaining({
             company_id: expect.any(String),
             company_name: expect.any(String),
             fiscal_year: expect.any(String)
           })
         ]),
-        total: expect.any(Number),
-        pagination: expect.objectContaining({
-          page: expect.any(Number),
-          limit: expect.any(Number),
-          has_more: expect.any(Boolean)
+        pagination: expect.any(Object),
+        security: expect.objectContaining({
+          validated: true
+        }),
+        performance: expect.objectContaining({
+          latency_ms: expect.any(Number)
         })
       })
     })
@@ -228,8 +240,7 @@ describe('/api/v1/companies', () => {
 
       const data = await (response as any).json()
       expect(data).toMatchObject({
-        error: 'Internal server error',
-        code: 'DATABASE_ERROR'
+        error: 'Failed to fetch companies'
       })
     })
 
@@ -251,8 +262,7 @@ describe('/api/v1/companies', () => {
 
       const data = await (response as any).json()
       expect(data).toMatchObject({
-        error: 'Rate limit exceeded',
-        code: 'RATE_LIMITED'
+        error: 'Rate limit exceeded'
       })
     })
   })
