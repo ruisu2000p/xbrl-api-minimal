@@ -161,7 +161,9 @@ export const paginationSchema = z.object({
  */
 export function sanitizeError(error: unknown): string {
   if (error instanceof z.ZodError) {
-    return 'Validation failed: ' + error.errors.map(e => e.message).join(', ')
+    // Type-safe access to ZodError properties
+    const zodError = error as z.ZodError<any>
+    return 'Validation failed: ' + zodError.issues.map(issue => issue.message).join(', ')
   }
 
   // Never expose internal error details

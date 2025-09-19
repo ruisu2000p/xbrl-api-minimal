@@ -11,7 +11,7 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key'
 process.env.API_KEY_SECRET = 'test-api-key-secret-minimum-32-chars'
 process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000'
-process.env.NODE_ENV = 'test'
+// NODE_ENV is already set to 'test' by Jest, no need to override
 
 // Mock Next.js modules
 jest.mock('next/navigation', () => ({
@@ -90,6 +90,10 @@ jest.mock('@supabase/supabase-js', () => ({
 }))
 
 // Global test utilities
+declare global {
+  var mockApiResponse: (data: any, status?: number) => Response
+}
+
 global.mockApiResponse = (data: any, status = 200) => {
   return new Response(JSON.stringify(data), {
     status,
