@@ -9,7 +9,7 @@ import { NextRequest } from 'next/server'
 describe('/api/health', () => {
   it('should return healthy status', async () => {
     const request = new NextRequest('http://localhost:3000/api/health')
-    const response = await GET(request)
+    const response = await GET()
 
     expect(response.status).toBe(200)
     
@@ -23,7 +23,7 @@ describe('/api/health', () => {
 
   it('should include current timestamp', async () => {
     const request = new NextRequest('http://localhost:3000/api/health')
-    const response = await GET(request)
+    const response = await GET()
     const data = await response.json()
 
     const timestamp = new Date(data.timestamp)
@@ -42,6 +42,6 @@ describe('/api/health', () => {
     const request = new NextRequest('http://localhost:3000/api/health')
     
     // エラーが発生してもレスポンスが返されることを確認
-    await expect(GET(request)).resolves.toBeDefined()
+    await expect(GET()).resolves.toBeDefined()
   })
 })
