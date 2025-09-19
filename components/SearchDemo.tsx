@@ -7,7 +7,7 @@ export default function SearchDemo() {
   const [searchTerm, setSearchTerm] = useState('トヨタ自動車');
   const [isLoading, setIsLoading] = useState(false);
   const [showResponse, setShowResponse] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
+  const [showVideo, setShowVideo] = useState(true); // デフォルトで動画を表示
 
   const handleSearch = () => {
     setIsLoading(true);
@@ -73,8 +73,83 @@ export default function SearchDemo() {
         </div>
 
         <div className="max-w-5xl mx-auto">
-          {/* Claude Desktop Style API Explorer */}
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+          {/* Toggle between Video and Claude Desktop Interface */}
+          {showVideo ? (
+            // Full Video Display
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+              {/* Video Header */}
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                        <i className="ri-play-circle-line text-white text-lg"></i>
+                      </div>
+                      <span className="text-white font-semibold text-lg">XBRL Financial API Demo</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowVideo(false)}
+                    className="bg-white/20 px-4 py-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center space-x-2"
+                  >
+                    <i className="ri-code-s-slash-line text-white"></i>
+                    <span className="text-white text-sm font-medium">インタラクティブモード</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Video Player */}
+              <div className="bg-gray-900 p-4">
+                <VideoPlayer
+                  videoUrl="/videos/demo.mp4"
+                  autoPlay={false}
+                  controls={true}
+                  muted={true}
+                  width="100%"
+                  height="600"
+                />
+              </div>
+
+              {/* Video Description */}
+              <div className="p-6 bg-gradient-to-b from-gray-50 to-white">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <i className="ri-information-line text-white text-xl"></i>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">デモビデオ</h3>
+                </div>
+                <p className="text-gray-600 leading-relaxed">
+                  XBRL Financial APIの実際の動作をご覧ください。企業の財務データを瞬時に取得し、
+                  AI分析によるインサイトを提供する様子をデモンストレーションしています。
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  <div className="flex items-start space-x-3">
+                    <i className="ri-check-double-line text-green-500 text-xl mt-1"></i>
+                    <div>
+                      <p className="font-semibold text-gray-800">リアルタイムデータ</p>
+                      <p className="text-sm text-gray-600">最新の財務情報を即座に取得</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <i className="ri-check-double-line text-green-500 text-xl mt-1"></i>
+                    <div>
+                      <p className="font-semibold text-gray-800">AI分析</p>
+                      <p className="text-sm text-gray-600">Claudeによる高度な解析</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <i className="ri-check-double-line text-green-500 text-xl mt-1"></i>
+                    <div>
+                      <p className="font-semibold text-gray-800">使いやすいAPI</p>
+                      <p className="text-sm text-gray-600">シンプルなRESTful設計</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Original Claude Desktop Style Interface
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
             {/* Claude Desktop Header */}
             <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-4">
               <div className="flex items-center justify-between">
@@ -93,11 +168,11 @@ export default function SearchDemo() {
                 </div>
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => setShowVideo(!showVideo)}
+                    onClick={() => setShowVideo(true)}
                     className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm hover:bg-white/30 transition-colors flex items-center space-x-2"
                   >
-                    <i className={showVideo ? "ri-image-line" : "ri-play-circle-line"} className="text-white"></i>
-                    <span className="text-white text-sm font-medium">{showVideo ? "デモ非表示" : "デモ表示"}</span>
+                    <i className="ri-play-circle-line text-white"></i>
+                    <span className="text-white text-sm font-medium">動画モード</span>
                   </button>
                   <div className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
                     <span className="text-white text-sm font-medium">XBRL Financial API</span>
@@ -234,6 +309,8 @@ export default function SearchDemo() {
               )}
             </div>
           </div>
+          )}
+          {/* End of toggle */}
 
           {/* Features highlight */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
