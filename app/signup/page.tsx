@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signUp } from '@/app/actions/auth';
-import { ApiKeyModal } from '@/app/components/ApiKeyModal';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -12,8 +11,6 @@ export default function SignupPage() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [generatedApiKey, setGeneratedApiKey] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -95,10 +92,11 @@ export default function SignupPage() {
       });
 
       if (result.success) {
-        // APIキーが作成された場合はモーダルで表示
+        // APIキーが作成された場合はダッシュボードで表示するためにパラメータ付きでリダイレクト
         if (result.apiKey) {
-          setGeneratedApiKey(result.apiKey);
-          setShowApiKeyModal(true);
+          // APIキーをセッションストレージに保存（一度だけ表示）
+          sessionStorage.setItem('newApiKey', result.apiKey);
+          router.push('/dashboard?newAccount=true');
         } else {
           // APIキーが生成されなかった場合は直接ダッシュボードへ
           router.push('/dashboard');
@@ -443,14 +441,6 @@ export default function SignupPage() {
         </div>
 
       </div>
-
-      {/* APIキーモーダル */}
-      {showApiKeyModal && generatedApiKey && (
-        <ApiKeyModal
-          apiKey={generatedApiKey}
-          onClose={() => setShowApiKeyModal(false)}
-        />
-      )}
     </div>
   );
 }

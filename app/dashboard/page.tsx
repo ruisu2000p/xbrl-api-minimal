@@ -1,6 +1,28 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AccountSettings from './AccountSettings';
+import { ApiKeyModal } from '@/app/components/ApiKeyModal';
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [newApiKey, setNewApiKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 新規アカウント作成後の場合、セッションストレージからAPIキーを取得
+    if (searchParams.get('newAccount') === 'true') {
+      const storedKey = sessionStorage.getItem('newApiKey');
+      if (storedKey) {
+        setNewApiKey(storedKey);
+        setShowApiKeyModal(true);
+        // 一度表示したら削除
+        sessionStorage.removeItem('newApiKey');
+      }
+    }
+  }, [searchParams]);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -13,6 +35,14 @@ export default function DashboardPage() {
           <AccountSettings />
         </div>
       </div>
+
+      {/* 新規アカウント作成時のAPIキーモーダル */}
+      {showApiKeyModal && newApiKey && (
+        <ApiKeyModal
+          apiKey={newApiKey}
+          onClose={() => setShowApiKeyModal(false)}
+        />
+      )}
     </div>
   );
 }
