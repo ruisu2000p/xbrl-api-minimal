@@ -31,15 +31,17 @@ export class EnhancedApiKeyValidator {
 
    
   constructor() {
-        if (process.env.NODE_ENV === 'production' && !process.env.API_KEY_SECRET) {
+    if (process.env.NODE_ENV === 'production' && !process.env.API_KEY_SECRET) {
       throw new Error('API_KEY_SECRET must be set in production')
     }
 
     // Use environment variable or generate secure random secret
     this.hmacSecret = process.env.API_KEY_SECRET || crypto.randomBytes(32).toString('hex')
-        if (!process.env.API_KEY_SECRET) {
+    
+    if (!process.env.API_KEY_SECRET) {
       console.warn('[Security] API_KEY_SECRET not set; using generated secret for non-production environments')
     }
+  }
 
 
         
@@ -189,7 +191,7 @@ export class EnhancedApiKeyValidator {
 
     const limit = limits[tier as keyof typeof limits] || limits.free
 
-       const now = Date.now();
+    const now = Date.now();
     // Initialize record for this API key if it doesn't exist
     let record = this.rateLimitStore[apiKeyId];
     if (!record) {
@@ -219,9 +221,6 @@ export class EnhancedApiKeyValidator {
       remaining: limit.perMinute - record.count,
       resetTime: record.resetTime
     };
-
-      resetTime: Date.now() + 60000
-    }
   }
 
   /**
