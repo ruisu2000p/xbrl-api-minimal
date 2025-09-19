@@ -12,8 +12,10 @@ const config = {
       tsconfig: {
         jsx: 'react',
         esModuleInterop: true,
-        moduleResolution: 'node'
-      }
+        moduleResolution: 'node',
+        skipLibCheck: true
+      },
+      isolatedModules: true
     }]
   },
   moduleNameMapper: {

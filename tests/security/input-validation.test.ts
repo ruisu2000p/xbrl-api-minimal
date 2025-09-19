@@ -3,7 +3,7 @@
  * Tests for preventing injection attacks and validating user inputs
  */
 
-import { NextRequest } from 'next/server'
+import { MockNextRequest } from '../test-utils/next-request-mock'
 
 describe('Security: Input Validation', () => {
   describe('SQL Injection Prevention', () => {
@@ -12,7 +12,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/companies')
       url.searchParams.set('search', maliciousInput)
       
-      const request = new NextRequest(url, {
+      const request = new MockNextRequest(url, {
         headers: {
           'Authorization': 'Bearer fin_live_test_key'
         }
@@ -28,7 +28,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/documents')
       url.searchParams.set('company_id', unionAttack)
       
-      const request = new NextRequest(url, {
+      const request = new MockNextRequest(url, {
         headers: {
           'Authorization': 'Bearer fin_live_test_key'
         }
@@ -47,7 +47,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/companies')
       url.searchParams.set('search', xssAttempt)
       
-      const request = new NextRequest(url, {
+      const request = new MockNextRequest(url, {
         headers: {
           'Authorization': 'Bearer fin_live_test_key'
         }
@@ -63,7 +63,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/companies')
       url.searchParams.set('search', encodedXSS)
       
-      const request = new NextRequest(url)
+      const request = new MockNextRequest(url)
 
       const decoded = decodeURIComponent(url.searchParams.get('search') || '')
       expect(decoded).toContain('<script>')
@@ -75,7 +75,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/companies')
       url.searchParams.set('name', eventHandler)
       
-      const request = new NextRequest(url)
+      const request = new MockNextRequest(url)
 
       const param = request.nextUrl.searchParams.get('name')
       expect(param).toContain('onerror')
@@ -89,7 +89,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/documents')
       url.searchParams.set('path', pathTraversal)
       
-      const request = new NextRequest(url)
+      const request = new MockNextRequest(url)
 
       const path = request.nextUrl.searchParams.get('path')
       expect(path).toContain('../')
@@ -101,7 +101,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/documents')
       url.searchParams.set('filename', nullByte)
       
-      const request = new NextRequest(url)
+      const request = new MockNextRequest(url)
 
       const filename = request.nextUrl.searchParams.get('filename')
       expect(filename).toContain('%00')
@@ -115,7 +115,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/companies')
       url.searchParams.set('search', longString)
       
-      const request = new NextRequest(url)
+      const request = new MockNextRequest(url)
 
       const search = request.nextUrl.searchParams.get('search')
       expect(search?.length).toBe(10000)
@@ -127,7 +127,7 @@ describe('Security: Input Validation', () => {
       const url = new URL('http://localhost:3000/api/v1/companies')
       url.searchParams.set('ids', manyIds)
       
-      const request = new NextRequest(url)
+      const request = new MockNextRequest(url)
 
       const ids = request.nextUrl.searchParams.get('ids')
       expect(ids?.split(',').length).toBe(1000)
@@ -146,13 +146,14 @@ describe('Security: Input Validation', () => {
       ]
 
       invalidKeys.forEach(key => {
-        const request = new NextRequest('http://localhost:3000/api/v1/companies', {
+        const request = new MockNextRequest('http://localhost:3000/api/v1/companies', {
           headers: {
             'Authorization': `Bearer ${key}`
           }
         })
 
-        const authHeader = request.headers.get('Authorization')
+        const headers = new Headers(request.headers)
+        const authHeader = headers.get('Authorization')
         expect(authHeader).toContain(key.replace('Bearer ', ''))
         // Should be rejected by API key validation
       })
@@ -175,7 +176,7 @@ describe('Security: Input Validation', () => {
 
   describe('Content Type Validation', () => {
     it('should validate JSON content type', () => {
-      const request = new NextRequest('http://localhost:3000/api/v1/companies', {
+      const request = new MockNextRequest('http://localhost:3000/api/v1/companies', {
         method: 'POST',
         headers: {
           'Content-Type': 'text/plain'
@@ -183,18 +184,20 @@ describe('Security: Input Validation', () => {
         body: JSON.stringify({ name: 'Test' })
       })
 
-      const contentType = request.headers.get('Content-Type')
+      const headers = new Headers(request.headers)
+      const contentType = headers.get('Content-Type')
       expect(contentType).not.toContain('application/json')
       // Should reject non-JSON content for JSON endpoints
     })
 
     it('should handle missing content type', () => {
-      const request = new NextRequest('http://localhost:3000/api/v1/companies', {
+      const request = new MockNextRequest('http://localhost:3000/api/v1/companies', {
         method: 'POST',
         body: JSON.stringify({ name: 'Test' })
       })
 
-      const contentType = request.headers.get('Content-Type')
+      const headers = new Headers(request.headers)
+      const contentType = headers.get('Content-Type')
       expect(contentType).toBeNull()
       // Should handle gracefully or reject
     })
