@@ -3,19 +3,25 @@
  * テスト対象: lib/supabase/client.ts
  */
 
-import { createClientComponentClient, createServerComponentClient } from '@supabase/ssr'
+import { createBrowserClient, createServerClient } from '@supabase/ssr'
 
 // Supabaseクライアントの基本機能をテスト
 describe('Supabase Client', () => {
-  describe('Client Component Client', () => {
-    it('should create client component client without error', () => {
+  describe('Browser Client', () => {
+    it('should create browser client without error', () => {
       expect(() => {
-        createClientComponentClient()
+        createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
       }).not.toThrow()
     })
 
     it('should have auth methods available', () => {
-      const client = createClientComponentClient()
+      const client = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
       
       expect(client.auth).toBeDefined()
       expect(typeof client.auth.signInWithPassword).toBe('function')
@@ -24,23 +30,41 @@ describe('Supabase Client', () => {
     })
 
     it('should have database methods available', () => {
-      const client = createClientComponentClient()
+      const client = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
       
       expect(typeof client.from).toBe('function')
       expect(typeof client.rpc).toBe('function')
     })
   })
 
-  describe('Server Component Client', () => {
-    it('should create server component client with cookies', () => {
-      const mockCookies = {
+  describe('Server Client', () => {
+    it('should create server client with cookie handler', () => {
+      const mockCookieStore = {
         get: jest.fn(),
         set: jest.fn(),
         remove: jest.fn(),
       }
 
       expect(() => {
-        createServerComponentClient({ cookies: () => mockCookies })
+        createServerClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            cookies: {
+              getAll() {
+                return []
+              },
+              setAll(cookiesToSet) {
+                cookiesToSet.forEach(({ name, value, options }) => {
+                  mockCookieStore.set(name, value)
+                })
+              },
+            }
+          }
+        )
       }).not.toThrow()
     })
   })
