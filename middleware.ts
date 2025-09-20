@@ -28,12 +28,22 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
+// ログインジェクション対策: 入力をサニタイズする関数
+function sanitizeLogInput(input: string): string {
+  // 改行文字、キャリッジリターン、タブを削除
+  return input
+    .replace(/[\r\n\t]/g, '')
+    .replace(/[^\x20-\x7E]/g, '') // 印刷可能ASCII文字のみ許可
+    .substring(0, 200); // 長さを制限
+}
+
 // IPアドレスの取得
 function getIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for') ||
+  const ip = request.headers.get('x-forwarded-for') ||
     request.headers.get('x-real-ip') ||
     request.ip ||
     'unknown';
+  return sanitizeLogInput(ip);
 }
 
 export function middleware(request: NextRequest) {
@@ -93,20 +103,20 @@ export function middleware(request: NextRequest) {
 
     // ReDoS対策: URLの長さ制限（1000文字）
     if (urlString.length > 1000) {
-      console.warn(`[Security] URL too long from IP ${ip}: ${urlString.length} characters`);
+      console.warn(`[Security] URL too long from IP ${sanitizeLogInput(ip)}: ${urlString.length} characters`);
       return new NextResponse('Bad Request', { status: 400 });
     }
 
     for (const pattern of suspiciousPatterns) {
       if (pattern.test(urlString)) {
-        console.warn(`[Security] Suspicious pattern detected from IP ${ip}: ${urlString}`);
+        console.warn(`[Security] Suspicious pattern detected from IP ${sanitizeLogInput(ip)}: [URL hidden for security]`);
         return new NextResponse('Bad Request', { status: 400 });
       }
     }
 
     // パストラバーサル対策
     if (url.pathname.includes('..') || url.pathname.includes('//')) {
-      console.warn(`[Security] Path traversal attempt from IP ${ip}: ${url.pathname}`);
+      console.warn(`[Security] Path traversal attempt from IP ${sanitizeLogInput(ip)}: [Path hidden for security]`);
       return new NextResponse('Bad Request', { status: 400 });
     }
   }

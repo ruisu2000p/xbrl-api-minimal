@@ -51,7 +51,7 @@ async function testApiRoute() {
       console.log('❌ Test 1 FAILED');
     }
   } catch (error) {
-    console.log('❌ Test 1 ERROR:', error.message);
+    console.log('❌ Test 1 ERROR:', error.message.replace(/[\r\n\t]/g, ''));
   }
 
   // Test 2: Invalid API key format
@@ -69,7 +69,7 @@ async function testApiRoute() {
       console.log('❌ Test 2 FAILED');
     }
   } catch (error) {
-    console.log('❌ Test 2 ERROR:', error.message);
+    console.log('❌ Test 2 ERROR:', error.message.replace(/[\r\n\t]/g, ''));
   }
 
   // Test 3: Invalid limit parameter
@@ -87,7 +87,7 @@ async function testApiRoute() {
       console.log('❌ Test 3 FAILED');
     }
   } catch (error) {
-    console.log('❌ Test 3 ERROR:', error.message);
+    console.log('❌ Test 3 ERROR:', error.message.replace(/[\r\n\t]/g, ''));
   }
 
   console.log('\nManual testing completed.');

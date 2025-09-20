@@ -2,7 +2,16 @@
 
 // ===== 改善版 MCP サーバー v3.1.0 =====
 // stdout はプロトコル専用
-console.log = (...args) => console.error('[LOG]', ...args);
+console.log = (...args) => {
+  // ログインジェクション対策: 引数をサニタイズ
+  const sanitizedArgs = args.map(arg => {
+    if (typeof arg === 'string') {
+      return arg.replace(/[\r\n\t]/g, '').substring(0, 500);
+    }
+    return arg;
+  });
+  console.error('[LOG]', ...sanitizedArgs);
+};
 
 // 起動メッセージ
 console.error('[xbrl-mcp-server v3.1.0] Starting improved version...');
