@@ -1,11 +1,11 @@
 {
   "name": "shared-supabase-mcp-minimal",
-  "version": "1.0.0",
+  "version": "3.5.0",
   "description": "XBRL Financial Data MCP Server for Supabase",
   "main": "index.js",
   "type": "module",
   "bin": {
-    "xbrl-financial-mcp": "./index.js"
+    "xbrl-financial-mcp": "index.js"
   },
   "scripts": {
     "start": "node index.js",
@@ -32,6 +32,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/shared-supabase-mcp-minimal"
+    "url": "git+https://github.com/ruisu2000p/xbrl-api-minimal.git"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
