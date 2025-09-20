@@ -100,6 +100,66 @@ jest.mock('@supabase/supabase-js', () => ({
   })),
 }))
 
+// Mock supabaseManager
+jest.mock('@/lib/infrastructure/supabase-manager', () => ({
+  supabaseManager: {
+    getInstance: jest.fn(() => ({
+      getServiceClient: jest.fn(() => ({
+        rpc: jest.fn().mockResolvedValue({
+          data: { is_valid: true, tier: 'basic', valid: true },
+          error: null
+        }),
+        from: jest.fn(() => ({
+          select: jest.fn(() => ({
+            eq: jest.fn(() => ({
+              limit: jest.fn().mockResolvedValue({
+                data: [],
+                error: null
+              })
+            }))
+          })),
+          insert: jest.fn().mockResolvedValue({
+            data: null,
+            error: null
+          })
+        }))
+      })),
+      getAnonClient: jest.fn(() => ({
+        rpc: jest.fn().mockResolvedValue({
+          data: { is_valid: true, tier: 'basic' },
+          error: null
+        }),
+        from: jest.fn(() => ({
+          select: jest.fn().mockReturnThis(),
+          insert: jest.fn().mockReturnThis(),
+          update: jest.fn().mockReturnThis(),
+          delete: jest.fn().mockReturnThis(),
+        }))
+      }))
+    })),
+    getServiceClient: jest.fn(() => ({
+      rpc: jest.fn().mockResolvedValue({
+        data: { is_valid: true, tier: 'basic', valid: true },
+        error: null
+      }),
+      from: jest.fn(() => ({
+        select: jest.fn(() => ({
+          eq: jest.fn(() => ({
+            limit: jest.fn().mockResolvedValue({
+              data: [],
+              error: null
+            })
+          }))
+        })),
+        insert: jest.fn().mockResolvedValue({
+          data: null,
+          error: null
+        })
+      }))
+    }))
+  }
+}))
+
 // Mock @supabase/ssr
 jest.mock('@supabase/ssr', () => ({
   createBrowserClient: jest.fn(() => ({

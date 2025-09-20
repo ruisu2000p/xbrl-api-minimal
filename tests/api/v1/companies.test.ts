@@ -62,12 +62,23 @@ describe('/api/v1/companies', () => {
         }
       })
 
-      // Mock successful API key verification
-      const mockSupabase = require('@supabase/supabase-js').createClient()
-      mockSupabase.rpc.mockResolvedValueOnce({
-        data: { is_valid: true, tier: 'basic' },
-        error: null
-      })
+      // Mock successful API key verification and data retrieval
+      const { supabaseManager } = require('@/lib/infrastructure/supabase-manager')
+      const mockServiceClient = supabaseManager.getServiceClient()
+
+      mockServiceClient.rpc
+        .mockResolvedValueOnce({
+          data: { valid: true, tier: 'basic', key_id: 'test-key-id', user_id: 'test-user-id' },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { ok: true, current_minute: 5 },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { data: [], pagination: { has_more: false } },
+          error: null
+        })
 
       const response = await GET(request)
       expect((response as any).status).not.toBe(401)
@@ -85,28 +96,38 @@ describe('/api/v1/companies', () => {
         }
       })
 
-      const mockSupabase = require('@supabase/supabase-js').createClient()
-      mockSupabase.rpc.mockResolvedValueOnce({
-        data: { is_valid: true, tier: 'basic' },
-        error: null
-      })
-      mockSupabase.from().select().eq().limit.mockResolvedValueOnce({
-        data: [
-          {
-            company_id: 'S100DLTX',
-            company_name: 'トヨタ自動車株式会社',
-            fiscal_year: 'FY2024'
-          }
-        ],
-        error: null
-      })
+      const { supabaseManager } = require('@/lib/infrastructure/supabase-manager')
+      const mockServiceClient = supabaseManager.getServiceClient()
+
+      mockServiceClient.rpc
+        .mockResolvedValueOnce({
+          data: { valid: true, tier: 'basic', key_id: 'test-key-id', user_id: 'test-user-id' },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { ok: true, current_minute: 5 },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: {
+            data: [
+              {
+                company_id: 'S100DLTX',
+                company_name: 'トヨタ自動車株式会社',
+                fiscal_year: 'FY2024'
+              }
+            ],
+            pagination: { has_more: false }
+          },
+          error: null
+        })
 
       const response = await GET(request)
       expect((response as any).status).toBe(200)
 
       const data = await (response as any).json()
-      expect(data.companies).toHaveLength(1)
-      expect(data.companies[0].company_name).toContain('トヨタ')
+      expect(data.data).toHaveLength(1)
+      expect(data.data[0].company_name).toContain('トヨタ')
     })
 
     it('should handle fiscal_year filter', async () => {
@@ -119,23 +140,32 @@ describe('/api/v1/companies', () => {
         }
       })
 
-      const mockSupabase = require('@supabase/supabase-js').createClient()
-      mockSupabase.rpc.mockResolvedValueOnce({
-        data: { is_valid: true, tier: 'basic' },
-        error: null
-      })
-      mockSupabase.from().select().eq().limit.mockResolvedValueOnce({
-        data: [],
-        error: null
-      })
+      const { supabaseManager } = require('@/lib/infrastructure/supabase-manager')
+      const mockServiceClient = supabaseManager.getServiceClient()
+
+      mockServiceClient.rpc
+        .mockResolvedValueOnce({
+          data: { valid: true, tier: 'basic', key_id: 'test-key-id', user_id: 'test-user-id' },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { ok: true, current_minute: 5 },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { data: [], pagination: { has_more: false } },
+          error: null
+        })
 
       const response = await GET(request)
       expect((response as any).status).toBe(200)
 
       // fiscal_yearフィルターが適用されていることを確認
-      expect(mockSupabase.from().select().eq).toHaveBeenCalledWith(
-        'fiscal_year',
-        'FY2024'
+      expect(mockServiceClient.rpc).toHaveBeenCalledWith(
+        'get_companies_list_paginated_secure',
+        expect.objectContaining({
+          p_fiscal_year: 'FY2024'
+        })
       )
     })
 
@@ -154,8 +184,8 @@ describe('/api/v1/companies', () => {
 
       const data = await (response as any).json()
       expect(data).toMatchObject({
-        error: 'Value out of range (1-200)',
-        code: 'NUMBER_OUT_OF_RANGE'
+        error: 'Security validation failed',
+        code: 'SECURITY_VALIDATION_FAILED'
       })
     })
   })
@@ -183,15 +213,22 @@ describe('/api/v1/companies', () => {
         }
       ]
 
-      const mockSupabase = require('@supabase/supabase-js').createClient()
-      mockSupabase.rpc.mockResolvedValueOnce({
-        data: { is_valid: true, tier: 'basic' },
-        error: null
-      })
-      mockSupabase.from().select().eq().limit.mockResolvedValueOnce({
-        data: mockCompanies,
-        error: null
-      })
+      const { supabaseManager } = require('@/lib/infrastructure/supabase-manager')
+      const mockServiceClient = supabaseManager.getServiceClient()
+
+      mockServiceClient.rpc
+        .mockResolvedValueOnce({
+          data: { valid: true, tier: 'basic', key_id: 'test-key-id', user_id: 'test-user-id' },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { ok: true, current_minute: 5 },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { data: mockCompanies, pagination: { has_more: false } },
+          error: null
+        })
 
       const response = await GET(request)
       expect((response as any).status).toBe(200)
@@ -225,15 +262,22 @@ describe('/api/v1/companies', () => {
         }
       })
 
-      const mockSupabase = require('@supabase/supabase-js').createClient()
-      mockSupabase.rpc.mockResolvedValueOnce({
-        data: { is_valid: true, tier: 'basic' },
-        error: null
-      })
-      mockSupabase.from().select().eq().limit.mockResolvedValueOnce({
-        data: null,
-        error: { message: 'Database connection failed' }
-      })
+      const { supabaseManager } = require('@/lib/infrastructure/supabase-manager')
+      const mockServiceClient = supabaseManager.getServiceClient()
+
+      mockServiceClient.rpc
+        .mockResolvedValueOnce({
+          data: { valid: true, tier: 'basic', key_id: 'test-key-id', user_id: 'test-user-id' },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { ok: true, current_minute: 5 },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: null,
+          error: { message: 'Database connection failed' }
+        })
 
       const response = await GET(request)
       expect((response as any).status).toBe(500)
@@ -251,11 +295,18 @@ describe('/api/v1/companies', () => {
         }
       })
 
-      const mockSupabase = require('@supabase/supabase-js').createClient()
-      mockSupabase.rpc.mockResolvedValueOnce({
-        data: { is_valid: false, tier: 'basic', rate_limited: true },
-        error: null
-      })
+      const { supabaseManager } = require('@/lib/infrastructure/supabase-manager')
+      const mockServiceClient = supabaseManager.getServiceClient()
+
+      mockServiceClient.rpc
+        .mockResolvedValueOnce({
+          data: { valid: true, tier: 'basic', key_id: 'test-key-id', user_id: 'test-user-id' },
+          error: null
+        })
+        .mockResolvedValueOnce({
+          data: { ok: false, retry_after: 60 },
+          error: null
+        })
 
       const response = await GET(request)
       expect((response as any).status).toBe(429)
