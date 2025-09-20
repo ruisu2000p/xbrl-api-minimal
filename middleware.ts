@@ -103,20 +103,20 @@ export function middleware(request: NextRequest) {
 
     // ReDoS対策: URLの長さ制限（1000文字）
     if (urlString.length > 1000) {
-      console.warn(`[Security] URL too long from IP ${sanitizeLogInput(ip)}: ${urlString.length} characters`);
+      console.warn('[Security] URL too long - request rejected');
       return new NextResponse('Bad Request', { status: 400 });
     }
 
     for (const pattern of suspiciousPatterns) {
       if (pattern.test(urlString)) {
-        console.warn(`[Security] Suspicious pattern detected from IP ${sanitizeLogInput(ip)}: [URL hidden for security]`);
+        console.warn('[Security] Suspicious pattern detected - request rejected');
         return new NextResponse('Bad Request', { status: 400 });
       }
     }
 
     // パストラバーサル対策
     if (url.pathname.includes('..') || url.pathname.includes('//')) {
-      console.warn(`[Security] Path traversal attempt from IP ${sanitizeLogInput(ip)}: [Path hidden for security]`);
+      console.warn('[Security] Path traversal attempt detected - request rejected');
       return new NextResponse('Bad Request', { status: 400 });
     }
   }

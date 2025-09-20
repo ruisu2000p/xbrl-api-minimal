@@ -3,14 +3,12 @@
 // ===== 改善版 MCP サーバー v3.1.0 =====
 // stdout はプロトコル専用
 console.log = (...args) => {
-  // ログインジェクション対策: 引数をサニタイズ
-  const sanitizedArgs = args.map(arg => {
-    if (typeof arg === 'string') {
-      return arg.replace(/[\r\n\t]/g, '').substring(0, 500);
-    }
-    return arg;
-  });
-  console.error('[LOG]', ...sanitizedArgs);
+  // セキュリティ対策: stdoutには何も出力しない（MCPプロトコル専用）
+  // デバッグログは最小限に制限
+  if (process.env.DEBUG === 'true') {
+    // デバッグモードでも機密情報は出力しない
+    console.error('[DEBUG] Log output suppressed for security');
+  }
 };
 
 // 起動メッセージ
