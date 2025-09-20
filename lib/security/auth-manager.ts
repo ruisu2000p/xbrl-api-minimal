@@ -294,7 +294,7 @@ export class UnifiedAuthManager {
     tier: 'free' | 'basic' | 'premium' = 'free'
   ): Promise<{ apiKey: string; keyId: string; masked: string }> {
     // Generate new API key using unified system
-    const { apiKey, hash, salt, masked } = await createApiKey('xbrl_live', 32);
+    const { apiKey, hash, salt, masked } = await createApiKey(32);
 
     // Store in database
     const { data, error } = await this.supabase

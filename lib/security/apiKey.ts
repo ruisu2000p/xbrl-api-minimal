@@ -37,10 +37,12 @@ function getHmacSecret(): Buffer {
   return HMAC_SECRET
 }
 
-export function generateApiKey(prefix = 'xbrl_live', size = 32): string {
+export function generateApiKey(size = 43): string {
+  // 長い形式専用: xbrl_live_v1_UUID_SECRET
+  const uuid = crypto.randomUUID()
   const bytes = crypto.randomBytes(size)
   const chars = Array.from(bytes).map((b) => BASE62[b % BASE62.length]).join('')
-  return `${prefix}_${chars}`
+  return `xbrl_live_v1_${uuid}_${chars}`
 }
 
 export function hashApiKey(apiKey: string): string {
@@ -51,16 +53,24 @@ export function hashApiKey(apiKey: string): string {
 }
 
 export function maskApiKey(apiKey: string): string {
+  // 長い形式専用のマスキング: xbrl_live_v1_c949****************************Jlfs
   if (!apiKey || apiKey.length < 12) return apiKey
-  const parts = apiKey.split('_')
-  const prefix = parts.length > 1 ? parts.slice(0, 2).join('_') : apiKey.slice(0, 8)
+  const lastUnderscoreIndex = apiKey.lastIndexOf('_')
+  if (lastUnderscoreIndex <= 0) return apiKey
+
+  const prefix = apiKey.slice(0, lastUnderscoreIndex + 5) // プリフィックス + シークレットの最初の4文字
   const suffix = apiKey.slice(-4)
-  return `${prefix}...${suffix}`
+  const maskedLength = apiKey.length - prefix.length - suffix.length
+  const masking = '*'.repeat(maskedLength)
+
+  return `${prefix}${masking}${suffix}`
 }
 
 export function extractApiKeyPrefix(apiKey: string): string {
-  const parts = apiKey.split('_')
-  return parts.length >= 2 ? `${parts[0]}_${parts[1]}` : parts[0]
+  // 長い形式専用: xbrl_live_v1_UUID_SECRET から prefix を抽出
+  const lastUnderscoreIndex = apiKey.lastIndexOf('_')
+  if (lastUnderscoreIndex <= 0) return apiKey
+  return apiKey.slice(0, lastUnderscoreIndex)
 }
 
 export function extractApiKeySuffix(apiKey: string): string {

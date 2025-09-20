@@ -93,9 +93,9 @@ export function middleware(request: NextRequest) {
       /\bDROP\s+TABLE\b/i,
       /\bDELETE\s+FROM\b/i,
       /\bINSERT\s+INTO\b/i,
-      /\bUPDATE\s+\S{1,100}\s+SET\b/i,  // ReDoS修正: 長さ制限追加
-      /\b(?:EXEC|EXECUTE)\b/i,  // 最適化: 非キャプチャグループ使用
-      /(?:--|\/\*|\*\/|xp_|sp_)/,  // 最適化: 非キャプチャグループ、キャプチャ不要
+      /\bUPDATE\s+\S{1,100}\s+SET\b/i,
+      /\b(?:EXEC|EXECUTE)\b/i,
+      /(?:--|\/\*|\*\/|xp_|sp_)/,
       /\bunion\s+select\b/i,
     ];
 
@@ -134,7 +134,7 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('X-Request-Id', crypto.randomUUID());
+  response.headers.set('X-Request-Id', Date.now().toString(36));
 
   // ロギング（監査ログ）
   if (process.env.NODE_ENV === 'production') {

@@ -25,47 +25,19 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import fetch from 'node-fetch';
 
-// APIキーから設定を取得
+// 直接Supabase環境変数を使用（シンプル化）
 const getConfig = async () => {
-  const apiKey = process.env.XBRL_API_KEY;
-  const apiUrl = process.env.XBRL_API_URL || 'https://xbrl-api-minimal.vercel.app/api/v1';
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
 
-  if (!apiKey) {
-    // 従来の環境変数を使用
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_ANON_KEY;
-
-    if (!url || !key) {
-      console.error('[ERROR] Missing environment variables');
-      console.error('Set either XBRL_API_KEY or SUPABASE_URL/SUPABASE_ANON_KEY');
-      process.exit(1);
-    }
-    return { url, key };
-  }
-
-  try {
-    const response = await fetch(`${apiUrl}/config`, {
-      method: 'GET',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      console.error(`[ERROR] Failed to fetch config: ${response.status}`);
-      process.exit(1);
-    }
-
-    const config = await response.json();
-    return {
-      url: config.supabaseUrl,
-      key: config.supabaseAnonKey
-    };
-  } catch (error) {
-    console.error('[ERROR] Failed to fetch config:', error.message);
+  if (!url || !key) {
+    console.error('[ERROR] Missing environment variables');
+    console.error('Set SUPABASE_URL and SUPABASE_ANON_KEY');
     process.exit(1);
   }
+
+  console.error('[INFO] Using direct Supabase environment variables');
+  return { url, key };
 };
 
 // メイン処理

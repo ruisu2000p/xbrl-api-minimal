@@ -253,7 +253,7 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 
   try {
     // Generate API key with new format using generateNewApiKey function
-    const result = await generateNewApiKey('xbrl_live')
+    const result = await generateNewApiKey()
     const fullKey = result.apiKey
     const keyPrefix = extractApiKeyPrefix(fullKey)
     const keySuffix = extractApiKeySuffix(fullKey)

@@ -26,30 +26,29 @@ export interface ApiKeyVerificationResult {
 }
 
 /**
- * Generate a new API key with secure random characters
+ * Generate a new API key with secure random characters (長い形式専用)
  */
-export function generateApiKey(prefix = 'xbrl_live', size = 32): string {
+export function generateApiKey(size = 43): string {
   // Generate UUID v4 for the public ID
   const uuid = crypto.randomUUID();
-  
+
   // Generate random secret
   const bytes = crypto.randomBytes(size);
   const chars = Array.from(bytes)
     .map((b) => BASE62[b % BASE62.length])
     .join('');
-  
-  // New format: xbrl_live_v1_{uuid}_{secret}
-  return `${prefix}_v1_${uuid}_${chars}`;
+
+  // 長い形式専用: xbrl_live_v1_{uuid}_{secret}
+  return `xbrl_live_v1_${uuid}_${chars}`;
 }
 
 /**
- * Generate and hash a new API key
+ * Generate and hash a new API key (長い形式専用)
  */
 export async function createApiKey(
-  prefix = 'xbrl_live',
-  size = 32
+  size = 43
 ): Promise<ApiKeyGenerationResult> {
-  const apiKey = generateApiKey(prefix, size);
+  const apiKey = generateApiKey(size);
   const { hash, salt } = await UnifiedKeyHasher.hashApiKey(apiKey);
   const masked = maskApiKey(apiKey);
 
@@ -105,23 +104,29 @@ export async function hashApiKey(apiKey: string): Promise<{ hash: string; salt: 
 }
 
 /**
- * Mask API key for display
+ * Mask API key for display (長い形式専用)
  */
 export function maskApiKey(apiKey: string): string {
   if (!apiKey || apiKey.length < 12) return apiKey;
 
-  const parts = apiKey.split('_');
-  const prefix = parts.length > 1 ? parts.slice(0, 2).join('_') : apiKey.slice(0, 8);
+  const lastUnderscoreIndex = apiKey.lastIndexOf('_');
+  if (lastUnderscoreIndex <= 0) return apiKey;
+
+  const prefix = apiKey.slice(0, lastUnderscoreIndex + 5); // プリフィックス + シークレットの最初の4文字
   const suffix = apiKey.slice(-4);
-  return `${prefix}...${suffix}`;
+  const maskedLength = apiKey.length - prefix.length - suffix.length;
+  const masking = '*'.repeat(maskedLength);
+
+  return `${prefix}${masking}${suffix}`;
 }
 
 /**
- * Extract prefix from API key
+ * Extract prefix from API key (長い形式専用)
  */
 export function extractApiKeyPrefix(apiKey: string): string {
-  const parts = apiKey.split('_');
-  return parts.length >= 2 ? `${parts[0]}_${parts[1]}` : parts[0];
+  const lastUnderscoreIndex = apiKey.lastIndexOf('_');
+  if (lastUnderscoreIndex <= 0) return apiKey;
+  return apiKey.slice(0, lastUnderscoreIndex);
 }
 
 /**

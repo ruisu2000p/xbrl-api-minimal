@@ -35,7 +35,6 @@ const nextConfig = {
   
   // パフォーマンス最適化
   experimental: {
-    optimizeCss: false, // CSS最適化を無効化してcrittersエラーを回避
     // サーバーコンポーネントの最適化
     serverComponentsExternalPackages: ['@supabase/supabase-js', 'isomorphic-dompurify', 'dompurify', 'webidl-conversions', 'whatwg-url'],
   },

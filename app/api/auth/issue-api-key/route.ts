@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 新しいAPIキーを生成
-    const apiKey = generateApiKey('xbrl_live');
+    const apiKey = generateApiKey();
     const keyHash = hashApiKey(apiKey);
     const keyPrefix = extractApiKeyPrefix(apiKey);
     const keySuffix = extractApiKeySuffix(apiKey);
