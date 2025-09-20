@@ -78,15 +78,15 @@ export function middleware(request: NextRequest) {
       }
     }
 
-    // SQLインジェクション対策: 危険な文字列のチェック
+    // SQLインジェクション対策: 危険な文字列のチェック（ReDoS対策済み）
     const suspiciousPatterns = [
-      /(\bDROP\s+TABLE\b)/i,
-      /(\bDELETE\s+FROM\b)/i,
-      /(\bINSERT\s+INTO\b)/i,
-      /(\bUPDATE\s+\S+\s+SET\b)/i,  // ReDoS修正: .*を\S+に変更（非空白文字のみ）
-      /(\bEXEC\b|\bEXECUTE\b)/i,
-      /(--|\/\*|\*\/|xp_|sp_)/i,
-      /(\bunion\s+select\b)/i,
+      /\bDROP\s+TABLE\b/i,
+      /\bDELETE\s+FROM\b/i,
+      /\bINSERT\s+INTO\b/i,
+      /\bUPDATE\s+\S{1,100}\s+SET\b/i,  // ReDoS修正: 長さ制限追加
+      /\b(?:EXEC|EXECUTE)\b/i,  // 最適化: 非キャプチャグループ使用
+      /(?:--|\/\*|\*\/|xp_|sp_)/,  // 最適化: 非キャプチャグループ、キャプチャ不要
+      /\bunion\s+select\b/i,
     ];
 
     const urlString = url.toString();
