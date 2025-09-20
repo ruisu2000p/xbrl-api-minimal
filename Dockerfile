@@ -1,46 +1,60 @@
-# Multi-stage build for Next.js application
-FROM node:18-alpine AS dependencies
-# Install dependencies only when needed
-RUN apk add --no-cache libc6-compat
+# Multi-stage build for security and efficiency
+FROM node:20-alpine AS builder
+
+# Install dependencies for building native modules
+RUN apk add --no-cache python3 make g++
+
+# Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package*.json ./
+
+# Install dependencies with clean install
 RUN npm ci --only=production
 
-# Rebuild the source code only when needed
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY --from=dependencies /app/node_modules ./node_modules
+# Copy application code
 COPY . .
-
-# Set environment variables for build
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
 
 # Build the application
 RUN npm run build
 
-# Production image, copy all the files and run next
-FROM node:18-alpine AS runner
+# Production stage
+FROM node:20-alpine
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user for security (DS002 fix)
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Set working directory
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+# Copy built application from builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/public ./public
+COPY --from=builder --chown=nodejs:nodejs /app/next.config.js ./
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Switch to non-root user (DS002 fix)
+USER nodejs
 
-# Copy built application
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
+# Expose port (non-privileged)
 EXPOSE 3000
 
-ENV PORT 3000
+# Set environment to production
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-CMD ["node", "server.js"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); });"
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "node_modules/next/dist/bin/next", "start"]

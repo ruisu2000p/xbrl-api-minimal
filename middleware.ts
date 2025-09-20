@@ -83,13 +83,20 @@ export function middleware(request: NextRequest) {
       /(\bDROP\s+TABLE\b)/i,
       /(\bDELETE\s+FROM\b)/i,
       /(\bINSERT\s+INTO\b)/i,
-      /(\bUPDATE\s+.*\s+SET\b)/i,
+      /(\bUPDATE\s+\S+\s+SET\b)/i,  // ReDoS修正: .*を\S+に変更（非空白文字のみ）
       /(\bEXEC\b|\bEXECUTE\b)/i,
       /(--|\/\*|\*\/|xp_|sp_)/i,
       /(\bunion\s+select\b)/i,
     ];
 
     const urlString = url.toString();
+
+    // ReDoS対策: URLの長さ制限（1000文字）
+    if (urlString.length > 1000) {
+      console.warn(`[Security] URL too long from IP ${ip}: ${urlString.length} characters`);
+      return new NextResponse('Bad Request', { status: 400 });
+    }
+
     for (const pattern of suspiciousPatterns) {
       if (pattern.test(urlString)) {
         console.warn(`[Security] Suspicious pattern detected from IP ${ip}: ${urlString}`);
