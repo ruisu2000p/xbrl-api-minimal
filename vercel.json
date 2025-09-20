@@ -5,14 +5,7 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key"
-  },
-  "build": {
-    "env": {
-      "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-      "API_KEY_SECRET": "@api_key_secret"
-    }
+    "NODE_ENV": "production"
   },
   "functions": {
     "app/api/**/*.ts": {
