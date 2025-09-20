@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   push:
     branches: [ main ]
+  workflow_dispatch:  # 手動実行を有効化
 
 permissions:
   contents: read
@@ -38,6 +39,7 @@ jobs:
         with:
           languages: javascript,typescript
           queries: security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
