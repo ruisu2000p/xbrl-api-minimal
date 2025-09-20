@@ -29,10 +29,12 @@ jobs:
         cache: 'npm'
     - run: npm install
     - run: npm run build --if-present
-    - run: npm test --if-present
+    - run: npm run test:ci --if-present
       continue-on-error: true
+      timeout-minutes: 3
       env:
         NODE_ENV: test
+        CI: true
         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co' }}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key' }}
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key' }}
