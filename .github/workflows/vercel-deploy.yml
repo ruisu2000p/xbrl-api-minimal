@@ -41,26 +41,30 @@ jobs:
         continue-on-error: false
 
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-
-      - name: Get Deployment URL
         id: deployment
         run: |
-          DEPLOYMENT_URL=$(vercel ls --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }} | grep xbrl-api-minimal | head -1 | awk '{print $2}')
-          echo "url=https://$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          DEPLOYMENT_OUTPUT=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "$DEPLOYMENT_OUTPUT"
+          DEPLOYMENT_URL=$(echo "$DEPLOYMENT_OUTPUT" | grep -oE 'https://[^ ]+' | tail -1)
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "Deployment URL: $DEPLOYMENT_URL"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Comment on Commit
         uses: actions/github-script@v7
+        continue-on-error: true
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            github.rest.repos.createCommitComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: context.sha,
-              body: '✅ Deployed to Vercel: ${{ steps.deployment.outputs.url }}'
-            })
+            try {
+              await github.rest.repos.createCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.sha,
+                body: '✅ Deployed to Vercel: ${{ steps.deployment.outputs.url }}'
+              })
+            } catch (error) {
+              console.log('Could not create commit comment:', error.message)
+              console.log('Deployment URL: ${{ steps.deployment.outputs.url }}')
+            }
