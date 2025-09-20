@@ -68,5 +68,11 @@
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "resolutions": {
+    "webidl-conversions": "^7.0.0"
+  },
+  "overrides": {
+    "webidl-conversions": "^7.0.0"
   }
 }
