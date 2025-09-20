@@ -165,31 +165,25 @@ const getConfig = async () => {
               .from('markdown_files_metadata')
               .select('*');
 
-            // 企業名またはティッカーコードで検索
-            if (company.match(/^\d{4}$/)) {
-              // 4桁の数字はティッカーコード
-              console.error(`[DEBUG] Searching by ticker code: ${company}`);
-              query = query.eq('ticker_code', company);
-            } else {
-              // 企業名で柔軟な検索（複数パターン）
-              console.error(`[DEBUG] Searching by company name: ${company}`);
+            // 企業名またはcompany_idで検索（ticker_codeは使用しない）
+            console.error(`[DEBUG] Searching by company name or company_id: ${company}`);
 
-              // 正規化した検索
-              const normalizedCompany = company
-                .replace(/株式会社/g, '')
-                .replace(/\s+/g, '')
-                .trim();
+            // 正規化した検索
+            const normalizedCompany = company
+              .replace(/株式会社/g, '')
+              .replace(/\s+/g, '')
+              .trim();
 
-              // 複数の検索パターンを試す
-              query = query.or([
-                `company_name.ilike.%${company}%`,
-                `company_name.ilike.%${normalizedCompany}%`,
-                `company_name.ilike.株式会社${company}%`,
-                `company_name.ilike.${company}株式会社%`,
-                `company_name.ilike.株式会社${normalizedCompany}%`,
-                `company_name.ilike.${normalizedCompany}株式会社%`
-              ].join(','));
-            }
+            // 複数の検索パターンを試す（company_nameとcompany_idで検索）
+            query = query.or([
+              `company_name.ilike.%${company}%`,
+              `company_name.ilike.%${normalizedCompany}%`,
+              `company_name.ilike.株式会社${company}%`,
+              `company_name.ilike.${company}株式会社%`,
+              `company_name.ilike.株式会社${normalizedCompany}%`,
+              `company_name.ilike.${normalizedCompany}株式会社%`,
+              `company_id.ilike.%${company}%`
+            ].join(','));
 
             // 年度フィルター
             if (fiscal_year) {
@@ -227,13 +221,10 @@ const getConfig = async () => {
 
               let companyQuery = supabase
                 .from('companies')
-                .select('id, company_name, ticker_code');
+                .select('id, company_name');
 
-              if (company.match(/^\d{4}$/)) {
-                companyQuery = companyQuery.eq('ticker_code', company);
-              } else {
-                companyQuery = companyQuery.ilike('company_name', `%${company}%`);
-              }
+              // 企業名のみで検索（ticker_codeは使用しない）
+              companyQuery = companyQuery.ilike('company_name', `%${company}%`);
 
               const { data: companies } = await companyQuery.limit(5);
 
@@ -273,14 +264,13 @@ const getConfig = async () => {
               }
             }
 
-            // 結果をグループ化
+            // 結果をグループ化（ticker_codeは使用しない）
             const grouped = {};
             for (const doc of documents) {
-              const key = `${doc.company_name || 'Unknown'}|${doc.ticker_code || 'N/A'}|${doc.company_id || 'unknown'}`;
+              const key = `${doc.company_name || 'Unknown'}|${doc.company_id || 'unknown'}`;
               if (!grouped[key]) {
                 grouped[key] = {
                   company_name: doc.company_name || 'Unknown',
-                  ticker_code: doc.ticker_code || 'N/A',
                   company_id: doc.company_id || 'unknown',
                   documents: []
                 };
@@ -292,7 +282,7 @@ const getConfig = async () => {
             let output = `Found ${documents.length} documents:\n\n`;
 
             for (const group of Object.values(grouped)) {
-              output += `## ${group.company_name} (${group.ticker_code})\n`;
+              output += `## ${group.company_name}\n`;
               output += `Company ID: ${group.company_id}\n\n`;
 
               // 年度ごとにグループ化
