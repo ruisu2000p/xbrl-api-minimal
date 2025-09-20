@@ -1,5 +1,3 @@
-WARN: no SMS provider is enabled. Disabling phone login
-Initialising login role...
 export type Json =
   | string
   | number
