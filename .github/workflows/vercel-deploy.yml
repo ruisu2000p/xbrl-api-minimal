@@ -30,25 +30,25 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
-        run: vercel build --prod
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         continue-on-error: false
 
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Get Deployment URL
         id: deployment
         run: |
-          DEPLOYMENT_URL=$(vercel ls --scope=${{ secrets.VERCEL_ORG_ID }} | grep xbrl-api-minimal | head -1 | awk '{print $2}')
+          DEPLOYMENT_URL=$(vercel ls --scope=${{ secrets.VERCEL_ORG_ID }} --token=${{ secrets.VERCEL_TOKEN }} | grep xbrl-api-minimal | head -1 | awk '{print $2}')
           echo "url=https://$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
