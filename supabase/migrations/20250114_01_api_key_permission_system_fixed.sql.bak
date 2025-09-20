@@ -85,27 +85,12 @@ $$;
 DO $$
 BEGIN
     -- Drop policies if they exist
-    DROP POLICY IF EXISTS "Unified read access for companies" ON public.companies;
     DROP POLICY IF EXISTS "Unified read access for markdown metadata" ON public.markdown_files_metadata;
+    DROP POLICY IF EXISTS "API and Auth unified read access for markdown metadata" ON public.markdown_files_metadata;
 END $$;
 
--- Companies table: Create new unified policy
-CREATE POLICY "API and Auth unified read access for companies"
-ON public.companies
-FOR SELECT
-USING (
-    -- Allow if user is authenticated (logged in)
-    auth.uid() IS NOT NULL
-    OR
-    -- Allow if valid API key is provided (checked via function)
-    current_setting('request.headers', true)::jsonb->>'x-api-key' IS NOT NULL
-    OR
-    -- Allow for anon role (public access)
-    auth.role() = 'anon'
-    OR
-    -- Always allow (since this is public data)
-    true
-);
+-- Note: Companies table doesn't exist in this setup, using company_master instead
+-- Skip companies table policies as it doesn't exist
 
 -- Markdown files metadata: Same unified access
 CREATE POLICY "API and Auth unified read access for markdown"

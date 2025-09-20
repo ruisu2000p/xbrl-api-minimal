@@ -50,13 +50,13 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_migration_status
 -- 4. Create function for API key usage increment
 CREATE OR REPLACE FUNCTION increment_api_key_usage(
   key_id UUID,
-  timestamp TIMESTAMP WITH TIME ZONE
+  ts TIMESTAMP WITH TIME ZONE
 ) RETURNS VOID AS $$
 BEGIN
   UPDATE api_keys
   SET
     usage_count = COALESCE(usage_count, 0) + 1,
-    last_used_at = timestamp
+    last_used_at = ts
   WHERE id = key_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

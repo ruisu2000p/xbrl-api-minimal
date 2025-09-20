@@ -24,13 +24,13 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_hash_method ON api_keys(hash_method);
 CREATE INDEX IF NOT EXISTS idx_api_keys_migration_status ON api_keys(migration_status);
 
 -- Add RPC function for incrementing usage if it doesn't exist
-CREATE OR REPLACE FUNCTION increment_api_key_usage(key_id UUID, timestamp TIMESTAMP WITH TIME ZONE)
+CREATE OR REPLACE FUNCTION increment_api_key_usage(key_id UUID, ts TIMESTAMP WITH TIME ZONE)
 RETURNS VOID AS $$
 BEGIN
   UPDATE api_keys
   SET
     usage_count = usage_count + 1,
-    last_used_at = timestamp
+    last_used_at = ts
   WHERE id = key_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
