@@ -1,0 +1,60 @@
+# Self-Hosted Runner Workflow for Node.js CI
+# This workflow runs on a self-hosted Windows runner for faster builds and local testing
+
+name: Node.js CI (Self-Hosted)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:  # Manual trigger support
+
+jobs:
+  build-self-hosted:
+    runs-on: self-hosted  # Use self-hosted runner
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        clean: true  # Clean workspace before checkout
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Clean npm cache if needed
+      run: npm cache clean --force
+      continue-on-error: true
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting
+      run: npm run lint --if-present
+      continue-on-error: true
+
+    - name: Type check
+      run: npm run type-check --if-present
+      continue-on-error: true
+
+    - name: Build project
+      run: npm run build --if-present
+
+    - name: Run tests
+      run: npm test
+      env:
+        NODE_ENV: test
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co' }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key' }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key' }}
+        API_KEY_SECRET: ${{ secrets.API_KEY_SECRET || 'test-api-key-secret-minimum-32-chars' }}
+
+    - name: Clean up workspace
+      if: always()
+      run: |
+        if (Test-Path .next) { Remove-Item -Recurse -Force .next }
+        if (Test-Path node_modules/.cache) { Remove-Item -Recurse -Force node_modules/.cache }
+      shell: powershell
