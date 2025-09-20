@@ -33,10 +33,15 @@ export function generateApiKey(size = 43): string {
   const uuid = crypto.randomUUID();
 
   // Generate random secret
-  const bytes = crypto.randomBytes(size);
-  const chars = Array.from(bytes)
-    .map((b) => BASE62[b % BASE62.length])
-    .join('');
+  const charsArr: string[] = [];
+  while (charsArr.length < size) {
+    const byte = crypto.randomBytes(1)[0];
+    if (byte >= BASE62.length * Math.floor(256 / BASE62.length)) {
+      continue; // discard biased value
+    }
+    charsArr.push(BASE62[byte % BASE62.length]);
+  }
+  const chars = charsArr.join('');
 
   // 長い形式専用: xbrl_live_v1_{uuid}_{secret}
   return `xbrl_live_v1_${uuid}_${chars}`;
