@@ -1,0 +1,37 @@
+{
+  "name": "shared-supabase-mcp-minimal",
+  "version": "1.0.0",
+  "description": "XBRL Financial Data MCP Server for Supabase",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "xbrl-financial-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "mcp",
+    "xbrl",
+    "financial",
+    "supabase",
+    "modelcontextprotocol"
+  ],
+  "author": "XBRL Financial Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/shared-supabase-mcp-minimal"
+  }
+}
