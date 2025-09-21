@@ -8,6 +8,7 @@ import { createServerClient } from '@supabase/ssr';
 export class SupabaseManager {
   private static instance: SupabaseManager;
   private anonClient: SupabaseClient | null = null;
+  private browserClient: SupabaseClient | null = null;
   private serviceClient: SupabaseClient | null = null;
 
   private constructor() {}
@@ -78,17 +79,37 @@ export class SupabaseManager {
    * ブラウザ用クライアント取得（認証セッション保持）
    */
   getBrowserClient(): SupabaseClient {
-    const { url, anonKey } = this.checkEnvironmentVariables();
+    // ブラウザ環境でのみシングルトンで管理
+    if (typeof window !== 'undefined') {
+      if (!this.browserClient) {
+        const { url, anonKey } = this.checkEnvironmentVariables();
 
+        this.browserClient = createClient(url, anonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          },
+          global: {
+            headers: {
+              'X-Client-Info': 'xbrl-api-minimal-browser/4.0',
+            },
+          },
+        });
+      }
+      return this.browserClient;
+    }
+
+    // サーバーサイドでは毎回新しいクライアントを作成
+    const { url, anonKey } = this.checkEnvironmentVariables();
     return createClient(url, anonKey, {
       auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
+        persistSession: false,
+        autoRefreshToken: false,
       },
       global: {
         headers: {
-          'X-Client-Info': 'xbrl-api-minimal-browser/4.0',
+          'X-Client-Info': 'xbrl-api-minimal-browser-ssr/4.0',
         },
       },
     });
