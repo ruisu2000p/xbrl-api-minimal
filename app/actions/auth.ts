@@ -146,7 +146,7 @@ export async function signUp(userData: {
         : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
         : 'basic'
 
-      // Use the O(1) optimized Supabase function
+      // Use the create_api_key_complete_v2 function with corrected response handling
       const { data: result, error: createError } = await admin
         .rpc('create_api_key_complete_v2', {
           p_user_id: data.user.id,
@@ -159,12 +159,18 @@ export async function signUp(userData: {
         throw new Error(`API Key creation failed: ${createError.message}`)
       }
 
-      if (!result?.success) {
+      if (!result || !result.api_key) {
         console.error('API Key creation failed:', result)
         throw new Error('APIキーの作成に失敗しました')
       }
 
       fullApiKey = result.api_key
+
+      console.log('API Key created successfully:', {
+        key_id: result.key_id,
+        name: result.name,
+        tier: result.tier
+      })
 
     } catch (apiKeyError) {
       console.error('Failed to create API key:', apiKeyError)

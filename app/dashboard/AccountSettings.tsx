@@ -551,26 +551,13 @@ export default function AccountSettings() {
         return;
       }
 
-      // APIキーを生成
-      const randomString = Array.from({ length: 32 }, () =>
-        Math.random().toString(36)[2] || '0'
-      ).join('');
-      const apiKey = `xbrl_v1_${randomString}`;
-      const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
-
-      // APIキーをデータベースに挿入
-      const { data, error } = await supabase
-        .from('api_keys')
-        .insert({
-          name: newKeyName.trim(),
-          key_prefix: keyPrefix,
-          key_hash: apiKey,
-          user_id: session.user.id,
-          tier: 'free',
-          is_active: true
-        })
-        .select()
-        .single();
+      // Supabase関数を使用してAPIキーを作成
+      const { data: result, error } = await supabase
+        .rpc('create_api_key_complete_v2', {
+          p_user_id: session.user.id,
+          p_name: newKeyName.trim(),
+          p_tier: 'free'
+        });
 
       if (error) {
         console.error('Error creating API key:', error);
@@ -579,17 +566,24 @@ export default function AccountSettings() {
         return;
       }
 
+      if (!result || !result.api_key) {
+        console.error('API Key creation failed - no result:', result);
+        setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
+        setIsCreatingKey(false);
+        return;
+      }
+
       const newKey: ApiKey = {
-        id: data.id,
-        name: data.name,
-        key: apiKey, // 作成時のみ完全なキーを表示
+        id: result.key_id,
+        name: result.name,
+        key: result.api_key, // 作成時のみ完全なキーを表示
         created: new Date().toLocaleDateString('ja-JP'),
         lastUsed: '未使用',
-        tier: (data.tier || 'free') as ApiKey['tier']
+        tier: (result.tier || 'free') as ApiKey['tier']
       };
 
       setApiKeys((prev) => [...prev, newKey]);
-      setGeneratedKey(apiKey);
+      setGeneratedKey(result.api_key);
       setNewKeyName('');
       setApiMessage({ type: 'success', text: '新しいAPIキーを作成しました。' });
     } catch (error) {
@@ -598,7 +592,7 @@ export default function AccountSettings() {
     }
 
     setIsCreatingKey(false);
-  }, [newKeyName]);
+  }, [newKeyName]);;
 
   const handleDeleteKey = useCallback((id: string) => {
     setDeleteKeyId(id);
