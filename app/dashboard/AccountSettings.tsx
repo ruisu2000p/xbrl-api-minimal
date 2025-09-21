@@ -601,7 +601,7 @@ export default function AccountSettings() {
       if (session?.user) {
         // Supabase認証が有効な場合
         userId = session.user.id;
-        userEmail = session.user.email;
+        userEmail = session.user.email || null;
         // eslint-disable-next-line no-console
         if (process.env.NODE_ENV === 'development') {
           console.log('✅ Supabase認証セッション有効:', { userId, email: userEmail });
