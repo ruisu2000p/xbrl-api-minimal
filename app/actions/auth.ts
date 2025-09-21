@@ -151,7 +151,6 @@ export async function signUp(userData: {
         .rpc('create_api_key_complete_v2', {
           p_user_id: data.user.id,
           p_name: 'Default API Key',
-          p_description: `${userData.plan} plan - Auto created`,
           p_tier: tier
         })
 

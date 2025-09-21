@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -448,7 +449,7 @@ export default function AccountSettings() {
     setApiMessage(null);
 
     try {
-      const supabase = require('@/lib/infrastructure/supabase-manager').supabaseManager.getAnonClient();
+      const supabase = supabaseManager.getAnonClient();
 
       // 認証状態を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -540,7 +541,7 @@ export default function AccountSettings() {
     setGeneratedKey(null);
 
     try {
-      const supabase = require('@/lib/infrastructure/supabase-manager').supabaseManager.getAnonClient();
+      const supabase = supabaseManager.getAnonClient();
 
       // 認証状態を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -609,7 +610,7 @@ export default function AccountSettings() {
     if (!deleteKeyId) return;
 
     try {
-      const supabase = require('@/lib/infrastructure/supabase-manager').supabaseManager.getAnonClient();
+      const supabase = supabaseManager.getAnonClient();
 
       // 認証状態を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
