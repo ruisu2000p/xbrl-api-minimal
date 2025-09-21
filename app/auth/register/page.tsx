@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signUpWithEmail } from '@/lib/auth'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
 const plans = [
   { value: 'free', label: '無料プラン', description: 'ベーシックアクセス' },
@@ -53,28 +53,35 @@ export default function RegisterPage() {
     }
 
     try {
-      // Supabase Authを使用して直接登録（メール確認リンク付き）
-      const result = await signUpWithEmail(
-        formData.email,
-        formData.password,
-        {
-          company_name: formData.companyName,
-          plan: formData.plan
-        }
-      )
+      const supabase = supabaseManager.getBrowserClient()
 
-      if (result.error) {
-        setError(result.error.message)
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            company_name: formData.companyName,
+            plan: formData.plan
+          }
+        }
+      })
+
+      if (error) {
+        if (error.message?.includes('User already registered')) {
+          setError('このメールアドレスは既に登録されています。パスワードが正しくない場合はログインページからパスワードリセットをしてください。')
+        } else {
+          setError(error.message)
+        }
         setLoading(false)
         return
       }
 
       // 登録成功
-      if (result.data?.user) {
+      if (data?.user) {
         setLoading(false)
 
         // セッションがある場合（メール確認OFF時）
-        if (result.data?.session) {
+        if (data?.session) {
           setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
           setTimeout(() => {
             router.push('/dashboard')

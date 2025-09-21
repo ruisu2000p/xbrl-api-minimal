@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signIn } from '@/app/actions/auth'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,16 +26,21 @@ export default function LoginPage() {
     }
 
     try {
-      const result = await signIn(formData.email, formData.password)
+      const supabase = supabaseManager.getBrowserClient()
 
-      if (!result.success) {
-        if (result.error?.includes('Invalid login credentials')) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (error) {
+        if (error.message?.includes('Invalid login credentials')) {
           setError('メールアドレスまたはパスワードが正しくありません')
         } else {
-          setError(result.error || 'ログイン中にエラーが発生しました')
+          setError(error.message || 'ログイン中にエラーが発生しました')
         }
-      } else {
-        // ログイン成功 - Server Actionが認証を処理
+      } else if (data?.user) {
+        // ログイン成功 - ブラウザクライアントが認証を処理
         router.push('/dashboard')
         router.refresh()
       }
