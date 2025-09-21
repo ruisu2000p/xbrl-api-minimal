@@ -211,11 +211,18 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   try {
     const supabase = await supabaseManager.createSSRClient()
 
+    // 認証ユーザーを取得
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
     // APIキーをデータベースから直接取得
     const { data: apiKeys, error } = await supabase
       .from('api_keys')
       .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
       .eq('is_active', true)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -252,6 +259,12 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   try {
     const supabase = await supabaseManager.createSSRClient()
 
+    // 認証ユーザーを取得
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
     // APIキーを生成（32文字のランダム文字列）
     const randomString = Array.from({ length: 32 }, () =>
       Math.random().toString(36)[2] || '0'
@@ -266,7 +279,7 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
         name: name || 'API Key',
         key_prefix: keyPrefix,
         key_hash: apiKey, // 一時的にプレーンテキストで保存
-        user_id: null, // デモ用なのでnull
+        user_id: user.id, // 認証済みユーザーのID
         tier: 'free',
         is_active: true,
         created_at: new Date().toISOString(),
