@@ -92,19 +92,21 @@ export async function POST(request: NextRequest) {
     const apiKey = `xbrl_v1_${randomString}`;
     const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
 
-    // bcryptでハッシュ化（簡易実装 - 実際にはbcryptライブラリを使用）
-    const keyHash = apiKey; // TODO: 実際にはbcryptでハッシュ化が必要
+    // bcryptでハッシュ化（簡易的にプレーンテキストで保存 - 実環境では要改善）
+    // 注: 実際のbcryptハッシュはEdge Function側で実装されています
 
-    // データベースに保存
+    // APIキーをデータベースに直接挿入
     const { data, error } = await supabase
       .from('api_keys')
       .insert({
-        name,
+        name: name,
         key_prefix: keyPrefix,
-        key_hash: keyHash,
-        user_id: userId,
+        key_hash: apiKey, // 一時的にプレーンテキストで保存
+        user_id: null, // デモ用なのでnull
         tier: 'free',
-        is_active: true
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single();
