@@ -258,7 +258,7 @@ app.get('/api-proxy/markdown-files', withApiKey(), async (c) => {
   return c.json({ data, tier: keyCtx.tier });
 });
 
-// POST /api-proxy/search-companies - 企業検索（部分一致対応）
+// POST /api-proxy/search-companies - 企業検索（英語・日本語対応）
 app.post('/api-proxy/search-companies', withApiKey(), async (c) => {
   const keyCtx = c.get('keyCtx') as KeyContext;
   const { query, limit = 10 } = await c.req.json();
@@ -267,52 +267,63 @@ app.post('/api-proxy/search-companies', withApiKey(), async (c) => {
     return c.json({ error: 'query parameter is required' }, 400);
   }
 
-  let q = admin
-    .from('markdown_files_metadata')
-    .select('company_id, company_name, fiscal_year')
-    .ilike('company_name', `%${query}%`)
-    .order('company_name', { ascending: true });
+  try {
+    // RPC関数 search_markdown_with_english を使用
+    const { data, error } = await admin.rpc('search_markdown_with_english', {
+      p_query: query
+    });
 
-  // Freeティアは直近2年のみ
-  if (keyCtx.tier === 'free') {
-    const [fyA, fyB] = recentTwoFiscalYears();
-    q = q.in('fiscal_year', [fyA, fyB]);
-  }
+    if (error) return c.json({ error: error.message }, 400);
 
-  const { data, error } = await q;
-  if (error) return c.json({ error: error.message }, 400);
+    // Freeティアの場合、直近2年のみにフィルタリング
+    let filteredData = data || [];
+    if (keyCtx.tier === 'free') {
+      const [fyA, fyB] = recentTwoFiscalYears();
+      filteredData = filteredData.filter(row =>
+        row.fiscal_year === fyA || row.fiscal_year === fyB
+      );
+    }
 
-  // 重複を除去して企業リストを作成
-  const companiesMap = new Map<string, { company_name: string; fiscal_years: Set<string> }>();
+    // 重複を除去して企業リストを作成
+    const companiesMap = new Map<string, {
+      company_name: string;
+      english_name: string | null;
+      fiscal_years: Set<string>
+    }>();
 
-  if (data) {
-    for (const row of data) {
-      const existing = companiesMap.get(row.company_id);
-      if (existing) {
-        existing.fiscal_years.add(row.fiscal_year);
-      } else {
-        companiesMap.set(row.company_id, {
-          company_name: row.company_name,
-          fiscal_years: new Set([row.fiscal_year])
-        });
+    if (filteredData) {
+      for (const row of filteredData) {
+        const existing = companiesMap.get(row.company_id);
+        if (existing) {
+          existing.fiscal_years.add(row.fiscal_year);
+        } else {
+          companiesMap.set(row.company_id, {
+            company_name: row.company_name,
+            english_name: row.english_name,
+            fiscal_years: new Set([row.fiscal_year])
+          });
+        }
       }
     }
+
+    const companies = Array.from(companiesMap.entries())
+      .slice(0, limit)
+      .map(([company_id, info]) => ({
+        company_id,
+        company_name: info.company_name,
+        english_name: info.english_name,
+        fiscal_years: Array.from(info.fiscal_years).sort()
+      }));
+
+    return c.json({
+      success: true,
+      count: companies.length,
+      companies,
+      tier: keyCtx.tier
+    });
+  } catch (err) {
+    return c.json({ error: String(err) }, 500);
   }
-
-  const companies = Array.from(companiesMap.entries())
-    .slice(0, limit)
-    .map(([company_id, info]) => ({
-      company_id,
-      company_name: info.company_name,
-      fiscal_years: Array.from(info.fiscal_years).sort()
-    }));
-
-  return c.json({
-    success: true,
-    count: companies.length,
-    companies,
-    tier: keyCtx.tier
-  });
 });
 
 // POST /api-proxy/query-data - SQLクエリ実行
@@ -357,13 +368,57 @@ app.post('/api-proxy/query-data', withApiKey(), async (c) => {
   }
 });
 
-// POST /api-proxy/get-file-content - ファイル内容取得
+// POST /api-proxy/get-file-content - ファイル内容取得（storage_pathベース）
 app.post('/api-proxy/get-file-content', withApiKey(), async (c) => {
   const keyCtx = c.get('keyCtx') as KeyContext;
-  const { fiscal_year, company_id, file_type } = await c.req.json();
+  const { storage_path, max_lines, fiscal_year, company_id, file_type } = await c.req.json();
 
+  // storage_pathが直接指定された場合（MCPサーバー対応）
+  if (storage_path) {
+    // storage_pathから'markdown-files/'プレフィックスを削除
+    const cleanPath = storage_path.replace(/^markdown-files\//, '');
+
+    // Freeティアの場合、年度制限をチェック
+    if (keyCtx.tier === 'free') {
+      const [fyA, fyB] = recentTwoFiscalYears();
+      if (!cleanPath.startsWith(`${fyA}/`) && !cleanPath.startsWith(`${fyB}/`)) {
+        return c.json({ error: `Free tier can only access ${fyA} and ${fyB}` }, 403);
+      }
+    }
+
+    // ストレージから内容を取得
+    const { data: content, error: storageError } = await admin
+      .storage
+      .from('markdown-files')
+      .download(cleanPath);
+
+    if (storageError) {
+      return c.json({ error: 'Failed to retrieve file content' }, 500);
+    }
+
+    // Blobをテキストに変換
+    const text = await content.text();
+
+    // max_linesが指定されている場合は制限
+    let finalContent = text;
+    if (max_lines && typeof max_lines === 'number') {
+      const lines = text.split('\n');
+      if (lines.length > max_lines) {
+        finalContent = lines.slice(0, max_lines).join('\n') + `\n... (truncated at ${max_lines} lines)`;
+      }
+    }
+
+    return c.json({
+      success: true,
+      content: finalContent,
+      path: storage_path,
+      tier: keyCtx.tier
+    });
+  }
+
+  // 従来の方式（fiscal_year, company_id, file_type）
   if (!fiscal_year || !company_id || !file_type) {
-    return c.json({ error: 'fiscal_year, company_id, and file_type are required' }, 400);
+    return c.json({ error: 'storage_path OR (fiscal_year, company_id, and file_type) are required' }, 400);
   }
 
   // Freeティアの年度制限チェック
@@ -389,7 +444,6 @@ app.post('/api-proxy/get-file-content', withApiKey(), async (c) => {
   }
 
   // ストレージから内容を取得
-  // storage_pathから'markdown-files/'プレフィックスを削除
   const cleanPath = fileData.storage_path.replace(/^markdown-files\//, '');
   const { data: content, error: storageError } = await admin
     .storage
@@ -409,6 +463,60 @@ app.post('/api-proxy/get-file-content', withApiKey(), async (c) => {
     path: fileData.storage_path,
     tier: keyCtx.tier
   });
+});
+
+// GET /api-proxy/database-stats - データベース統計取得
+app.get('/api-proxy/database-stats', withApiKey(), async (c) => {
+  const keyCtx = c.get('keyCtx') as KeyContext;
+
+  try {
+    let query = `
+      SELECT
+        COUNT(DISTINCT company_id) as total_companies,
+        COUNT(DISTINCT company_name) as unique_company_names,
+        COUNT(*) as total_documents,
+        COUNT(DISTINCT fiscal_year) as fiscal_years,
+        STRING_AGG(DISTINCT fiscal_year::text, ', ' ORDER BY fiscal_year) as available_years
+      FROM markdown_files_metadata`;
+
+    // Freeティアの場合、年度制限を適用
+    if (keyCtx.tier === 'free') {
+      const [fyA, fyB] = recentTwoFiscalYears();
+      query += ` WHERE fiscal_year IN ('${fyA}', '${fyB}')`;
+    }
+
+    const { data, error } = await admin.rpc('execute_sql', { query });
+
+    if (error) return c.json({ error: error.message }, 400);
+
+    const stats = data.data[0];
+
+    const output = `Database Statistics:
+
+- Total Companies: ${stats.total_companies}
+- Unique Company Names: ${stats.unique_company_names}
+- Total Documents: ${stats.total_documents}
+- Fiscal Years: ${stats.fiscal_years}
+- Available Years: ${stats.available_years}
+
+Note: The database contains financial documents for ${stats.total_companies} companies.
+This represents comprehensive XBRL financial data from EDINET.`;
+
+    return c.json({
+      success: true,
+      content: output,
+      tier: keyCtx.tier,
+      stats: {
+        total_companies: stats.total_companies,
+        unique_company_names: stats.unique_company_names,
+        total_documents: stats.total_documents,
+        fiscal_years: stats.fiscal_years,
+        available_years: stats.available_years
+      }
+    });
+  } catch (err) {
+    return c.json({ error: String(err) }, 500);
+  }
 });
 
 // Health check endpoint (no API key required)
