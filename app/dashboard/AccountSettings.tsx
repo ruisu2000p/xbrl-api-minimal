@@ -552,26 +552,38 @@ export default function AccountSettings() {
   }, [selectedPlan, currentPlan]);
 
   const handleCreateKey = useCallback(async () => {
-    console.log('🚀 APIキー作成ボタンクリック開始');
-    console.log('📝 入力されたキー名:', newKeyName);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 APIキー作成ボタンクリック開始');
+      console.log('📝 入力されたキー名:', newKeyName);
+    }
     
     if (newKeyName.trim().length === 0) {
-      console.log('❌ キー名が空のため処理を中止');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('❌ キー名が空のため処理を中止');
+      }
       return;
     }
 
-    console.log('⏳ 作成処理を開始...');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⏳ 作成処理を開始...');
+    }
     setIsCreatingKey(true);
     setApiMessage(null);
     setGeneratedKey(null);
 
     try {
-      console.log('📡 Supabaseクライアントを取得中...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📡 Supabaseクライアントを取得中...');
+      }
       const supabase = supabaseManager.getBrowserClient();
-      console.log('✅ Supabaseクライアント取得完了');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Supabaseクライアント取得完了');
+      }
 
       // 認証状態を確認
-      console.log('🔐 認証状態を確認中...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 認証状態を確認中...');
+      }
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -588,15 +600,19 @@ export default function AccountSettings() {
         return;
       }
       
-      console.log('✅ 認証OK - ユーザーID:', session.user.id);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ 認証OK - ユーザーID:', session.user.id);
+      }
 
       // Supabase関数を使用してAPIキーを作成
-      console.log('🔧 create_api_key_complete_v2関数を呼び出し中...');
-      console.log('📋 パラメータ:', {
-        p_user_id: session.user.id,
-        p_name: newKeyName.trim(),
-        p_tier: 'free'
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 create_api_key_complete_v2関数を呼び出し中...');
+        console.log('📋 パラメータ:', {
+          p_user_id: session.user.id,
+          p_name: newKeyName.trim(),
+          p_tier: 'free'
+        });
+      }
       
       const { data: result, error } = await supabase
         .rpc('create_api_key_complete_v2', {
@@ -605,16 +621,20 @@ export default function AccountSettings() {
           p_tier: 'free'
         });
 
-      console.log('📨 Supabase関数の実行結果:', { result, error });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📨 Supabase関数の実行結果:', { result, error });
+      }
 
       if (error) {
         console.error('❌ Supabase関数エラー:', error);
-        console.error('🔍 エラー詳細:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.error('🔍 エラー詳細:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+        }
         setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
         setIsCreatingKey(false);
         return;
@@ -627,13 +647,15 @@ export default function AccountSettings() {
         return;
       }
 
-      console.log('🎉 APIキー作成成功!');
-      console.log('🔑 作成されたキー情報:', {
-        key_id: result.key_id,
-        name: result.name,
-        tier: result.tier,
-        api_key_length: result.api_key?.length || 0
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎉 APIキー作成成功!');
+        console.log('🔑 作成されたキー情報:', {
+          key_id: result.key_id,
+          name: result.name,
+          tier: result.tier,
+          api_key_length: result.api_key?.length || 0
+        });
+      }
 
       const newKey: ApiKey = {
         id: result.key_id,
@@ -644,11 +666,15 @@ export default function AccountSettings() {
         tier: (result.tier || 'free') as ApiKey['tier']
       };
 
-      console.log('📝 フォーマット済みキー情報:', newKey);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📝 フォーマット済みキー情報:', newKey);
+      }
 
       setApiKeys((prev) => {
         const updated = [...prev, newKey];
-        console.log('📚 更新後のAPIキーリスト:', updated);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📚 更新後のAPIキーリスト:', updated);
+        }
         return updated;
       });
       
@@ -656,16 +682,22 @@ export default function AccountSettings() {
       setNewKeyName('');
       setApiMessage({ type: 'success', text: '新しいAPIキーを作成しました。' });
       
-      console.log('✅ 状態更新完了');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ 状態更新完了');
+      }
     } catch (error) {
       console.error('💥 予期しないエラー:', error);
-      console.error('🔍 エラースタック:', error instanceof Error ? error.stack : 'スタックなし');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🔍 エラースタック:', error instanceof Error ? error.stack : 'スタックなし');
+      }
       setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
     }
 
-    console.log('🏁 作成処理終了 - ローディング状態をfalseに');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🏁 作成処理終了 - ローディング状態をfalseに');
+    }
     setIsCreatingKey(false);
-  }, [newKeyName]);;
+  }, [newKeyName]);;;
 
   const handleDeleteKey = useCallback((id: string) => {
     setDeleteKeyId(id);
