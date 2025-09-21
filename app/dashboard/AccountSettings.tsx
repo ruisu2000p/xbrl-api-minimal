@@ -490,7 +490,7 @@ export default function AccountSettings() {
         return;
       }
 
-      console.log('Loaded API keys:', apiKeys); // デバッグ用
+      // console.log('Loaded API keys:', apiKeys); // デバッグ用
 
       const formattedKeys: ApiKey[] = (apiKeys || []).map((key: any) => ({
         id: key.id,
@@ -503,7 +503,7 @@ export default function AccountSettings() {
         tier: (key.tier || 'free') as ApiKey['tier']
       }));
 
-      console.log('Formatted keys:', formattedKeys); // デバッグ用
+      // console.log('Formatted keys:', formattedKeys); // デバッグ用
       setApiKeys(formattedKeys);
       setApiStatus('ready');
     } catch (error) {
