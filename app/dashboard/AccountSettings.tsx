@@ -552,18 +552,21 @@ export default function AccountSettings() {
   }, [selectedPlan, currentPlan]);
 
   const handleCreateKey = useCallback(async () => {
+    // eslint-disable-next-line no-console
     if (process.env.NODE_ENV === 'development') {
       console.log('🚀 APIキー作成ボタンクリック開始');
       console.log('📝 入力されたキー名:', newKeyName);
     }
     
     if (newKeyName.trim().length === 0) {
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('❌ キー名が空のため処理を中止');
       }
       return;
     }
 
+    // eslint-disable-next-line no-console
     if (process.env.NODE_ENV === 'development') {
       console.log('⏳ 作成処理を開始...');
     }
@@ -572,15 +575,18 @@ export default function AccountSettings() {
     setGeneratedKey(null);
 
     try {
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('📡 Supabaseクライアントを取得中...');
       }
       const supabase = supabaseManager.getBrowserClient();
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Supabaseクライアント取得完了');
       }
 
       // 認証状態を確認
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('🔐 認証状態を確認中...');
       }
@@ -600,11 +606,13 @@ export default function AccountSettings() {
         return;
       }
       
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ 認証OK - ユーザーID:', session.user.id);
       }
 
       // Supabase関数を使用してAPIキーを作成
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('🔧 create_api_key_complete_v2関数を呼び出し中...');
         console.log('📋 パラメータ:', {
@@ -621,6 +629,7 @@ export default function AccountSettings() {
           p_tier: 'free'
         });
 
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('📨 Supabase関数の実行結果:', { result, error });
       }
@@ -647,6 +656,7 @@ export default function AccountSettings() {
         return;
       }
 
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('🎉 APIキー作成成功!');
         console.log('🔑 作成されたキー情報:', {
@@ -666,12 +676,14 @@ export default function AccountSettings() {
         tier: (result.tier || 'free') as ApiKey['tier']
       };
 
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('📝 フォーマット済みキー情報:', newKey);
       }
 
       setApiKeys((prev) => {
         const updated = [...prev, newKey];
+        // eslint-disable-next-line no-console
         if (process.env.NODE_ENV === 'development') {
           console.log('📚 更新後のAPIキーリスト:', updated);
         }
@@ -682,6 +694,7 @@ export default function AccountSettings() {
       setNewKeyName('');
       setApiMessage({ type: 'success', text: '新しいAPIキーを作成しました。' });
       
+      // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ 状態更新完了');
       }
@@ -693,11 +706,12 @@ export default function AccountSettings() {
       setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
     }
 
+    // eslint-disable-next-line no-console
     if (process.env.NODE_ENV === 'development') {
       console.log('🏁 作成処理終了 - ローディング状態をfalseに');
     }
     setIsCreatingKey(false);
-  }, [newKeyName]);;;
+  }, [newKeyName]);;;;
 
   const handleDeleteKey = useCallback((id: string) => {
     setDeleteKeyId(id);
