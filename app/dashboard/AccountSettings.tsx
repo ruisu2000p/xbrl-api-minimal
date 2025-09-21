@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getUserApiKeys, createApiKey, deleteApiKey } from '@/app/actions/auth';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -439,6 +440,10 @@ export default function AccountSettings() {
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
 
+  // ダイアログ関連の状態
+  const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
   const loadApiKeys = useCallback(async () => {
     setApiStatus('loading');
     setApiMessage(null);
@@ -514,19 +519,22 @@ export default function AccountSettings() {
     setIsCreatingKey(false);
   }, [newKeyName]);
 
-  const handleDeleteKey = useCallback(async (id: string) => {
-    if (!window.confirm('このAPIキーを削除しますか？')) {
-      return;
-    }
+  const handleDeleteKey = useCallback((id: string) => {
+    setDeleteKeyId(id);
+  }, []);
 
-    const result = await deleteApiKey(id);
+  const confirmDeleteKey = useCallback(async () => {
+    if (!deleteKeyId) return;
+
+    const result = await deleteApiKey(deleteKeyId);
     if (result.success) {
-      setApiKeys((prev) => prev.filter((key) => key.id !== id));
+      setApiKeys((prev) => prev.filter((key) => key.id !== deleteKeyId));
       setApiMessage({ type: 'success', text: 'APIキーを削除しました。' });
     } else {
       setApiMessage({ type: 'error', text: result.error ?? 'APIキーの削除に失敗しました。' });
     }
-  }, []);
+    setDeleteKeyId(null);
+  }, [deleteKeyId]);
 
   const handleCopyKey = useCallback((value: string) => {
     void navigator.clipboard.writeText(value);
@@ -534,42 +542,53 @@ export default function AccountSettings() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    if (window.confirm('ログアウトしますか？')) {
-      router.push('/login');
-    }
+    setShowLogoutDialog(true);
+  }, []);
+
+  const confirmLogout = useCallback(() => {
+    setShowLogoutDialog(false);
+    router.push('/login');
   }, [router]);
 
   const activeTabLabel = useMemo(() => TABS.find((tab) => tab.id === activeTab)?.label ?? '', [activeTab]);
 
+  // 削除対象のAPIキー名を取得（ダイアログ表示用）
+  const deleteKeyName = useMemo(() => {
+    if (!deleteKeyId) return '';
+    const key = apiKeys.find(k => k.id === deleteKeyId);
+    return key?.name || '';
+  }, [deleteKeyId, apiKeys]);
+
   return (
-    <div className="rounded-2xl bg-white shadow-lg">
-      <div className="border-b border-gray-200">
-        <div className="flex flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
-          <nav className="flex gap-4 overflow-x-auto">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 border-b-2 px-1 pb-2 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <i className={`${tab.icon} text-base`}></i>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-          >
-            <i className="ri-logout-box-line"></i>
-            <span>ログアウト</span>
-          </button>
+    <>
+      <div className="rounded-2xl bg-white shadow-lg">
+        <div className="border-b border-gray-200">
+          <div className="flex flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
+            <nav className="flex gap-4 overflow-x-auto">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 border-b-2 px-1 pb-2 text-sm font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <i className={`${tab.icon} text-base`}></i>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </nav>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            >
+              <i className="ri-logout-box-line"></i>
+              <span>ログアウト</span>
+            </button>
+          </div>
         </div>
-      </div>
 
       <div className="space-y-6 border-b border-gray-100 px-6 pb-4 pt-6">
         <h2 className="text-lg font-semibold text-gray-900">{activeTabLabel}</h2>
@@ -617,5 +636,32 @@ export default function AccountSettings() {
         )}
       </div>
     </div>
+
+    {/* APIキー削除確認ダイアログ */}
+    <ConfirmDialog
+      isOpen={deleteKeyId !== null}
+      title="APIキーの削除"
+      message={`APIキー「${deleteKeyName}」を削除しますか？この操作は取り消せません。`}
+      confirmText="削除"
+      cancelText="キャンセル"
+      confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+      icon="danger"
+      onConfirm={confirmDeleteKey}
+      onCancel={() => setDeleteKeyId(null)}
+    />
+
+    {/* ログアウト確認ダイアログ */}
+    <ConfirmDialog
+      isOpen={showLogoutDialog}
+      title="ログアウト"
+      message="ログアウトしてもよろしいですか？"
+      confirmText="ログアウト"
+      cancelText="キャンセル"
+      confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+      icon="warning"
+      onConfirm={confirmLogout}
+      onCancel={() => setShowLogoutDialog(false)}
+    />
+  </>
   );
 }

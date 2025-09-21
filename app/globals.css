@@ -33,6 +33,35 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Modal animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -48%) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.15s ease-out;
+  }
+
+  .animate-slideIn {
+    animation: slideIn 0.2s ease-out;
+  }
 }
 
 /* Base reset */
