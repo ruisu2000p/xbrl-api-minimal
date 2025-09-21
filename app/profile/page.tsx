@@ -312,8 +312,10 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">氏名</label>
+                    <label htmlFor="profileName" className="block text-sm font-medium text-gray-700 mb-2">氏名</label>
                     <input
+                      id="profileName"
+                      name="profileName"
                       type="text"
                       value={formData.name || ''}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -323,8 +325,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">メールアドレス</label>
+                    <label htmlFor="profileEmail" className="block text-sm font-medium text-gray-700 mb-2">メールアドレス</label>
                     <input
+                      id="profileEmail"
+                      name="profileEmail"
                       type="email"
                       value={formData.email || ''}
                       disabled
@@ -334,8 +338,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">会社名</label>
+                    <label htmlFor="profileCompany" className="block text-sm font-medium text-gray-700 mb-2">会社名</label>
                     <input
+                      id="profileCompany"
+                      name="profileCompany"
                       type="text"
                       value={formData.company || ''}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
@@ -345,8 +351,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">部署</label>
+                    <label htmlFor="profileDepartment" className="block text-sm font-medium text-gray-700 mb-2">部署</label>
                     <input
+                      id="profileDepartment"
+                      name="profileDepartment"
                       type="text"
                       value={formData.department || ''}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
@@ -356,8 +364,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">役職</label>
+                    <label htmlFor="profilePosition" className="block text-sm font-medium text-gray-700 mb-2">役職</label>
                     <input
+                      id="profilePosition"
+                      name="profilePosition"
                       type="text"
                       value={formData.position || ''}
                       onChange={(e) => setFormData({ ...formData, position: e.target.value })}
@@ -367,8 +377,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">電話番号</label>
+                    <label htmlFor="profilePhone" className="block text-sm font-medium text-gray-700 mb-2">電話番号</label>
                     <input
+                      id="profilePhone"
+                      name="profilePhone"
                       type="tel"
                       value={formData.phone || ''}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -378,8 +390,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">ウェブサイト</label>
+                    <label htmlFor="profileWebsite" className="block text-sm font-medium text-gray-700 mb-2">ウェブサイト</label>
                     <input
+                      id="profileWebsite"
+                      name="profileWebsite"
                       type="url"
                       value={formData.website || ''}
                       onChange={(e) => setFormData({ ...formData, website: e.target.value })}
@@ -390,8 +404,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">自己紹介</label>
+                    <label htmlFor="profileBio" className="block text-sm font-medium text-gray-700 mb-2">自己紹介</label>
                     <textarea
+                      id="profileBio"
+                      name="profileBio"
                       value={formData.bio || ''}
                       onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                       disabled={!editMode}
@@ -414,8 +430,10 @@ export default function ProfilePage() {
                   <h4 className="font-medium mb-4">パスワード変更</h4>
                   <div className="space-y-4 max-w-md">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">現在のパスワード</label>
+                      <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">現在のパスワード</label>
                       <input
+                        id="currentPassword"
+                        name="currentPassword"
                         type="password"
                         value={passwordData.currentPassword}
                         onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
@@ -423,8 +441,10 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">新しいパスワード</label>
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">新しいパスワード</label>
                       <input
+                        id="newPassword"
+                        name="newPassword"
                         type="password"
                         value={passwordData.newPassword}
                         onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
@@ -432,8 +452,10 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">新しいパスワード（確認）</label>
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">新しいパスワード（確認）</label>
                       <input
+                        id="confirmPassword"
+                        name="confirmPassword"
                         type="password"
                         value={passwordData.confirmPassword}
                         onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
@@ -513,8 +535,10 @@ export default function ProfilePage() {
                         <p className="font-medium">{item.label}</p>
                         <p className="text-sm text-gray-600">{item.description}</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label htmlFor={`notification-${item.key}`} className="relative inline-flex items-center cursor-pointer">
                         <input
+                          id={`notification-${item.key}`}
+                          name={`notification-${item.key}`}
                           type="checkbox"
                           checked={formData.preferences?.[item.key as keyof typeof formData.preferences] as boolean || false}
                           onChange={(e) => setFormData({
