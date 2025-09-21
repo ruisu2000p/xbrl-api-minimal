@@ -1,0 +1,26 @@
+{
+  "name": "shared-supabase-mcp-minimal",
+  "version": "3.1.0",
+  "type": "module",
+  "bin": {
+    "xbrl-mcp-server": "index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.5",
+    "@supabase/supabase-js": "^2.46.0",
+    "node-fetch": "^3.3.2"
+  },
+  "description": "Simplified MCP server for XBRL financial data",
+  "keywords": [
+    "mcp",
+    "xbrl",
+    "financial-data",
+    "japanese-companies"
+  ],
+  "author": "ruisu2000",
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

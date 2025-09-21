@@ -1,0 +1,12 @@
+rules:
+  - id: custom-config
+    patterns:
+      - pattern-not: |
+          response.headers.set('X-Frame-Options', 'DENY')
+    message: Custom Semgrep configuration
+    languages: [typescript, javascript]
+    severity: INFO
+
+# Exclude specific rules that are false positives
+exclude:
+  - javascript.express.security.x-frame-options-misconfiguration

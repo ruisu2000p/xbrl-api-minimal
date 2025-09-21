@@ -1,31 +1,36 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["hnd1"],
-  "git": {
-    "deploymentEnabled": true
+  "env": {
+    "NODE_ENV": "production"
   },
   "functions": {
-    "app/api/v1/companies/route.ts": {
+    "app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/:path*",
       "headers": [
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
         {
           "key": "Access-Control-Allow-Origin",
           "value": "*"
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "X-API-Key, Content-Type"
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-API-Key"
         }
       ]
     }

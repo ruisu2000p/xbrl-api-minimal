@@ -1,55 +1,59 @@
 # Dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
-.yarn/install-state.gz
 
-# Testing
-/coverage
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
 
-# Next.js
-/.next/
-/out/
+# Test files
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+# **/*test*  # Commented out to allow test-mcp page
+**/*spec*
 
-# Production
-/build
+# Config examples (keep in repo for reference)
+# claude-config-example.json
+# .env.example
 
-# Misc
-.DS_Store
-*.pem
+# Package files
+*.tgz
+**/*.tgz
+**/*.tar.gz
 
-# Debug
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local env files
-.env*.local
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Testing
+/coverage
+.nyc_output/
 
-# Vercel
-.vercel
-
-# Typescript
-*.tsbuildinfo
+# Next.js
+/.next/
+/out/
 next-env.d.ts
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Production
+/build
+/dist
 
-# OS
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-
-# Logs
-logs
-*.log
+desktop.ini
 
 # Runtime data
 pids
@@ -57,53 +61,66 @@ pids
 *.seed
 *.pid.lock
 
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
 # Temporary files
+*.tmp
+*.temp
 tmp/
 temp/
+.temp/
+.tmp/
+.cache/
+.history/
+
+# Certificate files
+*.pem
+*.key
+*.crt
+
+# Vercel
 .vercel
-supabase/.temp/
 
-# MCP Server node_modules (Claude Desktop integration)
-/mcp-server/node_modules/
+# TypeScript
+*.tsbuildinfo
+**/*.tsbuildinfo
 
-# Development and testing files
-test-*.js
-test-*.mjs
-check-*.js
-get-*.js
-*-test.js
-*-debug.js
-api-proxy-server.js
-express-server.js
-example-client.html
+# Supabase
+supabase/.branches
+supabase/.temp
 
-# Batch and shell scripts (developer-specific)
-*.bat
-*.sh
+# AI Tools
+.serena/
+.claude/
+.cursor/
 
-# Claude Desktop configs (keep only examples)
-claude-desktop-config.json
-claude_desktop_config.json
-
-# Multiple package files
-package-mcp.json
-
-# Backup and version files
-*-backup.*
-*-old.*
-*_v1.*
-*_v2.*
-*_backup.*
-*-fixed.*
-
-# Additional environment files
-.env.production
-.env.wpwqxhyiglbtlaimrjrx
-.env.zxzyidqrvzfzhicfuhlo
-
-# MCP configuration
+# MCP local configs
 mcp-config.json
+claud*config*.json
+!claude-config-example.json
 
-# Test reports
-unmatched_ids_report.json
-*_report.json
+# Generated/Large files
+scripts/sql-inserts/
+scripts/sql-metadata/
+scripts/temp/
+scripts/generated/
+**/nul
+
+# Development SQL files (temporary)
+**/*batch*.sql
+**/*insert*.sql
+**/temp*.sql
+
+# API keys and secrets (extra protection)
+*secret*
+**/secrets/**
+**/tokens/**
+api-keys.txt
+# Exclude key files but not type definitions
+*.key
+!types/**/*.ts

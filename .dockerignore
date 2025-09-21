@@ -1,0 +1,62 @@
+# Git
+.git
+.gitignore
+.github
+
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+.next
+out
+
+# Test
+coverage
+.nyc_output
+tests
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Documentation
+*.md
+docs
+
+# Temporary files
+*.tmp
+*.temp
+tmp
+temp
+
+# Build artifacts from host
+dist
+build
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore

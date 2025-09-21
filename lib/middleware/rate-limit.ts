@@ -1,14 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { supabaseManager } from '../infrastructure/supabase-manager';
 
 // メモリベースのレート制限（本番環境ではRedis推奨）
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
-// Supabase Client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 interface RateLimitConfig {
   windowMs: number;  // 時間窓（ミリ秒）
@@ -155,6 +149,7 @@ async function logRateLimitExceeded(
   limit: number
 ) {
   try {
+    const supabase = supabaseManager.getServiceClient();
     await supabase.from('rate_limit_violations').insert({
       api_key_id: apiKeyId,
       attempted_requests: attemptedCount,
@@ -162,7 +157,7 @@ async function logRateLimitExceeded(
       violation_time: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Failed to log rate limit violation:', error);
+    // エラーをログに記録しない（機密情報保護）
   }
 }
 
@@ -189,32 +184,3 @@ if (typeof window === 'undefined') {
   setInterval(cleanupRateLimitStore, 5 * 60 * 1000);
 }
 
-/**
- * 分散レート制限（組織全体）
- */
-export async function checkOrganizationRateLimit(
-  organizationId: string,
-  planType: string
-): Promise<{ allowed: boolean; remaining: number; resetTime: Date }> {
-  const config = RATE_LIMITS[planType] || RATE_LIMITS.free;
-  const now = Date.now();
-  const key = `org_rate_limit:${organizationId}`;
-  
-  let limitData = rateLimitStore.get(key);
-  
-  if (!limitData || now > limitData.resetTime) {
-    limitData = {
-      count: 0,
-      resetTime: now + config.windowMs
-    };
-  }
-  
-  limitData.count++;
-  rateLimitStore.set(key, limitData);
-  
-  return {
-    allowed: limitData.count <= config.maxRequests,
-    remaining: Math.max(0, config.maxRequests - limitData.count),
-    resetTime: new Date(limitData.resetTime)
-  };
-}

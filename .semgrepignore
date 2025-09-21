@@ -1,0 +1,31 @@
+# Semgrep Ignore File
+
+# Dependencies
+node_modules/
+.next/
+dist/
+build/
+out/
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+tests/
+
+# Configuration files
+*.config.js
+*.config.ts
+
+# Generated files
+*.generated.ts
+*.d.ts
+
+# Documentation
+*.md
+docs/
+
+# False positives
+# X-Frame-Options is hardcoded to 'DENY' - not user controllable
+# lib/middleware/api-security-middleware.ts:javascript.express.security.x-frame-options-misconfiguration

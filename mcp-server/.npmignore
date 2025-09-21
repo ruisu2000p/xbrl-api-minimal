@@ -1,0 +1,14 @@
+test.js
+*.log
+.env
+.env.*
+node_modules/
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
