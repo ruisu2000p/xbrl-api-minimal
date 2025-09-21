@@ -222,7 +222,7 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
       return { success: false, error: 'No active session' }
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-key-manager/list`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/list`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -270,14 +270,14 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 
   try {
     // 直接Edge Functionを呼び出す
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-key-manager/create`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({
-        key_name: name || 'API Key',
+        name: name || 'API Key',
         tier: 'free'
       })
     })
@@ -321,15 +321,12 @@ export async function deleteApiKey(keyId: string) {
 
   try {
     // 直接Edge Functionを呼び出す
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-key-manager/delete`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/${keyId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify({
-        key_id: keyId
-      })
+      }
     })
 
     const result = await response.json()
