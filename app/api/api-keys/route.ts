@@ -4,10 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 // GET /api/api-keys - APIキー一覧を取得
 export async function GET(request: NextRequest) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
     if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase configuration missing:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseKey
+      });
       return NextResponse.json(
         { error: 'Supabase configuration missing' },
         { status: 500 }
@@ -21,12 +25,13 @@ export async function GET(request: NextRequest) {
     const userId = 'demo-user';
 
     // APIキーをデータベースから取得
+    // user_idがnullの場合も含めて取得（デモ用）
     const { data: apiKeys, error } = await supabase
       .from('api_keys')
       .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
-      .eq('user_id', userId)
       .eq('is_active', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(10);
 
     if (error) {
       console.error('Error fetching API keys:', error);
@@ -61,10 +66,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
     if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase configuration missing:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseKey
+      });
       return NextResponse.json(
         { error: 'Supabase configuration missing' },
         { status: 500 }
@@ -138,10 +147,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
     if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase configuration missing:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseKey
+      });
       return NextResponse.json(
         { error: 'Supabase configuration missing' },
         { status: 500 }
