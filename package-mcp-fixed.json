@@ -1,0 +1,19 @@
+{
+  "name": "xbrl-mcp-server-fixed",
+  "version": "4.0.0",
+  "description": "Fixed MCP server for XBRL financial data with full database access",
+  "type": "module",
+  "bin": {
+    "xbrl-mcp-server-fixed": "./xbrl-mcp-server-fixed.js"
+  },
+  "scripts": {
+    "start": "node xbrl-mcp-server-fixed.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

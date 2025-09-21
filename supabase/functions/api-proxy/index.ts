@@ -70,33 +70,34 @@ function nowMinuteBucket(date = new Date()): string {
 }
 
 async function resolveKeyContext(rawKey: string): Promise<KeyContext> {
-  const { data, error } = await admin.rpc('verify_api_key_hash', { p_api_key: rawKey });
-  if (error) throw new Error(`verify_api_key_hash failed: ${error.message}`);
-  if (!data || !Array.isArray(data) || data.length === 0) {
+  // verify_api_key_complete_v2を使用して統一
+  const { data, error } = await admin.rpc('verify_api_key_complete_v2', { p_api_key: rawKey });
+
+  if (error) {
+    throw new Error(`API key verification failed: ${error.message}`);
+  }
+
+  if (!data || !data.valid) {
     throw new Error('Invalid or inactive API key');
   }
-  const row = data[0] as { user_id: string | null; tier: string; rate_limit: number; key_hash: string };
 
-  const { data: keyRow, error: keyErr } = await admin
-    .from('api_keys')
-    .select('id, rate_limit_per_minute')
-    .eq('key_hash', row.key_hash)
-    .maybeSingle();
+  // デフォルトレート制限（tier別）
+  const defaultLimits = {
+    free: 60,
+    basic: 300,
+    premium: 1000
+  };
 
-  if (keyErr) throw new Error(`api_keys lookup failed: ${keyErr.message}`);
-  if (!keyRow) throw new Error('API key not found (hash mismatch)');
-
-  const perMinute = Number.isFinite(row.rate_limit) && row.rate_limit > 0
-    ? row.rate_limit
-    : (keyRow.rate_limit_per_minute ?? 100);
+  const tier = data.tier || 'free';
+  const perMinute = data.rate_limit_per_minute || defaultLimits[tier as keyof typeof defaultLimits] || 60;
 
   return {
     apiKey: rawKey,
-    userId: row.user_id,
-    tier: (row.tier || 'free') as KeyContext['tier'],
+    userId: data.user_id,
+    tier: tier as KeyContext['tier'],
     rateLimitPerMinute: perMinute,
-    keyHash: row.key_hash,
-    apiKeyId: keyRow.id,
+    keyHash: '', // v2では不要だが互換性のため空文字
+    apiKeyId: data.key_id,
   };
 }
 
@@ -257,27 +258,161 @@ app.get('/api-proxy/markdown-files', withApiKey(), async (c) => {
   return c.json({ data, tier: keyCtx.tier });
 });
 
+// POST /api-proxy/search-companies - 企業検索（部分一致対応）
+app.post('/api-proxy/search-companies', withApiKey(), async (c) => {
+  const keyCtx = c.get('keyCtx') as KeyContext;
+  const { query, limit = 10 } = await c.req.json();
+
+  if (!query || typeof query !== 'string') {
+    return c.json({ error: 'query parameter is required' }, 400);
+  }
+
+  let q = admin
+    .from('markdown_files_metadata')
+    .select('company_id, company_name, fiscal_year')
+    .ilike('company_name', `%${query}%`)
+    .order('company_name', { ascending: true });
+
+  // Freeティアは直近2年のみ
+  if (keyCtx.tier === 'free') {
+    const [fyA, fyB] = recentTwoFiscalYears();
+    q = q.in('fiscal_year', [fyA, fyB]);
+  }
+
+  const { data, error } = await q;
+  if (error) return c.json({ error: error.message }, 400);
+
+  // 重複を除去して企業リストを作成
+  const companiesMap = new Map<string, { company_name: string; fiscal_years: Set<string> }>();
+
+  if (data) {
+    for (const row of data) {
+      const existing = companiesMap.get(row.company_id);
+      if (existing) {
+        existing.fiscal_years.add(row.fiscal_year);
+      } else {
+        companiesMap.set(row.company_id, {
+          company_name: row.company_name,
+          fiscal_years: new Set([row.fiscal_year])
+        });
+      }
+    }
+  }
+
+  const companies = Array.from(companiesMap.entries())
+    .slice(0, limit)
+    .map(([company_id, info]) => ({
+      company_id,
+      company_name: info.company_name,
+      fiscal_years: Array.from(info.fiscal_years).sort()
+    }));
+
+  return c.json({
+    success: true,
+    count: companies.length,
+    companies,
+    tier: keyCtx.tier
+  });
+});
+
+// POST /api-proxy/query-data - SQLクエリ実行
+app.post('/api-proxy/query-data', withApiKey(), async (c) => {
+  const keyCtx = c.get('keyCtx') as KeyContext;
+  const { query } = await c.req.json();
+
+  if (!query || typeof query !== 'string') {
+    return c.json({ error: 'query parameter is required' }, 400);
+  }
+
+  // 危険なSQLを防ぐ簡易チェック
+  const dangerousPatterns = /\b(DROP|DELETE|TRUNCATE|ALTER|CREATE|INSERT|UPDATE)\b/i;
+  if (dangerousPatterns.test(query)) {
+    return c.json({ error: 'Modification queries are not allowed' }, 403);
+  }
+
+  try {
+    // Freeティアの場合、fiscal_year制限を追加
+    let finalQuery = query;
+    if (keyCtx.tier === 'free') {
+      const [fyA, fyB] = recentTwoFiscalYears();
+      // WHERE句にfiscal_year条件を追加（簡易的な実装）
+      if (query.toLowerCase().includes('where')) {
+        finalQuery = query.replace(/where/i, `WHERE fiscal_year IN ('${fyA}', '${fyB}') AND `);
+      } else if (query.toLowerCase().includes('from')) {
+        finalQuery = query.replace(/from\s+(\w+)/i, `FROM $1 WHERE fiscal_year IN ('${fyA}', '${fyB}')`);
+      }
+    }
+
+    const { data, error } = await admin.rpc('execute_sql', { query: finalQuery });
+
+    if (error) return c.json({ error: error.message }, 400);
+
+    return c.json({
+      success: true,
+      data,
+      tier: keyCtx.tier
+    });
+  } catch (err) {
+    return c.json({ error: String(err) }, 500);
+  }
+});
+
+// POST /api-proxy/get-file-content - ファイル内容取得
+app.post('/api-proxy/get-file-content', withApiKey(), async (c) => {
+  const keyCtx = c.get('keyCtx') as KeyContext;
+  const { fiscal_year, company_id, file_type } = await c.req.json();
+
+  if (!fiscal_year || !company_id || !file_type) {
+    return c.json({ error: 'fiscal_year, company_id, and file_type are required' }, 400);
+  }
+
+  // Freeティアの年度制限チェック
+  if (keyCtx.tier === 'free') {
+    const [fyA, fyB] = recentTwoFiscalYears();
+    if (fiscal_year !== fyA && fiscal_year !== fyB) {
+      return c.json({ error: `Free tier can only access ${fyA} and ${fyB}` }, 403);
+    }
+  }
+
+  // ストレージパスを取得
+  const { data: fileData, error: fileError } = await admin
+    .from('markdown_files_metadata')
+    .select('storage_path')
+    .eq('fiscal_year', fiscal_year)
+    .eq('company_id', company_id)
+    .eq('file_type', file_type)
+    .limit(1)
+    .single();
+
+  if (fileError || !fileData) {
+    return c.json({ error: 'File not found' }, 404);
+  }
+
+  // ストレージから内容を取得
+  // storage_pathから'markdown-files/'プレフィックスを削除
+  const cleanPath = fileData.storage_path.replace(/^markdown-files\//, '');
+  const { data: content, error: storageError } = await admin
+    .storage
+    .from('markdown-files')
+    .download(cleanPath);
+
+  if (storageError) {
+    return c.json({ error: 'Failed to retrieve file content' }, 500);
+  }
+
+  // Blobをテキストに変換
+  const text = await content.text();
+
+  return c.json({
+    success: true,
+    content: text,
+    path: fileData.storage_path,
+    tier: keyCtx.tier
+  });
+});
+
 // Health check endpoint (no API key required)
 app.get('/api-proxy/health', (c) => c.text('ok'));
-
-// APIキー生成ヘルパー関数
-function generateApiKey(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let key = '';
-  for (let i = 0; i < 32; i++) {
-    key += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `xbrl_v1_${key}`;
-}
-
-// SHA256ハッシュ生成
-async function sha256(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-}
 
 // 認証ミドルウェア（APIキー管理用）
 const authMiddleware = async (c: any, next: any) => {
@@ -309,10 +444,6 @@ app.post('/api-proxy/keys/create', authMiddleware, async (c) => {
   }
 
   try {
-    // APIキーを生成
-    const apiKey = generateApiKey();
-    const keyHash = await sha256(apiKey);
-
     // ティアに基づいてレート制限を設定
     const rateLimits = {
       free: 60,
@@ -322,35 +453,47 @@ app.post('/api-proxy/keys/create', authMiddleware, async (c) => {
 
     const rateLimit = rateLimits[tier as keyof typeof rateLimits] || 60;
 
-    // データベースに保存
-    const { data: keyData, error: insertError } = await admin
-      .from('api_keys')
-      .insert({
-        user_id: user.id,
-        name: name.trim(),
-        key_hash: keyHash,
-        tier: tier,
-        rate_limit_per_minute: rateLimit,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        last_used_at: null
-      })
-      .select()
-      .single();
+    // create_api_key_complete_v2 関数を使用してAPIキーを生成
+    const { data: createResult, error: createError } = await admin
+      .rpc('create_api_key_complete_v2', {
+        p_user_id: user.id,
+        p_name: name.trim(),
+        p_tier: tier
+      });
 
-    if (insertError) {
-      console.error('Insert error:', insertError);
-      return c.json({ error: `APIキーの作成に失敗しました: ${insertError.message}` }, 500);
+    if (createError) {
+      console.error('Create API key error:', createError);
+      return c.json({ error: `APIキーの作成に失敗しました: ${createError.message}` }, 500);
+    }
+
+    if (!createResult || !createResult.api_key) {
+      return c.json({ error: 'APIキーの生成に失敗しました' }, 500);
+    }
+
+    // レート制限を更新（必要な場合）
+    if (createResult.key_id) {
+      const { error: updateError } = await admin
+        .from('api_keys')
+        .update({
+          rate_limit_per_minute: rateLimit,
+          rate_limit_per_hour: rateLimits[tier as keyof typeof rateLimits] ? rateLimit * 50 : 3000,
+          rate_limit_per_day: rateLimits[tier as keyof typeof rateLimits] ? rateLimit * 500 : 30000
+        })
+        .eq('id', createResult.key_id);
+
+      if (updateError) {
+        console.error('Update rate limit error:', updateError);
+      }
     }
 
     // 作成されたキーを返す（一度だけ表示）
     return c.json({
       success: true,
-      apiKey: apiKey,
-      keyId: keyData.id,
-      name: keyData.name,
-      tier: keyData.tier,
-      rateLimit: keyData.rate_limit_per_minute,
+      apiKey: createResult.api_key,
+      keyId: createResult.key_id,
+      name: name.trim(),
+      tier: tier,
+      rateLimit: rateLimit,
       message: 'このAPIキーは一度だけ表示されます。安全な場所に保管してください。'
     });
 
