@@ -75,6 +75,26 @@ export class SupabaseManager {
   }
 
   /**
+   * ブラウザ用クライアント取得（認証セッション保持）
+   */
+  getBrowserClient(): SupabaseClient {
+    const { url, anonKey } = this.checkEnvironmentVariables();
+
+    return createClient(url, anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'xbrl-api-minimal-browser/4.0',
+        },
+      },
+    });
+  }
+
+  /**
    * Service Roleクライアント取得（サーバー側のみ）
    */
   getServiceClient(): SupabaseClient {

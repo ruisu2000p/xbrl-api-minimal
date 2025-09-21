@@ -449,7 +449,7 @@ export default function AccountSettings() {
     setApiMessage(null);
 
     try {
-      const supabase = supabaseManager.getAnonClient();
+      const supabase = supabaseManager.getBrowserClient();
 
       // 認証状態を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -541,7 +541,7 @@ export default function AccountSettings() {
     setGeneratedKey(null);
 
     try {
-      const supabase = supabaseManager.getAnonClient();
+      const supabase = supabaseManager.getBrowserClient();
 
       // 認証状態を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -610,7 +610,7 @@ export default function AccountSettings() {
     if (!deleteKeyId) return;
 
     try {
-      const supabase = supabaseManager.getAnonClient();
+      const supabase = supabaseManager.getBrowserClient();
 
       // 認証状態を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
