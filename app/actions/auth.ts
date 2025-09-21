@@ -208,7 +208,7 @@ export async function getUser() {
 
 export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   try {
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     // クライアントサイドで認証状態を確認
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -216,12 +216,11 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
       return { success: false, error: 'Not authenticated' }
     }
 
-    // APIキーをデータベースから直接取得
+    // APIキーをデータベースから直接取得（RLSポリシーで自動的にuser_idでフィルタリング）
     const { data: apiKeys, error } = await supabase
       .from('api_keys')
       .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
       .eq('is_active', true)
-      .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -256,7 +255,7 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
 
 export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   try {
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     // クライアントサイドで認証状態を確認
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
