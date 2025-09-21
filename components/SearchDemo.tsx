@@ -199,6 +199,7 @@ export default function SearchDemo() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="bg-white/20 text-white placeholder-white/70 px-3 py-1 rounded-lg border-0 outline-none text-sm flex-1"
                       placeholder="企業名またはコード"
+                      autoComplete="organization"
                     />
                   </div>
                   <button
