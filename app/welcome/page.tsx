@@ -126,11 +126,14 @@ export default function WelcomePage() {
             <p className="text-sm text-gray-600 mb-2">このAPIキーは一度だけ表示されます。必ず安全な場所に保管してください。</p>
             
             <div className="flex items-center gap-2">
+              <label htmlFor="apiKeyDisplay" className="sr-only">APIキー</label>
               <input
+                id="apiKeyDisplay"
+                name="apiKeyDisplay"
                 type={showApiKey ? "text" : "password"}
                 value={
-                  userData.apiKey ? userData.apiKey : 
-                  isGeneratingKey ? 'APIキーを生成中...' : 
+                  userData.apiKey ? userData.apiKey :
+                  isGeneratingKey ? 'APIキーを生成中...' :
                   apiKeyError ? 'エラー: APIキー生成失敗' :
                   'APIキーを生成中...'
                 }

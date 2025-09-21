@@ -163,7 +163,10 @@ export default function SupportPage() {
           {/* 検索バー */}
           <div className="max-w-2xl mx-auto">
             <div className="relative">
+              <label htmlFor="helpSearch" className="sr-only">ヘルプ記事を検索</label>
               <input
+                id="helpSearch"
+                name="helpSearch"
                 type="text"
                 placeholder="キーワードで検索..."
                 value={searchQuery}

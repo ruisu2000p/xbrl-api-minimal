@@ -190,8 +190,10 @@ export default function SearchDemo() {
               <div className="flex justify-end mb-6">
                 <div className="bg-orange-500 text-white px-6 py-3 rounded-2xl rounded-br-md max-w-md shadow-lg">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-sm font-medium">GET /api/v1/companies/</span>
+                    <label htmlFor="searchCompany" className="text-sm font-medium">GET /api/v1/companies/</label>
                     <input
+                      id="searchCompany"
+                      name="searchCompany"
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
