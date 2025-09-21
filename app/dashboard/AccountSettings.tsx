@@ -590,25 +590,57 @@ export default function AccountSettings() {
       if (process.env.NODE_ENV === 'development') {
         console.log('🔐 認証状態を確認中...');
       }
+
+      // 本番環境ではSupabase認証、開発環境ではlocalstorage認証をサポート
+      let userId: string | null = null;
+      let userEmail: string | null = null;
+
+      // まずSupabase認証を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('❌ セッションエラー:', sessionError);
-        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
-        setIsCreatingKey(false);
-        return;
+
+      if (session?.user) {
+        // Supabase認証が有効な場合
+        userId = session.user.id;
+        userEmail = session.user.email;
+        // eslint-disable-next-line no-console
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Supabase認証セッション有効:', { userId, email: userEmail });
+        }
+      } else {
+        // Supabase認証が無効な場合、localStorage認証を確認（開発環境用）
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const currentUser = localStorage.getItem('currentUser');
+
+        if (isAuthenticated === 'true' && currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            userId = userData.id;
+            userEmail = userData.email;
+            // eslint-disable-next-line no-console
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ localStorage認証有効:', { userId, email: userEmail });
+            }
+          } catch (e) {
+            console.error('❌ localStorage認証データが無効:', e);
+          }
+        }
       }
-      
-      if (!session?.user) {
-        console.error('❌ ユーザーセッションが存在しません');
-        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
+
+      if (!userId || !userEmail) {
+        console.error('❌ 認証セッションが存在しません (Supabase + localStorage両方とも無効)');
+        setApiMessage({ type: 'error', text: 'ログインが必要です。認証ページにリダイレクトします。' });
         setIsCreatingKey(false);
+        // 3秒後に認証ページにリダイレクト
+        setTimeout(() => {
+          window.location.href = '/auth';
+        }, 3000);
         return;
       }
       
       // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ 認証OK - ユーザーID:', session.user.id);
+        console.log('✅ 認証OK - ユーザーID:', userId);
+        console.log('📝 キー名:', newKeyName);
       }
 
       // Supabase関数を使用してAPIキーを作成
@@ -616,15 +648,15 @@ export default function AccountSettings() {
       if (process.env.NODE_ENV === 'development') {
         console.log('🔧 create_api_key_complete_v2関数を呼び出し中...');
         console.log('📋 パラメータ:', {
-          p_user_id: session.user.id,
+          p_user_id: userId,
           p_name: newKeyName.trim(),
           p_tier: 'free'
         });
       }
-      
+
       const { data: result, error } = await supabase
         .rpc('create_api_key_complete_v2', {
-          p_user_id: session.user.id,
+          p_user_id: userId,
           p_name: newKeyName.trim(),
           p_tier: 'free'
         });
