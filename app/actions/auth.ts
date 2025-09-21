@@ -216,13 +216,17 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   }
 
   try {
-    // API Routeを呼び出す（Next.jsサーバー内部通信）
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/keys/list`, {
+    // 直接Edge Functionを呼び出す（サーバーサイドから）
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return { success: false, error: 'No active session' }
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/list`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': `sb-access-token=${(await supabase.auth.getSession()).data.session?.access_token}`
+        'Authorization': `Bearer ${session.access_token}`
       }
     })
 
@@ -265,13 +269,12 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   }
 
   try {
-    // API Routeを呼び出す
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/keys/create`, {
+    // 直接Edge Functionを呼び出す
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': `sb-access-token=${session.access_token}`
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({
         name: name || 'API Key',
@@ -317,13 +320,12 @@ export async function deleteApiKey(keyId: string) {
   }
 
   try {
-    // API Routeを呼び出す
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/keys/${keyId}`, {
+    // 直接Edge Functionを呼び出す
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/${keyId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': `sb-access-token=${session.access_token}`
+        'Authorization': `Bearer ${session.access_token}`
       }
     })
 
