@@ -208,47 +208,35 @@ export async function getUser() {
 }
 
 export async function getUserApiKeys(): Promise<ApiKeyResponse> {
-  const supabase = await supabaseManager.createSSRClient()
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return { success: false, error: 'Not authenticated' }
-  }
-
   try {
-    // 直接Edge Functionを呼び出す（サーバーサイドから）
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      return { success: false, error: 'No active session' }
-    }
+    const supabase = await supabaseManager.createSSRClient()
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/list`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
-      }
-    })
+    // APIキーをデータベースから直接取得
+    const { data: apiKeys, error } = await supabase
+      .from('api_keys')
+      .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-    const result = await response.json()
-
-    if (!response.ok || !result?.success) {
+    if (error) {
+      console.error('Error fetching API keys:', error);
       return {
         success: false,
-        error: result?.error || 'APIキーの取得に失敗しました'
+        error: 'APIキーの取得に失敗しました'
       }
     }
 
-    const formattedKeys: ApiKey[] = result.keys?.map((key: any) => ({
+    const formattedKeys: ApiKey[] = (apiKeys || []).map((key: any) => ({
       id: key.id,
       name: key.name,
-      key: `xbrl_v1_****${key.id.slice(-4)}`, // マスク済みキー
+      key: key.key_prefix ? `${key.key_prefix}****` : `api_key****${key.id.slice(-4)}`, // マスク済みキー
       created: new Date(key.created_at).toLocaleDateString('ja-JP'),
       lastUsed: key.last_used_at
         ? new Date(key.last_used_at).toLocaleDateString('ja-JP')
         : '未使用',
-      tier: key.tier as ApiKey['tier']
-    })) || []
+      tier: (key.tier || 'free') as ApiKey['tier']
+    }))
 
     return {
       success: true,
@@ -261,44 +249,48 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
 }
 
 export async function createApiKey(name: string): Promise<ApiKeyResponse> {
-  const supabase = await supabaseManager.createSSRClient()
-
-  const { data: { session }, error: authError } = await supabase.auth.getSession()
-  if (authError || !session) {
-    return { success: false, error: 'Not authenticated' }
-  }
-
   try {
-    // 直接Edge Functionを呼び出す
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify({
+    const supabase = await supabaseManager.createSSRClient()
+
+    // APIキーを生成（32文字のランダム文字列）
+    const randomString = Array.from({ length: 32 }, () =>
+      Math.random().toString(36)[2] || '0'
+    ).join('');
+    const apiKey = `xbrl_v1_${randomString}`;
+    const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
+
+    // APIキーをデータベースに直接挿入
+    const { data, error } = await supabase
+      .from('api_keys')
+      .insert({
         name: name || 'API Key',
-        tier: 'free'
+        key_prefix: keyPrefix,
+        key_hash: apiKey, // 一時的にプレーンテキストで保存
+        user_id: null, // デモ用なのでnull
+        tier: 'free',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
-    })
+      .select()
+      .single();
 
-    const result = await response.json()
-
-    if (!response.ok || !result?.success) {
+    if (error) {
+      console.error('Error creating API key:', error);
       return {
         success: false,
-        error: result?.error || 'APIキーの作成に失敗しました'
+        error: 'APIキーの作成に失敗しました'
       }
     }
 
     // Return the plain text key only once for the user to save
     const newKey: ApiKey = {
-      id: result.key_id || result.keyId,
-      name: result.key_name || result.name,
-      key: result.api_key || result.apiKey, // Return the actual key only this once
+      id: data.id,
+      name: data.name,
+      key: apiKey, // Return the actual key only this once
       created: new Date().toLocaleDateString('ja-JP'),
       lastUsed: '未使用',
-      tier: result.tier as ApiKey['tier']
+      tier: (data.tier || 'free') as ApiKey['tier']
     }
 
     return {
