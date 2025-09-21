@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUserApiKeys, createApiKey, deleteApiKey } from '@/app/actions/auth';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -448,14 +447,50 @@ export default function AccountSettings() {
     setApiStatus('loading');
     setApiMessage(null);
 
-    const result = await getUserApiKeys();
+    try {
+      const supabase = require('@/lib/infrastructure/supabase-manager').supabaseManager.getAnonClient();
 
-    if (result.success && Array.isArray(result.data)) {
-      setApiKeys(result.data);
+      // 認証状態を確認
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.user) {
+        setApiStatus('error');
+        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
+        return;
+      }
+
+      // APIキーを取得
+      const { data: apiKeys, error } = await supabase
+        .from('api_keys')
+        .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
+        .eq('is_active', true)
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching API keys:', error);
+        setApiStatus('error');
+        setApiMessage({ type: 'error', text: 'APIキーの読み込みに失敗しました。' });
+        return;
+      }
+
+      const formattedKeys: ApiKey[] = (apiKeys || []).map((key: any) => ({
+        id: key.id,
+        name: key.name,
+        key: key.key_prefix ? `${key.key_prefix}****` : `api_key****${key.id.slice(-4)}`,
+        created: new Date(key.created_at).toLocaleDateString('ja-JP'),
+        lastUsed: key.last_used_at
+          ? new Date(key.last_used_at).toLocaleDateString('ja-JP')
+          : '未使用',
+        tier: (key.tier || 'free') as ApiKey['tier']
+      }));
+
+      setApiKeys(formattedKeys);
       setApiStatus('ready');
-    } else {
+    } catch (error) {
+      console.error('Failed to load API keys:', error);
       setApiStatus('error');
-      setApiMessage({ type: 'error', text: result.error ?? 'APIキーの読み込みに失敗しました。' });
+      setApiMessage({ type: 'error', text: 'APIキーの読み込みに失敗しました。' });
     }
   }, []);
 
@@ -504,16 +539,63 @@ export default function AccountSettings() {
     setApiMessage(null);
     setGeneratedKey(null);
 
-    const result = await createApiKey(newKeyName.trim());
+    try {
+      const supabase = require('@/lib/infrastructure/supabase-manager').supabaseManager.getAnonClient();
 
-    if (result.success && result.data && !Array.isArray(result.data)) {
-      const createdKey = result.data;
-      setApiKeys((prev) => [...prev, createdKey]);
-      setGeneratedKey(createdKey.key);
+      // 認証状態を確認
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.user) {
+        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
+        setIsCreatingKey(false);
+        return;
+      }
+
+      // APIキーを生成
+      const randomString = Array.from({ length: 32 }, () =>
+        Math.random().toString(36)[2] || '0'
+      ).join('');
+      const apiKey = `xbrl_v1_${randomString}`;
+      const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
+
+      // APIキーをデータベースに挿入
+      const { data, error } = await supabase
+        .from('api_keys')
+        .insert({
+          name: newKeyName.trim(),
+          key_prefix: keyPrefix,
+          key_hash: apiKey,
+          user_id: session.user.id,
+          tier: 'free',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating API key:', error);
+        setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
+        setIsCreatingKey(false);
+        return;
+      }
+
+      const newKey: ApiKey = {
+        id: data.id,
+        name: data.name,
+        key: apiKey, // 作成時のみ完全なキーを表示
+        created: new Date().toLocaleDateString('ja-JP'),
+        lastUsed: '未使用',
+        tier: (data.tier || 'free') as ApiKey['tier']
+      };
+
+      setApiKeys((prev) => [...prev, newKey]);
+      setGeneratedKey(apiKey);
       setNewKeyName('');
       setApiMessage({ type: 'success', text: '新しいAPIキーを作成しました。' });
-    } else {
-      setApiMessage({ type: 'error', text: result.error ?? 'APIキーの作成に失敗しました。' });
+    } catch (error) {
+      console.error('Failed to create API key:', error);
+      setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
     }
 
     setIsCreatingKey(false);
@@ -526,13 +608,36 @@ export default function AccountSettings() {
   const confirmDeleteKey = useCallback(async () => {
     if (!deleteKeyId) return;
 
-    const result = await deleteApiKey(deleteKeyId);
-    if (result.success) {
-      setApiKeys((prev) => prev.filter((key) => key.id !== deleteKeyId));
-      setApiMessage({ type: 'success', text: 'APIキーを削除しました。' });
-    } else {
-      setApiMessage({ type: 'error', text: result.error ?? 'APIキーの削除に失敗しました。' });
+    try {
+      const supabase = require('@/lib/infrastructure/supabase-manager').supabaseManager.getAnonClient();
+
+      // 認証状態を確認
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.user) {
+        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
+        setDeleteKeyId(null);
+        return;
+      }
+
+      // APIキーを無効化（削除ではなく無効化）
+      const { error } = await supabase
+        .from('api_keys')
+        .update({ is_active: false })
+        .eq('id', deleteKeyId)
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Error deleting API key:', error);
+        setApiMessage({ type: 'error', text: 'APIキーの削除に失敗しました。' });
+      } else {
+        setApiKeys((prev) => prev.filter((key) => key.id !== deleteKeyId));
+        setApiMessage({ type: 'success', text: 'APIキーを削除しました。' });
+      }
+    } catch (error) {
+      console.error('Failed to delete API key:', error);
+      setApiMessage({ type: 'error', text: 'APIキーの削除に失敗しました。' });
     }
+
     setDeleteKeyId(null);
   }, [deleteKeyId]);
 

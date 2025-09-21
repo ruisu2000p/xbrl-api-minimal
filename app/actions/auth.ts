@@ -209,11 +209,11 @@ export async function getUser() {
 
 export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   try {
-    const supabase = await supabaseManager.createSSRClient()
+    const supabase = supabaseManager.getAnonClient()
 
-    // 認証ユーザーを取得
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // クライアントサイドで認証状態を確認
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session?.user) {
       return { success: false, error: 'Not authenticated' }
     }
 
@@ -222,7 +222,7 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
       .from('api_keys')
       .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
       .eq('is_active', true)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -257,11 +257,11 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
 
 export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   try {
-    const supabase = await supabaseManager.createSSRClient()
+    const supabase = supabaseManager.getAnonClient()
 
-    // 認証ユーザーを取得
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    // クライアントサイドで認証状態を確認
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session?.user) {
       return { success: false, error: 'Not authenticated' }
     }
 
@@ -279,7 +279,7 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
         name: name || 'API Key',
         key_prefix: keyPrefix,
         key_hash: apiKey, // 一時的にプレーンテキストで保存
-        user_id: user.id, // 認証済みユーザーのID
+        user_id: session.user.id, // 認証済みユーザーのID
         tier: 'free',
         is_active: true,
         created_at: new Date().toISOString(),
