@@ -289,7 +289,7 @@ export default function SignupPage() {
                     required
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-gray-50/50 transition-all duration-300"
+                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
                     placeholder="山田太郎"
                   />
                 </div>
@@ -305,7 +305,7 @@ export default function SignupPage() {
                     type="text"
                     value={formData.company}
                     onChange={handleInputChange}
-                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-gray-50/50 transition-all duration-300"
+                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
                     placeholder="株式会社サンプル"
                   />
                 </div>
@@ -323,7 +323,7 @@ export default function SignupPage() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-gray-50/50 transition-all duration-300"
+                  className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
                   placeholder="example@company.com"
                 />
               </div>
@@ -341,7 +341,7 @@ export default function SignupPage() {
                     required
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-gray-50/50 transition-all duration-300"
+                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
                     placeholder="8文字以上のパスワード"
                   />
                 </div>
@@ -358,13 +358,13 @@ export default function SignupPage() {
                     required
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-gray-50/50 transition-all duration-300"
+                    className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
                     placeholder="パスワードを再入力"
                   />
                 </div>
               </div>
 
-              <div className="flex items-start space-x-4 p-4 bg-gray-50/50 rounded-2xl border border-gray-200">
+              <div className="flex items-start space-x-4 p-4 bg-white text-gray-900 placeholder:text-gray-500 rounded-2xl border border-gray-200">
                 <input
                   id="agreeToTerms"
                   name="agreeToTerms"
