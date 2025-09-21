@@ -17,7 +17,7 @@
       }
     },
     {
-      "files": ["app/api/**/*.ts", "app/api/**/*.tsx", "app/auth/**/*.ts", "app/actions/**/*.ts", "lib/**/*.ts", "lib/**/*.tsx"],
+      "files": ["app/api/**/*.ts", "app/api/**/*.tsx", "app/auth/**/*.ts", "app/actions/**/*.ts", "lib/**/*.ts", "lib/**/*.tsx", "app/dashboard/**/*.tsx"],
       "rules": {
         "no-console": "off"
       }
