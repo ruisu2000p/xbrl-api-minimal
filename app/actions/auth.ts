@@ -210,91 +210,90 @@ export async function getUser() {
 export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   const supabase = await supabaseManager.createSSRClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
+  const { data: { session }, error: authError } = await supabase.auth.getSession()
+  if (authError || !session) {
     return { success: false, error: 'Not authenticated' }
   }
 
-  const { data: apiKeys, error } = await supabase
-    .from('api_keys')
-    .select('id, key_hash, masked_key, name, status, tier, created_at, last_used_at')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
+  try {
+    // Edge Functionを使用してAPIキー一覧を取得
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/list`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    })
 
-  if (error) {
-    return { success: false, error: error.message }
-  }
+    const result = await response.json()
 
-  const formattedKeys: ApiKey[] = apiKeys?.map(key => ({
-    id: key.id,
-    name: key.name,
-    key: key.masked_key ?? maskApiKey(key.key_hash ?? ''),
-    created: new Date(key.created_at).toLocaleDateString('ja-JP'),
-    lastUsed: key.last_used_at
-      ? new Date(key.last_used_at).toLocaleDateString('ja-JP')
-      : '未使用',
-    tier: key.tier as ApiKey['tier']
-  })) || []
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        error: result.error || 'APIキーの取得に失敗しました'
+      }
+    }
 
-  return {
-    success: true,
-    data: formattedKeys
+    const formattedKeys: ApiKey[] = result.keys?.map((key: any) => ({
+      id: key.id,
+      name: key.name,
+      key: `xbrl_v1_****${key.id.slice(-4)}`, // マスク済みキー
+      created: new Date(key.created_at).toLocaleDateString('ja-JP'),
+      lastUsed: key.last_used_at
+        ? new Date(key.last_used_at).toLocaleDateString('ja-JP')
+        : '未使用',
+      tier: key.tier as ApiKey['tier']
+    })) || []
+
+    return {
+      success: true,
+      data: formattedKeys
+    }
+  } catch (error) {
+    console.error('Failed to get API keys:', error)
+    return { success: false, error: 'Failed to get API keys' }
   }
 }
 
 export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   const supabase = await supabaseManager.createSSRClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
+  const { data: { session }, error: authError } = await supabase.auth.getSession()
+  if (authError || !session) {
     return { success: false, error: 'Not authenticated' }
   }
 
   try {
-    // Generate API key with new format using generateNewApiKey function
-    const result = await generateNewApiKey()
-    const fullKey = result.apiKey
-    const keyPrefix = extractApiKeyPrefix(fullKey)
-    const keySuffix = extractApiKeySuffix(fullKey)
-
-    // Extract UUID from the new format: xbrl_live_v1_{uuid}_{secret}
-    const keyParts = fullKey.split('_');
-    const uuid = keyParts[3]; // UUID is the 4th part (index 3)
-
-    const { data, error } = await supabase
-      .from('api_keys')
-      .insert({
-        id: uuid, // Use the UUID as the ID
-        user_id: user.id,
-        key_hash: result.hash,     // Use result.hash from createApiKey
-        salt: result.salt,         // Use result.salt from createApiKey
-        key_prefix: keyPrefix,
-        key_suffix: keySuffix,
-        masked_key: maskApiKey(fullKey),
+    // Edge Functionを使用してAPIキーを作成
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
         name: name || 'API Key',
-        status: 'active',
-        is_active: true,
-        rate_limit_per_minute: 100,
-        rate_limit_per_hour: 2000,
-        rate_limit_per_day: 50000,
-        tier: 'free' // Default to free tier
+        tier: 'free'
       })
-      .select()
-      .single()
+    })
 
-    if (error) {
-      return { success: false, error: error.message }
+    const result = await response.json()
+
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        error: result.error || 'APIキーの作成に失敗しました'
+      }
     }
 
     // Return the plain text key only once for the user to save
     const newKey: ApiKey = {
-      id: data.id,
-      name: data.name,
-      key: fullKey, // Return the actual key only this once
-      created: new Date(data.created_at).toLocaleDateString('ja-JP'),
+      id: result.keyId,
+      name: result.name,
+      key: result.apiKey, // Return the actual key only this once
+      created: new Date().toLocaleDateString('ja-JP'),
       lastUsed: '未使用',
-      tier: data.tier as ApiKey['tier']
+      tier: result.tier as ApiKey['tier']
     }
 
     return {
@@ -302,6 +301,7 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
       data: newKey
     }
   } catch (error) {
+    console.error('Failed to create API key:', error)
     return { success: false, error: 'Failed to create API key' }
   }
 }
@@ -309,20 +309,33 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 export async function deleteApiKey(keyId: string) {
   const supabase = await supabaseManager.createSSRClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
+  const { data: { session }, error: authError } = await supabase.auth.getSession()
+  if (authError || !session) {
     return { success: false, error: 'Not authenticated' }
   }
 
-  const { error } = await supabase
-    .from('api_keys')
-    .update({ status: 'revoked' })
-    .eq('id', keyId)
-    .eq('user_id', user.id)
+  try {
+    // Edge Functionを使用してAPIキーを削除
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/${keyId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    })
 
-  if (error) {
-    return { success: false, error: error.message }
+    const result = await response.json()
+
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        error: result.error || 'APIキーの削除に失敗しました'
+      }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to delete API key:', error)
+    return { success: false, error: 'Failed to delete API key' }
   }
-
-  return { success: true }
 }

@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XBRL API 完全テスト - データ＆ストレージアクセス</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Yu Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #764ba2;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab:hover {
+            color: #764ba2;
+        }
+
+        .tab.active {
+            color: #764ba2;
+            border-bottom-color: #764ba2;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(118, 75, 162, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .document-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .document-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .document-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .document-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .document-meta {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .action-buttons button {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #764ba2;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+        }
+
+        .endpoint-list {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .endpoint-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .endpoint-item:last-child {
+            border-bottom: none;
+        }
+
+        .method-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 10px;
+            width: 50px;
+            text-align: center;
+        }
+
+        .method-badge.post {
+            background: #007bff;
+        }
+
+        .endpoint-path {
+            flex: 1;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .test-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🔬 XBRL API 完全テストスイート
+            <span id="connectionStatus" class="status-badge status-warning">未接続</span>
+        </h1>
+
+        <!-- タブナビゲーション -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('metadata')">📊 メタデータアクセス</button>
+            <button class="tab" onclick="switchTab('storage')">💾 ストレージアクセス</button>
+            <button class="tab" onclick="switchTab('apikey')">🔑 APIキー管理</button>
+            <button class="tab" onclick="switchTab('endpoints')">🚀 エンドポイント一覧</button>
+        </div>
+
+        <!-- API設定（共通） -->
+        <div style="margin-bottom: 30px;">
+            <h2>⚙️ API接続設定</h2>
+            <div style="display: grid; grid-template-columns: 3fr 2fr 1fr; gap: 15px;">
+                <div class="form-group" style="margin: 0;">
+                    <label>API URL</label>
+                    <input type="text" id="apiUrl" value="http://localhost:3001/functions/v1" />
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label>APIキー</label>
+                    <input type="text" id="apiKey" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMTk1NDEsImV4cCI6MjA3Mzc5NTU0MX0.aGMCRtTRIbdUMRTdJ7KFZ7oJ2krkD7QWzUEcTs7Jlfs" placeholder="Anon Key または xbrl_v1_..." />
+                </div>
+                <div class="form-group" style="margin: 0; align-self: flex-end;">
+                    <button onclick="testConnection()">接続テスト</button>
+                </div>
+            </div>
+            <div id="connectionResult"></div>
+        </div>
+
+        <!-- メタデータアクセスタブ -->
+        <div id="metadata-tab" class="tab-content active">
+            <h2>📊 markdown_files_metadata テーブルアクセステスト</h2>
+
+            <div class="form-group">
+                <label>企業名/コード（部分一致）</label>
+                <input type="text" id="searchCompany" placeholder="例: トヨタ、三菱、S100..." />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>年度</label>
+                    <select id="searchFiscalYear">
+                        <option value="">全年度</option>
+                        <option value="FY2025">FY2025</option>
+                        <option value="FY2024">FY2024</option>
+                        <option value="FY2023">FY2023</option>
+                        <option value="FY2022">FY2022</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>文書タイプ</label>
+                    <select id="searchDocType">
+                        <option value="all">すべて</option>
+                        <option value="PublicDoc">有価証券報告書</option>
+                        <option value="AuditDoc">監査報告書</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>取得件数</label>
+                    <select id="searchLimit">
+                        <option value="10">10件</option>
+                        <option value="20">20件</option>
+                        <option value="50">50件</option>
+                        <option value="100">100件</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="searchDocuments()">🔍 検索実行</button>
+
+            <div id="searchResult"></div>
+            <div id="documentsList"></div>
+        </div>
+
+        <!-- ストレージアクセスタブ -->
+        <div id="storage-tab" class="tab-content">
+            <h2>💾 Supabase Storage アクセステスト</h2>
+
+            <div class="form-group">
+                <label>ストレージパス（markdown_files_metadataから取得）</label>
+                <input type="text" id="storagePath" placeholder="例: FY2025/S100TT6U_b3dba3fcf6e4e494/PublicDoc_markdown/..." />
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    ※ 上記メタデータ検索から「ストレージ取得」ボタンでパスを自動入力できます
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>最大サイズ（バイト）</label>
+                <input type="number" id="maxSize" value="100000" />
+            </div>
+
+            <button onclick="getDocument()">📥 ドキュメント取得</button>
+
+            <div id="storageResult"></div>
+            <div id="documentContent"></div>
+        </div>
+
+        <!-- APIキー管理タブ -->
+        <div id="apikey-tab" class="tab-content">
+            <h2>🔑 独自APIキーテスト</h2>
+
+            <div class="form-group">
+                <label>新規APIキー生成（デモ）</label>
+                <button onclick="generateNewKey()">新規キー生成</button>
+            </div>
+
+            <div id="generatedKey"></div>
+
+            <div class="form-group" style="margin-top: 30px;">
+                <label>APIキー検証</label>
+                <input type="text" id="validateKey" placeholder="検証するAPIキーを入力" />
+                <button onclick="validateApiKey()">検証実行</button>
+            </div>
+
+            <div id="validationResult"></div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">総ドキュメント数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statCompanies">0</div>
+                    <div class="stat-label">企業数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statYears">0</div>
+                    <div class="stat-label">年度数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statAccess">Free</div>
+                    <div class="stat-label">アクセスティア</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- エンドポイント一覧タブ -->
+        <div id="endpoints-tab" class="tab-content">
+            <h2>🚀 利用可能なAPIエンドポイント</h2>
+
+            <div class="endpoint-list">
+                <div class="endpoint-item">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/api/health</span>
+                    <button class="test-btn" onclick="testEndpoint('/api/health')">テスト</button>
+                </div>
+                <div class="endpoint-item">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/api/search</span>
+                    <button class="test-btn" onclick="testEndpoint('/api/search?limit=5')">テスト</button>
+                </div>
+                <div class="endpoint-item">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/api/companies</span>
+                    <button class="test-btn" onclick="testEndpoint('/api/companies?limit=5')">テスト</button>
+                </div>
+                <div class="endpoint-item">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/api/company/:id</span>
+                    <button class="test-btn" onclick="testCompanyEndpoint()">テスト</button>
+                </div>
+                <div class="endpoint-item">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/api/document</span>
+                    <button class="test-btn" onclick="testDocumentEndpoint()">テスト</button>
+                </div>
+                <div class="endpoint-item">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/api/statistics</span>
+                    <button class="test-btn" onclick="testEndpoint('/api/statistics')">テスト</button>
+                </div>
+            </div>
+
+            <div id="endpointResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let currentApiKey = 'demo-key';
+        let currentDocuments = [];
+
+        // タブ切り替え
+        function switchTab(tabName) {
+            // すべてのタブとコンテンツを非アクティブに
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // 選択されたタブをアクティブに
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // 接続テスト
+        async function testConnection() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            currentApiKey = apiKey;
+
+            try {
+                // api-proxyのヘルスチェックエンドポイントでテスト
+                const response = await fetch(`${apiUrl}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Api-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+
+                if (response.ok) {
+                    const text = await response.text();
+                    document.getElementById('connectionStatus').className = 'status-badge status-success';
+                    document.getElementById('connectionStatus').textContent = '接続済み';
+
+                    showMessage('connectionResult',
+                        `✅ 接続成功: ${text === 'ok' ? 'Health check passed' : text} (${apiKey.startsWith('xbrl_v1_') ? '独自APIキー' : 'Anon Key'}使用)`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(errorText || '接続に失敗しました');
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').className = 'status-badge status-error';
+                document.getElementById('connectionStatus').textContent = 'エラー';
+
+                // CORSエラーの場合の追加メッセージ
+                const errorMsg = error.message === 'Failed to fetch'
+                    ? 'CORSプロキシが応答していません。http://localhost:3001 が起動していることを確認してください。'
+                    : error.message;
+
+                showMessage('connectionResult',
+                    `❌ エラー: ${errorMsg}`, 'error');
+            }
+        }
+
+        // ドキュメント検索
+        async function searchDocuments() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const company = document.getElementById('searchCompany').value;
+            const fiscalYear = document.getElementById('searchFiscalYear').value;
+            const docType = document.getElementById('searchDocType').value;
+            const limit = document.getElementById('searchLimit').value;
+
+            showLoading('searchResult');
+
+            const params = new URLSearchParams();
+            if (company) params.append('company_name', company);
+            if (fiscalYear && fiscalYear !== 'all') params.append('fiscal_year', fiscalYear);
+            if (docType !== 'all') {
+                const fileTypeMap = {
+                    '有価証券報告書': 'PublicDoc',
+                    '監査報告書': 'AuditDoc'
+                };
+                params.append('file_type', fileTypeMap[docType] || docType);
+            }
+            params.append('limit', limit);
+
+            try {
+                const response = await fetch(`${apiUrl}/markdown-files?${params}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Api-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentDocuments = data.data || [];
+                    const tierInfo = data.tier ? ` (${data.tier} tier)` : '';
+
+                    showMessage('searchResult',
+                        `✅ ${currentDocuments.length}件のドキュメントが見つかりました${tierInfo}`,
+                        'success');
+
+                    displayDocuments(currentDocuments);
+                } else {
+                    throw new Error(data.error || '検索に失敗しました');
+                }
+            } catch (error) {
+                const errorMsg = error.message === 'Failed to fetch'
+                    ? 'CORSプロキシへの接続に失敗しました。'
+                    : error.message;
+                showMessage('searchResult', `❌ エラー: ${errorMsg}`, 'error');
+                document.getElementById('documentsList').innerHTML = '';
+            }
+        }
+
+        // ドキュメント一覧表示
+        function displayDocuments(documents) {
+            const container = document.getElementById('documentsList');
+
+            if (documents.length === 0) {
+                container.innerHTML = '<div class="message info">ドキュメントが見つかりませんでした</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="result-box">' +
+                documents.map((doc, index) => `
+                    <div class="document-item">
+                        <div class="document-header">
+                            <div>
+                                <div class="document-title">${doc.company_name || 'Unknown'}</div>
+                                <div class="document-meta">
+                                    ID: ${doc.company_id} |
+                                    年度: ${doc.fiscal_year} |
+                                    タイプ: ${doc.file_type}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="document-meta">
+                            パス: <code>${doc.storage_path}</code>
+                        </div>
+                        <div class="action-buttons">
+                            <button onclick="useStoragePath('${doc.storage_path}')">
+                                💾 ストレージ取得
+                            </button>
+                            <button onclick="showDocumentDetails(${index})">
+                                📋 詳細表示
+                            </button>
+                        </div>
+                    </div>
+                `).join('') + '</div>';
+        }
+
+        // ストレージパスを使用
+        function useStoragePath(path) {
+            document.getElementById('storagePath').value = path;
+            switchTab('storage');
+            document.querySelectorAll('.tab')[1].click(); // ストレージタブに切り替え
+        }
+
+        // ドキュメント詳細表示
+        function showDocumentDetails(index) {
+            const doc = currentDocuments[index];
+            alert(JSON.stringify(doc, null, 2));
+        }
+
+        // ドキュメント取得（ストレージ）
+        async function getDocument() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const path = document.getElementById('storagePath').value;
+            const maxSize = document.getElementById('maxSize').value;
+
+            if (!path) {
+                showMessage('storageResult', '❌ ストレージパスを入力してください', 'error');
+                return;
+            }
+
+            showLoading('storageResult');
+
+            try {
+                const params = new URLSearchParams({
+                    path: path,
+                    max_size: maxSize
+                });
+
+                const response = await fetch(`${apiUrl}/document?${params}`, {
+                    headers: { 'x-api-key': apiKey }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('storageResult',
+                        `✅ ドキュメント取得成功（サイズ: ${data.size}バイト）`,
+                        'success');
+
+                    // メタデータとコンテンツを表示
+                    document.getElementById('documentContent').innerHTML = `
+                        <div class="result-box">
+                            <h3>📄 メタデータ</h3>
+                            <pre>${JSON.stringify(data.metadata, null, 2)}</pre>
+
+                            <h3 style="margin-top: 20px;">📝 コンテンツ（先頭${maxSize}バイト）</h3>
+                            <pre>${escapeHtml(data.content.substring(0, 1000))}${data.content.length > 1000 ? '\n\n... (省略)' : ''}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.error || 'ドキュメント取得に失敗しました');
+                }
+            } catch (error) {
+                showMessage('storageResult', `❌ エラー: ${error.message}`, 'error');
+                document.getElementById('documentContent').innerHTML = '';
+            }
+        }
+
+        // 新規APIキー生成（実際にデータベースに登録）
+        async function generateNewKey() {
+            const apiKey = `xbrl_v1_${generateRandomString(32)}`;
+            const apiUrl = document.getElementById('apiUrl').value;
+
+            // デモモードまたは実際の登録を選択
+            const mode = confirm('実際にデータベースに登録しますか？\n\nOK: 実際に登録（Service Role Key必要）\nキャンセル: デモモード（表示のみ）');
+
+            if (mode) {
+                const serviceKey = prompt('Service Role Key を入力してください（APIキー作成に必要）:');
+                if (!serviceKey) {
+                    document.getElementById('generatedKey').innerHTML = `
+                        <div class="message warning">
+                            <strong>⚠️ Service Role Key が必要です</strong><br>
+                            独自APIキーを作成するにはService Role権限が必要です。
+                        </div>
+                    `;
+                    return;
+                }
+
+                try {
+                // Supabase RPC経由でAPIキーを登録
+                const supabaseUrl = 'https://wpwqxhyiglbtlaimrjrx.supabase.co';
+                const response = await fetch(`${supabaseUrl}/rest/v1/rpc/create_api_key`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': serviceKey,
+                        'Authorization': `Bearer ${serviceKey}`
+                    },
+                    body: JSON.stringify({
+                        p_api_key: apiKey,
+                        p_user_id: 'test-user-' + Date.now(),
+                        p_tier: 'free',
+                        p_rate_limit: 100
+                    })
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    result = { error: 'Response parse error' };
+                }
+
+                if (response.ok) {
+                    document.getElementById('generatedKey').innerHTML = `
+                        <div class="message success">
+                            <strong>🔑 新規APIキー（登録済み）</strong><br>
+                            <code style="display: block; margin-top: 10px; padding: 10px; background: white; border-radius: 5px;">
+                                ${apiKey}
+                            </code>
+                            <button style="margin-top: 10px;" onclick="copyToClipboard('${apiKey}')">
+                                📋 クリップボードにコピー
+                            </button>
+                            <small style="display: block; margin-top: 10px;">
+                                このキーはデータベースに登録されました。すぐに使用できます。
+                            </small>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error || '登録に失敗しました');
+                }
+            } catch (error) {
+                    document.getElementById('generatedKey').innerHTML = `
+                        <div class="message error">
+                            <strong>❌ エラー</strong><br>
+                            ${error.message}
+                        </div>
+                    `;
+                }
+            } else {
+                // デモモード（表示のみ）
+                document.getElementById('generatedKey').innerHTML = `
+                    <div class="message info">
+                        <strong>🔑 新規APIキー（デモモード）</strong><br>
+                        <code style="display: block; margin-top: 10px; padding: 10px; background: white; border-radius: 5px;">
+                            ${apiKey}
+                        </code>
+                        <button style="margin-top: 10px;" onclick="copyToClipboard('${apiKey}')">
+                            📋 クリップボードにコピー
+                        </button>
+                        <small style="display: block; margin-top: 10px; color: #666;">
+                            <strong>注意:</strong> これはデモ用のキーです。実際にはデータベースに登録されていません。<br>
+                            実際に使用するには、Service Role Keyを使用して登録してください。
+                        </small>
+                    </div>
+                `;
+            }
+        }
+
+        // APIキー検証
+        async function validateApiKey() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const testKey = document.getElementById('validateKey').value;
+
+            if (!testKey) {
+                showMessage('validationResult', '❌ APIキーを入力してください', 'error');
+                return;
+            }
+
+            showLoading('validationResult');
+
+            try {
+                // ヘルスチェック
+                const healthResponse = await fetch(`${apiUrl}/health`, {
+                    headers: { 'x-api-key': testKey }
+                });
+
+                // データアクセステスト
+                const searchResponse = await fetch(`${apiUrl}/search?limit=1`, {
+                    headers: { 'x-api-key': testKey }
+                });
+
+                const searchData = await searchResponse.json();
+
+                if (healthResponse.ok && searchResponse.ok) {
+                    const tierInfo = testKey === 'demo-key' ?
+                        'Free (FY2024-2025のみ)' :
+                        'Premium (全年度アクセス可能)';
+
+                    document.getElementById('validationResult').innerHTML = `
+                        <div class="message success">
+                            <strong>✅ APIキー有効</strong><br>
+                            キー: <code>${testKey.substring(0, 20)}...</code><br>
+                            ティア: ${tierInfo}<br>
+                            アクセス可能データ: ${searchData.total}件
+                        </div>
+                    `;
+                } else {
+                    throw new Error('APIキーが無効です');
+                }
+            } catch (error) {
+                showMessage('validationResult', `❌ 検証失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // エンドポイントテスト
+        async function testEndpoint(endpoint) {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+
+            showLoading('endpointResult');
+
+            try {
+                const response = await fetch(`${apiUrl.replace('/api', '')}${endpoint}`, {
+                    headers: { 'x-api-key': apiKey }
+                });
+
+                const data = await response.json();
+
+                document.getElementById('endpointResult').innerHTML = `
+                    <div class="result-box">
+                        <h3>${endpoint}</h3>
+                        <div class="status-badge ${response.ok ? 'status-success' : 'status-error'}">
+                            Status: ${response.status}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                showMessage('endpointResult', `❌ エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 企業詳細エンドポイントテスト
+        async function testCompanyEndpoint() {
+            const companyId = prompt('企業ID（例: S100TT6U）を入力してください:');
+            if (companyId) {
+                testEndpoint(`/api/company/${companyId}`);
+            }
+        }
+
+        // ドキュメントエンドポイントテスト
+        async function testDocumentEndpoint() {
+            const path = prompt('ストレージパスを入力してください:');
+            if (path) {
+                testEndpoint(`/api/document?path=${encodeURIComponent(path)}&max_size=1000`);
+            }
+        }
+
+        // 統計情報取得
+        async function fetchStatistics() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const apiKey = document.getElementById('apiKey').value;
+
+            try {
+                const response = await fetch(`${apiUrl}/statistics`, {
+                    headers: { 'x-api-key': apiKey }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('statTotal').textContent = data.total_documents || 0;
+                    document.getElementById('statCompanies').textContent = data.total_companies || 0;
+                    document.getElementById('statYears').textContent = Object.keys(data.documents_by_year || {}).length;
+                    document.getElementById('statAccess').textContent = data.tier_info?.current_tier?.toUpperCase() || 'Free';
+                }
+            } catch (error) {
+                console.error('統計情報の取得に失敗:', error);
+            }
+        }
+
+        // ユーティリティ関数
+        function showMessage(elementId, message, type) {
+            document.getElementById(elementId).innerHTML =
+                `<div class="message ${type}">${message}</div>`;
+        }
+
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML =
+                '<div class="loading">処理中...</div>';
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('クリップボードにコピーしました！');
+            }).catch(err => {
+                console.error('コピーに失敗しました:', err);
+            });
+        }
+
+        function generateRandomString(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('クリップボードにコピーしました');
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            testConnection();
+        });
+    </script>
+</body>
+</html>

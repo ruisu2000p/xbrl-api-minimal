@@ -1,0 +1,24 @@
+{
+  "name": "xbrl-api-test-web",
+  "version": "1.0.0",
+  "description": "XBRL API Web Testing Interface",
+  "main": "cors-proxy.js",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run proxy\"",
+    "server": "http-server -p 8000",
+    "proxy": "node cors-proxy.js",
+    "dev": "npm start"
+  },
+  "keywords": [
+    "XBRL",
+    "API",
+    "Testing",
+    "Supabase"
+  ],
+  "author": "XBRL Development Team",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "concurrently": "^8.2.2"
+  }
+}

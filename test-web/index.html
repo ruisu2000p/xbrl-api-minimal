@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XBRL API テストページ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .test-button {
+            padding: 10px;
+            border: 1px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .test-button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .result-area {
+            background: #f7f9fc;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-area pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+        }
+
+        .status {
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .test-companies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .company-chip {
+            background: #e0e7ff;
+            color: #5a67d8;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .company-chip:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: #718096;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab.active {
+            color: #667eea;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 XBRL API テストページ</h1>
+            <p>ローカル環境でXBRL APIの動作確認を行います</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 左側：設定パネル -->
+            <div class="card">
+                <h2>⚙️ API設定</h2>
+
+                <div class="form-group">
+                    <label for="apiUrl">APIエンドポイント</label>
+                    <input type="text" id="apiUrl" value="https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/markdown-reader" />
+                </div>
+
+                <div class="form-group">
+                    <label for="authType">認証タイプ</label>
+                    <select id="authType" onchange="toggleAuthInput()">
+                        <option value="anon">Anon Key</option>
+                        <option value="api">XBRL API Key</option>
+                        <option value="none">認証なし</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="authKeyGroup">
+                    <label for="authKey">認証キー</label>
+                    <textarea id="authKey" placeholder="Bearer キーを入力..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="companyName">企業名</label>
+                    <input type="text" id="companyName" placeholder="例: 株式会社ダイフク" />
+                </div>
+
+                <div class="test-companies">
+                    <div class="company-chip" onclick="setCompany('株式会社エル・ティー・エス')">株式会社エル・ティー・エス</div>
+                    <div class="company-chip" onclick="setCompany('株式会社ダイフク')">株式会社ダイフク</div>
+                    <div class="company-chip" onclick="setCompany('日本瓦斯株式会社')">日本瓦斯株式会社</div>
+                    <div class="company-chip" onclick="setCompany('株式会社多摩川ホールディングス')">多摩川HD</div>
+                </div>
+
+                <button class="btn" onclick="testAPI()">
+                    🚀 APIテスト実行
+                </button>
+            </div>
+
+            <!-- 右側：クイックテスト -->
+            <div class="card">
+                <h2>⚡ クイックテスト</h2>
+
+                <div class="btn-group">
+                    <button class="test-button" onclick="testAuth()">🔐 認証テスト</button>
+                    <button class="test-button" onclick="testData()">📊 データ取得</button>
+                    <button class="test-button" onclick="testError()">❌ エラー処理</button>
+                    <button class="test-button" onclick="testPerformance()">⚡ パフォーマンス</button>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('response')">レスポンス</button>
+                    <button class="tab" onclick="switchTab('headers')">ヘッダー</button>
+                    <button class="tab" onclick="switchTab('stats')">統計</button>
+                </div>
+
+                <div class="tab-content active" id="response-tab">
+                    <div class="result-area">
+                        <pre id="quickResult">テスト結果がここに表示されます...</pre>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="headers-tab">
+                    <div class="result-area">
+                        <pre id="headersResult">ヘッダー情報がここに表示されます...</pre>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="stats-tab">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="responseTime">-</div>
+                            <div class="stat-label">応答時間 (ms)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="dataSize">-</div>
+                            <div class="stat-label">データサイズ</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statusCode">-</div>
+                            <div class="stat-label">ステータス</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="testCount">0</div>
+                            <div class="stat-label">実行回数</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 下部：詳細結果 -->
+        <div class="card">
+            <h2>📝 詳細結果</h2>
+            <div id="statusMessage"></div>
+            <div class="result-area">
+                <pre id="detailResult">APIレスポンスの詳細がここに表示されます...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testCounter = 0;
+        let lastResponseTime = 0;
+
+        // デフォルトのAnon Key（環境変数から読み込むべきですが、テスト用にハードコード）
+        const DEFAULT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMTk1NDEsImV4cCI6MjA3Mzc5NTU0MX0.aGMCRtTRIbdUMRTdJ7KFZ7oJ2krkD7QWzUEcTs7Jlfs';
+
+        // 初期設定
+        window.onload = function() {
+            document.getElementById('authKey').value = DEFAULT_ANON_KEY;
+        };
+
+        function toggleAuthInput() {
+            const authType = document.getElementById('authType').value;
+            const authKeyGroup = document.getElementById('authKeyGroup');
+
+            if (authType === 'none') {
+                authKeyGroup.style.display = 'none';
+            } else {
+                authKeyGroup.style.display = 'block';
+                if (authType === 'anon') {
+                    document.getElementById('authKey').value = DEFAULT_ANON_KEY;
+                } else {
+                    document.getElementById('authKey').value = '';
+                }
+            }
+        }
+
+        function setCompany(name) {
+            document.getElementById('companyName').value = name;
+        }
+
+        function switchTab(tabName) {
+            // すべてのタブとコンテンツを非アクティブに
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // 選択されたタブをアクティブに
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        async function testAPI() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const authType = document.getElementById('authType').value;
+            const authKey = document.getElementById('authKey').value;
+            const companyName = document.getElementById('companyName').value;
+
+            if (!companyName) {
+                showStatus('企業名を入力してください', 'warning');
+                return;
+            }
+
+            showStatus('APIを呼び出し中...', 'info');
+
+            const startTime = Date.now();
+            testCounter++;
+
+            try {
+                const url = `${apiUrl}/by-company?name=${encodeURIComponent(companyName)}`;
+                const headers = {};
+
+                if (authType !== 'none' && authKey) {
+                    headers['Authorization'] = `Bearer ${authKey}`;
+                }
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                lastResponseTime = Date.now() - startTime;
+
+                const data = await response.text();
+
+                // 統計情報を更新
+                updateStats(response.status, data.length, lastResponseTime);
+
+                // ヘッダー情報を表示
+                displayHeaders(response.headers);
+
+                if (response.ok) {
+                    showStatus(`✅ 成功: ${companyName}のデータ取得完了 (${lastResponseTime}ms)`, 'success');
+                    document.getElementById('quickResult').textContent = data.substring(0, 1000) +
+                        (data.length > 1000 ? '\n\n... (省略) ...' : '');
+                    document.getElementById('detailResult').textContent =
+                        `ステータス: ${response.status}\n` +
+                        `データサイズ: ${data.length.toLocaleString()}文字\n` +
+                        `応答時間: ${lastResponseTime}ms\n\n` +
+                        `=== データ内容 ===\n${data}`;
+                } else {
+                    showStatus(`❌ エラー: ${response.status} ${response.statusText}`, 'error');
+                    document.getElementById('quickResult').textContent = data;
+                    document.getElementById('detailResult').textContent =
+                        `エラーステータス: ${response.status}\n` +
+                        `エラー内容: ${data}`;
+                }
+            } catch (error) {
+                showStatus(`💥 接続エラー: ${error.message}`, 'error');
+                document.getElementById('quickResult').textContent = error.toString();
+                document.getElementById('detailResult').textContent =
+                    `エラー詳細:\n${error.stack || error.toString()}`;
+            }
+        }
+
+        async function testAuth() {
+            showStatus('認証テスト実行中...', 'info');
+
+            const apiUrl = document.getElementById('apiUrl').value;
+            const results = [];
+
+            // 認証なしテスト
+            try {
+                const response = await fetch(`${apiUrl}/by-company?name=test`);
+                results.push(`認証なし: ${response.status} ${response.status === 401 ? '✅' : '❌'}`);
+            } catch (error) {
+                results.push(`認証なし: エラー ❌`);
+            }
+
+            // Anon Key認証テスト
+            try {
+                const response = await fetch(`${apiUrl}/by-company?name=test`, {
+                    headers: { 'Authorization': `Bearer ${DEFAULT_ANON_KEY}` }
+                });
+                results.push(`Anon Key: ${response.status} ${[200, 404].includes(response.status) ? '✅' : '❌'}`);
+            } catch (error) {
+                results.push(`Anon Key: エラー ❌`);
+            }
+
+            document.getElementById('quickResult').textContent = results.join('\n');
+            showStatus('認証テスト完了', 'success');
+        }
+
+        async function testData() {
+            const companies = [
+                '株式会社エル・ティー・エス',
+                '株式会社ダイフク',
+                '日本瓦斯株式会社'
+            ];
+
+            showStatus('データ取得テスト実行中...', 'info');
+            const results = [];
+
+            for (const company of companies) {
+                try {
+                    const response = await fetch(
+                        `${document.getElementById('apiUrl').value}/by-company?name=${encodeURIComponent(company)}`,
+                        {
+                            headers: { 'Authorization': `Bearer ${document.getElementById('authKey').value}` }
+                        }
+                    );
+
+                    if (response.ok) {
+                        const data = await response.text();
+                        results.push(`✅ ${company}: ${data.length.toLocaleString()}文字`);
+                    } else {
+                        results.push(`❌ ${company}: ${response.status}`);
+                    }
+                } catch (error) {
+                    results.push(`❌ ${company}: エラー`);
+                }
+            }
+
+            document.getElementById('quickResult').textContent = results.join('\n');
+            showStatus('データ取得テスト完了', 'success');
+        }
+
+        async function testError() {
+            showStatus('エラーハンドリングテスト実行中...', 'info');
+            const apiUrl = document.getElementById('apiUrl').value;
+            const authKey = document.getElementById('authKey').value;
+            const results = [];
+
+            const tests = [
+                { name: 'パラメータなし', url: `${apiUrl}/by-company`, expected: 400 },
+                { name: '空の会社名', url: `${apiUrl}/by-company?name=`, expected: 400 },
+                { name: '存在しない会社', url: `${apiUrl}/by-company?name=XXXNONEXISTENT`, expected: 404 }
+            ];
+
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url, {
+                        headers: { 'Authorization': `Bearer ${authKey}` }
+                    });
+                    const status = response.status === test.expected ? '✅' : '❌';
+                    results.push(`${test.name}: ${response.status} ${status}`);
+                } catch (error) {
+                    results.push(`${test.name}: エラー ❌`);
+                }
+            }
+
+            document.getElementById('quickResult').textContent = results.join('\n');
+            showStatus('エラーハンドリングテスト完了', 'success');
+        }
+
+        async function testPerformance() {
+            showStatus('パフォーマンステスト実行中...', 'info');
+            const company = '株式会社エル・ティー・エス';
+            const times = [];
+
+            for (let i = 0; i < 3; i++) {
+                const startTime = Date.now();
+                try {
+                    await fetch(
+                        `${document.getElementById('apiUrl').value}/by-company?name=${encodeURIComponent(company)}`,
+                        {
+                            headers: { 'Authorization': `Bearer ${document.getElementById('authKey').value}` }
+                        }
+                    );
+                    const duration = Date.now() - startTime;
+                    times.push(duration);
+                } catch (error) {
+                    times.push(-1);
+                }
+            }
+
+            const avgTime = Math.round(times.filter(t => t > 0).reduce((a, b) => a + b, 0) / times.filter(t => t > 0).length);
+
+            document.getElementById('quickResult').textContent =
+                `試行1: ${times[0]}ms\n` +
+                `試行2: ${times[1]}ms\n` +
+                `試行3: ${times[2]}ms\n\n` +
+                `平均応答時間: ${avgTime}ms`;
+
+            showStatus(`パフォーマンステスト完了 (平均: ${avgTime}ms)`, 'success');
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function updateStats(status, dataSize, responseTime) {
+            document.getElementById('responseTime').textContent = `${responseTime}`;
+            document.getElementById('dataSize').textContent = dataSize > 1000 ?
+                `${Math.round(dataSize / 1000)}KB` : `${dataSize}B`;
+            document.getElementById('statusCode').textContent = status;
+            document.getElementById('testCount').textContent = testCounter;
+        }
+
+        function displayHeaders(headers) {
+            const headerText = [];
+            headers.forEach((value, key) => {
+                headerText.push(`${key}: ${value}`);
+            });
+            document.getElementById('headersResult').textContent = headerText.join('\n');
+        }
+    </script>
+</body>
+</html>

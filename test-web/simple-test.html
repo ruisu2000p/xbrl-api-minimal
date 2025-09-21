@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XBRL API シンプルテスト</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover { background: #45a049; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🔧 XBRL API シンプルテスト</h1>
+
+    <div class="test-section">
+        <h2>Edge Functions 接続テスト</h2>
+        <button onclick="testMarkdownReader()">markdown-reader</button>
+        <button onclick="testGateway()">gateway-simple</button>
+        <button onclick="testXbrlSearch()">xbrl-search</button>
+        <div id="result" class="result">テスト結果がここに表示されます...</div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            PROXY_URL: 'http://localhost:3001',
+            ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMTk1NDEsImV4cCI6MjA3Mzc5NTU0MX0.aGMCRtTRIbdUMRTdJ7KFZ7oJ2krkD7QWzUEcTs7Jlfs'
+        };
+
+        async function testMarkdownReader() {
+            const result = document.getElementById('result');
+            result.textContent = 'Testing markdown-reader...';
+
+            try {
+                const response = await fetch(
+                    `${CONFIG.PROXY_URL}/functions/v1/markdown-reader/by-company?name=株式会社ダイフク`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${CONFIG.ANON_KEY}`
+                        }
+                    }
+                );
+
+                if (response.ok) {
+                    const data = await response.text();
+                    result.innerHTML = `<span class="success">✅ Success (${response.status})</span>\n\nData (first 500 chars):\n${data.substring(0, 500)}...`;
+                } else {
+                    result.innerHTML = `<span class="error">❌ Error: ${response.status} ${response.statusText}</span>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Connection Error: ${error.message}</span>`;
+            }
+        }
+
+        async function testGateway() {
+            const result = document.getElementById('result');
+            result.textContent = 'Testing gateway-simple...';
+
+            try {
+                const response = await fetch(
+                    `${CONFIG.PROXY_URL}/functions/v1/gateway-simple`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${CONFIG.ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ test: true })
+                    }
+                );
+
+                const data = await response.text();
+                result.innerHTML = response.ok ?
+                    `<span class="success">✅ Success (${response.status})</span>\n\n${data}` :
+                    `<span class="error">❌ Error: ${response.status}</span>\n\n${data}`;
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Connection Error: ${error.message}</span>`;
+            }
+        }
+
+        async function testXbrlSearch() {
+            const result = document.getElementById('result');
+            result.textContent = 'Testing xbrl-search...';
+
+            try {
+                const response = await fetch(
+                    `${CONFIG.PROXY_URL}/functions/v1/xbrl-search`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${CONFIG.ANON_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            query: 'ダイフク',
+                            year: 'FY2022'
+                        })
+                    }
+                );
+
+                const data = await response.text();
+                result.innerHTML = response.ok ?
+                    `<span class="success">✅ Success (${response.status})</span>\n\n${data}` :
+                    `<span class="error">❌ Error: ${response.status}</span>\n\n${data}`;
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Connection Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
