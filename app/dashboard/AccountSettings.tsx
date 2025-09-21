@@ -614,6 +614,30 @@ export default function AccountSettings() {
         if (isAuthenticated === 'true' && currentUser) {
           try {
             const userData = JSON.parse(currentUser);
+
+            // UUID形式チェック（古いIDの場合は新しいUUIDを生成）
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(userData.id)) {
+              // eslint-disable-next-line no-console
+              console.warn('⚠️ 古い形式のユーザーID検出:', userData.id);
+
+              // 新しいUUID形式のIDを生成
+              const generateUUID = () => {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                  const r = Math.random() * 16 | 0;
+                  const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                  return v.toString(16);
+                });
+              };
+
+              userData.id = generateUUID();
+              // 更新したデータを保存
+              localStorage.setItem('currentUser', JSON.stringify(userData));
+
+              // eslint-disable-next-line no-console
+              console.log('✅ 新しいUUID形式のIDを生成:', userData.id);
+            }
+
             userId = userData.id;
             userEmail = userData.email;
             // eslint-disable-next-line no-console
