@@ -210,27 +210,27 @@ export async function getUser() {
 export async function getUserApiKeys(): Promise<ApiKeyResponse> {
   const supabase = await supabaseManager.createSSRClient()
 
-  const { data: { session }, error: authError } = await supabase.auth.getSession()
-  if (authError || !session) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
     return { success: false, error: 'Not authenticated' }
   }
 
   try {
-    // Edge Functionを使用してAPIキー一覧を取得
+    // 直接Edge Functionを呼び出す
     const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/list`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
       }
     })
 
     const result = await response.json()
 
-    if (!response.ok || !result.success) {
+    if (!response.ok || !result?.success) {
       return {
         success: false,
-        error: result.error || 'APIキーの取得に失敗しました'
+        error: result?.error || 'APIキーの取得に失敗しました'
       }
     }
 
@@ -264,7 +264,7 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
   }
 
   try {
-    // Edge Functionを使用してAPIキーを作成
+    // 直接Edge Functionを呼び出す
     const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/create`, {
       method: 'POST',
       headers: {
@@ -279,10 +279,10 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 
     const result = await response.json()
 
-    if (!response.ok || !result.success) {
+    if (!response.ok || !result?.success) {
       return {
         success: false,
-        error: result.error || 'APIキーの作成に失敗しました'
+        error: result?.error || 'APIキーの作成に失敗しました'
       }
     }
 
@@ -315,7 +315,7 @@ export async function deleteApiKey(keyId: string) {
   }
 
   try {
-    // Edge Functionを使用してAPIキーを削除
+    // 直接Edge Functionを呼び出す
     const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/${keyId}`, {
       method: 'DELETE',
       headers: {
@@ -326,10 +326,10 @@ export async function deleteApiKey(keyId: string) {
 
     const result = await response.json()
 
-    if (!response.ok || !result.success) {
+    if (!response.ok || !result?.success) {
       return {
         success: false,
-        error: result.error || 'APIキーの削除に失敗しました'
+        error: result?.error || 'APIキーの削除に失敗しました'
       }
     }
 
