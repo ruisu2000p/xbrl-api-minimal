@@ -431,7 +431,10 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
           )}
           <div className="space-y-4">
             <div>
+              <label htmlFor="apiKeyName" className="block text-sm font-medium text-gray-700 mb-1">APIキー名</label>
               <input
+                id="apiKeyName"
+                name="apiKeyName"
                 type="text"
                 placeholder="APIキー名（例：本番用キー）"
                 value={keyName}
@@ -440,7 +443,10 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
               />
             </div>
             <div>
+              <label htmlFor="apiKeyDescription" className="block text-sm font-medium text-gray-700 mb-1">説明（オプション）</label>
               <textarea
+                id="apiKeyDescription"
+                name="apiKeyDescription"
                 placeholder="説明（オプション）"
                 value={keyDescription}
                 onChange={(e) => setKeyDescription(e.target.value)}
@@ -570,8 +576,10 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
               <h2 className="text-xl font-semibold mb-4">プロファイル情報</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">名前</label>
+                  <label htmlFor="profileUserName" className="block text-sm font-medium text-gray-700 mb-1">名前</label>
                   <input
+                    id="profileUserName"
+                    name="profileUserName"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -580,8 +588,10 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">会社名（オプション）</label>
+                  <label htmlFor="profileCompanyName" className="block text-sm font-medium text-gray-700 mb-1">会社名（オプション）</label>
                   <input
+                    id="profileCompanyName"
+                    name="profileCompanyName"
                     type="text"
                     value={formData.company}
                     onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
@@ -606,8 +616,10 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
               <h2 className="text-xl font-semibold mb-4">メールアドレス変更</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">現在のメールアドレス</label>
+                  <label htmlFor="currentEmailAddress" className="block text-sm font-medium text-gray-700 mb-1">現在のメールアドレス</label>
                   <input
+                    id="currentEmailAddress"
+                    name="currentEmailAddress"
                     type="email"
                     value={user.email}
                     disabled
@@ -615,8 +627,10 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">新しいメールアドレス</label>
+                  <label htmlFor="newEmailAddress" className="block text-sm font-medium text-gray-700 mb-1">新しいメールアドレス</label>
                   <input
+                    id="newEmailAddress"
+                    name="newEmailAddress"
                     type="email"
                     value={formData.newEmail}
                     onChange={(e) => setFormData(prev => ({ ...prev, newEmail: e.target.value }))}
@@ -777,8 +791,9 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                     </ul>
                     <div className="flex items-center justify-center">
                       <input
-                        type="radio"
+                        id={`plan-${plan.id}`}
                         name="plan"
+                        type="radio"
                         checked={isSelected}
                         onChange={() => setSelectedPlan(plan.id)}
                         className="mr-2"

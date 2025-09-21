@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -90,35 +90,44 @@ function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
 
       <section className="grid gap-6 md:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">メールアドレス</label>
+          <label htmlFor="profile-email" className="mb-2 block text-sm font-medium text-gray-700">メールアドレス</label>
           <input
+            id="profile-email"
+            name="email"
             type="email"
             value={profile.email}
             onChange={(event) => onChange('email', event.target.value)}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="your@email.com"
+            autoComplete="email"
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">ユーザー名</label>
+          <label htmlFor="profile-name" className="mb-2 block text-sm font-medium text-gray-700">ユーザー名</label>
           <input
+            id="profile-name"
+            name="name"
             type="text"
             value={profile.name}
             onChange={(event) => onChange('name', event.target.value)}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="田中太郎"
+            autoComplete="name"
           />
         </div>
       </section>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">会社名</label>
+        <label htmlFor="profile-company" className="mb-2 block text-sm font-medium text-gray-700">会社名</label>
         <input
+          id="profile-company"
+          name="company"
           type="text"
           value={profile.company}
           onChange={(event) => onChange('company', event.target.value)}
           className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="株式会社サンプル"
+          autoComplete="organization"
         />
       </div>
 
@@ -330,12 +339,15 @@ function ApiKeyTab({
       <section className="rounded-2xl border border-gray-200 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex-1">
-            <label className="mb-2 block text-sm font-medium text-gray-700">新しいAPIキー名</label>
+            <label htmlFor="api-key-name" className="mb-2 block text-sm font-medium text-gray-700">新しいAPIキー名</label>
             <input
+              id="api-key-name"
+              name="apiKeyName"
               type="text"
               value={newKeyName}
               onChange={(event) => onChangeName(event.target.value)}
               placeholder="例: Production Key"
+              autoComplete="off"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -377,46 +389,43 @@ function ApiKeyTab({
             <p className="mt-3 text-sm">まだAPIキーがありません。上のフォームから作成できます。</p>
           </div>
         ) : (
-          <ul className="space-y-4">
+          <div className="space-y-3">
             {apiKeys.map((key) => (
-              <li key={key.id} className="rounded-xl border border-gray-200 p-5 transition-colors hover:border-blue-200">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-base font-semibold text-gray-900">{key.name}</span>
-                      <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        key.tier === 'premium'
-                          ? 'bg-purple-100 text-purple-700'
-                          : key.tier === 'basic'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {key.tier === 'premium' ? 'プレミアム' : key.tier === 'basic' ? 'スタンダード' : 'フリー'}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                      <span>作成日: {key.created}</span>
-                      <span>最終使用: {key.lastUsed}</span>
-                    </div>
-                    <ApiKeyDisplay
-                      apiKey={key.key}
-                      keyId={key.id}
-                      onCopy={onCopy}
-                    />
+              <div
+                key={key.id}
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 p-4"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900">{key.name}</span>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                      {key.status}
+                    </span>
                   </div>
-                  <div className="flex flex-col gap-2 md:items-end">
-                    <button
-                      onClick={() => onDelete(key.id)}
-                      className="flex items-center space-x-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-                    >
-                      <i className="ri-delete-bin-line"></i>
-                      <span>削除</span>
-                    </button>
+                  <div className="mt-1 flex flex-col gap-1 text-xs text-gray-500 md:flex-row md:items-center md:gap-4">
+                    <span>作成: {key.created_at}</span>
+                    <span>最終使用: {key.last_used ? key.last_used : '未使用'}</span>
                   </div>
                 </div>
-              </li>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onCopy(key.key_prefix + '***')}
+                    className="flex items-center space-x-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    <i className="ri-file-copy-line"></i>
+                    <span>コピー</span>
+                  </button>
+                  <button
+                    onClick={() => onDelete(key.id)}
+                    className="flex items-center space-x-1 rounded-lg border border-red-300 px-3 py-2 text-xs font-medium text-red-700 transition-colors hover:bg-red-50"
+                  >
+                    <i className="ri-delete-bin-line"></i>
+                    <span>削除</span>
+                  </button>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </div>
@@ -425,7 +434,13 @@ function ApiKeyTab({
 
 export default function AccountSettings() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>('profile');
+  const searchParams = useSearchParams();
+
+  // 新規アカウントの場合はAPIキータブを初期表示
+  const isNewAccount = searchParams.get('newAccount') === 'true';
+  const initialTab = isNewAccount ? 'api' : 'profile';
+
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [profile, setProfile] = useState<ProfileState>(INITIAL_PROFILE);
   const [profileMessage, setProfileMessage] = useState<Message>(null);
 
@@ -475,6 +490,8 @@ export default function AccountSettings() {
         return;
       }
 
+      console.log('Loaded API keys:', apiKeys); // デバッグ用
+
       const formattedKeys: ApiKey[] = (apiKeys || []).map((key: any) => ({
         id: key.id,
         name: key.name,
@@ -486,6 +503,7 @@ export default function AccountSettings() {
         tier: (key.tier || 'free') as ApiKey['tier']
       }));
 
+      console.log('Formatted keys:', formattedKeys); // デバッグ用
       setApiKeys(formattedKeys);
       setApiStatus('ready');
     } catch (error) {
@@ -592,7 +610,7 @@ export default function AccountSettings() {
     }
 
     setIsCreatingKey(false);
-  }, [newKeyName]);;
+  }, [newKeyName]);
 
   const handleDeleteKey = useCallback((id: string) => {
     setDeleteKeyId(id);
@@ -688,78 +706,78 @@ export default function AccountSettings() {
           </div>
         </div>
 
-      <div className="space-y-6 border-b border-gray-100 px-6 pb-4 pt-6">
-        <h2 className="text-lg font-semibold text-gray-900">{activeTabLabel}</h2>
-        <p className="text-sm text-gray-500">
-          {activeTab === 'profile' && 'アカウントに紐づく基本情報を管理します。'}
-          {activeTab === 'plan' && '契約中のプランや請求履歴を確認し、プラン変更をリクエストできます。'}
-          {activeTab === 'api' && 'APIキーの発行・管理・削除が行えます。'}
-        </p>
+        <div className="space-y-6 border-b border-gray-100 px-6 pb-4 pt-6">
+          <h2 className="text-lg font-semibold text-gray-900">{activeTabLabel}</h2>
+          <p className="text-sm text-gray-500">
+            {activeTab === 'profile' && 'アカウントに紐づく基本情報を管理します。'}
+            {activeTab === 'plan' && '契約中のプランや請求履歴を確認し、プラン変更をリクエストできます。'}
+            {activeTab === 'api' && 'APIキーの発行・管理・削除が行えます。'}
+          </p>
+        </div>
+
+        <div className="px-6 pb-8 pt-2">
+          {activeTab === 'profile' && (
+            <ProfileTab
+              profile={profile}
+              message={profileMessage}
+              onChange={handleProfileChange}
+              onSave={handleProfileSave}
+            />
+          )}
+
+          {activeTab === 'plan' && (
+            <PlanTab
+              currentPlan={currentPlan}
+              selectedPlan={selectedPlan}
+              message={planMessage}
+              onSelectPlan={handlePlanSelect}
+              onUpdatePlan={handlePlanUpdate}
+            />
+          )}
+
+          {activeTab === 'api' && (
+            <ApiKeyTab
+              apiKeys={apiKeys}
+              status={apiStatus}
+              message={apiMessage}
+              generatedKey={generatedKey}
+              newKeyName={newKeyName}
+              isCreating={isCreatingKey}
+              onReload={loadApiKeys}
+              onCreate={handleCreateKey}
+              onDelete={handleDeleteKey}
+              onChangeName={setNewKeyName}
+              onCopy={handleCopyKey}
+            />
+          )}
+        </div>
       </div>
 
-      <div className="px-6 pb-8 pt-2">
-        {activeTab === 'profile' && (
-          <ProfileTab
-            profile={profile}
-            message={profileMessage}
-            onChange={handleProfileChange}
-            onSave={handleProfileSave}
-          />
-        )}
+      {/* APIキー削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={deleteKeyId !== null}
+        title="APIキーの削除"
+        message={`APIキー「${deleteKeyName}」を削除しますか？この操作は取り消せません。`}
+        confirmText="削除"
+        cancelText="キャンセル"
+        confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+        icon="danger"
+        onConfirm={confirmDeleteKey}
+        onCancel={() => setDeleteKeyId(null)}
+      />
 
-        {activeTab === 'plan' && (
-          <PlanTab
-            currentPlan={currentPlan}
-            selectedPlan={selectedPlan}
-            message={planMessage}
-            onSelectPlan={handlePlanSelect}
-            onUpdatePlan={handlePlanUpdate}
-          />
-        )}
-
-        {activeTab === 'api' && (
-          <ApiKeyTab
-            apiKeys={apiKeys}
-            status={apiStatus}
-            message={apiMessage}
-            generatedKey={generatedKey}
-            newKeyName={newKeyName}
-            isCreating={isCreatingKey}
-            onReload={loadApiKeys}
-            onCreate={handleCreateKey}
-            onDelete={handleDeleteKey}
-            onChangeName={setNewKeyName}
-            onCopy={handleCopyKey}
-          />
-        )}
-      </div>
-    </div>
-
-    {/* APIキー削除確認ダイアログ */}
-    <ConfirmDialog
-      isOpen={deleteKeyId !== null}
-      title="APIキーの削除"
-      message={`APIキー「${deleteKeyName}」を削除しますか？この操作は取り消せません。`}
-      confirmText="削除"
-      cancelText="キャンセル"
-      confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
-      icon="danger"
-      onConfirm={confirmDeleteKey}
-      onCancel={() => setDeleteKeyId(null)}
-    />
-
-    {/* ログアウト確認ダイアログ */}
-    <ConfirmDialog
-      isOpen={showLogoutDialog}
-      title="ログアウト"
-      message="ログアウトしてもよろしいですか？"
-      confirmText="ログアウト"
-      cancelText="キャンセル"
-      confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
-      icon="warning"
-      onConfirm={confirmLogout}
-      onCancel={() => setShowLogoutDialog(false)}
-    />
-  </>
+      {/* ログアウト確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={showLogoutDialog}
+        title="ログアウト"
+        message="ログアウトしてもよろしいですか？"
+        confirmText="ログアウト"
+        cancelText="キャンセル"
+        confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+        icon="warning"
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutDialog(false)}
+      />
+    </>
   );
 }
