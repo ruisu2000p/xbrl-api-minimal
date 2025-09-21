@@ -674,7 +674,8 @@ export default function AccountSettings() {
         console.log('📋 パラメータ:', {
           p_user_id: userId,
           p_name: newKeyName.trim(),
-          p_tier: 'free'
+          p_tier: 'free',
+          p_email: userEmail
         });
       }
 
@@ -682,7 +683,8 @@ export default function AccountSettings() {
         .rpc('create_api_key_complete_v2', {
           p_user_id: userId,
           p_name: newKeyName.trim(),
-          p_tier: 'free'
+          p_tier: 'free',
+          p_email: userEmail  // メールアドレスを追加
         });
 
       // eslint-disable-next-line no-console
@@ -705,8 +707,15 @@ export default function AccountSettings() {
         return;
       }
 
-      if (!result || !result.api_key) {
-        console.error('❌ APIキー作成失敗 - 結果が空:', result);
+      if (!result || !result.success) {
+        console.error('❌ APIキー作成失敗:', result);
+        setApiMessage({ type: 'error', text: result?.error || 'APIキーの作成に失敗しました。' });
+        setIsCreatingKey(false);
+        return;
+      }
+
+      if (!result.api_key) {
+        console.error('❌ APIキー作成失敗 - キーが空:', result);
         setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
         setIsCreatingKey(false);
         return;
