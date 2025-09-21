@@ -558,18 +558,15 @@ export default function AccountSettings() {
       const apiKey = `xbrl_v1_${randomString}`;
       const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
 
-      // APIキーをデータベースに挿入
+      // APIキーをデータベースに挿入（user_idはトリガーで自動設定）
       const { data, error } = await supabase
         .from('api_keys')
         .insert({
           name: newKeyName.trim(),
           key_prefix: keyPrefix,
           key_hash: apiKey,
-          user_id: session.user.id,
           tier: 'free',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          is_active: true
         })
         .select()
         .single();
