@@ -55,7 +55,12 @@ export default function AdminPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
           <h1 className="text-2xl font-bold mb-6">管理者ログイン</h1>
+          <label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
+            管理者パスワード
+          </label>
           <input
+            id="adminPassword"
+            name="adminPassword"
             type="password"
             value={adminPassword}
             onChange={(e) => setAdminPassword(e.target.value)}
@@ -85,7 +90,12 @@ export default function AdminPage() {
       </header>
       <main className="max-w-7xl mx-auto p-8">
         <div className="bg-white rounded-lg shadow p-6">
+          <label htmlFor="userSearch" className="block text-sm font-medium text-gray-700 mb-2">
+            ユーザー検索
+          </label>
           <input
+            id="userSearch"
+            name="userSearch"
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

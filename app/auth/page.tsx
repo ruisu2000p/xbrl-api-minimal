@@ -133,10 +133,11 @@ export default function AuthPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 お名前
               </label>
               <input
+                id="name"
                 type="text"
                 name="name"
                 value={formData.name}
@@ -151,10 +152,11 @@ export default function AuthPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               メールアドレス
             </label>
             <input
+              id="email"
               type="email"
               name="email"
               value={formData.email}
@@ -168,10 +170,11 @@ export default function AuthPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               パスワード
             </label>
             <input
+              id="password"
               type="password"
               name="password"
               value={formData.password}
@@ -187,10 +190,11 @@ export default function AuthPage() {
           {!isLogin && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                   パスワード（確認）
                 </label>
                 <input
+                  id="confirmPassword"
                   type="password"
                   name="confirmPassword"
                   value={formData.confirmPassword}
@@ -204,10 +208,11 @@ export default function AuthPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
                   会社名（任意）
                 </label>
                 <input
+                  id="company"
                   type="text"
                   name="company"
                   value={formData.company}
@@ -218,10 +223,11 @@ export default function AuthPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="plan" className="block text-sm font-medium text-gray-700 mb-1">
                   プラン選択
                 </label>
                 <select
+                  id="plan"
                   name="plan"
                   value={formData.plan}
                   onChange={handleChange}
