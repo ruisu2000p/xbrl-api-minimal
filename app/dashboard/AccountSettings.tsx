@@ -398,18 +398,18 @@ function ApiKeyTab({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-gray-900">{key.name}</span>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                      {key.status}
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-600">
+                      アクティブ
                     </span>
                   </div>
                   <div className="mt-1 flex flex-col gap-1 text-xs text-gray-500 md:flex-row md:items-center md:gap-4">
-                    <span>作成: {key.created_at}</span>
-                    <span>最終使用: {key.last_used ? key.last_used : '未使用'}</span>
+                    <span>作成: {key.created}</span>
+                    <span>最終使用: {key.lastUsed}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => onCopy(key.key_prefix + '***')}
+                    onClick={() => onCopy(key.key)}
                     className="flex items-center space-x-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
                   >
                     <i className="ri-file-copy-line"></i>
