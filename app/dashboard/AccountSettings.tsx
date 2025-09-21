@@ -466,9 +466,31 @@ export default function AccountSettings() {
     try {
       const supabase = supabaseManager.getBrowserClient();
 
-      // 認証状態を確認
+      // 本番環境ではSupabase認証、開発環境ではlocalstorage認証をサポート
+      let userId: string | null = null;
+
+      // まずSupabase認証を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.user) {
+
+      if (session?.user) {
+        // Supabase認証が有効な場合
+        userId = session.user.id;
+      } else {
+        // Supabase認証が無効な場合、localStorage認証を確認（開発環境用）
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const currentUser = localStorage.getItem('currentUser');
+
+        if (isAuthenticated === 'true' && currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            userId = userData.id;
+          } catch (e) {
+            console.error('❌ localStorage認証データが無効:', e);
+          }
+        }
+      }
+
+      if (!userId) {
         setApiStatus('error');
         setApiMessage({ type: 'error', text: 'ログインが必要です。' });
         return;
@@ -479,7 +501,7 @@ export default function AccountSettings() {
         .from('api_keys')
         .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
         .eq('is_active', true)
-        .eq('user_id', session.user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -788,9 +810,39 @@ export default function AccountSettings() {
     try {
       const supabase = supabaseManager.getBrowserClient();
 
-      // 認証状態を確認
+      // 本番環境ではSupabase認証、開発環境ではlocalstorage認証をサポート
+      let userId: string | null = null;
+
+      // まずSupabase認証を確認
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.user) {
+
+      if (session?.user) {
+        // Supabase認証が有効な場合
+        userId = session.user.id;
+        // eslint-disable-next-line no-console
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🗑️ Supabase認証で削除:', userId);
+        }
+      } else {
+        // Supabase認証が無効な場合、localStorage認証を確認（開発環境用）
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const currentUser = localStorage.getItem('currentUser');
+
+        if (isAuthenticated === 'true' && currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            userId = userData.id;
+            // eslint-disable-next-line no-console
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🗑️ localStorage認証で削除:', userId);
+            }
+          } catch (e) {
+            console.error('❌ localStorage認証データが無効:', e);
+          }
+        }
+      }
+
+      if (!userId) {
         setApiMessage({ type: 'error', text: 'ログインが必要です。' });
         setDeleteKeyId(null);
         return;
@@ -801,7 +853,7 @@ export default function AccountSettings() {
         .from('api_keys')
         .update({ is_active: false })
         .eq('id', deleteKeyId)
-        .eq('user_id', session.user.id);
+        .eq('user_id', userId);
 
       if (error) {
         console.error('Error deleting API key:', error);
