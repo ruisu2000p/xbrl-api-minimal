@@ -95,3 +95,7 @@ gcp_jwt_path = "supabase/gcp.json"
 # Disable JWT verification for v1_filings function (uses x-api-key instead)
 [functions.v1_filings]
 verify_jwt = false
+
+# Disable JWT verification for api-proxy function (uses x-api-key instead)
+[functions.api-proxy]
+verify_jwt = false

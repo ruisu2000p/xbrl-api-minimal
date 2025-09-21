@@ -220,14 +220,15 @@ const app = new Hono();
 
 app.use('*', cors({
   origin: '*',
-  allowMethods: ['GET','POST','OPTIONS'],
-  allowHeaders: ['content-type','x-api-key']
+  allowMethods: ['GET','POST','OPTIONS','DELETE'],
+  allowHeaders: ['content-type','x-api-key','X-Api-Key','authorization','Authorization']
 }));
 
-app.use('/api-proxy/*', withApiKey());
+// APIキー管理以外のエンドポイントにはwithApiKeyを適用
+// /api-proxy/keys/* エンドポイントは除外する
 
 // GET /api-proxy/markdown-files
-app.get('/api-proxy/markdown-files', async (c) => {
+app.get('/api-proxy/markdown-files', withApiKey(), async (c) => {
   const keyCtx = c.get('keyCtx') as KeyContext;
   const url = new URL(c.req.url);
   const companyId = url.searchParams.get('company_id');

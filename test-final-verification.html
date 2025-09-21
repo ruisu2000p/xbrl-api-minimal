@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XBRL API 最終動作確認</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        #output {
+            background: #282c34;
+            color: #61dafb;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .api-key-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 XBRL API 最終動作確認</h1>
+
+        <div class="test-section">
+            <h2>APIキー設定</h2>
+            <input type="text"
+                   id="apiKey"
+                   class="api-key-input"
+                   value="xbrl_v1_c1tq34z9bcoic0z8zvy6i5r2vdccpgnv"
+                   placeholder="APIキーを入力してください">
+            <div style="margin-top: 10px;">
+                <span class="info">ℹ️ 生成されたAPIキーを使用してテストを実行します</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>テスト項目</h2>
+            <button onclick="testHealthCheck()">1. ヘルスチェック</button>
+            <button onclick="testWithApiKey()">2. APIキー認証テスト</button>
+            <button onclick="testRateLimit()">3. レート制限テスト</button>
+            <button onclick="testFreeRestrictions()">4. 無料プラン制限テスト</button>
+            <button onclick="runAllTests()">🚀 全テスト実行</button>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="tierValue">-</div>
+                <div class="stat-label">ティア</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="rateLimitValue">-</div>
+                <div class="stat-label">レート制限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="remainingValue">-</div>
+                <div class="stat-label">残りリクエスト</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="dataCountValue">-</div>
+                <div class="stat-label">取得データ数</div>
+            </div>
+        </div>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/api-proxy';
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString('ja-JP');
+            const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            output.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function getApiKey() {
+            return document.getElementById('apiKey').value;
+        }
+
+        async function testHealthCheck() {
+            log('ヘルスチェック開始...');
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const text = await response.text();
+                if (response.ok) {
+                    log(`ヘルスチェック成功: ${text}`, 'success');
+                } else {
+                    log(`ヘルスチェック失敗: ${text}`, 'error');
+                }
+            } catch (error) {
+                log(`エラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithApiKey() {
+            const apiKey = getApiKey();
+            log(`APIキー認証テスト開始: ${apiKey.substring(0, 20)}...`);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/markdown-files?limit=5`, {
+                    headers: {
+                        'X-Api-Key': apiKey
+                    }
+                });
+
+                // ヘッダー情報を表示
+                const rateLimit = response.headers.get('X-RateLimit-Limit');
+                const remaining = response.headers.get('X-RateLimit-Remaining');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`APIキー認証成功！`, 'success');
+                    log(`  ティア: ${data.tier || 'unknown'}`);
+                    log(`  レート制限: ${rateLimit}/分`);
+                    log(`  残りリクエスト: ${remaining}`);
+                    log(`  取得データ数: ${data.data ? data.data.length : 0}`);
+
+                    // 統計を更新
+                    document.getElementById('stats').style.display = 'grid';
+                    document.getElementById('tierValue').textContent = data.tier || 'free';
+                    document.getElementById('rateLimitValue').textContent = `${rateLimit}/分`;
+                    document.getElementById('remainingValue').textContent = remaining;
+                    document.getElementById('dataCountValue').textContent = data.data ? data.data.length : 0;
+
+                    // データのサンプルを表示
+                    if (data.data && data.data.length > 0) {
+                        log('データサンプル:');
+                        data.data.slice(0, 2).forEach((item, index) => {
+                            log(`  ${index + 1}. ${item.company_name} (${item.fiscal_year})`);
+                        });
+                    }
+                } else {
+                    const error = await response.text();
+                    log(`APIキー認証失敗: ${error}`, 'error');
+                }
+            } catch (error) {
+                log(`エラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRateLimit() {
+            const apiKey = getApiKey();
+            log('レート制限テスト開始（5回連続リクエスト）...');
+
+            for (let i = 1; i <= 5; i++) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/markdown-files?limit=1`, {
+                        headers: {
+                            'X-Api-Key': apiKey
+                        }
+                    });
+
+                    const remaining = response.headers.get('X-RateLimit-Remaining');
+
+                    if (response.ok) {
+                        log(`  リクエスト ${i}/5: 成功 (残り: ${remaining})`);
+                    } else {
+                        const error = await response.text();
+                        log(`  リクエスト ${i}/5: 失敗 - ${error}`, 'error');
+                    }
+
+                    // 少し待機
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                } catch (error) {
+                    log(`  リクエスト ${i}/5: エラー - ${error.message}`, 'error');
+                }
+            }
+            log('レート制限テスト完了', 'success');
+        }
+
+        async function testFreeRestrictions() {
+            const apiKey = getApiKey();
+            log('無料プラン制限テスト開始...');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/markdown-files`, {
+                    headers: {
+                        'X-Api-Key': apiKey
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.tier === 'free') {
+                        log('無料プラン制限が適用されています:', 'success');
+
+                        // 利用可能な年度を確認
+                        const fiscalYears = data.data ? [...new Set(data.data.map(f => f.fiscal_year))] : [];
+                        log(`  利用可能な年度: ${fiscalYears.join(', ')}`);
+                        log(`  制限: 直近2年度のデータのみアクセス可能`);
+
+                        // データ数を確認
+                        const fyCount = {};
+                        if (data.data) {
+                            data.data.forEach(item => {
+                                fyCount[item.fiscal_year] = (fyCount[item.fiscal_year] || 0) + 1;
+                            });
+                        }
+
+                        Object.entries(fyCount).forEach(([fy, count]) => {
+                            log(`  ${fy}: ${count}件`);
+                        });
+                    } else {
+                        log(`プランティア: ${data.tier} - 制限なし`, 'info');
+                    }
+                } else {
+                    const error = await response.text();
+                    log(`テスト失敗: ${error}`, 'error');
+                }
+            } catch (error) {
+                log(`エラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function runAllTests() {
+            log('=== 全テスト開始 ===', 'info');
+            document.getElementById('output').innerHTML = '';
+
+            await testHealthCheck();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testWithApiKey();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testRateLimit();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await testFreeRestrictions();
+
+            log('=== 全テスト完了 ===', 'success');
+        }
+
+        // 初期ログ
+        log('XBRL API 最終動作確認ツール 準備完了');
+        log('生成されたAPIキーでテストを実行してください');
+    </script>
+</body>
+</html>

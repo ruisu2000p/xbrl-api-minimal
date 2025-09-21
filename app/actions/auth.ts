@@ -222,7 +222,7 @@ export async function getUserApiKeys(): Promise<ApiKeyResponse> {
       return { success: false, error: 'No active session' }
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/list`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-key-manager/list`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -270,14 +270,14 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 
   try {
     // 直接Edge Functionを呼び出す
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/create`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-key-manager/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({
-        name: name || 'API Key',
+        key_name: name || 'API Key',
         tier: 'free'
       })
     })
@@ -293,9 +293,9 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 
     // Return the plain text key only once for the user to save
     const newKey: ApiKey = {
-      id: result.keyId,
-      name: result.name,
-      key: result.apiKey, // Return the actual key only this once
+      id: result.key_id || result.keyId,
+      name: result.key_name || result.name,
+      key: result.api_key || result.apiKey, // Return the actual key only this once
       created: new Date().toLocaleDateString('ja-JP'),
       lastUsed: '未使用',
       tier: result.tier as ApiKey['tier']
@@ -321,12 +321,15 @@ export async function deleteApiKey(keyId: string) {
 
   try {
     // 直接Edge Functionを呼び出す
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/${keyId}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-key-manager/delete`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
-      }
+      },
+      body: JSON.stringify({
+        key_id: keyId
+      })
     })
 
     const result = await response.json()
