@@ -62,7 +62,7 @@ export class ApiSecurity {
 
       const key = this.deriveKey(secret, salt);
       const decipher = crypto.createDecipheriv(ALGORITHM, key as any, iv as any);
-      decipher.setAuthTag(tag);
+      decipher.setAuthTag(tag as any);
 
       const decrypted = Buffer.concat([
         decipher.update(encrypted) as any,
