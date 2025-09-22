@@ -8,6 +8,13 @@ node_modules/
 .env.local
 .env.*.local
 .env.production
+.env.production.backup
+.env.*.backup
+*.env.backup
+
+# Service Role Keys - NEVER commit
+*service*role*
+*SERVICE*ROLE*
 
 # Test files
 *.test.js

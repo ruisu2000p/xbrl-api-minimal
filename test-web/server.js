@@ -18,8 +18,13 @@ const __dirname = dirname(__filename);
 const PORT = process.env.PORT || 3002;
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://wpwqxhyiglbtlaimrjrx.supabase.co';
 // テスト環境では、anon keyを使用し、ユーザーのAPIキーで認証
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyMTk1NDEsImV4cCI6MjA3Mzc5NTU0MX0.aGMCRtTRIbdUMRTdJ7KFZ7oJ2krkD7QWzUEcTs7Jlfs';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_ANON_KEY) {
+    console.error('Error: NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required');
+    console.log('Please set it in your .env.local file');
+    process.exit(1);
+}
 
 // Supabaseクライアントの初期化（anon keyを使用）
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

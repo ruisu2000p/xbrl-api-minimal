@@ -1,7 +1,14 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = 'http://localhost:54321';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+const supabaseUrl = process.env.SUPABASE_LOCAL_URL || 'http://localhost:54321';
+const supabaseKey = process.env.SUPABASE_LOCAL_SERVICE_KEY;
+
+if (!supabaseKey) {
+  console.error('Error: SUPABASE_LOCAL_SERVICE_KEY environment variable is required');
+  console.log('Please set it using:');
+  console.log('export SUPABASE_LOCAL_SERVICE_KEY="your-service-role-key"');
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

@@ -951,13 +951,23 @@
 
         // ユーティリティ関数
         function showMessage(elementId, message, type) {
-            document.getElementById(elementId).innerHTML =
-                `<div class="message ${type}">${message}</div>`;
+            // XSS対策: textContentを使用
+            const element = document.getElementById(elementId);
+            element.textContent = '';
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.textContent = message;
+            element.appendChild(div);
         }
 
         function showLoading(elementId) {
-            document.getElementById(elementId).innerHTML =
-                '<div class="loading">処理中...</div>';
+            // XSS対策: textContentを使用
+            const element = document.getElementById(elementId);
+            element.textContent = '';
+            const div = document.createElement('div');
+            div.className = 'loading';
+            div.textContent = '処理中...';
+            element.appendChild(div);
         }
 
         function copyToClipboard(text) {

@@ -3,7 +3,14 @@
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const SUPABASE_URL = 'https://wpwqxhyiglbtlaimrjrx.supabase.co';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3F4aHlpZ2xidGxhaW1yanJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI4NDY5MTEsImV4cCI6MjA0ODQyMjkxMX0.hKDDQifCssE6B2XGmuKBRhOOtqeXvzp9_5FQN9sJQew';
+const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+if (!ANON_KEY) {
+  console.error('Error: SUPABASE_ANON_KEY environment variable is required');
+  console.log('Please set it using:');
+  console.log('export SUPABASE_ANON_KEY="your-anon-key"');
+  process.exit(1);
+}
 
 async function testDatabase() {
   console.log('=== Database Format Testing ===\n');

@@ -652,7 +652,12 @@
 
         function showStatus(message, type) {
             const statusDiv = document.getElementById('statusMessage');
-            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            // XSS対策: textContentを使用
+            statusDiv.textContent = '';
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            statusDiv.appendChild(div);
         }
 
         function updateStats(status, dataSize, responseTime) {
