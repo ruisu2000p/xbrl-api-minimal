@@ -38,7 +38,7 @@ export class ApiSecurity {
     const salt = crypto.randomBytes(SALT_LENGTH);
     const key = this.deriveKey(secret, salt);
     const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv(ALGORITHM, key as any, iv);
+    const cipher = crypto.createCipheriv(ALGORITHM, key as any, iv as any);
 
     const encrypted = Buffer.concat([
       cipher.update(apiKey, 'utf8'),
@@ -61,7 +61,7 @@ export class ApiSecurity {
       const encrypted = combined.slice(SALT_LENGTH + IV_LENGTH + TAG_LENGTH);
 
       const key = this.deriveKey(secret, salt);
-      const decipher = crypto.createDecipheriv(ALGORITHM, key as any, iv);
+      const decipher = crypto.createDecipheriv(ALGORITHM, key as any, iv as any);
       decipher.setAuthTag(tag);
 
       const decrypted = Buffer.concat([
