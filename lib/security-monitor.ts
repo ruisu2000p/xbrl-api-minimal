@@ -247,4 +247,5 @@ class SecurityMonitor {
 }
 
 export default SecurityMonitor.getInstance();
-export { SecurityMonitor, SecurityEvent, AlertThreshold };
+export { SecurityMonitor };
+export type { SecurityEvent, AlertThreshold };
