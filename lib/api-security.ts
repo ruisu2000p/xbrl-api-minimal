@@ -31,7 +31,7 @@ export class ApiSecurity {
   }
 
   deriveKey(secret: string, salt: Buffer): Buffer {
-    return crypto.pbkdf2Sync(secret, salt, 100000, KEY_LENGTH, 'sha256');
+    return crypto.pbkdf2Sync(secret, salt as any, 100000, KEY_LENGTH, 'sha256');
   }
 
   encryptApiKey(apiKey: string, secret: string): string {
