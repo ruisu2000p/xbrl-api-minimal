@@ -46,7 +46,7 @@ export class ApiSecurity {
     ] as any[]);
 
     const tag = cipher.getAuthTag();
-    const combined = Buffer.concat([salt, iv, tag, encrypted]);
+    const combined = Buffer.concat([salt as any, iv as any, tag as any, encrypted as any] as any[]);
 
     return combined.toString('base64');
   }
