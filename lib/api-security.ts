@@ -77,26 +77,47 @@ export class ApiSecurity {
   }
 
   hashApiKey(apiKey: string): string {
-    return crypto
-      .createHash('sha256')
-      .update(apiKey)
-      .digest('hex');
+    // Use PBKDF2 for better security instead of simple SHA256
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.pbkdf2Sync(apiKey, salt, 100000, 64, 'sha512').toString('hex');
+    return `${salt}:${hash}`;
+  }
+
+  verifyApiKeyHash(apiKey: string, storedHash: string): boolean {
+    const [salt, hash] = storedHash.split(':');
+    if (!salt || !hash) return false;
+
+    const testHash = crypto.pbkdf2Sync(apiKey, salt, 100000, 64, 'sha512').toString('hex');
+    // Use timing-safe comparison
+    return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(testHash));
   }
 
   async verifyApiKey(apiKey: string, supabase: any): Promise<boolean> {
     try {
-      const hashedKey = this.hashApiKey(apiKey);
-
-      const { data, error } = await supabase
+      // Get all active keys to check against
+      const { data: keys, error } = await supabase
         .from('api_keys')
-        .select('id, tier, is_active')
-        .eq('key_hash', hashedKey)
-        .eq('is_active', true)
-        .single();
+        .select('id, tier, is_active, key_hash')
+        .eq('is_active', true);
 
-      if (error || !data) {
+      if (error || !keys) {
         return false;
       }
+
+      // Check each key with timing-safe comparison
+      let validKey = null;
+      for (const key of keys) {
+        if (this.verifyApiKeyHash(apiKey, key.key_hash)) {
+          validKey = key;
+          break;
+        }
+      }
+
+      if (!validKey) {
+        return false;
+      }
+
+      const data = validKey;
 
       // APIキー使用ログを記録
       await supabase
@@ -154,11 +175,15 @@ export class ApiSecurity {
       /(--|\/\*|\*\/|xp_|sp_|0x)/gi,
     ];
 
-    // XSS対策パターン
+    // XSS対策パターン - More comprehensive patterns
     const xssPatterns = [
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      /<script[^>]*>[\s\S]*?<\/script[^>]*>/gi,
+      /<script[^>]*\/>/gi,
       /javascript:/gi,
       /on\w+\s*=/gi,
+      /<iframe[^>]*>[\s\S]*?<\/iframe[^>]*>/gi,
+      /<embed[^>]*>/gi,
+      /<object[^>]*>[\s\S]*?<\/object[^>]*>/gi,
     ];
 
     for (const pattern of [...sqlPatterns, ...xssPatterns]) {

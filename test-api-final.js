@@ -11,8 +11,8 @@ if (!API_KEY) {
 
 async function testApiKey() {
   // セキュリティのため、APIキーをマスク
-  const maskedKey = API_KEY ? `${API_KEY.substring(0, 10)}...${API_KEY.substring(API_KEY.length - 4)}` : 'not set';
-  console.log('Testing API key:', maskedKey);
+  const maskedKey = API_KEY ? `${API_KEY.substring(0, 10)}...[REDACTED]` : 'not set';
+  console.log('Testing with API key (masked)');
 
   try {
     // Test the markdown-files endpoint

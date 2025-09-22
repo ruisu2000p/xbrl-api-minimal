@@ -57,9 +57,8 @@ async function testEndpoint(name, endpoint, method = 'GET', body = null) {
 
 async function runTests() {
   console.log('Starting Unified API Tests');
-  // セキュリティのため、APIキーをマスク
-  const maskedKey = API_KEY ? `${API_KEY.substring(0, 10)}...${API_KEY.substring(API_KEY.length - 4)}` : 'not set';
-  console.log('Using API Key:', maskedKey);
+  // Never log API keys
+  console.log('Using API Key: [REDACTED]');
   console.log('Supabase URL:', SUPABASE_URL);
 
   // 1. 企業検索（部分一致）

@@ -22,8 +22,10 @@ export class AuthManager {
     const keyBytes = crypto.randomBytes(32);
     const apiKey = `xbrl_v1_${keyBytes.toString('hex')}`;
 
-    // Create hash for storage
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+    // Create hash for storage using PBKDF2 for better security
+    const salt = crypto.randomBytes(16).toString('hex');
+    const keyHash = crypto.pbkdf2Sync(apiKey, salt, 100000, 64, 'sha512').toString('hex');
+    const storedHash = `${salt}:${keyHash}`;
 
     // Store in database
     const { data, error } = await this.supabase
@@ -31,7 +33,7 @@ export class AuthManager {
       .insert({
         user_id: userId,
         name,
-        key_hash: keyHash,
+        key_hash: storedHash,
         status: 'active',
         created_at: new Date().toISOString(),
         last_used_at: null,
@@ -71,21 +73,45 @@ export class AuthManager {
         };
       }
 
-      // Hash the key
-      const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+      // Note: For validation, we need to check against stored hash with salt
+      // This requires updating the validate_api_key_access function to handle PBKDF2
 
       // Validate using Supabase function
-      const { data, error } = await this.supabase
-        .rpc('validate_api_key_access', { key_hash: keyHash });
+      // First, get all active keys to check against (this is a temporary solution)
+      const { data: keys, error: keysError } = await this.supabase
+        .from('api_keys')
+        .select('id, user_id, name, key_hash, expires_at, status')
+        .eq('status', 'active');
 
-      if (error || !data || data.length === 0) {
+      if (keysError || !keys) {
+        return {
+          valid: false,
+          error: 'Database error'
+        };
+      }
+
+      // Check each key with PBKDF2
+      let validKey = null;
+      for (const key of keys) {
+        const [salt, hash] = key.key_hash.split(':');
+        if (salt && hash) {
+          const testHash = crypto.pbkdf2Sync(apiKey, salt, 100000, 64, 'sha512').toString('hex');
+          if (testHash === hash) {
+            validKey = key;
+            break;
+          }
+        }
+      }
+
+      if (!validKey) {
         return {
           valid: false,
           error: 'Invalid or expired API key'
         };
       }
 
-      const keyInfo = data[0];
+      const keyInfo = validKey;
+
 
       // Check expiration
       if (keyInfo.expires_at && new Date(keyInfo.expires_at) < new Date()) {
