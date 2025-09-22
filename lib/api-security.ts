@@ -41,9 +41,9 @@ export class ApiSecurity {
     const cipher = crypto.createCipheriv(ALGORITHM, key as any, iv as any);
 
     const encrypted = Buffer.concat([
-      cipher.update(apiKey, 'utf8'),
-      cipher.final(),
-    ]);
+      cipher.update(apiKey, 'utf8') as any,
+      cipher.final() as any,
+    ] as any[]);
 
     const tag = cipher.getAuthTag();
     const combined = Buffer.concat([salt, iv, tag, encrypted]);
@@ -65,9 +65,9 @@ export class ApiSecurity {
       decipher.setAuthTag(tag);
 
       const decrypted = Buffer.concat([
-        decipher.update(encrypted),
-        decipher.final(),
-      ]);
+        decipher.update(encrypted) as any,
+        decipher.final() as any,
+      ] as any[]);
 
       return decrypted.toString('utf8');
     } catch (error) {
