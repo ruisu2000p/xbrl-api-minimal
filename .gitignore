@@ -11,6 +11,8 @@ node_modules/
 .env.production.backup
 .env.*.backup
 *.env.backup
+.env.test
+.env.encrypted
 
 # Service Role Keys - NEVER commit
 *service*role*
