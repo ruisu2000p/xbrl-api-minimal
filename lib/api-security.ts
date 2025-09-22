@@ -31,14 +31,14 @@ export class ApiSecurity {
   }
 
   deriveKey(secret: string, salt: Buffer): Buffer {
-    return crypto.pbkdf2Sync(secret, salt as any, 100000, KEY_LENGTH, 'sha256');
+    return crypto.pbkdf2Sync(secret, salt, 100000, KEY_LENGTH, 'sha256');
   }
 
   encryptApiKey(apiKey: string, secret: string): string {
     const salt = crypto.randomBytes(SALT_LENGTH);
     const key = this.deriveKey(secret, salt);
     const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    const cipher = crypto.createCipheriv(ALGORITHM, key as any, iv);
 
     const encrypted = Buffer.concat([
       cipher.update(apiKey, 'utf8'),
@@ -61,7 +61,7 @@ export class ApiSecurity {
       const encrypted = combined.slice(SALT_LENGTH + IV_LENGTH + TAG_LENGTH);
 
       const key = this.deriveKey(secret, salt);
-      const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+      const decipher = crypto.createDecipheriv(ALGORITHM, key as any, iv);
       decipher.setAuthTag(tag);
 
       const decrypted = Buffer.concat([
