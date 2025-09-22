@@ -59,10 +59,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // デバッグログ
+    // デバッグログ（Log Injection対策）
+    const sanitizedKeyName = keyName.trim().replace(/[\r\n]/g, '_');
+    const sanitizedTier = tier.replace(/[\r\n]/g, '_');
     console.log('Creating API key for user:', session.user.id);
-    console.log('Key name:', keyName);
-    console.log('Tier:', tier);
+    console.log('Key name:', sanitizedKeyName);
+    console.log('Tier:', sanitizedTier);
 
     // Supabase RPC関数を呼び出してAPIキーを作成
     const { data: result, error: rpcError } = await supabase
