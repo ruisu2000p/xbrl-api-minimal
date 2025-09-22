@@ -256,7 +256,7 @@ export class ApiSecurity {
 
     // 異常なリクエストヘッダーの検出
     const headers = request.headers;
-    if (headers.get('x-forwarded-for')?.split(',').length > 5) {
+    if (headers && headers.get('x-forwarded-for')?.split(',').length && headers.get('x-forwarded-for')!.split(',').length > 5) {
       return true;
     }
 
