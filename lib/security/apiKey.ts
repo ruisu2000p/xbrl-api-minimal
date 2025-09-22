@@ -40,9 +40,24 @@ function getHmacSecret(): Buffer {
 export function generateApiKey(size = 43): string {
   // 長い形式専用: xbrl_live_v1_UUID_SECRET
   const uuid = crypto.randomUUID()
-  const bytes = crypto.randomBytes(size)
-  const chars = Array.from(bytes).map((b) => BASE62[b % BASE62.length]).join('')
-  return `xbrl_live_v1_${uuid}_${chars}`
+
+  // バイアスのない乱数生成のために、rejection sampling を使用
+  const chars: string[] = []
+  let bytesNeeded = size
+  const maxValidByte = Math.floor(256 / BASE62.length) * BASE62.length - 1
+
+  while (chars.length < size) {
+    const bytes = crypto.randomBytes(bytesNeeded * 2) // 多めに生成して効率化
+    for (const byte of bytes) {
+      if (byte <= maxValidByte) {
+        chars.push(BASE62[byte % BASE62.length])
+        if (chars.length >= size) break
+      }
+    }
+    bytesNeeded = size - chars.length
+  }
+
+  return `xbrl_live_v1_${uuid}_${chars.slice(0, size).join('')}`
 }
 
 export function hashApiKey(apiKey: string): string {

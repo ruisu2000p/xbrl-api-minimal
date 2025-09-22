@@ -269,10 +269,9 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
       return { success: false, error: 'Not authenticated' }
     }
 
-    // APIキーを生成（32文字のランダム文字列）
-    const randomString = Array.from({ length: 32 }, () =>
-      Math.random().toString(36)[2] || '0'
-    ).join('');
+    // APIキーを生成（32文字のセキュアなランダム文字列）
+    const { generateSecureToken } = await import('@/lib/security/validation')
+    const randomString = generateSecureToken(16) // 16バイト = 32文字の16進数
     const apiKey = `xbrl_v1_${randomString}`;
     const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
 
@@ -328,9 +327,31 @@ export async function deleteApiKey(keyId: string) {
     return { success: false, error: 'Not authenticated' }
   }
 
+  // セキュリティ検証ライブラリを使用
+  const { validateApiKeyFormat, buildSecureUrl } = await import('@/lib/security/validation')
+
+  // APIキーフォーマットの検証（SSRF対策）
+  if (!validateApiKeyFormat(keyId)) {
+    return {
+      success: false,
+      error: 'Invalid API key format'
+    }
+  }
+
   try {
-    // 直接Edge Functionを呼び出す
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/api-proxy/keys/${keyId}`, {
+    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (!baseUrl) {
+      return { success: false, error: 'Invalid configuration' }
+    }
+
+    // 安全なURL構築
+    const url = buildSecureUrl(
+      baseUrl,
+      `/functions/v1/api-proxy/keys/${encodeURIComponent(keyId)}`
+    )
+
+    // 直接Edge Functionを呼び出す（セキュアURL使用）
+    const response = await fetch(url, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

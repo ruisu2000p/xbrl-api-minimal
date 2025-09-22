@@ -85,10 +85,9 @@ export async function POST(request: NextRequest) {
     // 現在のユーザー情報を取得（ダミー）
     const userId = 'demo-user';
 
-    // APIキーを生成（32文字のランダム文字列）
-    const randomString = Array.from({ length: 32 }, () =>
-      Math.random().toString(36)[2] || '0'
-    ).join('');
+    // APIキーを生成（32文字のセキュアなランダム文字列）
+    const { generateSecureToken } = await import('@/lib/security/validation')
+    const randomString = generateSecureToken(16) // 16バイト = 32文字の16進数
     const apiKey = `xbrl_v1_${randomString}`;
     const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
 
