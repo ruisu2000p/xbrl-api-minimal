@@ -31,22 +31,22 @@ export class ApiSecurity {
   }
 
   deriveKey(secret: string, salt: Buffer): Buffer {
-    return crypto.pbkdf2Sync(secret, salt as any, 100000, KEY_LENGTH, 'sha256');
+    return crypto.pbkdf2Sync(secret, salt, 100000, KEY_LENGTH, 'sha256');
   }
 
   encryptApiKey(apiKey: string, secret: string): string {
     const salt = crypto.randomBytes(SALT_LENGTH);
     const key = this.deriveKey(secret, salt);
     const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv(ALGORITHM, key as any, iv as any);
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
 
     const encrypted = Buffer.concat([
-      cipher.update(apiKey, 'utf8') as any,
-      cipher.final() as any,
-    ] as any[]);
+      cipher.update(apiKey, 'utf8'),
+      cipher.final(),
+    ]);
 
     const tag = cipher.getAuthTag();
-    const combined = Buffer.concat([salt as any, iv as any, tag as any, encrypted as any] as any[]);
+    const combined = Buffer.concat([salt, iv, tag, encrypted]);
 
     return combined.toString('base64');
   }
@@ -61,13 +61,13 @@ export class ApiSecurity {
       const encrypted = combined.slice(SALT_LENGTH + IV_LENGTH + TAG_LENGTH);
 
       const key = this.deriveKey(secret, salt);
-      const decipher = crypto.createDecipheriv(ALGORITHM, key as any, iv as any);
-      decipher.setAuthTag(tag as any);
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+      decipher.setAuthTag(new Uint8Array(tag));
 
       const decrypted = Buffer.concat([
-        decipher.update(encrypted) as any,
-        decipher.final() as any,
-      ] as any[]);
+        decipher.update(encrypted),
+        decipher.final(),
+      ]);
 
       return decrypted.toString('utf8');
     } catch (error) {
