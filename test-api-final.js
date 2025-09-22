@@ -1,6 +1,13 @@
 // Test the newly created API key
-const API_KEY = 'xbrl_v1_c1tq34z9bcoic0z8zvy6i5r2vdccpgnv';
-const API_URL = 'https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/api-proxy';
+const API_KEY = process.env.XBRL_API_KEY || '';
+const API_URL = process.env.XBRL_API_URL || 'https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/api-proxy';
+
+if (!API_KEY) {
+  console.error('Error: XBRL_API_KEY environment variable is required');
+  console.log('Please set it using:');
+  console.log('export XBRL_API_KEY="your-api-key"');
+  process.exit(1);
+}
 
 async function testApiKey() {
   // セキュリティのため、APIキーをマスク

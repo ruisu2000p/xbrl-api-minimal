@@ -290,7 +290,7 @@ export function getSecurityHeaders(): Record<string, string> {
   }
 }
 
-export default {
+const validationUtils = {
   validateApiKeyFormat,
   validateUrl,
   sanitizeSqlInput,
@@ -306,3 +306,5 @@ export default {
   CompanySearchSchema,
   AuthSchema
 }
+
+export default validationUtils;
