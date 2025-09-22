@@ -33,7 +33,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+// 静的ファイルの公開を制限 - セキュリティ対策
+// app.use(express.static(__dirname)); // 全ファイル公開は危険
 
 // ルートパス
 app.get('/', (req, res) => {
@@ -399,10 +400,15 @@ app.post('/api/register-key', async (req, res) => {
 
         // api_keysテーブルに登録（実際の実装ではService Role Keyが必要）
         // ここではデモとして成功レスポンスを返す
-        console.log(`📝 APIキー登録（デモ）: ${api_key.substring(0, 20)}...`);
+        // Log Injection対策: 改行文字を除去
+        const sanitizedApiKey = api_key.substring(0, 20).replace(/[\r\n]/g, '_');
+        const sanitizedTier = tier.replace(/[\r\n]/g, '_');
+        const sanitizedName = name.replace(/[\r\n]/g, '_');
+
+        console.log(`📝 APIキー登録（デモ）: ${sanitizedApiKey}...`);
         console.log(`   Hash: ${keyHash}`);
-        console.log(`   Tier: ${tier}`);
-        console.log(`   Name: ${name}`);
+        console.log(`   Tier: ${sanitizedTier}`);
+        console.log(`   Name: ${sanitizedName}`);
 
         // 実際のデータベースに登録（anon keyでも可能）
         const { data, error } = await supabase
