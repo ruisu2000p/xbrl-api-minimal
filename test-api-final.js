@@ -3,7 +3,9 @@ const API_KEY = 'xbrl_v1_c1tq34z9bcoic0z8zvy6i5r2vdccpgnv';
 const API_URL = 'https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/api-proxy';
 
 async function testApiKey() {
-  console.log('Testing API key:', API_KEY);
+  // セキュリティのため、APIキーをマスク
+  const maskedKey = API_KEY ? `${API_KEY.substring(0, 10)}...${API_KEY.substring(API_KEY.length - 4)}` : 'not set';
+  console.log('Testing API key:', maskedKey);
 
   try {
     // Test the markdown-files endpoint

@@ -62,9 +62,14 @@ export function generateApiKey(size = 43): string {
 
 export function hashApiKey(apiKey: string): string {
   // Use bcrypt to hash API key with generated salt
-  // Cost factor of 12 is considered secure; can be adjusted via env/config if desired
-  const saltRounds = 12;
-  return bcrypt.hashSync(apiKey, saltRounds);
+  // Cost factor of 14 is recommended for 2025 security standards
+  // Can be adjusted via environment variable for different environments
+  const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '14', 10);
+
+  // Ensure saltRounds is within reasonable bounds (10-16)
+  const validatedRounds = Math.max(10, Math.min(16, saltRounds));
+
+  return bcrypt.hashSync(apiKey, validatedRounds);
 }
 
 export function maskApiKey(apiKey: string): string {

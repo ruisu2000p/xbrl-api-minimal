@@ -40,7 +40,9 @@ async function testEndpoint(name, endpoint, method = 'GET', body = null) {
 
 async function runTests() {
   console.log('Starting API Key Integration Tests');
-  console.log('Using API Key:', TEST_API_KEY);
+  // セキュリティのため、APIキーをマスク
+  const maskedKey = TEST_API_KEY ? `${TEST_API_KEY.substring(0, 10)}...${TEST_API_KEY.substring(TEST_API_KEY.length - 4)}` : 'not set';
+  console.log('Using API Key:', maskedKey);
   console.log('Supabase URL:', SUPABASE_URL);
 
   // 1. Test api-proxy (markdown-files endpoint)
