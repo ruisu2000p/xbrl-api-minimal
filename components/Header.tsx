@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AuthDisplay from './AuthDisplay';
 
 export default function Header() {
   return (
@@ -16,6 +17,10 @@ export default function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center space-x-8">
+            <Link href="/auth" className="relative text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium group">
+              JWT管理
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
+            </Link>
             <Link href="/pricing" className="relative text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium group">
               料金プラン
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
@@ -27,9 +32,12 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Link href="/login" className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium">
-              ログイン
-            </Link>
+            <AuthDisplay className="hidden lg:block" />
+            <div className="lg:hidden">
+              <Link href="/login" className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium">
+                ログイン
+              </Link>
+            </div>
             <Link href="/signup" className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 cursor-pointer whitespace-nowrap font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
               <span className="relative z-10">無料で始める</span>
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
