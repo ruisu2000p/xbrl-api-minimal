@@ -346,8 +346,29 @@ export default function SignupPage() {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
-                    placeholder="8文字以上のパスワード"
+                    placeholder="パスワードを入力"
                   />
+                  <div className="mt-2 text-xs space-y-1">
+                    <p className="text-gray-600 mb-2">パスワード要件：</p>
+                    <ul className="space-y-1">
+                      <li className={`flex items-center ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-400'}`}>
+                        <i className={`ri-${formData.password.length >= 8 ? 'check' : 'close'}-line mr-2 text-xs`}></i>
+                        8文字以上
+                      </li>
+                      <li className={`flex items-center ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                        <i className={`ri-${/[A-Z]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
+                        大文字を含む (A-Z)
+                      </li>
+                      <li className={`flex items-center ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                        <i className={`ri-${/[a-z]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
+                        小文字を含む (a-z)
+                      </li>
+                      <li className={`flex items-center ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                        <i className={`ri-${/[0-9]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
+                        数字を含む (0-9)
+                      </li>
+                    </ul>
+                  </div>
                 </div>
 
                 <div>
