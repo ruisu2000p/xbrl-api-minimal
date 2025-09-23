@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type AuthChangeEvent, type Session } from '@supabase/supabase-js';
 
 // Supabase client setup (クライアントサイドでのみ初期化)
 let supabase: any = null;
@@ -56,7 +56,7 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
 
     // 認証状態変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: AuthChangeEvent, session: Session | null) => {
         if (session?.user) {
           setUser(session.user);
           setJwt(session.access_token || '');
