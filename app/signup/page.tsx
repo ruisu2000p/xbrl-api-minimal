@@ -287,6 +287,7 @@ export default function SignupPage() {
                     name="name"
                     type="text"
                     required
+                    autoComplete="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
@@ -303,6 +304,7 @@ export default function SignupPage() {
                     id="company"
                     name="company"
                     type="text"
+                    autoComplete="organization"
                     value={formData.company}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
@@ -321,6 +323,7 @@ export default function SignupPage() {
                   name="email"
                   type="email"
                   required
+                  autoComplete="email"
                   value={formData.email}
                   onChange={handleInputChange}
                   className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
@@ -339,6 +342,7 @@ export default function SignupPage() {
                     name="password"
                     type="password"
                     required
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
@@ -356,6 +360,7 @@ export default function SignupPage() {
                     name="confirmPassword"
                     type="password"
                     required
+                    autoComplete="new-password"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"

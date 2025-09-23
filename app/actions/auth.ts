@@ -112,26 +112,41 @@ export async function signUp(userData: {
   plan: string;
   billingPeriod: string;
 }) {
-  const supabase = await supabaseManager.createSSRClient()
+  try {
+    // Input validation
+    const validatedEmail = emailSchema.parse(userData.email)
+    const validatedPassword = passwordSchema.parse(userData.password)
+    const validatedName = sanitizeInput(userData.name)
+    const validatedCompany = userData.company ? sanitizeInput(userData.company) : null
 
-  // Create user account
-  const { data, error } = await supabase.auth.signUp({
-    email: userData.email,
-    password: userData.password,
-    options: {
-      data: {
-        name: userData.name,
-        company: userData.company || null,
-        plan: userData.plan,
-        billing_period: userData.billingPeriod
+    const supabase = await supabaseManager.createSSRClient()
+
+    // Create user account
+    const { data, error } = await supabase.auth.signUp({
+      email: validatedEmail,
+      password: validatedPassword,
+      options: {
+        data: {
+          name: validatedName,
+          company: validatedCompany,
+          plan: userData.plan,
+          billing_period: userData.billingPeriod
+        }
+      }
+    })
+
+    if (error) {
+      console.error('User signup error:', error)
+      return {
+        success: false,
+        error: sanitizeError(error)
       }
     }
-  })
-
-  if (error) {
+  } catch (validationError) {
+    console.error('Validation error during signup:', validationError)
     return {
       success: false,
-      error: error.message
+      error: 'Invalid input data'
     }
   }
 
@@ -146,11 +161,12 @@ export async function signUp(userData: {
         : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
         : 'basic'
 
-      // Use the create_api_key_complete_v2 function with corrected response handling
+      // Use the create_api_key_bcrypt function for new user registration
       const { data: result, error: createError } = await admin
-        .rpc('create_api_key_complete_v2', {
+        .rpc('create_api_key_bcrypt', {
           p_user_id: data.user.id,
           p_name: 'Default API Key',
+          p_description: 'Default API key for new user',
           p_tier: tier
         })
 
@@ -159,17 +175,17 @@ export async function signUp(userData: {
         throw new Error(`API Key creation failed: ${createError.message}`)
       }
 
-      if (!result || !result.api_key) {
+      if (!result || typeof result !== 'object') {
         console.error('API Key creation failed:', result)
         throw new Error('APIキーの作成に失敗しました')
       }
 
-      fullApiKey = result.api_key
+      // create_api_key_bcrypt関数のレスポンス形式に合わせて調整
+      fullApiKey = result.api_key || result.full_key || null
 
       console.log('API Key created successfully:', {
-        key_id: result.key_id,
-        name: result.name,
-        tier: result.tier
+        result: result,
+        has_api_key: !!fullApiKey
       })
 
     } catch (apiKeyError) {
