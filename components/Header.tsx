@@ -17,10 +17,6 @@ export default function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/auth" className="relative text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium group">
-              JWT管理
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
-            </Link>
             <Link href="/pricing" className="relative text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium group">
               料金プラン
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
