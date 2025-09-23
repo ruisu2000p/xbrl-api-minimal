@@ -3,10 +3,17 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase client setup
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Supabase client setup (クライアントサイドでのみ初期化)
+let supabase: any = null;
+
+if (typeof window !== 'undefined') {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+  }
+}
 
 interface AuthDisplayProps {
   className?: string;
@@ -19,6 +26,12 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
   const [showJwt, setShowJwt] = useState(false);
 
   useEffect(() => {
+    // Supabaseクライアントが利用可能な場合のみ認証状態を監視
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     // 認証状態を監視
     const getSession = async () => {
       try {
@@ -60,6 +73,11 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
 
   // ログイン処理
   const handleLogin = async () => {
+    if (!supabase) {
+      alert('Supabase設定が見つかりません');
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github'
@@ -72,6 +90,8 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
 
   // ログアウト処理
   const handleLogout = async () => {
+    if (!supabase) return;
+
     try {
       const { error } = await supabase.auth.signOut();
       if (error) console.error('Logout error:', error);
@@ -103,6 +123,16 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
       <div className={`flex items-center space-x-2 ${className}`}>
         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         <span className="text-sm text-gray-600">認証状態を確認中...</span>
+      </div>
+    );
+  }
+
+  // Supabaseが利用不可の場合
+  if (!supabase) {
+    return (
+      <div className={`flex items-center space-x-2 ${className}`}>
+        <span className="text-sm text-orange-600">Supabase未設定</span>
+        <span className="text-xs text-gray-500">（ローカル開発環境のみ）</span>
       </div>
     );
   }
