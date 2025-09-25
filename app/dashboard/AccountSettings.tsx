@@ -468,34 +468,52 @@ export default function AccountSettings() {
 
   // セッション確認フラグ（初回読み込み時の早すぎるリダイレクトを防ぐ）
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [redirectTimer, setRedirectTimer] = useState<NodeJS.Timeout | null>(null);
 
   // 初回マウント時に認証状態をチェック（改善版）
   useEffect(() => {
     // まだローディング中なら何もしない
-    if (supabaseLoading) return;
-
-    // セッション確認完了をマーク
-    if (!sessionChecked) {
-      setSessionChecked(true);
+    if (supabaseLoading) {
+      console.log('⏳ Supabaseセッション読み込み中...');
+      return;
     }
 
     // ユーザーが存在すれば認証済み
     if (user) {
       console.log('✅ 認証済みユーザー:', user.email);
+      // 既存のタイマーをクリア
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+        setRedirectTimer(null);
+      }
+      setSessionChecked(true);
       return;
     }
 
-    // ローディング完了かつユーザーが存在しない場合のみリダイレクト
-    // ただし初回読み込み時は少し待つ（localStorageからのセッション復元のため）
-    const timer = setTimeout(() => {
-      if (!user && sessionChecked) {
-        console.log('❌ 認証されていません。ログインページへリダイレクトします。');
-        router.push('/auth/login');
-      }
-    }, 100); // 100ms待機してセッション復元を待つ
+    // 初回チェック時は少し待つ（セッション復元のため）
+    if (!sessionChecked) {
+      console.log('🔍 セッション復元を待機中...');
+      const timer = setTimeout(() => {
+        // 再度チェックして、まだユーザーがいなければリダイレクト
+        if (!user) {
+          console.log('❌ セッション復元タイムアウト。ログインページへリダイレクトします。');
+          router.push('/auth/login');
+        }
+        setSessionChecked(true);
+      }, 500); // 500ms待機（より確実にセッション復元を待つ）
 
-    return () => clearTimeout(timer);
-  }, [user, supabaseLoading, router, sessionChecked]);
+      setRedirectTimer(timer);
+      return () => {
+        if (timer) clearTimeout(timer);
+      };
+    }
+
+    // セッションチェック済みで、ユーザーがいない場合
+    if (sessionChecked && !user) {
+      console.log('❌ 認証されていません。ログインページへリダイレクトします。');
+      router.push('/auth/login');
+    }
+  }, [user, supabaseLoading, router, sessionChecked, redirectTimer]);
 
   // ユーザー情報でプロフィールを初期化
   useEffect(() => {

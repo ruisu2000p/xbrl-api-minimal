@@ -170,6 +170,11 @@ export class SupabaseManager {
           }
         },
       },
+      auth: {
+        autoRefreshToken: true,  // サーバー側でもトークン自動更新を有効化
+        detectSessionInUrl: false,
+        persistSession: false,
+      },
     });
   }
 

@@ -88,6 +88,15 @@ const nextConfig = {
           }
         ],
       },
+      {
+        source: '/dashboard/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-cache, must-revalidate',
+          }
+        ],
+      },
     ];
   },
 }
