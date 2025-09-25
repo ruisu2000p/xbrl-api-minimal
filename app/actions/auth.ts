@@ -136,7 +136,42 @@ export async function signUp(userData: {
     })
 
     if (error) {
-      console.error('User signup error:', error)
+      console.error('User signup error:', {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+        details: error
+      })
+
+      // Provide more specific error messages
+      if (error.code === 'user_already_exists') {
+        return {
+          success: false,
+          error: 'このメールアドレスは既に登録されています'
+        }
+      }
+
+      if (error.code === 'weak_password') {
+        return {
+          success: false,
+          error: 'パスワードが弱すぎます。8文字以上で大文字、小文字、数字を含めてください'
+        }
+      }
+
+      if (error.code === 'invalid_email') {
+        return {
+          success: false,
+          error: '有効なメールアドレスを入力してください'
+        }
+      }
+
+      if (error.message?.includes('Email signups are disabled')) {
+        return {
+          success: false,
+          error: 'サインアップが一時的に無効になっています。管理者にお問い合わせください'
+        }
+      }
+
       return {
         success: false,
         error: sanitizeError(error)
@@ -164,7 +199,12 @@ export async function signUp(userData: {
           })
 
         if (createError) {
-          console.error('API Key creation error:', createError)
+          console.error('API Key creation error:', {
+            message: createError.message,
+            code: createError.code,
+            details: createError,
+            hint: createError.hint
+          })
           throw new Error(`API Key creation failed: ${createError.message}`)
         }
 
