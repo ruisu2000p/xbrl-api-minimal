@@ -531,7 +531,8 @@ export default function AccountSettings() {
       const { data: invokeData, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}` // 明示的にトークンを付与
         },
         body: { action: 'list' }
       });
@@ -748,7 +749,15 @@ export default function AccountSettings() {
         });
       }
 
+      // 現在のセッションのトークンを取得
+      const currentToken = session?.access_token || '';
+
       const { data: result, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentToken}` // 明示的にトークンを付与
+        },
         body: {
           action: 'create',
           key_name: newKeyName.trim(),
@@ -903,7 +912,8 @@ export default function AccountSettings() {
       const { data: result, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}` // 明示的にトークンを付与
         },
         body: {
           action: 'delete',
