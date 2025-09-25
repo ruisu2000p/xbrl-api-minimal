@@ -97,6 +97,24 @@ const nextConfig = {
           }
         ],
       },
+      {
+        source: '/auth/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-cache, must-revalidate',
+          }
+        ],
+      },
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-cache, must-revalidate',
+          }
+        ],
+      },
     ];
   },
 }

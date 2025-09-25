@@ -2,5 +2,40 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-cache, must-revalidate"
+        },
+        {
+          "key": "Vary",
+          "value": "Cookie"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=60, stale-while-revalidate=300"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "app/dashboard/page.tsx": {
+      "maxDuration": 30
+    },
+    "app/auth/login/page.tsx": {
+      "maxDuration": 30
+    },
+    "app/api/auth/sync/route.ts": {
+      "maxDuration": 30
+    }
+  }
 }
