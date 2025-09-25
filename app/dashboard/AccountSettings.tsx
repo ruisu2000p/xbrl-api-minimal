@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { supabase } from '@/app/auth/AuthContext';
+import { useSupabase } from '@/components/SupabaseProvider';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -435,6 +436,7 @@ function ApiKeyTab({
 export default function AccountSettings() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: supabaseLoading } = useSupabase();
 
   // 新規アカウントの場合はAPIキータブを初期表示
   const isNewAccount = searchParams.get('newAccount') === 'true';
@@ -455,38 +457,39 @@ export default function AccountSettings() {
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
 
-  // 認証状態
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
-
   // ダイアログ関連の状態
   const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
+  // 認証状態をSupabaseProviderから取得
+  const isAuthenticated = !!user;
+  const checkingAuth = supabaseLoading;
+
   // 初回マウント時に認証状態をチェック
   useEffect(() => {
-    const checkAuth = async () => {
-      
-      const { data: { session } } = await supabase.auth.getSession();
+    if (!supabaseLoading && !user) {
+      console.log('❌ 認証されていません。ログインページへリダイレクトします。');
+      router.push('/auth/login');
+    }
+  }, [user, supabaseLoading, router]);
 
-      if (!session) {
-        console.log('❌ 認証されていません。ログインページへリダイレクトします。');
-        router.push('/auth/login');
-      } else {
-        setIsAuthenticated(true);
-      }
-      setCheckingAuth(false);
-    };
-
-    checkAuth();
-  }, [router]);
+  // ユーザー情報でプロフィールを初期化
+  useEffect(() => {
+    if (user && profile.email === '') {
+      setProfile({
+        email: user.email || '',
+        name: user.user_metadata?.name || '',
+        company: user.user_metadata?.company || ''
+      });
+    }
+  }, [user, profile.email]);
 
   const loadApiKeys = useCallback(async () => {
     setApiStatus('loading');
     setApiMessage(null);
 
     try {
-      
+      const supabase = supabaseManager.getBrowserClient();
 
       // Supabase認証を確認
       const { data: { session } } = await supabase.auth.getSession();
@@ -640,7 +643,9 @@ export default function AccountSettings() {
       if (process.env.NODE_ENV === 'development') {
         console.log('📡 Supabaseクライアントを取得中...');
       }
-      
+
+      const supabase = supabaseManager.getBrowserClient();
+
       // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Supabaseクライアント取得完了');
@@ -848,7 +853,7 @@ export default function AccountSettings() {
     if (!deleteKeyId) return;
 
     try {
-      
+      const supabase = supabaseManager.getBrowserClient();
 
       // 本番環境ではSupabase認証、開発環境ではlocalstorage認証をサポート
       let userId: string | null = null;
