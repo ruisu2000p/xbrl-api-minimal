@@ -151,10 +151,21 @@ export async function signUp(userData: {
         }
       }
 
-      if (error.code === 'weak_password') {
+      // Check for weak password with more detail
+      if (error.code === 'weak_password' || error.message?.toLowerCase().includes('password')) {
+        console.error('Password validation failed:', {
+          providedPassword: validatedPassword.replace(/./g, '*'),
+          passwordLength: validatedPassword.length,
+          hasUpperCase: /[A-Z]/.test(validatedPassword),
+          hasLowerCase: /[a-z]/.test(validatedPassword),
+          hasNumber: /[0-9]/.test(validatedPassword),
+          errorMessage: error.message
+        })
+
+        // Return the actual error message from Supabase for debugging
         return {
           success: false,
-          error: 'パスワードが弱すぎます。8文字以上で大文字、小文字、数字を含めてください'
+          error: `パスワードエラー: ${error.message || 'パスワードが要件を満たしていません'}`
         }
       }
 

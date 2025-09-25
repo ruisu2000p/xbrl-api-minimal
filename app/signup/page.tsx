@@ -74,8 +74,33 @@ export default function SignupPage() {
       setError('投資助言に関する注意事項をご確認ください');
       return;
     }
+    // Enhanced password validation
     if (formData.password.length < 8) {
       setError('パスワードは8文字以上で入力してください');
+      return;
+    }
+
+    // Check for uppercase letter
+    if (!/[A-Z]/.test(formData.password)) {
+      setError('パスワードには少なくとも1つの大文字（A-Z）を含めてください');
+      return;
+    }
+
+    // Check for lowercase letter
+    if (!/[a-z]/.test(formData.password)) {
+      setError('パスワードには少なくとも1つの小文字（a-z）を含めてください');
+      return;
+    }
+
+    // Check for number
+    if (!/[0-9]/.test(formData.password)) {
+      setError('パスワードには少なくとも1つの数字（0-9）を含めてください');
+      return;
+    }
+
+    // Check for special character (Supabase might require this)
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password)) {
+      setError('パスワードには少なくとも1つの特殊文字（!@#$%など）を含めてください');
       return;
     }
 
@@ -366,6 +391,10 @@ export default function SignupPage() {
                       <li className={`flex items-center ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
                         <i className={`ri-${/[0-9]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
                         数字を含む (0-9)
+                      </li>
+                      <li className={`flex items-center ${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                        <i className={`ri-${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
+                        特殊文字を含む (!@#$%など)
                       </li>
                     </ul>
                   </div>
