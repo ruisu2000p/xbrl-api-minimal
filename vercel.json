@@ -9,11 +9,37 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "private, no-cache, must-revalidate"
+          "value": "private, max-age=0, must-revalidate"
         },
         {
           "key": "Vary",
           "value": "Cookie"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/auth/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Pragma",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/dashboard/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, max-age=0, must-revalidate"
         }
       ]
     },
