@@ -131,7 +131,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // 保護されたルートのみマッチ
-    '/dashboard/:path*',
+    // '/dashboard/:path*',  // (protected)レイアウトで保護するためコメントアウト
     '/profile/:path*',
     '/settings/:path*',
     '/api/dashboard/:path*',
