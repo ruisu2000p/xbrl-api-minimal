@@ -437,6 +437,7 @@ export default function AccountSettings() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: supabaseLoading } = useSupabase();
+  const supabaseClient = useMemo(() => supabaseManager.getBrowserClient(), []);
 
   // 新規アカウントの場合はAPIキータブを初期表示
   const isNewAccount = searchParams.get('newAccount') === 'true';
@@ -489,10 +490,8 @@ export default function AccountSettings() {
     setApiMessage(null);
 
     try {
-      const supabase = supabaseManager.getBrowserClient();
-
       // Supabase認証を確認
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseClient.auth.getSession();
 
       if (!session?.user) {
         console.log('❌ セッションが存在しません');
@@ -511,7 +510,7 @@ export default function AccountSettings() {
       });
 
       // 現在のセッション確認
-      const currentSession = await supabase.auth.getSession();
+      const currentSession = await supabaseClient.auth.getSession();
       console.log('🔍 Current session check:', {
         hasSession: !!currentSession.data.session,
         hasToken: !!currentSession.data.session?.access_token,
@@ -529,7 +528,7 @@ export default function AccountSettings() {
       console.log('🔧 Using supabase.functions.invoke (POST with explicit method)...');
 
       // Edge Functionは'list'アクションをURLパスで受け取る
-      const { data: invokeData, error: invokeError } = await supabase.functions.invoke('api-key-manager', {
+      const { data: invokeData, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -575,7 +574,7 @@ export default function AccountSettings() {
       setApiStatus('error');
       setApiMessage({ type: 'error', text: 'APIキーの読み込みに失敗しました。' });
     }
-  }, []);
+  }, [supabaseClient]);
 
   useEffect(() => {
     if (activeTab === 'api' && apiStatus === 'idle') {
@@ -644,7 +643,6 @@ export default function AccountSettings() {
         console.log('📡 Supabaseクライアントを取得中...');
       }
 
-      const supabase = supabaseManager.getBrowserClient();
 
       // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
@@ -662,7 +660,7 @@ export default function AccountSettings() {
       let userEmail: string | null = null;
 
       // まずSupabase認証を確認
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
       if (session?.user) {
         // Supabase認証が有効な場合
@@ -750,7 +748,7 @@ export default function AccountSettings() {
         });
       }
 
-      const { data: result, error: invokeError } = await supabase.functions.invoke('api-key-manager', {
+      const { data: result, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
         body: {
           action: 'create',
           key_name: newKeyName.trim(),
@@ -843,7 +841,7 @@ export default function AccountSettings() {
       console.log('🏁 作成処理終了 - ローディング状態をfalseに');
     }
     setIsCreatingKey(false);
-  }, [newKeyName]);;;;
+  }, [newKeyName, supabaseClient]);
 
   const handleDeleteKey = useCallback((id: string) => {
     setDeleteKeyId(id);
@@ -853,13 +851,12 @@ export default function AccountSettings() {
     if (!deleteKeyId) return;
 
     try {
-      const supabase = supabaseManager.getBrowserClient();
 
       // 本番環境ではSupabase認証、開発環境ではlocalstorage認証をサポート
       let userId: string | null = null;
 
       // まずSupabase認証を確認
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
       if (session?.user) {
         // Supabase認証が有効な場合
@@ -894,7 +891,7 @@ export default function AccountSettings() {
       }
 
       // 現在のセッションを再取得
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
 
       if (!currentSession?.access_token) {
         setApiMessage({ type: 'error', text: 'ログインが必要です。' });
@@ -903,7 +900,7 @@ export default function AccountSettings() {
       }
 
       // Edge Function経由でAPIキーを削除（supabase.functions.invoke使用）
-      const { data: result, error: invokeError } = await supabase.functions.invoke('api-key-manager', {
+      const { data: result, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -930,7 +927,7 @@ export default function AccountSettings() {
     }
 
     setDeleteKeyId(null);
-  }, [deleteKeyId]);
+  }, [deleteKeyId, supabaseClient]);
 
   const handleCopyKey = useCallback((value: string) => {
     void navigator.clipboard.writeText(value);
