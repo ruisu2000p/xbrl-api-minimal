@@ -47,3 +47,34 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+nul
+
+# Test files
+test-*.js
+test_*.js
+*-test.js
+*.test.js
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+build.log
+
+# Local development
+.serena/
+mcp-server/node_modules/
+
+# Infrastructure (local only)
+/infrastructure/config/
+
+# Environment files (keep sample files)
+.env.production
+.env.test
+.env.development
+
+# Backup files
+*.backup
+*.bak
+backup_*.zip
