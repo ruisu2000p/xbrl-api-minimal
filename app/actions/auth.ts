@@ -112,91 +112,107 @@ export async function signUp(userData: {
   plan: string;
   billingPeriod: string;
 }) {
-  const supabase = await supabaseManager.createSSRClient()
+  try {
+    // Input validation
+    const validatedEmail = emailSchema.parse(userData.email)
+    const validatedPassword = passwordSchema.parse(userData.password)
+    const validatedName = sanitizeInput(userData.name)
+    const validatedCompany = userData.company ? sanitizeInput(userData.company) : null
 
-  // Create user account
-  const { data, error } = await supabase.auth.signUp({
-    email: userData.email,
-    password: userData.password,
-    options: {
-      data: {
-        name: userData.name,
-        company: userData.company || null,
-        plan: userData.plan,
-        billing_period: userData.billingPeriod
+    const supabase = await supabaseManager.createSSRClient()
+
+    // Create user account
+    const { data, error } = await supabase.auth.signUp({
+      email: validatedEmail,
+      password: validatedPassword,
+      options: {
+        data: {
+          name: validatedName,
+          company: validatedCompany,
+          plan: userData.plan,
+          billing_period: userData.billingPeriod
+        }
+      }
+    })
+
+    if (error) {
+      console.error('User signup error:', error)
+      return {
+        success: false,
+        error: sanitizeError(error)
       }
     }
-  })
 
-  if (error) {
-    return {
-      success: false,
-      error: error.message
-    }
-  }
+    if (data?.user) {
+      // Create API key for the new user
+      let fullApiKey: string | null = null
 
-  if (data?.user) {
-    // Create API key for the new user
-    let fullApiKey: string | null = null
+      try {
+        const admin = await supabaseManager.createAdminSSRClient()
 
-    try {
-      const admin = await supabaseManager.createAdminSSRClient()
+        const tier = userData.plan === 'freemium' ? 'free'
+          : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
+          : 'basic'
 
-      const tier = userData.plan === 'freemium' ? 'free'
-        : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
-        : 'basic'
+        // Use the create_api_key_bcrypt function for new user registration
+        const { data: result, error: createError } = await admin
+          .rpc('create_api_key_bcrypt', {
+            p_user_id: data.user.id,
+            p_name: 'Default API Key',
+            p_description: 'Default API key for new user',
+            p_tier: tier
+          })
 
-      // Use the create_api_key_complete_v2 function with corrected response handling
-      const { data: result, error: createError } = await admin
-        .rpc('create_api_key_complete_v2', {
-          p_user_id: data.user.id,
-          p_name: 'Default API Key',
-          p_tier: tier
+        if (createError) {
+          console.error('API Key creation error:', createError)
+          throw new Error(`API Key creation failed: ${createError.message}`)
+        }
+
+        if (!result || typeof result !== 'object') {
+          console.error('API Key creation failed:', result)
+          throw new Error('APIキーの作成に失敗しました')
+        }
+
+        // create_api_key_bcrypt関数のレスポンス形式に合わせて調整
+        fullApiKey = result.api_key || result.full_key || null
+
+        console.log('API Key created successfully:', {
+          result: result,
+          has_api_key: !!fullApiKey
         })
 
-      if (createError) {
-        console.error('API Key creation error:', createError)
-        throw new Error(`API Key creation failed: ${createError.message}`)
+      } catch (apiKeyError) {
+        console.error('Failed to create API key:', apiKeyError)
+        // Continue even if API key creation fails since user is already created
+        console.warn('User created but API key creation failed. User can create API key later from dashboard.')
+        // Do not delete user - API key can be created later from dashboard
       }
 
-      if (!result || !result.api_key) {
-        console.error('API Key creation failed:', result)
-        throw new Error('APIキーの作成に失敗しました')
+      revalidatePath('/dashboard', 'layout')
+
+      return {
+        success: true,
+        user: {
+          id: data.user.id,
+          email: data.user.email!,
+          name: validatedName,
+          company: validatedCompany,
+          plan: userData.plan
+        },
+        apiKey: fullApiKey // Return the API key once for the user to save
       }
-
-      fullApiKey = result.api_key
-
-      console.log('API Key created successfully:', {
-        key_id: result.key_id,
-        name: result.name,
-        tier: result.tier
-      })
-
-    } catch (apiKeyError) {
-      console.error('Failed to create API key:', apiKeyError)
-      // Continue even if API key creation fails since user is already created
-      console.warn('User created but API key creation failed. User can create API key later from dashboard.')
-      // Do not delete user - API key can be created later from dashboard
     }
-
-    revalidatePath('/dashboard', 'layout')
 
     return {
-      success: true,
-      user: {
-        id: data.user.id,
-        email: data.user.email!,
-        name: userData.name,
-        company: userData.company || null,
-        plan: userData.plan
-      },
-      apiKey: fullApiKey // Return the API key once for the user to save
+      success: false,
+      error: 'Account creation failed'
     }
-  }
-
-  return {
-    success: false,
-    error: 'Account creation failed'
+  } catch (validationError) {
+    console.error('Validation error during signup:', validationError)
+    return {
+      success: false,
+      error: 'Invalid input data'
+    }
   }
 }
 

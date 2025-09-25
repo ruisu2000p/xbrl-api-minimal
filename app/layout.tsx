@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Pacifico } from "next/font/google";
+import { cookies } from "next/headers";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { supabaseManager } from "@/lib/infrastructure/supabase-manager";
+import SupabaseProvider from "@/components/SupabaseProvider";
 import "./globals.css";
 
 const pacifico = Pacifico({
@@ -36,11 +40,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // サーバーサイドでセッションを取得
+  const cookieStore = cookies()
+  const supabase = supabaseManager.getServerClient(cookieStore)
+
+  let initialSession = null
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    initialSession = session
+  } catch (error) {
+    // 初回セッション取得エラーは無視（未認証の場合も正常）
+  }
+
   return (
     <html lang="ja" suppressHydrationWarning={true}>
       <head>
@@ -52,7 +68,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${pacifico.variable} antialiased`}
       >
-        {children}
+        <SupabaseProvider initialSession={initialSession}>
+          {children}
+          <SpeedInsights />
+        </SupabaseProvider>
       </body>
     </html>
   );

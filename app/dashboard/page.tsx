@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AccountSettings from './AccountSettings';
 import { ApiKeyModal } from '@/app/components/ApiKeyModal';
+import AuthDisplay from '@/components/AuthDisplay';
 
 function DashboardContent() {
   const searchParams = useSearchParams();
@@ -40,6 +41,14 @@ function DashboardContent() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
           <p className="text-gray-600 mt-2">アカウント設定と管理機能</p>
+        </div>
+
+        {/* JWT認証状態表示 */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">JWT認証状態</h2>
+            <AuthDisplay />
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto">

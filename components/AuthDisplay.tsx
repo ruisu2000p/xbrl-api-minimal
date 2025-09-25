@@ -1,19 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient, type AuthChangeEvent, type Session } from '@supabase/supabase-js';
-
-// Supabase client setup (クライアントサイドでのみ初期化)
-let supabase: any = null;
-
-if (typeof window !== 'undefined') {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-  }
-}
+import { type AuthChangeEvent, type Session } from '@supabase/supabase-js';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
 interface AuthDisplayProps {
   className?: string;
@@ -26,18 +15,14 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
   const [showJwt, setShowJwt] = useState(false);
 
   useEffect(() => {
-    // Supabaseクライアントが利用可能な場合のみ認証状態を監視
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
     // 認証状態を監視
     const getSession = async () => {
       try {
+        const supabase = supabaseManager.getBrowserClient();
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Session error:', error);
+          setLoading(false);
           return;
         }
 
@@ -45,9 +30,9 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
           setUser(session.user);
           setJwt(session.access_token || '');
         }
+        setLoading(false);
       } catch (error) {
         console.error('Auth error:', error);
-      } finally {
         setLoading(false);
       }
     };
@@ -55,6 +40,7 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
     getSession();
 
     // 認証状態変更を監視
+    const supabase = supabaseManager.getBrowserClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
         if (session?.user) {
@@ -73,12 +59,8 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
 
   // ログイン処理
   const handleLogin = async () => {
-    if (!supabase) {
-      alert('Supabase設定が見つかりません');
-      return;
-    }
-
     try {
+      const supabase = supabaseManager.getBrowserClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github'
       });
@@ -90,9 +72,8 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
 
   // ログアウト処理
   const handleLogout = async () => {
-    if (!supabase) return;
-
     try {
+      const supabase = supabaseManager.getBrowserClient();
       const { error } = await supabase.auth.signOut();
       if (error) console.error('Logout error:', error);
     } catch (error) {
@@ -127,15 +108,6 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
     );
   }
 
-  // Supabaseが利用不可の場合
-  if (!supabase) {
-    return (
-      <div className={`flex items-center space-x-2 ${className}`}>
-        <span className="text-sm text-orange-600">Supabase未設定</span>
-        <span className="text-xs text-gray-500">（ローカル開発環境のみ）</span>
-      </div>
-    );
-  }
 
   if (!user) {
     return (
@@ -218,30 +190,6 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
         </div>
       )}
 
-      {/* API テスト機能 */}
-      {jwt && (
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">API テスト</h4>
-          <button
-            onClick={async () => {
-              try {
-                const response = await fetch('/api/test-auth', {
-                  headers: {
-                    'Authorization': `Bearer ${jwt}`
-                  }
-                });
-                const result = await response.json();
-                alert(`API レスポンス: ${JSON.stringify(result, null, 2)}`);
-              } catch (error) {
-                alert(`API エラー: ${error}`);
-              }
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
-          >
-            認証テスト実行
-          </button>
-        </div>
-      )}
     </div>
   );
 }

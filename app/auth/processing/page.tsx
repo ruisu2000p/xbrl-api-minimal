@@ -19,7 +19,7 @@ function ProcessingContent() {
 
     // セッション交換を試みる
     const handleAuth = async () => {
-      const supabase = supabaseManager.getAnonClient()
+      const supabase = supabaseManager.getBrowserClient()
 
       // URLにコードが含まれている場合、セッション交換を試みる
       const hashParams = new URLSearchParams(window.location.hash.substring(1))

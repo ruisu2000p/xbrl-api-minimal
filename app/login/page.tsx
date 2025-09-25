@@ -5,24 +5,60 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // シミュレートされたログイン処理
-    setTimeout(() => {
+    setError(null);
+
+    try {
+      const supabase = supabaseManager.getBrowserClient();
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError('メールアドレスまたはパスワードが正しくありません');
+        setIsLoading(false);
+        return;
+      }
+
+      if (data?.user) {
+        // Cookie同期
+        await fetch('/api/auth/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access_token: data.session?.access_token,
+            refresh_token: data.session?.refresh_token,
+          }),
+          credentials: 'include'
+        });
+
+        // ダッシュボードにリダイレクト
+        router.push('/dashboard');
+        router.refresh();
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Login error:', err);
+      setError('ログイン中にエラーが発生しました');
+    } finally {
       setIsLoading(false);
-      // ダッシュボードにリダイレクト
-      router.push('/dashboard');
-    }, 1500);
+    }
   };
 
   return (
@@ -45,6 +81,11 @@ export default function LoginPage() {
           
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   メールアドレス

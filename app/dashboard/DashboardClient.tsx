@@ -94,7 +94,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
 
     try {
-      const supabase = supabaseManager.getAnonClient()
+      const supabase = supabaseManager.getBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
@@ -141,7 +141,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     }
 
     try {
-      const supabase = supabaseManager.getAnonClient()
+      const supabase = supabaseManager.getBrowserClient()
 
       // APIキーを無効化（削除はせずにステータスを変更）
       const { error } = await supabase
@@ -167,7 +167,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
   }
 
   const loadSubscriptionData = async () => {
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       // プラン一覧を取得
@@ -210,7 +210,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       const { error: updateError } = await supabase.auth.updateUser({
@@ -246,7 +246,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       const { error } = await supabase.auth.updateUser({
@@ -274,7 +274,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       if (currentSubscription) {

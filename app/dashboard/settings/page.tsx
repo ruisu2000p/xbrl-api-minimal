@@ -63,7 +63,7 @@ export default function SettingsPage() {
   }, [])
 
   const loadUserProfile = async () => {
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -100,7 +100,7 @@ export default function SettingsPage() {
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       // プロファイル情報を更新
@@ -144,7 +144,7 @@ export default function SettingsPage() {
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       const { error } = await supabase.auth.updateUser({
@@ -171,7 +171,7 @@ export default function SettingsPage() {
   }
 
   const loadSubscriptionData = async () => {
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       // プラン一覧を取得
@@ -219,7 +219,7 @@ export default function SettingsPage() {
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getAnonClient()
+    const supabase = supabaseManager.getBrowserClient()
 
     try {
       if (currentSubscription) {

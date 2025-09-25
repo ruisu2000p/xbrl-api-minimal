@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
+import { supabase } from '@/app/auth/AuthContext';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -455,64 +455,104 @@ export default function AccountSettings() {
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
 
+  // 認証状態
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
+
   // ダイアログ関連の状態
   const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  // 初回マウント時に認証状態をチェック
+  useEffect(() => {
+    const checkAuth = async () => {
+      
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.log('❌ 認証されていません。ログインページへリダイレクトします。');
+        router.push('/auth/login');
+      } else {
+        setIsAuthenticated(true);
+      }
+      setCheckingAuth(false);
+    };
+
+    checkAuth();
+  }, [router]);
 
   const loadApiKeys = useCallback(async () => {
     setApiStatus('loading');
     setApiMessage(null);
 
     try {
-      const supabase = supabaseManager.getBrowserClient();
+      
 
-      // 本番環境ではSupabase認証、開発環境ではlocalstorage認証をサポート
-      let userId: string | null = null;
+      // Supabase認証を確認
+      const { data: { session } } = await supabase.auth.getSession();
 
-      // まずSupabase認証を確認
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        // Supabase認証が有効な場合
-        userId = session.user.id;
-      } else {
-        // Supabase認証が無効な場合、localStorage認証を確認（開発環境用）
-        const isAuthenticated = localStorage.getItem('isAuthenticated');
-        const currentUser = localStorage.getItem('currentUser');
-
-        if (isAuthenticated === 'true' && currentUser) {
-          try {
-            const userData = JSON.parse(currentUser);
-            userId = userData.id;
-          } catch (e) {
-            console.error('❌ localStorage認証データが無効:', e);
-          }
-        }
-      }
-
-      if (!userId) {
+      if (!session?.user) {
+        console.log('❌ セッションが存在しません');
         setApiStatus('error');
         setApiMessage({ type: 'error', text: 'ログインが必要です。' });
         return;
       }
 
-      // APIキーを取得
-      const { data: apiKeys, error } = await supabase
-        .from('api_keys')
-        .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
-        .eq('is_active', true)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const accessToken = session.access_token;
 
-      if (error) {
-        console.error('Error fetching API keys:', error);
+      console.log('📡 APIキー取得開始:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        hasToken: !!accessToken,
+        tokenPreview: accessToken?.substring(0, 20) + '...'
+      });
+
+      // 現在のセッション確認
+      const currentSession = await supabase.auth.getSession();
+      console.log('🔍 Current session check:', {
+        hasSession: !!currentSession.data.session,
+        hasToken: !!currentSession.data.session?.access_token,
+        tokenPrefix: currentSession.data.session?.access_token?.substring(0, 30)
+      });
+
+      if (!currentSession.data.session?.access_token) {
+        console.error('❌ No JWT token available in session');
+        setApiMessage({ type: 'error', text: '認証セッションが見つかりません。再度ログインしてください。' });
         setApiStatus('error');
-        setApiMessage({ type: 'error', text: 'APIキーの読み込みに失敗しました。' });
         return;
       }
 
-      // console.log('Loaded API keys:', apiKeys); // デバッグ用
+      // supabase.functions.invokeのみを使用（JWTを自動付与）
+      console.log('🔧 Using supabase.functions.invoke (POST with explicit method)...');
+
+      // Edge Functionは'list'アクションをURLパスで受け取る
+      const { data: invokeData, error: invokeError } = await supabase.functions.invoke('api-key-manager', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: { action: 'list' }
+      });
+
+      console.log('📨 Invoke result:', { data: invokeData, error: invokeError });
+
+      if (invokeError) {
+        console.error('❌ Invoke error:', invokeError);
+        throw new Error(invokeError.message || 'Failed to invoke API key manager');
+      }
+
+      if (!invokeData) {
+        throw new Error('No data returned from API key manager');
+      }
+
+      console.log('✅ Invoke succeeded:', invokeData);
+
+      if (!invokeData?.success) {
+        throw new Error(invokeData?.error || 'Failed to fetch API keys');
+      }
+
+      const apiKeys = invokeData.keys || [];
+      console.log('✅ Loaded API keys:', apiKeys);
 
       const formattedKeys: ApiKey[] = (apiKeys || []).map((key: any) => ({
         id: key.id,
@@ -525,7 +565,6 @@ export default function AccountSettings() {
         tier: (key.tier || 'free') as ApiKey['tier']
       }));
 
-      // console.log('Formatted keys:', formattedKeys); // デバッグ用
       setApiKeys(formattedKeys);
       setApiStatus('ready');
     } catch (error) {
@@ -601,7 +640,7 @@ export default function AccountSettings() {
       if (process.env.NODE_ENV === 'development') {
         console.log('📡 Supabaseクライアントを取得中...');
       }
-      const supabase = supabaseManager.getBrowserClient();
+      
       // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
         console.log('✅ Supabaseクライアント取得完了');
@@ -695,55 +734,48 @@ export default function AccountSettings() {
         console.log('📝 キー名:', newKeyName);
       }
 
-      // Supabase関数を使用してAPIキーを作成
+      // Edge Function経由でAPIキーを作成（supabase.functions.invoke使用）
       // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 create_api_key_complete_v2関数を呼び出し中...');
+        console.log('🔧 supabase.functions.invoke api-key-manager (create)を呼び出し中...');
         console.log('📋 パラメータ:', {
-          p_user_id: userId,
-          p_name: newKeyName.trim(),
-          p_tier: 'free',
-          p_email: userEmail
+          action: 'create',
+          key_name: newKeyName.trim(),
+          tier: 'free'
         });
       }
 
-      const { data: result, error } = await supabase
-        .rpc('create_api_key_complete_v2', {
-          p_user_id: userId,
-          p_name: newKeyName.trim(),
-          p_tier: 'free',
-          p_email: userEmail  // メールアドレスを追加
-        });
+      const { data: result, error: invokeError } = await supabase.functions.invoke('api-key-manager', {
+        body: {
+          action: 'create',
+          key_name: newKeyName.trim(),
+          tier: 'free'
+        }
+      });
+
+      if (invokeError) {
+        console.error('❌ APIキー作成失敗:', invokeError);
+        throw new Error(invokeError.message || 'APIキーの作成に失敗しました');
+      }
 
       // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
-        console.log('📨 Supabase関数の実行結果:', { result, error });
+        console.log('📨 Edge Function実行結果:', result);
       }
 
-      if (error) {
-        console.error('❌ Supabase関数エラー:', error);
-        if (process.env.NODE_ENV === 'development') {
-          console.error('🔍 エラー詳細:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          });
-        }
-        setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
-        setIsCreatingKey(false);
-        return;
-      }
-
-      if (!result || !result.success) {
+      if (!result.success) {
         console.error('❌ APIキー作成失敗:', result);
         setApiMessage({ type: 'error', text: result?.error || 'APIキーの作成に失敗しました。' });
         setIsCreatingKey(false);
         return;
       }
 
-      if (!result.api_key) {
-        console.error('❌ APIキー作成失敗 - キーが空:', result);
+      // 新規作成時は newKey フィールドに平文キーが含まれる
+      // 一覧取得時は keys 配列にメタ情報のみ
+      const newApiKey = result.newKey || result.api_key || result.apiKey;
+
+      if (!newApiKey) {
+        console.error('❌ APIキー作成失敗 - 新規キーが返されませんでした:', result);
         setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
         setIsCreatingKey(false);
         return;
@@ -753,17 +785,19 @@ export default function AccountSettings() {
       if (process.env.NODE_ENV === 'development') {
         console.log('🎉 APIキー作成成功!');
         console.log('🔑 作成されたキー情報:', {
-          key_id: result.key_id,
+          key_id: result.key_id || result.keyId,
           name: result.name,
           tier: result.tier,
-          api_key_length: result.api_key?.length || 0
+          api_key_length: newApiKey.length
         });
       }
 
+      const keyId = result.key_id || result.keyId;
+
       const newKey: ApiKey = {
-        id: result.key_id,
+        id: keyId,
         name: result.name,
-        key: result.api_key, // 作成時のみ完全なキーを表示
+        key: newApiKey, // 作成時のみ完全なキーを表示
         created: new Date().toLocaleDateString('ja-JP'),
         lastUsed: '未使用',
         tier: (result.tier || 'free') as ApiKey['tier']
@@ -783,7 +817,7 @@ export default function AccountSettings() {
         return updated;
       });
       
-      setGeneratedKey(result.api_key);
+      setGeneratedKey(newApiKey);
       setNewKeyName('');
       setApiMessage({ type: 'success', text: '新しいAPIキーを作成しました。' });
       
@@ -814,7 +848,7 @@ export default function AccountSettings() {
     if (!deleteKeyId) return;
 
     try {
-      const supabase = supabaseManager.getBrowserClient();
+      
 
       // 本番環境ではSupabase認証、開発環境ではlocalstorage認証をサポート
       let userId: string | null = null;
@@ -854,16 +888,33 @@ export default function AccountSettings() {
         return;
       }
 
-      // APIキーを無効化（削除ではなく無効化）
-      const { error } = await supabase
-        .from('api_keys')
-        .update({ is_active: false })
-        .eq('id', deleteKeyId)
-        .eq('user_id', userId);
+      // 現在のセッションを再取得
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error('Error deleting API key:', error);
-        setApiMessage({ type: 'error', text: 'APIキーの削除に失敗しました。' });
+      if (!currentSession?.access_token) {
+        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
+        setDeleteKeyId(null);
+        return;
+      }
+
+      // Edge Function経由でAPIキーを削除（supabase.functions.invoke使用）
+      const { data: result, error: invokeError } = await supabase.functions.invoke('api-key-manager', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: {
+          action: 'delete',
+          key_id: deleteKeyId
+        }
+      });
+
+      if (invokeError) {
+        console.error('❌ APIキー削除失敗:', invokeError);
+        setApiMessage({ type: 'error', text: invokeError.message || 'APIキーの削除に失敗しました。' });
+      } else if (!result?.success) {
+        console.error('❌ APIキー削除失敗:', result);
+        setApiMessage({ type: 'error', text: result?.error || 'APIキーの削除に失敗しました。' });
       } else {
         setApiKeys((prev) => prev.filter((key) => key.id !== deleteKeyId));
         setApiMessage({ type: 'success', text: 'APIキーを削除しました。' });
@@ -898,6 +949,31 @@ export default function AccountSettings() {
     const key = apiKeys.find(k => k.id === deleteKeyId);
     return key?.name || '';
   }, [deleteKeyId, apiKeys]);
+
+  // 認証チェック中の表示
+  if (checkingAuth) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] rounded-2xl bg-white shadow-lg">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">認証状態を確認中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 認証されていない場合の表示
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] rounded-2xl bg-white shadow-lg">
+        <div className="text-center space-y-4">
+          <i className="ri-lock-line text-4xl text-gray-400"></i>
+          <p className="text-gray-600">ログインが必要です</p>
+          <p className="text-sm text-gray-500">リダイレクト中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -61,8 +61,9 @@ export class SupabaseManager {
 
       this.anonClient = createClient(url, anonKey, {
         auth: {
-          persistSession: false,
-          autoRefreshToken: false,
+          persistSession: true,  // セッションを保持するように変更
+          autoRefreshToken: true,  // トークンの自動更新を有効化
+          detectSessionInUrl: true  // URLからセッション検出を有効化
         },
         global: {
           headers: {
@@ -81,14 +82,21 @@ export class SupabaseManager {
   getBrowserClient(): SupabaseClient {
     // ブラウザ環境でのみシングルトンで管理
     if (typeof window !== 'undefined') {
-      if (!this.browserClient) {
+      // windowグローバルを使用してシングルトンを保証
+      // @ts-ignore
+      if (!window.__xbrlSupabaseClient) {
         const { url, anonKey } = this.checkEnvironmentVariables();
 
-        this.browserClient = createClient(url, anonKey, {
+        // @ts-ignore
+        window.__xbrlSupabaseClient = createClient(url, anonKey, {
           auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true
+            detectSessionInUrl: true,
+            flowType: 'pkce',
+            // 重要: アプリ固有のストレージキーを設定（他のSupabaseアプリと競合を避ける）
+            storageKey: 'sb-xbrl-api-auth',
+            storage: window.localStorage
           },
           global: {
             headers: {
@@ -97,7 +105,8 @@ export class SupabaseManager {
           },
         });
       }
-      return this.browserClient;
+      // @ts-ignore
+      return window.__xbrlSupabaseClient;
     }
 
     // サーバーサイドでは毎回新しいクライアントを作成
@@ -154,6 +163,30 @@ export class SupabaseManager {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Server Componentからの呼び出しは無視
+          }
+        },
+      },
+    });
+  }
+
+  /**
+   * サーバークライアント作成（Cookieストアを受け取る）
+   */
+  getServerClient(cookieStore: any) {
+    const { url, anonKey } = this.checkEnvironmentVariables();
+
+    return createServerClient(url, anonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: any) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }: any) =>
               cookieStore.set(name, value, options)
             );
           } catch {

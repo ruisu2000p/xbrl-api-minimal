@@ -49,6 +49,13 @@ export default function HeroSection() {
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
             </Link>
             <Link
+              href="/login"
+              className="group border-2 border-white/30 text-white px-10 py-4 rounded-xl text-lg font-semibold hover:bg-white/10 hover:border-white/50 transition-all duration-300 cursor-pointer whitespace-nowrap text-center backdrop-blur-sm"
+            >
+              <i className="ri-user-line mr-2"></i>
+              ログイン
+            </Link>
+            <Link
               href="/demo"
               className="group border-2 border-blue-400/50 text-blue-100 px-10 py-4 rounded-xl text-lg font-semibold hover:bg-blue-400/10 hover:border-blue-400 transition-all duration-300 cursor-pointer whitespace-nowrap text-center backdrop-blur-sm"
             >
