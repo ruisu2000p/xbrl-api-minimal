@@ -32,16 +32,18 @@ export default function SupabaseProvider({
 
   const refreshSession = async () => {
     try {
+      console.log('🔄 セッション読み込み開始...')
       const supabase = supabaseManager.getBrowserClient()
       const { data: { session }, error } = await supabase.auth.getSession()
 
       if (error) {
-        // エラーは状態で管理するため、console出力は不要
+        console.error('❌ セッション読み込みエラー:', error)
         setUser(null)
         return
       }
 
       if (session) {
+        console.log('✅ セッション復元成功:', session.user.email)
         setUser(session.user)
         // Cookieとの同期
         await fetch('/api/auth/sync', {
@@ -56,10 +58,11 @@ export default function SupabaseProvider({
           credentials: 'include'
         })
       } else {
+        console.log('⚠️ セッションが見つかりません')
         setUser(null)
       }
     } catch (error) {
-      // エラーは状態で管理
+      console.error('❌ セッション処理エラー:', error)
     } finally {
       setLoading(false)
     }
@@ -71,9 +74,11 @@ export default function SupabaseProvider({
     // 初回読み込み時のセッション確認
     const checkSession = async () => {
       try {
+        console.log('📱 初回セッションチェック開始...')
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (!error && session) {
+          console.log('✅ 初回セッション確認成功:', session.user.email)
           setUser(session.user)
           // Cookieとの同期
           await fetch('/api/auth/sync', {
@@ -88,10 +93,11 @@ export default function SupabaseProvider({
             credentials: 'include'
           })
         } else {
+          console.log('⚠️ 初回セッション確認: 未認証状態')
           setUser(null)
         }
       } catch (error) {
-        // 初回セッションエラーは無視（未認証の場合も正常）
+        console.error('❌ 初回セッション確認エラー:', error)
       } finally {
         setLoading(false)
       }
@@ -105,6 +111,8 @@ export default function SupabaseProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔔 認証イベント:', event, session?.user?.email || '未認証')
+
       if (session) {
         setUser(session.user)
 
@@ -122,11 +130,12 @@ export default function SupabaseProvider({
             credentials: 'include'
           })
         } catch (error) {
-          // Cookie同期エラーは無視（ネットワークエラー等）
+          console.error('Cookie同期エラー:', error)
         }
 
         // ログイン後のリダイレクト
         if (event === 'SIGNED_IN') {
+          console.log('🚀 ログイン検知、ページをリフレッシュ')
           router.refresh()
         }
       } else {
@@ -134,6 +143,7 @@ export default function SupabaseProvider({
 
         // ログアウト時のCookieクリア
         if (event === 'SIGNED_OUT') {
+          console.log('👋 ログアウト検知')
           try {
             await fetch('/api/auth/sync', {
               method: 'DELETE',

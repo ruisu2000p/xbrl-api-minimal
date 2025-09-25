@@ -466,13 +466,36 @@ export default function AccountSettings() {
   const isAuthenticated = !!user;
   const checkingAuth = supabaseLoading;
 
-  // 初回マウント時に認証状態をチェック
+  // セッション確認フラグ（初回読み込み時の早すぎるリダイレクトを防ぐ）
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  // 初回マウント時に認証状態をチェック（改善版）
   useEffect(() => {
-    if (!supabaseLoading && !user) {
-      console.log('❌ 認証されていません。ログインページへリダイレクトします。');
-      router.push('/auth/login');
+    // まだローディング中なら何もしない
+    if (supabaseLoading) return;
+
+    // セッション確認完了をマーク
+    if (!sessionChecked) {
+      setSessionChecked(true);
     }
-  }, [user, supabaseLoading, router]);
+
+    // ユーザーが存在すれば認証済み
+    if (user) {
+      console.log('✅ 認証済みユーザー:', user.email);
+      return;
+    }
+
+    // ローディング完了かつユーザーが存在しない場合のみリダイレクト
+    // ただし初回読み込み時は少し待つ（localStorageからのセッション復元のため）
+    const timer = setTimeout(() => {
+      if (!user && sessionChecked) {
+        console.log('❌ 認証されていません。ログインページへリダイレクトします。');
+        router.push('/auth/login');
+      }
+    }, 100); // 100ms待機してセッション復元を待つ
+
+    return () => clearTimeout(timer);
+  }, [user, supabaseLoading, router, sessionChecked]);
 
   // ユーザー情報でプロフィールを初期化
   useEffect(() => {
@@ -948,10 +971,19 @@ export default function AccountSettings() {
     setShowLogoutDialog(true);
   }, []);
 
-  const confirmLogout = useCallback(() => {
+  const confirmLogout = useCallback(async () => {
     setShowLogoutDialog(false);
-    router.push('/login');
-  }, [router]);
+
+    // Supabaseからログアウト
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      console.error('ログアウトエラー:', error);
+    } else {
+      console.log('✅ ログアウト成功');
+    }
+
+    router.push('/auth/login');
+  }, [router, supabaseClient]);
 
   const activeTabLabel = useMemo(() => TABS.find((tab) => tab.id === activeTab)?.label ?? '', [activeTab]);
 
