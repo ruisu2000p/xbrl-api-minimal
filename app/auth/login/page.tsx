@@ -5,10 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
-// ページレベルでキャッシュを無効化（バックフォワードキャッシュ対応）
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
