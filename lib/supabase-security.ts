@@ -42,7 +42,11 @@ export const securityConfig = {
  * 環境に応じたSupabaseクライアントを作成
  */
 export function createSecureSupabaseClient(): SupabaseClient {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!supabaseUrl) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured');
+  }
 
   if (isDevelopment && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     // 開発環境: Service Role Keyを使用（RLSバイパス）
@@ -55,9 +59,15 @@ export function createSecureSupabaseClient(): SupabaseClient {
     });
   } else {
     // 本番環境: Anon Keyを使用（RLS適用）
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!anonKey) {
+      throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured');
+    }
+
     return createClient(
       supabaseUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      anonKey,
       {
         auth: {
           persistSession: true,

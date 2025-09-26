@@ -54,9 +54,29 @@ export async function middleware(request: NextRequest) {
 
   // Supabaseクライアントを作成
   const response = NextResponse.next()
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('❌ Middleware: Supabase configuration missing')
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Configuration error',
+        message: 'Service configuration is incomplete'
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {

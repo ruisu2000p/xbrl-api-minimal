@@ -6,8 +6,15 @@ export async function POST(request: NextRequest) {
   try {
     // クッキーを使用してSupabaseクライアントを作成
     const cookieStore = await cookies();
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { error: 'Service configuration is incomplete' },
+        { status: 500 }
+      );
+    }
 
     const supabase = createServerClient(
       supabaseUrl,
@@ -110,8 +117,15 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { error: 'Service configuration is incomplete' },
+        { status: 500 }
+      );
+    }
 
     const supabase = createServerClient(
       supabaseUrl,
