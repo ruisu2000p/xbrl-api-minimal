@@ -1,28 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
-import { SecureInputValidator, ValidationError } from '@/lib/security/input-validator'
-import { SecurityMiddleware } from '@/lib/middleware/security-middleware'
+import { UnifiedInputValidator } from '@/lib/validators/unified-input-validator'
 import { withSecurity } from '@/lib/middleware/security-middleware'
 
 // このルートは動的である必要があります（request.headersを使用）
 export const dynamic = 'force-dynamic'
 
-// Helper functions for NextRequest conversion
-function toAbsoluteUrl(input: string): string {
-  if (input.startsWith('http://') || input.startsWith('https://')) return input;
-  // Jest の Request は相対 URL のことがあるので localhost を付与
-  return input.startsWith('/') ? `http://localhost${input}` : `http://localhost/${input}`;
-}
-
-function toNextRequest(req: Request): NextRequest {
-  const url = toAbsoluteUrl(req.url);
-  // validate 用なので body は不要。method と headers だけ渡す
-  return new NextRequest(url, { method: req.method, headers: req.headers as any });
-}
-
 // テストが想定する「最低限のキー形式」：英数字/ハイフン/アンダースコア/ドットを許容し、長さ10以上
 const API_KEY_RE = /^[A-Za-z0-9._-]{10,}$/;
-const isTestEnv = process.env.NODE_ENV === 'test';
 
 async function handleGetRequest(request: Request) {
   const startTime = Date.now()
@@ -46,34 +31,13 @@ async function handleGetRequest(request: Request) {
       return NextResponse.json({ error: 'Invalid API key format', code: 'INVALID_API_KEY_FORMAT' }, { status: 401 });
     }
 
-    // 4) セキュリティチェック（テスト環境では簡易チェック）
-    let securityCheck: any
-    if (!isTestEnv) {
-      const nreq = toNextRequest(request);
-      securityCheck = await SecurityMiddleware.validateRequest(nreq, '/api/v1/companies')
-
-      if (!securityCheck.valid) {
-        return NextResponse.json({
-          error: 'Security validation failed',
-          code: 'SECURITY_VALIDATION_FAILED',
-          violations: securityCheck.violations,
-          requestId: securityCheck.requestId
-        }, {
-          status: securityCheck.statusCode || 401,
-          headers: {
-            'X-Security-Violation': securityCheck.violations?.join(',') || 'UNKNOWN',
-            'X-Request-ID': securityCheck.requestId
-          }
-        })
-      }
-    } else {
-      // テスト環境でのデフォルト値
-      securityCheck = {
-        valid: true,
-        violations: [],
-        requestId: crypto.randomUUID(),
-        processingTime: 0
-      }
+    // 4) セキュリティチェックは withSecurity ミドルウェアで既に実行済み
+    // withSecurityで追加されたリクエストIDを取得
+    const securityCheck = {
+      valid: true,
+      violations: [],
+      requestId: crypto.randomUUID(),
+      processingTime: 0
     }
 
     // Create service client for API key validation
@@ -114,12 +78,10 @@ async function handleGetRequest(request: Request) {
     // セキュア入力検証 - エラーハンドリング追加
     let limit = 50
     try {
-      limit = SecureInputValidator.validateNumeric(
+      limit = UnifiedInputValidator.validateNumericInput(
         searchParams.get('limit'),
-        1,
-        200,
-        50
-      )
+        { min: 1, max: 200, defaultValue: 50 }
+      ) as number
     } catch (error: any) {
       // NUMBER_OUT_OF_RANGE を SECURITY_VALIDATION_FAILED にマッピング
       if (error?.code === 'NUMBER_OUT_OF_RANGE') {
@@ -140,17 +102,14 @@ async function handleGetRequest(request: Request) {
     let cursor: string | null = null
 
     try {
-      fiscalYear = SecureInputValidator.validateFiscalYear(
-        searchParams.get('fiscal_year')
-      )
+      const fyParam = searchParams.get('fiscal_year');
+      fiscalYear = fyParam ? UnifiedInputValidator.validateFiscalYear(fyParam) : null
 
-      nameFilter = SecureInputValidator.validateSearchQuery(
-        searchParams.get('name_filter')
-      )
+      const nameParam = searchParams.get('name_filter');
+      nameFilter = nameParam ? UnifiedInputValidator.validateSearchQuery(nameParam) : null
 
-      cursor = SecureInputValidator.validateCursor(
-        searchParams.get('cursor')
-      )
+      const cursorParam = searchParams.get('cursor');
+      cursor = cursorParam ? UnifiedInputValidator.validateString(cursorParam, { maxLength: 100 }) : null
     } catch (error: any) {
       // バリデーションエラーをSECURITY_VALIDATION_FAILEDにマッピング
       if (error?.code) {
@@ -314,15 +273,15 @@ async function handleGetRequest(request: Request) {
       })
     }
 
-    // ValidationError の場合は適切なステータスコードを返す
-    if (error instanceof ValidationError) {
+    // バリデーションエラーの場合
+    if (error instanceof Error && error.message.includes('検証エラー')) {
       return NextResponse.json(
         {
           error: error.message,
-          code: error.code,
+          code: 'VALIDATION_ERROR',
           requestId: crypto.randomUUID()
         },
-        { status: error.statusCode }
+        { status: 400 }
       )
     }
 
@@ -357,30 +316,13 @@ async function handlePostRequest(request: Request) {
       return NextResponse.json({ error: 'Invalid API key format', code: 'INVALID_API_KEY_FORMAT' }, { status: 401 });
     }
 
-    // 3) セキュリティチェック（テスト環境では簡易チェック）
-    let securityCheck: any
-    if (!isTestEnv) {
-      const nreq = toNextRequest(request);
-      securityCheck = await SecurityMiddleware.validateRequest(nreq, '/api/v1/companies')
-
-      if (!securityCheck.valid) {
-        return NextResponse.json({
-          error: 'Security validation failed',
-          code: 'SECURITY_VALIDATION_FAILED',
-          violations: securityCheck.violations,
-          requestId: securityCheck.requestId
-        }, {
-          status: securityCheck.statusCode || 401
-        })
-      }
-    } else {
-      // テスト環境でのデフォルト値
-      securityCheck = {
-        valid: true,
-        violations: [],
-        requestId: crypto.randomUUID(),
-        processingTime: 0
-      }
+    // 3) セキュリティチェックは withSecurity ミドルウェアで既に実行済み
+    // withSecurityで追加されたリクエストIDを取得
+    const securityCheck = {
+      valid: true,
+      violations: [],
+      requestId: crypto.randomUUID(),
+      processingTime: 0
     }
 
     const serviceClient = supabaseManager.getServiceClient()
@@ -393,7 +335,17 @@ async function handlePostRequest(request: Request) {
 
     // 🛡️ リクエストボディの安全な取得と検証
     const body = await request.json()
-    const validatedParams = SecureInputValidator.validateBatchParameters(body)
+    // リクエストボディのバリデーション
+    const validatedParams = {
+      limit: UnifiedInputValidator.validateNumericInput(
+        body.limit,
+        { min: 1, max: 200, defaultValue: 50 }
+      ) as number,
+      cursor: body.cursor ? UnifiedInputValidator.validateString(body.cursor, { maxLength: 100 }) : null,
+      fiscal_year: body.fiscal_year ? UnifiedInputValidator.validateFiscalYear(body.fiscal_year) : null,
+      file_type: body.file_type ? UnifiedInputValidator.validateString(body.file_type, { maxLength: 50 }) : null,
+      name_filter: body.name_filter ? UnifiedInputValidator.validateSearchQuery(body.name_filter) : null
+    }
 
     // Secure RPC call with validated parameters
     const { data: paginatedResult, error: companiesError } = await serviceClient
@@ -439,10 +391,10 @@ async function handlePostRequest(request: Request) {
   } catch (error) {
     console.error('POST API error:', error)
 
-    if (error instanceof ValidationError) {
+    if (error instanceof Error && error.message.includes('検証エラー')) {
       return NextResponse.json(
-        { error: error.message, code: error.code },
-        { status: error.statusCode }
+        { error: error.message, code: 'VALIDATION_ERROR' },
+        { status: 400 }
       )
     }
 

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
-import { SecureInputValidator, ValidationError } from '@/lib/validators/secure-input-validator'
-import { PathSecurity, SecurityError } from '@/lib/security/path-security'
-import { SQLInjectionShield } from '@/lib/security/sql-injection-shield'
+import { UnifiedInputValidator } from '@/lib/validators/unified-input-validator'
+import { withSecurity } from '@/lib/middleware/security-middleware'
 import { z } from 'zod'
 
 // このルートは動的である必要があります（request.headersを使用）
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+async function handleGetRequest(request: Request) {
   try {
     // Get API key from header
     const apiKey = request.headers.get('X-API-Key')
@@ -38,7 +37,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Secure input validation and sanitization
-    const searchParams = request.nextUrl.searchParams
+    const url = new URL(request.url)
+    const searchParams = url.searchParams
     let validatedParams: {
       companyId: string | null
       fiscalYear: string | null
@@ -49,28 +49,20 @@ export async function GET(request: NextRequest) {
     try {
       validatedParams = {
         companyId: searchParams.get('company_id') ?
-          SecureInputValidator.sanitizeTextInput(searchParams.get('company_id'), 20) : null,
-        fiscalYear: SecureInputValidator.validateFiscalYear(searchParams.get('fiscal_year')),
-        fileType: SecureInputValidator.validateDocumentType(searchParams.get('file_type')),
-        limit: SecureInputValidator.validateNumericInput(
+          UnifiedInputValidator.validateString(searchParams.get('company_id'), { maxLength: 20 }) : null,
+        fiscalYear: searchParams.get('fiscal_year') ?
+          UnifiedInputValidator.validateFiscalYear(searchParams.get('fiscal_year')) : null,
+        fileType: searchParams.get('file_type') ?
+          UnifiedInputValidator.validateString(searchParams.get('file_type'), { maxLength: 50 }) : null,
+        limit: UnifiedInputValidator.validateNumericInput(
           searchParams.get('limit'),
-          1,
-          100,
-          20
-        )
+          { min: 1, max: 100, defaultValue: 20 }
+        ) as number
       }
 
       // Validate company ID format if provided
-      if (validatedParams.companyId && !SecureInputValidator.validateCompanyId(validatedParams.companyId)) {
-        throw new ValidationError('Invalid company ID format')
-      }
-
-      // SQL injection check for company ID
       if (validatedParams.companyId) {
-        const injectionCheck = SQLInjectionShield.validateInput(validatedParams.companyId, 'filter')
-        if (!injectionCheck.valid) {
-          throw new ValidationError(`Invalid company ID: ${injectionCheck.reason}`)
-        }
+        validatedParams.companyId = UnifiedInputValidator.validateCompanyId(validatedParams.companyId);
       }
     } catch (error) {
       console.warn('Input validation failed:', {
@@ -81,7 +73,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Invalid request parameters',
-          message: error instanceof ValidationError ? error.message : 'Validation failed'
+          message: error instanceof Error ? error.message : 'Validation failed'
         },
         { status: 400 }
       )
@@ -117,10 +109,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Add public URL for each document
+    // 環境変数から取得、設定されていない場合はエラー
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      return NextResponse.json(
+        { error: 'Supabase URL not configured' },
+        { status: 500 }
+      );
+    }
+
     const documentsWithUrls = documents?.map(doc => ({
       ...doc,
       public_url: doc.storage_path ?
-        `https://wpwqxhyiglbtlaimrjrx.supabase.co/storage/v1/object/public/markdown-files/${doc.storage_path}` : null
+        `${supabaseUrl}/storage/v1/object/public/markdown-files/${doc.storage_path}` : null
     }))
 
     return NextResponse.json({
@@ -138,7 +139,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handlePostRequest(request: Request) {
   try {
     // Get API key from header
     const apiKey = request.headers.get('X-API-Key')
@@ -166,29 +167,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get search parameters from body
+    // Get and validate search parameters from body
     const body = await request.json()
-    const { company_name, company_id, fiscal_year, file_type } = body
+
+    // Validate and sanitize input parameters
+    const validatedParams = {
+      company_name: body.company_name ?
+        UnifiedInputValidator.validateSearchQuery(body.company_name) : null,
+      company_id: body.company_id ?
+        UnifiedInputValidator.validateCompanyId(body.company_id) : null,
+      fiscal_year: body.fiscal_year ?
+        UnifiedInputValidator.validateFiscalYear(body.fiscal_year) : null,
+      file_type: body.file_type ?
+        UnifiedInputValidator.validateString(body.file_type, { maxLength: 50 }) : null
+    }
 
     // Build query
     let query = serviceClient
       .from('markdown_files_metadata')
       .select('*')
 
-    if (company_name) {
-      query = query.ilike('company_name', `%${company_name}%`)
+    if (validatedParams.company_name) {
+      query = query.ilike('company_name', `%${validatedParams.company_name}%`)
     }
 
-    if (company_id) {
-      query = query.eq('company_id', company_id)
+    if (validatedParams.company_id) {
+      query = query.eq('company_id', validatedParams.company_id)
     }
 
-    if (fiscal_year) {
-      query = query.eq('fiscal_year', fiscal_year)
+    if (validatedParams.fiscal_year) {
+      query = query.eq('fiscal_year', validatedParams.fiscal_year)
     }
 
-    if (file_type) {
-      query = query.eq('file_type', file_type)
+    if (validatedParams.file_type) {
+      query = query.eq('file_type', validatedParams.file_type)
     }
 
     query = query.order('created_at', { ascending: false })
@@ -204,10 +216,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Add public URL for each document
+    // 環境変数から取得、設定されていない場合はエラー
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      return NextResponse.json(
+        { error: 'Supabase URL not configured' },
+        { status: 500 }
+      );
+    }
+
     const documentsWithUrls = documents?.map(doc => ({
       ...doc,
       public_url: doc.storage_path ?
-        `https://wpwqxhyiglbtlaimrjrx.supabase.co/storage/v1/object/public/markdown-files/${doc.storage_path}` : null
+        `${supabaseUrl}/storage/v1/object/public/markdown-files/${doc.storage_path}` : null
     }))
 
     return NextResponse.json({
@@ -224,3 +245,7 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// Export with security middleware
+export const GET = withSecurity(handleGetRequest)
+export const POST = withSecurity(handlePostRequest)

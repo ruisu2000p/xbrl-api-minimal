@@ -1,24 +1,47 @@
 /**
  * CSRF Protection Library
  * Implements double-submit cookie pattern and origin validation
+ * with server-side token storage for verification
  */
 
 import { headers } from 'next/headers'
 import crypto from 'crypto'
 import { NextRequest } from 'next/server'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
 /**
- * Generate CSRF token
+ * Generate CSRF token and store it server-side
  */
-export function generateCSRFToken(): string {
-  return crypto.randomBytes(32).toString('base64url')
+export async function generateCSRFToken(sessionId: string): Promise<string> {
+  const token = crypto.randomBytes(32).toString('base64url')
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+  try {
+    const supabase = supabaseManager.getServiceClient()
+    await supabase
+      .from('csrf_tokens')
+      .upsert({
+        session_id: sessionId,
+        token_hash: hashedToken,
+        expires_at: expiresAt.toISOString(),
+        created_at: new Date().toISOString()
+      }, {
+        onConflict: 'session_id'
+      })
+  } catch (error) {
+    console.error('[CSRF] Failed to store token:', error)
+  }
+
+  return token
 }
 
 /**
- * Validate CSRF token using double-submit cookie pattern
+ * Validate CSRF token using double-submit cookie pattern with server-side verification
  */
 export async function validateCSRFToken(
   request: NextRequest | Request,
+  sessionId: string,
   token?: string
 ): Promise<boolean> {
   try {
@@ -43,15 +66,47 @@ export async function validateCSRFToken(
 
     // 2. Check for CSRF token in headers or body
     const csrfHeader = headersList.get('x-csrf-token')
-    if (!csrfHeader && !token) {
+    const csrfCookie = request.headers?.get('cookie')?.split(';')
+      .find(c => c.trim().startsWith('csrf-token='))
+      ?.split('=')[1]
+
+    const tokenToValidate = csrfHeader || token || csrfCookie || ''
+
+    if (!tokenToValidate) {
       console.error('[CSRF] No CSRF token provided')
       return false
     }
 
     // 3. Validate token format (should be base64url)
-    const tokenToValidate = csrfHeader || token || ''
     if (!/^[A-Za-z0-9_-]+$/.test(tokenToValidate)) {
       console.error('[CSRF] Invalid token format')
+      return false
+    }
+
+    // 4. Verify token against stored hash in database
+    const hashedToken = crypto.createHash('sha256').update(tokenToValidate).digest('hex')
+    const supabase = supabaseManager.getServiceClient()
+
+    const { data: storedToken, error } = await supabase
+      .from('csrf_tokens')
+      .select('token_hash, expires_at')
+      .eq('session_id', sessionId)
+      .eq('token_hash', hashedToken)
+      .single()
+
+    if (error || !storedToken) {
+      console.error('[CSRF] Token not found or expired')
+      return false
+    }
+
+    // 5. Check token expiration
+    if (new Date(storedToken.expires_at) < new Date()) {
+      console.error('[CSRF] Token expired')
+      // Clean up expired token
+      await supabase
+        .from('csrf_tokens')
+        .delete()
+        .eq('session_id', sessionId)
       return false
     }
 
@@ -73,42 +128,75 @@ export function validateRequestMethod(
 }
 
 /**
- * Rate limiting for Server Actions
+ * Rate limiting using Supabase for distributed environments
  */
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
-
-export function checkRateLimit(
+export async function checkRateLimit(
   identifier: string,
   maxRequests: number = 10,
   windowMs: number = 60000 // 1 minute
-): boolean {
-  const now = Date.now()
-  const userLimit = rateLimitMap.get(identifier)
+): Promise<boolean> {
+  try {
+    const supabase = supabaseManager.getServiceClient()
+    const now = Date.now()
+    const windowStart = new Date(now - windowMs).toISOString()
 
-  if (!userLimit || now > userLimit.resetTime) {
-    rateLimitMap.set(identifier, {
-      count: 1,
-      resetTime: now + windowMs
-    })
+    // Count recent requests
+    const { count, error: countError } = await supabase
+      .from('rate_limit_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('identifier', identifier)
+      .gte('created_at', windowStart)
+
+    if (countError) {
+      console.error('[Rate Limit] Count error:', countError)
+      // Fail open in case of error (allow request)
+      return true
+    }
+
+    if ((count || 0) >= maxRequests) {
+      return false
+    }
+
+    // Log the request
+    await supabase
+      .from('rate_limit_logs')
+      .insert({
+        identifier,
+        created_at: new Date().toISOString()
+      })
+
+    return true
+  } catch (error) {
+    console.error('[Rate Limit] Error:', error)
+    // Fail open in case of error
     return true
   }
-
-  if (userLimit.count >= maxRequests) {
-    return false
-  }
-
-  userLimit.count++
-  return true
 }
 
 /**
- * Clean expired rate limit entries periodically
+ * Clean expired tokens and rate limit logs periodically
+ * This should be run as a scheduled job in production
  */
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, value] of rateLimitMap.entries()) {
-    if (now > value.resetTime) {
-      rateLimitMap.delete(key)
-    }
+export async function cleanupExpiredData(): Promise<void> {
+  try {
+    const supabase = supabaseManager.getServiceClient()
+    const now = new Date().toISOString()
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+
+    // Clean expired CSRF tokens
+    await supabase
+      .from('csrf_tokens')
+      .delete()
+      .lt('expires_at', now)
+
+    // Clean old rate limit logs
+    await supabase
+      .from('rate_limit_logs')
+      .delete()
+      .lt('created_at', oneHourAgo)
+
+    console.log('[Cleanup] Expired data cleaned')
+  } catch (error) {
+    console.error('[Cleanup] Error:', error)
   }
-}, 300000) // Clean every 5 minutes
+}

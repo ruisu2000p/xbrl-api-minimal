@@ -338,25 +338,16 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
 
     // APIキーを生成（32文字のセキュアなランダム文字列）
     const { generateSecureToken } = await import('@/lib/security/validation')
-    const randomString = generateSecureToken(16) // 16バイト = 32文字の16進数
+    const randomString = generateSecureToken(32) // 32バイト = 64文字の16進数
     const apiKey = `xbrl_v1_${randomString}`;
-    const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
 
-    // APIキーをデータベースに直接挿入
+    // 既存のcreate_api_key関数を使用（この関数内でbcryptハッシュ化される）
     const { data, error } = await supabase
-      .from('api_keys')
-      .insert({
-        name: name || 'API Key',
-        key_prefix: keyPrefix,
-        key_hash: apiKey, // 一時的にプレーンテキストで保存
-        user_id: session.user.id, // 認証済みユーザーのID
-        tier: 'free',
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+      .rpc('create_api_key', {
+        p_user_id: session.user.id,
+        p_name: name || 'API Key',
+        p_environment: 'production'
+      });
 
     if (error) {
       console.error('Error creating API key:', error);
@@ -366,14 +357,18 @@ export async function createApiKey(name: string): Promise<ApiKeyResponse> {
       }
     }
 
+    // create_api_key関数はAPIキーそのものを返すので、それを使用
+    // dataにはAPIキー文字列が返される
+    const actualApiKey = data as unknown as string;
+
     // Return the plain text key only once for the user to save
     const newKey: ApiKey = {
-      id: data.id,
-      name: data.name,
-      key: apiKey, // Return the actual key only this once
+      id: crypto.randomUUID(), // 一時的なID
+      name: name || 'API Key',
+      key: actualApiKey, // Return the actual key only this once
       created: new Date().toLocaleDateString('ja-JP'),
       lastUsed: '未使用',
-      tier: (data.tier || 'free') as ApiKey['tier']
+      tier: 'free' as ApiKey['tier']
     }
 
     return {

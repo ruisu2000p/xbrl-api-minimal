@@ -2,14 +2,25 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    // 環境変数のチェック
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json({
+        error: 'Configuration error',
+        message: 'Supabase environment variables not configured'
+      }, { status: 500 });
+    }
+
     // MCP server configuration
     const config = {
       name: 'xbrl-financial',
       version: '3.2.0',
       description: 'XBRL Financial Data API MCP Server',
       // Required for MCP server to connect to Supabase
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wpwqxhyiglbtlaimrjrx.supabase.co',
-      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      supabaseUrl: supabaseUrl,
+      supabaseAnonKey: supabaseAnonKey,
       tools: [
         'search-documents',
         'get-document',
