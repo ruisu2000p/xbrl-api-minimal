@@ -198,13 +198,11 @@ export function buildSecureUrl(
   url.pathname = url.pathname.replace(/\/$/, '') + '/' + sanitizedPath
 
   // クエリパラメータを安全に追加
+  // URLSearchParams.append は内部でエンコードするため、二重エンコードを避ける
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (key && value) {
-        url.searchParams.append(
-          encodeURIComponent(key),
-          encodeURIComponent(value)
-        )
+        url.searchParams.append(key, value)
       }
     })
   }
@@ -282,7 +280,7 @@ export function getSecurityHeaders(): Record<string, string> {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://wpwqxhyiglbtlaimrjrx.supabase.co",
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wpwqxhyiglbtlaimrjrx.supabase.co'}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"

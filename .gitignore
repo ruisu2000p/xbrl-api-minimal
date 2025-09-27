@@ -190,3 +190,4 @@ edge-function-*.md
 supabase-*.js
 supabase.exe
 supabase_*.log
+.claude/

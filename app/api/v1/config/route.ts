@@ -8,7 +8,7 @@ export async function GET() {
       version: '3.2.0',
       description: 'XBRL Financial Data API MCP Server',
       // Required for MCP server to connect to Supabase
-      supabaseUrl: 'https://wpwqxhyiglbtlaimrjrx.supabase.co',
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wpwqxhyiglbtlaimrjrx.supabase.co',
       supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
       tools: [
         'search-documents',
