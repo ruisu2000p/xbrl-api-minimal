@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
@@ -470,6 +470,9 @@ export default function AccountSettings() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [redirectTimer, setRedirectTimer] = useState<NodeJS.Timeout | null>(null);
 
+  // リダイレクト済みかどうかを記録（useRefで永続化）
+  const hasRedirected = useRef(false);
+
   // 初回マウント時に認証状態をチェック（改善版）
   useEffect(() => {
     // まだローディング中なら何もしない
@@ -487,6 +490,7 @@ export default function AccountSettings() {
         setRedirectTimer(null);
       }
       setSessionChecked(true);
+      hasRedirected.current = false; // ユーザーがいる場合はリセット
       return;
     }
 
@@ -495,9 +499,10 @@ export default function AccountSettings() {
       console.log('🔍 セッション復元を待機中...');
       const timer = setTimeout(() => {
         // 再度チェックして、まだユーザーがいなければリダイレクト
-        if (!user) {
+        if (!user && !hasRedirected.current) {
           console.log('❌ セッション復元タイムアウト。ログインページへリダイレクトします。');
-          router.push('/auth/login');
+          hasRedirected.current = true; // リダイレクト済みとマーク
+          router.replace('/auth/login'); // replaceを使用して履歴に残さない
         }
         setSessionChecked(true);
       }, 500); // 500ms待機（より確実にセッション復元を待つ）
@@ -509,11 +514,12 @@ export default function AccountSettings() {
     }
 
     // セッションチェック済みで、ユーザーがいない場合
-    if (sessionChecked && !user) {
+    if (sessionChecked && !user && !hasRedirected.current) {
       console.log('❌ 認証されていません。ログインページへリダイレクトします。');
-      router.push('/auth/login');
+      hasRedirected.current = true; // リダイレクト済みとマーク
+      router.replace('/auth/login'); // replaceを使用して履歴に残さない
     }
-  }, [user, supabaseLoading, router, sessionChecked, redirectTimer]);
+  }, [user, supabaseLoading, sessionChecked]); // router と redirectTimer を依存配列から削除
 
   // ユーザー情報でプロフィールを初期化
   useEffect(() => {
