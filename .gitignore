@@ -78,3 +78,115 @@ mcp-server/node_modules/
 *.backup
 *.bak
 backup_*.zip
+
+# User directories and system files
+.anaconda/
+.cache/
+.conda/
+.config/
+.continuum/
+.cursor/
+.cursor-tutor/
+.docker/
+.fly/
+.ipython/
+.jupyter/
+.keras/
+.local/
+.matplotlib/
+.npmrc
+.playwright-mcp/
+.rustup/
+.streamlit/
+.thumbnails/
+anaconda3/
+AppData/
+Contacts/
+Developer/
+Downloads/
+Favorites/
+Links/
+OneDrive/
+Searches/
+scoop/
+bin/
+externals/
+temp/
+
+# Windows system files
+NTUSER.DAT*
+ntuser.dat*
+ntuser.ini
+
+# Python environments
+venv/
+env/
+ENV/
+.venv/
+
+# Archive and package files
+*.tgz
+*.tar.gz
+*.zip
+
+# Documentation and reports (local)
+*_REPORT.md
+*_SUMMARY.md
+*_GUIDE.md
+*_SETUP*.md
+IMPLEMENTATION-FILE-LIST.md
+SYSTEM-ARCHITECTURE-DIAGRAM.md
+
+# Config files (local)
+.mcp.json
+.claude.json*
+.codex*
+claude-config*.json
+mcp-config*.json
+mcp-server.example.toml
+
+# Script files (local)
+*.ps1
+*.bat
+*.cmd
+*.sh
+
+# Temporary and debug files
+*.mjs
+_diag/
+_buildManifest.js
+*.sql
+query.sql
+
+# Project specific
+xbrl-api-minimal/
+xbrl-api-documentation.html
+xbrl-financial-api-complete-documentation.html
+xbrl-financial-mcp/
+xbrl-mcp-server/
+financial-analysis-app/
+finxbrl-insight-*/
+gateway-*/
+shared-supabase-mcp-minimal/
+package-secure/
+package/
+npm-cache/
+github-runner/
+sqlite-explorer-fastmcp-mcp-server/
+components/ApiKeyManager.tsx
+
+# Analysis and report files
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!next.config.json
+
+# Edge function source files (local)
+edge-function-*.ts
+edge-function-*.md
+
+# Supabase local files
+supabase-*.js
+supabase.exe
+supabase_*.log
