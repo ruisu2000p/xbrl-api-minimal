@@ -1,192 +1,197 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { apiKeyNameSchema } from '@/lib/security/input-validation'
+import {
+  createApiKey as generateNewApiKey,
+  extractApiKeyPrefix,
+  extractApiKeySuffix
+} from '@/lib/security/unified-apikey'
 
-// GET /api/api-keys - APIキー一覧を取得
-export async function GET(request: NextRequest) {
+async function getSessionContext() {
+  const supabase = await supabaseManager.createSSRClient()
+  const { data: { session }, error } = await supabase.auth.getSession()
+
+  if (error) {
+    return { supabase, error }
+  }
+
+  if (!session?.user) {
+    return { supabase, error: new Error('Not authenticated') }
+  }
+
+  return { supabase, userId: session.user.id }
+}
+
+export async function GET(_request: NextRequest) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing:', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseKey
-      });
-      return NextResponse.json(
-        { error: 'Supabase configuration missing' },
-        { status: 500 }
-      );
+    const { supabase, userId, error } = await getSessionContext()
+    if (error || !userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // 現在のユーザー情報を取得（ダミー）
-    // 実際にはセッションから取得する必要があります
-    const userId = 'demo-user';
-
-    // APIキーをデータベースから取得
-    // user_idがnullの場合も含めて取得（デモ用）
-    const { data: apiKeys, error } = await supabase
+    const { data: apiKeys, error: fetchError } = await supabase
       .from('api_keys')
-      .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
+      .select('id, name, masked_key, key_prefix, key_suffix, tier, status, is_active, created_at, last_used_at')
+      .eq('user_id', userId)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(10)
 
-    if (error) {
-      console.error('Error fetching API keys:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch API keys' },
-        { status: 500 }
-      );
+    if (fetchError) {
+      console.error('Error fetching API keys:', fetchError)
+      return NextResponse.json({ error: 'Failed to fetch API keys' }, { status: 500 })
     }
 
-    return NextResponse.json({
-      success: true,
-      apiKeys: apiKeys || []
-    });
-  } catch (error) {
-    console.error('API keys fetch error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const sanitized = (apiKeys ?? []).map((key) => ({
+      id: key.id,
+      name: key.name,
+      masked_key: key.masked_key
+        ? key.masked_key
+        : key.key_prefix
+          ? `${key.key_prefix}****`
+          : `api_key****${(key.key_suffix ?? key.id).slice(-4)}`,
+      tier: key.tier,
+      status: key.status,
+      is_active: key.is_active,
+      created_at: key.created_at,
+      last_used_at: key.last_used_at
+    }))
+
+    return NextResponse.json({ success: true, apiKeys: sanitized })
+  } catch (err) {
+    console.error('API keys fetch error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// POST /api/api-keys - 新しいAPIキーを作成
 export async function POST(request: NextRequest) {
   try {
-    const { name } = await request.json();
-
-    if (!name || typeof name !== 'string') {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
-      );
+    const { supabase, userId, error } = await getSessionContext()
+    if (error || !userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing:', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseKey
-      });
-      return NextResponse.json(
-        { error: 'Supabase configuration missing' },
-        { status: 500 }
-      );
+    let body: any
+    try {
+      body = await request.json()
+    } catch {
+      body = {}
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const providedName = typeof body?.name === 'string' ? body.name : undefined
 
-    // 現在のユーザー情報を取得（ダミー）
-    const userId = 'demo-user';
+    let validatedName: string
+    try {
+      validatedName = providedName ? apiKeyNameSchema.parse(providedName) : 'API Key'
+    } catch (validationError) {
+      return NextResponse.json({ error: 'Invalid API key name' }, { status: 400 })
+    }
 
-    // APIキーを生成（32文字のセキュアなランダム文字列）
-    const { generateSecureToken } = await import('@/lib/security/validation')
-    const randomString = generateSecureToken(16) // 16バイト = 32文字の16進数
-    const apiKey = `xbrl_v1_${randomString}`;
-    const keyPrefix = `xbrl_v1_${randomString.substring(0, 4)}`;
+    const { apiKey, hash, salt, masked } = await generateNewApiKey()
+    const keyPrefix = extractApiKeyPrefix(apiKey)
+    const keySuffix = extractApiKeySuffix(apiKey)
+    const timestamp = new Date().toISOString()
 
-    // bcryptでハッシュ化（簡易的にプレーンテキストで保存 - 実環境では要改善）
-    // 注: 実際のbcryptハッシュはEdge Function側で実装されています
-
-    // APIキーをデータベースに直接挿入
-    const { data, error } = await supabase
+    const { data, error: insertError } = await supabase
       .from('api_keys')
       .insert({
-        name: name,
+        name: validatedName,
         key_prefix: keyPrefix,
-        key_hash: apiKey, // 一時的にプレーンテキストで保存
-        user_id: null, // デモ用なのでnull
+        key_suffix: keySuffix,
+        key_hash: hash,
+        salt,
+        masked_key: masked,
+        user_id: userId,
         tier: 'free',
+        status: 'active',
         is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        created_at: timestamp,
+        updated_at: timestamp
       })
-      .select()
-      .single();
+      .select('id, name, tier, status, masked_key, created_at, last_used_at')
+      .single()
 
-    if (error) {
-      console.error('Error creating API key:', error);
-      return NextResponse.json(
-        { error: 'Failed to create API key' },
-        { status: 500 }
-      );
+    if (insertError || !data) {
+      console.error('Error creating API key:', insertError)
+      return NextResponse.json({ error: 'Failed to create API key' }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
       apiKey: {
-        ...data,
-        full_key: apiKey // 初回のみ完全なキーを返す
-      }
-    });
-  } catch (error) {
-    console.error('API key creation error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+        id: data.id,
+        name: data.name,
+        masked_key: data.masked_key ?? masked,
+        tier: data.tier,
+        status: data.status,
+        created_at: data.created_at,
+        last_used_at: data.last_used_at
+      },
+      plaintextKey: apiKey
+    })
+  } catch (err) {
+    console.error('API key creation error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// DELETE /api/api-keys/[id] - APIキーを削除
 export async function DELETE(request: NextRequest) {
   try {
-    const url = new URL(request.url);
-    const pathParts = url.pathname.split('/');
-    const keyId = pathParts[pathParts.length - 1];
+    const { supabase, userId, error } = await getSessionContext()
+    if (error || !userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const url = new URL(request.url)
+    let keyId = url.searchParams.get('id')
 
     if (!keyId) {
-      return NextResponse.json(
-        { error: 'Key ID is required' },
-        { status: 400 }
-      );
+      const segments = url.pathname.split('/').filter(Boolean)
+      const candidate = segments.at(-1)
+      if (candidate && candidate !== 'api-keys') {
+        keyId = candidate
+      }
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing:', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseKey
-      });
-      return NextResponse.json(
-        { error: 'Supabase configuration missing' },
-        { status: 500 }
-      );
+    if (!keyId) {
+      return NextResponse.json({ error: 'Key ID is required' }, { status: 400 })
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // APIキーを無効化（削除ではなく無効化）
-    const { error } = await supabase
+    const { data: keyRecord, error: fetchError } = await supabase
       .from('api_keys')
-      .update({ is_active: false })
-      .eq('id', keyId);
+      .select('id')
+      .eq('id', keyId)
+      .eq('user_id', userId)
+      .maybeSingle()
 
-    if (error) {
-      console.error('Error deleting API key:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete API key' },
-        { status: 500 }
-      );
+    if (fetchError) {
+      console.error('Error verifying API key ownership:', fetchError)
+      return NextResponse.json({ error: 'Failed to delete API key' }, { status: 500 })
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'API key deleted successfully'
-    });
-  } catch (error) {
-    console.error('API key deletion error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    if (!keyRecord) {
+      return NextResponse.json({ error: 'API key not found' }, { status: 404 })
+    }
+
+    const { error: updateError } = await supabase
+      .from('api_keys')
+      .update({
+        is_active: false,
+        status: 'revoked',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', keyId)
+      .eq('user_id', userId)
+
+    if (updateError) {
+      console.error('Error deleting API key:', updateError)
+      return NextResponse.json({ error: 'Failed to delete API key' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, message: 'API key revoked successfully' })
+  } catch (err) {
+    console.error('API key deletion error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+

@@ -9,44 +9,44 @@ import DOMPurify from 'isomorphic-dompurify';
 export class SecureInputValidator {
   // パス注入攻撃防御パターン
   private static readonly PATH_INJECTION_PATTERNS = [
-    /\.\./g,                                          // Directory traversal
-    /\.\.%2f/gi,                                     // URL encoded traversal
-    /\.\.%252f/gi,                                   // Double URL encoded
-    /\.\.%c0%af/gi,                                  // UTF-8 overlong encoding
-    /\.\.%c1%1c/gi,                                  // Alternative encoding
-    /[\/\\]/g,                                       // Path separators
-    /\0/g,                                           // Null byte injection
-    /[\x00-\x1f\x7f]/g,                             // Control characters
-    /[<>:"|*?]/g,                                    // Invalid filename chars
+    /\.\./,                                          // Directory traversal
+    /\.\.%2f/i,                                     // URL encoded traversal
+    /\.\.%252f/i,                                   // Double URL encoded
+    /\.\.%c0%af/i,                                  // UTF-8 overlong encoding
+    /\.\.%c1%1c/i,                                  // Alternative encoding
+    /[\/\\]/,                                       // Path separators
+    /\0/,                                           // Null byte injection
+    /[\x00-\x1f\x7f]/,                             // Control characters
+    /[<>:"|*?]/,                                    // Invalid filename chars
     /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i,      // Windows reserved names
-    /\$\{.*\}/g,                                     // Template injection
-    /%00/g,                                          // URL encoded null
-    /\.\.[;|&]/g,                                    // Command injection
+    /\$\{.*\}/,                                     // Template injection
+    /%00/,                                          // URL encoded null
+    /\.\.[;|&]/,                                    // Command injection
   ];
 
   // SQL注入攻撃防御パターン
   private static readonly SQL_INJECTION_PATTERNS = [
-    /('|(\\')|(;)|(\s*(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\s+))/gi,
-    /(UNION\s+SELECT)|(\s+OR\s+)|(\s+AND\s+)/gi,
-    /(-{2})|(\/\*)|(\*\/)/g,                        // SQL comments
-    /(xp_|sp_|0x[0-9a-f]+)/gi,                      // Extended procedures & hex
-    /(\|\||&&)/g,                                    // Logical operators
-    /(CAST|CONVERT|CHAR|NCHAR|VARCHAR|NVARCHAR)\s*\(/gi,
-    /(WAITFOR|DELAY|BENCHMARK|SLEEP)/gi,            // Time-based attacks
-    /(INTO\s+(OUTFILE|DUMPFILE))/gi,               // File operations
+    /('|(\\')|(;)|(\s*(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\s+))/i,
+    /(UNION\s+SELECT)|(\s+OR\s+)|(\s+AND\s+)/i,
+    /(-{2})|(\/\*)|(\*\/)/,                        // SQL comments
+    /(xp_|sp_|0x[0-9a-f]+)/i,                      // Extended procedures & hex
+    /(\|\||&&)/,                                    // Logical operators
+    /(CAST|CONVERT|CHAR|NCHAR|VARCHAR|NVARCHAR)\s*\(/i,
+    /(WAITFOR|DELAY|BENCHMARK|SLEEP)/i,            // Time-based attacks
+    /(INTO\s+(OUTFILE|DUMPFILE))/i,               // File operations
   ];
 
   // XSS攻撃パターン
   private static readonly XSS_PATTERNS = [
-    /<script[^>]*>.*?<\/script>/gi,
-    /javascript:/gi,
-    /on\w+\s*=/gi,
-    /<iframe/gi,
-    /<object/gi,
-    /<embed/gi,
-    /<applet/gi,
-    /data:text\/html/gi,
-    /vbscript:/gi,
+    /<script[^>]*>.*?<\/script>/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /<iframe/i,
+    /<object/i,
+    /<embed/i,
+    /<applet/i,
+    /data:text\/html/i,
+    /vbscript:/i,
   ];
 
   /**
