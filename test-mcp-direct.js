@@ -1,116 +1,92 @@
 #!/usr/bin/env node
 
-// MCPサーバーの直接テスト
+// Direct test of MCP server connection
 const { spawn } = require('child_process');
+const readline = require('readline');
 
-console.log('Testing MCP Server v3.12.0 with JWT authentication...\n');
+console.log('Starting MCP connection test...\n');
 
-// 環境変数を設定
-const env = {
-  ...process.env,
-  SUPABASE_URL: 'https://wpwqxhyiglbtlaimrjrx.supabase.co',
-  XBRL_API_KEY: 'xbrl_v1_c1tq34z9bcoic0z8zvy6i5r2vdccpgnv'
+// Start the wrapper
+const mcp = spawn('node', ['supabase-mcp-codex-wrapper.js'], {
+    env: {
+        ...process.env,
+        SUPABASE_ACCESS_TOKEN: 'sbp_7c52c0edbe8685320292aa80c15931766a9975ea'
+    }
+});
+
+const rl = readline.createInterface({
+    input: mcp.stdout,
+    output: null,
+    terminal: false
+});
+
+// Step 1: Initialize
+console.log('1. Sending initialize...');
+const initMessage = {
+    jsonrpc: "2.0",
+    method: "initialize",
+    params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {}
+    },
+    id: 1
 };
 
-// MCPサーバーを起動
-const server = spawn('node', [
-  'C:/Users/pumpk/xbrl-mcp-server/index.js'
-], {
-  env: env,
-  stdio: ['pipe', 'pipe', 'pipe']
-});
+mcp.stdin.write(JSON.stringify(initMessage) + '\n');
 
-let responseBuffer = '';
+// Step 2: List tools after init
+let step = 1;
 
-server.stdout.on('data', (data) => {
-  responseBuffer += data.toString();
-
-  // JSONレスポンスを探す
-  const lines = responseBuffer.split('\n');
-  for (const line of lines) {
-    if (line.trim().startsWith('{') && line.includes('jsonrpc')) {
-      try {
+rl.on('line', (line) => {
+    try {
         const response = JSON.parse(line);
-        console.log('Response received:', JSON.stringify(response, null, 2));
+        console.log(`   Response:`, JSON.stringify(response, null, 2).substring(0, 200) + '...\n');
 
-        // 結果を解析
-        if (response.result && response.result.content) {
-          const content = JSON.parse(response.result.content[0].text);
-          console.log('\n=== Result ===');
-          console.log('Success:', content.success);
-          console.log('Count:', content.count);
-          if (content.companies) {
-            console.log('\nCompanies found:');
-            content.companies.slice(0, 5).forEach(company => {
-              console.log(`  - ${company.company_name} (${company.company_id})`);
-            });
-          }
+        if (step === 1 && response.id === 1) {
+            step = 2;
+            console.log('2. Listing tools...');
+            const listMessage = {
+                jsonrpc: "2.0",
+                method: "tools/list",
+                params: {},
+                id: 2
+            };
+            mcp.stdin.write(JSON.stringify(listMessage) + '\n');
+        } else if (step === 2 && response.id === 2) {
+            step = 3;
+            console.log('3. Calling get_project_url tool...');
+            const toolMessage = {
+                jsonrpc: "2.0",
+                method: "tools/call",
+                params: {
+                    name: "get_project_url",
+                    arguments: {
+                        project_id: "wpwqxhyiglbtlaimrjrx"
+                    }
+                },
+                id: 3
+            };
+            mcp.stdin.write(JSON.stringify(toolMessage) + '\n');
+        } else if (step === 3) {
+            console.log('\n✅ All tests passed!');
+            process.exit(0);
         }
-      } catch (e) {
-        // JSON解析エラーは無視
-      }
+    } catch (e) {
+        console.error('Error parsing response:', e.message);
     }
-  }
 });
 
-server.stderr.on('data', (data) => {
-  const message = data.toString();
-  if (message.includes('running on stdio')) {
-    console.log('✅ MCP Server started successfully\n');
-
-    // 初期化リクエストを送信
-    const initRequest = {
-      jsonrpc: "2.0",
-      id: 1,
-      method: "initialize",
-      params: {
-        protocolVersion: "0.1.0",
-        capabilities: {}
-      }
-    };
-
-    server.stdin.write(JSON.stringify(initRequest) + '\n');
-
-    // 1秒後にツールリストを要求
-    setTimeout(() => {
-      console.log('Requesting tool list...');
-      const listToolsRequest = {
-        jsonrpc: "2.0",
-        id: 2,
-        method: "tools/list",
-        params: {}
-      };
-      server.stdin.write(JSON.stringify(listToolsRequest) + '\n');
-    }, 1000);
-
-    // 2秒後にトヨタを検索
-    setTimeout(() => {
-      console.log('\nSearching for Toyota...');
-      const searchRequest = {
-        jsonrpc: "2.0",
-        id: 3,
-        method: "tools/call",
-        params: {
-          name: "search_companies_by_name",
-          arguments: {
-            company_name: "トヨタ",
-            limit: 10
-          }
-        }
-      };
-      server.stdin.write(JSON.stringify(searchRequest) + '\n');
-    }, 2000);
-
-    // 5秒後に終了
-    setTimeout(() => {
-      console.log('\nTest completed.');
-      server.kill();
-      process.exit(0);
-    }, 5000);
-  }
+mcp.stderr.on('data', (data) => {
+    console.error('MCP Error:', data.toString());
 });
 
-server.on('error', (error) => {
-  console.error('Error starting MCP server:', error);
-  process.exit(1);
+mcp.on('close', (code) => {
+    console.log(`MCP closed with code ${code}`);
+    process.exit(code);
 });
+
+// Timeout
+setTimeout(() => {
+    console.error('❌ Test timed out');
+    process.exit(1);
+}, 10000);
