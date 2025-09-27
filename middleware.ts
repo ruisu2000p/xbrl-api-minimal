@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 
 // 保護されたルートのリスト
 const protectedRoutes = [
@@ -52,14 +51,12 @@ export async function middleware(request: NextRequest) {
 
   console.log(`🔐 Middleware: Checking auth for ${pathname}`)
 
-  // Supabaseクライアントを作成
-  const response = NextResponse.next()
+  // Edge Runtime互換: クッキーから直接セッショントークンを確認
+  // Supabaseのセッショントークンはsb-<project-ref>-auth-tokenという名前で保存される
+  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('❌ Middleware: Supabase configuration missing')
+  if (!projectRef) {
+    console.error('❌ Middleware: Invalid Supabase URL configuration')
     return new NextResponse(
       JSON.stringify({
         error: 'Configuration error',
@@ -74,47 +71,13 @@ export async function middleware(request: NextRequest) {
     )
   }
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: any) {
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-        },
-      },
-      auth: {
-        autoRefreshToken: true,
-        detectSessionInUrl: false,
-        persistSession: false,
-      },
-    }
-  )
+  // Supabaseのauth cookieを確認
+  const authTokenName = `sb-${projectRef}-auth-token`
+  const authToken = request.cookies.get(authTokenName)?.value
 
-  // セッションチェック
-  const { data: { session }, error } = await supabase.auth.getSession()
-
-  if (error) {
-    console.error('❌ Middleware: Session check error:', error)
-  }
-
-  // セッションがない場合はログインページへリダイレクト
-  if (!session) {
-    console.log(`❌ Middleware: No session for ${pathname}, redirecting to login`)
+  // セッショントークンがない場合はログインページへリダイレクト
+  if (!authToken) {
+    console.log(`❌ Middleware: No auth token for ${pathname}, redirecting to login`)
 
     // APIルートの場合は401を返す
     if (pathname.startsWith('/api/')) {
@@ -139,19 +102,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  console.log(`✅ Middleware: Authenticated user ${session.user.email} accessing ${pathname}`)
+  // Edge Runtimeでは完全なセッション検証はできないため、
+  // auth tokenの存在のみをチェック
+  // 実際のセッション検証は各ルートハンドラーで行う
+  console.log(`✅ Middleware: Auth token found for ${pathname}`)
 
-  // 認証済みの場合はリクエストを通す
+  const response = NextResponse.next()
+
   // バックフォワードキャッシュを有効にするため、Cache-Controlを調整
   response.headers.set('Cache-Control', 'private, no-cache, must-revalidate')
   response.headers.set('Vary', 'Cookie')
+
   return response
 }
 
 export const config = {
   matcher: [
-    // 保護されたルートのみマッチ
-    // '/dashboard/:path*',  // (protected)レイアウトで保護するためコメントアウト
+    // 保護されたルートを有効化
+    '/dashboard/:path*',
     '/profile/:path*',
     '/settings/:path*',
     '/api/dashboard/:path*',

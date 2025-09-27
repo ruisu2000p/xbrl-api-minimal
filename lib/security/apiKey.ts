@@ -60,8 +60,8 @@ export function generateApiKey(size = 43): string {
   return `xbrl_live_v1_${uuid}_${chars.slice(0, size).join('')}`
 }
 
-export function hashApiKey(apiKey: string): string {
-  // Use bcrypt to hash API key with generated salt
+export async function hashApiKey(apiKey: string): Promise<string> {
+  // Use async bcrypt to avoid blocking the event loop
   // Cost factor of 14 is recommended for 2025 security standards
   // Can be adjusted via environment variable for different environments
   const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '14', 10);
@@ -69,6 +69,14 @@ export function hashApiKey(apiKey: string): string {
   // Ensure saltRounds is within reasonable bounds (10-16)
   const validatedRounds = Math.max(10, Math.min(16, saltRounds));
 
+  return bcrypt.hash(apiKey, validatedRounds);
+}
+
+// 互換性のための同期版（非推奨、将来削除予定）
+export function hashApiKeySync(apiKey: string): string {
+  console.warn('hashApiKeySync is deprecated. Use async hashApiKey instead.');
+  const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '14', 10);
+  const validatedRounds = Math.max(10, Math.min(16, saltRounds));
   return bcrypt.hashSync(apiKey, validatedRounds);
 }
 

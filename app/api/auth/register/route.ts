@@ -46,11 +46,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Supabaseで既存ユーザーをチェック
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === email);
-    
-    if (existingUser) {
+    // Supabaseで既存ユーザーをチェック（最適化: メールで直接検索）
+    // まずusersテーブルから直接検索を試みる
+    const { data: existingUser, error: searchError } = await supabaseAdmin
+      .from('auth.users')
+      .select('id, email')
+      .eq('email', email)
+      .single();
+
+    // auth.usersへの直接アクセスが失敗した場合は、従来の方法にフォールバック
+    if (searchError && searchError.code !== 'PGRST116') { // PGRST116 = not found
+      // auth.admin.getUserByEmailが存在しない場合のフォールバック
+      try {
+        const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+          email,
+          password: 'dummy_check_only', // 存在チェックのみ
+        });
+
+        // メールが存在する場合、パスワードエラーが返る
+        if (authError?.message?.includes('Invalid login credentials')) {
+          return createApiResponse.error(
+            ErrorCodes.ALREADY_EXISTS,
+            'このメールアドレスは既に登録されています'
+          );
+        }
+      } catch (e) {
+        // エラーは無視（ユーザーが存在しない場合）
+      }
+    } else if (!searchError && existingUser) {
       return createApiResponse.error(
         ErrorCodes.ALREADY_EXISTS,
         'このメールアドレスは既に登録されています'

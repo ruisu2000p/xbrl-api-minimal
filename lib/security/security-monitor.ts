@@ -422,9 +422,21 @@ export class SecurityMonitor {
 
   /**
    * クリーンアップジョブ
+   * サーバレス環境では動作しないように制御
    */
   private startCleanupJob(): void {
-    setInterval(() => {
+    // サーバレス環境（Vercel等）では setInterval を使用しない
+    const isServerless = process.env.VERCEL ||
+                        process.env.AWS_LAMBDA_FUNCTION_NAME ||
+                        process.env.NETLIFY ||
+                        process.env.NODE_ENV === 'test';
+
+    if (isServerless) {
+      console.log('[SecurityMonitor] Cleanup job disabled in serverless environment');
+      return;
+    }
+
+    const intervalId = setInterval(() => {
       const cutoff = Date.now() - this.WINDOW_SIZE_MS * 2;
 
       // 古いイベントを削除
@@ -463,6 +475,13 @@ export class SecurityMonitor {
         }
       });
     }, 600000); // 10分ごと
+
+    // グローバルなクリーンアップ関数の登録（Jest等のテスト環境用）
+    if (typeof global !== 'undefined') {
+      (global as any).__cleanupSecurityMonitor = () => {
+        clearInterval(intervalId);
+      };
+    }
   }
 }
 
