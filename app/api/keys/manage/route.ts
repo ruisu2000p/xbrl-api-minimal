@@ -10,6 +10,16 @@ import { UnifiedApiKeyManager } from '@/lib/api-key/unified-api-key-manager';
 
 export async function GET(request: NextRequest) {
   try {
+    // Health check - returns version info without auth
+    const url = new URL(request.url);
+    if (url.searchParams.get('health') === 'true') {
+      return NextResponse.json({
+        status: 'ok',
+        version: '2.0.0', // Updated version with fixes
+        timestamp: new Date().toISOString()
+      });
+    }
+
     // Log environment setup
     console.log('API Keys GET endpoint called');
     console.log('Environment check:', {
