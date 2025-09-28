@@ -11,7 +11,7 @@ import {
   extractApiKeyPrefix,
   extractApiKeySuffix,
   maskApiKey
-} from '@/lib/security/unified-apikey'
+} from '@/lib/security/bcrypt-apikey'
 import { checkRateLimit } from '@/lib/security/csrf'
 import {
   emailSchema,

@@ -5,7 +5,7 @@ import {
   createApiKey as generateNewApiKey,
   extractApiKeyPrefix,
   extractApiKeySuffix
-} from '@/lib/security/unified-apikey'
+} from '@/lib/security/bcrypt-apikey'
 
 async function getSessionContext() {
   const supabase = await supabaseManager.createSSRClient()
