@@ -66,23 +66,47 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Temporarily return empty array until RPC function is created in database
+    // Try to fetch API keys
     console.log('Fetching API keys for user:', user.id);
-    console.warn('RPC function get_user_api_keys not yet created in database. Returning empty array.');
 
-    // TODO: Once the following SQL is executed in Supabase dashboard, uncomment the RPC call below:
-    // CREATE OR REPLACE FUNCTION public.get_user_api_keys(p_user_id UUID)
-    // ...
+    // First, try to call the RPC function if it exists
+    let data: any[] = [];
+    let fetchError = null;
 
-    // const { data, error } = await supabase
-    //   .rpc('get_user_api_keys', { p_user_id: user.id });
+    try {
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_user_api_keys', { p_user_id: user.id });
 
-    const data: any[] = [];
+      if (rpcError) {
+        // If the function doesn't exist, try direct query with service role
+        if (rpcError.message?.includes('function') && rpcError.message?.includes('does not exist')) {
+          console.log('RPC function not found, trying service role query');
+
+          // Use service role client for direct query
+          const serviceClient = await createServiceSupabaseClient();
+          if (serviceClient) {
+            const apiKeyManager = new UnifiedApiKeyManager(serviceClient);
+            data = await apiKeyManager.listUserApiKeys(user.id) as any[];
+          } else {
+            console.warn('Service role client not available, returning empty array');
+            data = [];
+          }
+        } else {
+          throw rpcError;
+        }
+      } else {
+        data = rpcData || [];
+      }
+    } catch (err) {
+      fetchError = err;
+      console.error('Error fetching API keys:', err);
+      data = [];
+    }
 
     console.log('Fetch result:', {
       hasData: true,
-      dataCount: 0,
-      error: undefined
+      dataCount: data.length,
+      error: fetchError
     });
 
     return NextResponse.json({
@@ -195,9 +219,29 @@ export async function POST(request: NextRequest) {
 
       case 'list':
       default: {
-        // Temporarily return empty array until RPC function is created
-        console.warn('RPC function not yet created. Returning empty array.');
-        const data: any[] = [];
+        // Use the same logic as GET endpoint for fetching keys
+        let data: any[] = [];
+
+        try {
+          // Try RPC function first
+          const { data: rpcData, error: rpcError } = await authClient
+            .rpc('get_user_api_keys', { p_user_id: user.id });
+
+          if (rpcError) {
+            // Fallback to service role query
+            if (rpcError.message?.includes('function') && rpcError.message?.includes('does not exist')) {
+              const apiKeys = await apiKeyManager.listUserApiKeys(user.id);
+              data = apiKeys as any[];
+            } else {
+              throw rpcError;
+            }
+          } else {
+            data = rpcData || [];
+          }
+        } catch (err) {
+          console.error('Error fetching API keys:', err);
+          data = [];
+        }
 
         return NextResponse.json({
           success: true,

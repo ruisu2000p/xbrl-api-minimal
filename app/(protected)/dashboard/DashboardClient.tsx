@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { useSupabase } from '@/components/SupabaseProvider'
 
 interface ApiKey {
   id: string
@@ -56,6 +56,7 @@ interface UserSubscription {
 
 export default function DashboardClient({ user, apiKeys }: DashboardClientProps) {
   const router = useRouter()
+  const { supabase } = useSupabase()
   const [isGenerating, setIsGenerating] = useState(false)
   const [keyName, setKeyName] = useState('')
   const [keyDescription, setKeyDescription] = useState('')
@@ -94,7 +95,6 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
 
     try {
-      const supabase = supabaseManager.getBrowserClient()
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
@@ -141,8 +141,6 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     }
 
     try {
-      const supabase = supabaseManager.getBrowserClient()
-
       // APIキーを無効化（削除はせずにステータスを変更）
       const { error } = await supabase
         .from('api_keys')
@@ -167,8 +165,6 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
   }
 
   const loadSubscriptionData = async () => {
-    const supabase = supabaseManager.getBrowserClient()
-
     try {
       // プラン一覧を取得
       const { data: plansData, error: plansError } = await supabase
@@ -210,8 +206,6 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getBrowserClient()
-
     try {
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
@@ -246,8 +240,6 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getBrowserClient()
-
     try {
       const { error } = await supabase.auth.updateUser({
         email: formData.newEmail
@@ -273,8 +265,6 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
     setUpdateLoading(true)
     setError('')
     setSuccess('')
-
-    const supabase = supabaseManager.getBrowserClient()
 
     try {
       if (currentSubscription) {

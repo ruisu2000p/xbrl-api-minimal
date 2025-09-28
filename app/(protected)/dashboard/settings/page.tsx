@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { useSupabase } from '@/components/SupabaseProvider'
 
 interface UserProfile {
   id: string
@@ -39,6 +39,7 @@ interface UserSubscription {
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { supabase } = useSupabase()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [updateLoading, setUpdateLoading] = useState(false)
@@ -63,8 +64,6 @@ export default function SettingsPage() {
   }, [])
 
   const loadUserProfile = async () => {
-    const supabase = supabaseManager.getBrowserClient()
-
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -99,8 +98,6 @@ export default function SettingsPage() {
     setUpdateLoading(true)
     setError('')
     setSuccess('')
-
-    const supabase = supabaseManager.getBrowserClient()
 
     try {
       // プロファイル情報を更新
@@ -144,8 +141,6 @@ export default function SettingsPage() {
     setError('')
     setSuccess('')
 
-    const supabase = supabaseManager.getBrowserClient()
-
     try {
       const { error } = await supabase.auth.updateUser({
         email: formData.newEmail
@@ -171,8 +166,6 @@ export default function SettingsPage() {
   }
 
   const loadSubscriptionData = async () => {
-    const supabase = supabaseManager.getBrowserClient()
-
     try {
       // プラン一覧を取得
       const { data: plansData, error: plansError } = await supabase
@@ -218,8 +211,6 @@ export default function SettingsPage() {
     setUpdateLoading(true)
     setError('')
     setSuccess('')
-
-    const supabase = supabaseManager.getBrowserClient()
 
     try {
       if (currentSubscription) {
