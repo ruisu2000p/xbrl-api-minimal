@@ -46,7 +46,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // サーバーサイドでセッションを取得
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = supabaseManager.getServerClient(cookieStore)
 
   let initialSession = null
