@@ -68,7 +68,7 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${pacifico.variable} antialiased`}
       >
-        <SupabaseProvider initialSession={initialSession}>
+        <SupabaseProvider>
           {children}
           <SpeedInsights />
         </SupabaseProvider>
