@@ -1,74 +1,36 @@
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+/**
+ * Legacy server client wrapper
+ * 新しい統一クライアントへの移行用ラッパー
+ *
+ * @deprecated unified-client.ts を直接使用してください
+ */
+
 import type { SupabaseClient } from '@supabase/supabase-js'
+import {
+  createServerSupabaseClient,
+  createServiceSupabaseClient,
+} from './unified-client'
 
+/**
+ * @deprecated createServerSupabaseClient を使用してください
+ */
 export async function createClient(): Promise<SupabaseClient> {
-  const cookieStore = await cookies()
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch {
-            // Server Componentでの書き込みは無視（middlewareで処理）
-          }
-        },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch {
-            // Server Componentでの書き込みは無視
-          }
-        },
-      },
-    }
-  )
+  return createServerSupabaseClient()
 }
 
-// Service Role用のクライアント（管理者操作用）
+/**
+ * @deprecated createServiceSupabaseClient を使用してください
+ *
+ * Service Keyが設定されていない場合は通常のクライアントを返す
+ */
 export async function createServiceClient(): Promise<SupabaseClient> {
-  const serviceKey = process.env.XBRL_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+  const serviceClient = await createServiceSupabaseClient()
 
-  if (!serviceKey) {
-    throw new Error('Service role key not configured')
+  // Service Keyが設定されていない場合は通常のクライアントを返す
+  if (!serviceClient) {
+    console.warn('Service role key not configured, falling back to regular client')
+    return createServerSupabaseClient()
   }
 
-  const cookieStore = await cookies()
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch {
-            // Service Roleではcookie操作は不要
-          }
-        },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch {
-            // Service Roleではcookie操作は不要
-          }
-        },
-      },
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    }
-  ) as SupabaseClient
+  return serviceClient
 }

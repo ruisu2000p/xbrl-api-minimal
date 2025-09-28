@@ -1,0 +1,173 @@
+name: CD - Production Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  pre-deploy-checks:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript strict check
+        run: npx tsc --noEmit --strict
+
+      - name: Run ESLint strict mode
+        run: npm run lint -- --max-warnings=0
+
+      - name: Build test
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+  database-migrations:
+    name: Database Migrations
+    runs-on: ubuntu-latest
+    needs: pre-deploy-checks
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to Supabase project
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Run migrations
+        run: |
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Run seed data (if exists)
+        run: |
+          if [ -f "supabase/seed.sql" ]; then
+            supabase db seed
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  deploy-vercel:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: database-migrations
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build for Production
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+  post-deploy-checks:
+    name: Post-deployment Verification
+    runs-on: ubuntu-latest
+    needs: deploy-vercel
+    timeout-minutes: 10
+
+    steps:
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Health check
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.PRODUCTION_URL }}/api/health)
+          if [ $response -eq 200 ]; then
+            echo "✅ Health check passed"
+          else
+            echo "❌ Health check failed with status: $response"
+            exit 1
+          fi
+
+      - name: Check critical endpoints
+        run: |
+          endpoints=("/api/auth/session" "/api/xbrl/health")
+          for endpoint in "${endpoints[@]}"; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.PRODUCTION_URL }}$endpoint)
+            if [ $response -eq 200 ] || [ $response -eq 401 ]; then
+              echo "✅ Endpoint $endpoint is responding"
+            else
+              echo "❌ Endpoint $endpoint failed with status: $response"
+              exit 1
+            fi
+          done
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: post-deploy-checks
+    if: failure()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: List recent deployments
+        run: vercel ls --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Rollback notification
+        run: |
+          echo "⚠️ Deployment failed. Manual rollback may be required."
+          echo "Check Vercel dashboard for rollback options."
+
+  notify-success:
+    name: Deployment Success Notification
+    runs-on: ubuntu-latest
+    needs: post-deploy-checks
+    if: success()
+
+    steps:
+      - name: Success notification
+        run: |
+          echo "🚀 Production deployment successful!"
+          echo "URL: https://${{ secrets.PRODUCTION_URL }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Deployed by: ${{ github.actor }}"

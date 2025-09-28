@@ -5,7 +5,7 @@ export const revalidate = 0;
 // APIキー生成専用エンドポイント
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { createClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
 import { generateApiKey as generateApiKeyRPC, getMyApiKeys as getMyApiKeysRPC } from '@/lib/supabase/rpc-client';
 
 
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const { name = 'API Key', tier = 'free' } = body;
 
     // Supabaseクライアント作成（認証確認）
-    const supabase = await createClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Supabaseクライアント作成（認証確認）
-    const supabase = await createClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {

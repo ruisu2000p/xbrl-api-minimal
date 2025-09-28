@@ -1,0 +1,234 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20'
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+jobs:
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit --strict
+
+      - name: Check for TypeScript errors with strict mode
+        run: |
+          if npx tsc --noEmit --strict 2>&1 | grep -E "error TS[0-9]+:"; then
+            echo "TypeScript errors found. Build failed."
+            exit 1
+          fi
+
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint with max warnings
+        run: npm run lint -- --max-warnings=0
+
+      - name: Check for unused dependencies
+        run: npx depcheck --ignores="@types/*,eslint-*,@eslint/*"
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [type-check, lint]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          CI: true
+
+      - name: Check build output
+        run: |
+          if [ ! -d ".next" ]; then
+            echo "Build output not found"
+            exit 1
+          fi
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+
+      - name: Check for sensitive data
+        run: |
+          # Check for hardcoded secrets
+          if grep -r "xbrl_" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --exclude-dir=node_modules --exclude-dir=.next .; then
+            echo "Warning: Possible hardcoded API key found"
+            exit 1
+          fi
+
+          if grep -r "service_role" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --exclude-dir=node_modules --exclude-dir=.next .; then
+            echo "Warning: Possible hardcoded service role key found"
+            exit 1
+          fi
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [type-check, lint]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: |
+          if [ -f "package.json" ] && grep -q "\"test\":" "package.json"; then
+            npm test
+          else
+            echo "No test script found, skipping tests"
+          fi
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [type-check, lint]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check bundle size
+        run: |
+          if [ -f "package.json" ] && grep -q "\"analyze\":" "package.json"; then
+            npm run analyze || true
+          fi
+
+      - name: Check for console.log statements
+        run: |
+          if grep -r "console.log" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=.next --exclude="*test*" --exclude="*spec*" .; then
+            echo "Warning: console.log statements found in production code"
+          fi
+
+  deploy-check:
+    name: Deployment Readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build, security, test]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify environment variables
+        run: |
+          required_vars=("NEXT_PUBLIC_SUPABASE_URL" "NEXT_PUBLIC_SUPABASE_ANON_KEY")
+          for var in "${required_vars[@]}"; do
+            if [ -z "${!var}" ]; then
+              echo "Error: Required environment variable $var is not set"
+              exit 1
+            fi
+          done
+
+      - name: Check migration files
+        run: |
+          if [ -d "supabase/migrations" ]; then
+            echo "Found migration files:"
+            ls -la supabase/migrations/
+          else
+            echo "No migration directory found"
+          fi
+
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [deploy-check]
+    if: always()
+
+    steps:
+      - name: CI Status
+        run: |
+          if [ "${{ needs.deploy-check.result }}" == "success" ]; then
+            echo "✅ CI Pipeline passed successfully!"
+          else
+            echo "❌ CI Pipeline failed. Please check the logs."
+            exit 1
+          fi

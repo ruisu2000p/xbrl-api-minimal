@@ -6,11 +6,11 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { createClient } from '@/utils/supabase/server';
+import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
 
 export async function POST(request: NextRequest) {
-  // Create SSR Supabase client
-  const supabase = await createClient();
+  // Create SSR Supabase client using unified implementation
+  const supabase = await createServerSupabaseClient();
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
 
 // セッション確認用（オプション）
 export async function GET(request: NextRequest) {
-  // Create SSR Supabase client
-  const supabase = await createClient();
+  // Create SSR Supabase client using unified implementation
+  const supabase = await createServerSupabaseClient();
 
   // Supabaseでセッションを検証
   const { data: { user }, error } = await supabase.auth.getUser();

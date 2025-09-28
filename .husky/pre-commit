@@ -1,0 +1,50 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Pre-commit hook for type checking and linting
+
+echo "🔍 Running pre-commit checks..."
+
+# TypeScript type check
+echo "📝 Checking TypeScript types..."
+npx tsc --noEmit --strict
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript type check failed. Please fix errors before committing."
+  exit 1
+fi
+
+# ESLint check
+echo "🔧 Running ESLint..."
+npm run lint -- --max-warnings=0
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint check failed. Please fix linting errors before committing."
+  exit 1
+fi
+
+# Check for console.log statements
+echo "🔍 Checking for console.log statements..."
+git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx)$' | while read file; do
+  if grep -q "console\.log" "$file"; then
+    echo "⚠️  Warning: console.log found in $file"
+  fi
+done
+
+# Check for hardcoded secrets
+echo "🔒 Checking for hardcoded secrets..."
+git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx|json)$' | while read file; do
+  # Check for API keys
+  if grep -q "xbrl_[a-zA-Z0-9_-]\{32,\}" "$file"; then
+    echo "❌ Possible API key found in $file"
+    echo "Please use environment variables instead."
+    exit 1
+  fi
+
+  # Check for Supabase service keys
+  if grep -q "service_role" "$file" | grep -v "process\.env"; then
+    echo "❌ Possible service role key found in $file"
+    echo "Please use environment variables instead."
+    exit 1
+  fi
+done
+
+echo "✅ All pre-commit checks passed!"

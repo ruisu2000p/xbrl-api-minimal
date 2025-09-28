@@ -1,0 +1,51 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Pre-push hook for build verification
+
+echo "🚀 Running pre-push checks..."
+
+# Check current branch
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+protected_branches="main master production"
+
+for branch in $protected_branches; do
+  if [ "$current_branch" = "$branch" ]; then
+    echo "⚠️  Pushing to protected branch: $branch"
+    echo "📦 Running full build check..."
+
+    # Run full build
+    npm run build
+    if [ $? -ne 0 ]; then
+      echo "❌ Build failed. Please fix build errors before pushing to $branch."
+      exit 1
+    fi
+  fi
+done
+
+# Run TypeScript strict check
+echo "📝 Running TypeScript strict mode check..."
+npx tsc --noEmit --strict
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript strict mode check failed."
+  echo "Please fix type errors before pushing."
+  exit 1
+fi
+
+# Check for uncommitted changes
+if ! git diff --quiet; then
+  echo "⚠️  Warning: You have uncommitted changes."
+  echo "Consider committing or stashing them before pushing."
+fi
+
+# Check for large files
+echo "📏 Checking for large files..."
+git diff --stat --cached HEAD~1 HEAD | while read file; do
+  size=$(git cat-file -s HEAD:"$file" 2>/dev/null || echo 0)
+  if [ "$size" -gt 1048576 ]; then  # 1MB
+    echo "⚠️  Warning: Large file detected: $file ($(($size / 1024))KB)"
+    echo "Consider using Git LFS for large files."
+  fi
+done
+
+echo "✅ All pre-push checks passed!"
