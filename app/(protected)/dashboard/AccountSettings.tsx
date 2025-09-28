@@ -1,12 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useSupabase } from '@/components/SupabaseProvider';
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -436,8 +435,7 @@ function ApiKeyTab({
 export default function AccountSettings() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading: supabaseLoading } = useSupabase();
-  const supabaseClient = useMemo(() => supabaseManager.getBrowserClient(), []);
+  const { user, loading: supabaseLoading, supabase: supabaseClient } = useSupabase();
 
   // 新規アカウントの場合はAPIキータブを初期表示
   const isNewAccount = searchParams.get('newAccount') === 'true';
