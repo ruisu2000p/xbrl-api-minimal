@@ -41,9 +41,14 @@ export class SupabaseManager {
 
   /**
    * Service Roleクライアント取得（サーバー側のみ）
+   * 常にSupabaseClientを返す（nullの場合は例外をスロー）
    */
-  getServiceClient(): SupabaseClient | null {
-    return createServiceRoleClient();
+  getServiceClient(): SupabaseClient {
+    const client = createServiceRoleClient();
+    if (!client) {
+      throw new Error('Service role client not available. Check SUPABASE_SERVICE_ROLE_KEY environment variable.');
+    }
+    return client;
   }
 
   /**
@@ -70,9 +75,14 @@ export class SupabaseManager {
 
   /**
    * 一時的な管理用クライアント作成（トークン検証用）
+   * 常にSupabaseClientを返す（nullの場合は例外をスロー）
    */
-  createTemporaryAdminClient(): SupabaseClient | null {
-    return createServiceRoleClient();
+  createTemporaryAdminClient(): SupabaseClient {
+    const client = createServiceRoleClient();
+    if (!client) {
+      throw new Error('Admin client not available. Check SUPABASE_SERVICE_ROLE_KEY environment variable.');
+    }
+    return client;
   }
 }
 

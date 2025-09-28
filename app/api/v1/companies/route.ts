@@ -42,12 +42,6 @@ async function handleGetRequest(request: Request) {
 
     // Create service client for API key validation
     const serviceClient = supabaseManager.getServiceClient()
-    if (!serviceClient) {
-      return NextResponse.json(
-        { error: 'Service client not available' },
-        { status: 500 }
-      )
-    }
 
     // O(1)化されたAPIキー認証（public_id埋め込み方式）
     const { data: authData, error: keyError } = await serviceClient
@@ -337,9 +331,6 @@ async function handlePostRequest(request: Request) {
     }
 
     const serviceClient = supabaseManager.getServiceClient()
-    if (!serviceClient) {
-      return NextResponse.json({ error: 'Service client not available' }, { status: 500 })
-    }
     const { data: authResult, error: authError } = await serviceClient
       .rpc('verify_api_key_complete_v2', { p_api_key: apiKey })
 

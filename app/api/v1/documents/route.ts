@@ -21,12 +21,6 @@ async function handleGetRequest(request: Request) {
 
     // Create service client
     const serviceClient = supabaseManager.getServiceClient()
-    if (!serviceClient) {
-      return NextResponse.json(
-        { error: 'Service client not available' },
-        { status: 500 }
-      )
-    }
 
     // Verify API key with bcrypt (Supabase handles everything)
     const { data: authResult, error: keyError } = await serviceClient
@@ -159,12 +153,6 @@ async function handlePostRequest(request: Request) {
 
     // Create service client
     const serviceClient = supabaseManager.getServiceClient()
-    if (!serviceClient) {
-      return NextResponse.json(
-        { error: 'Service client not available' },
-        { status: 500 }
-      )
-    }
 
     // Verify API key with bcrypt (Supabase handles everything)
     const { data: authResult, error: keyError } = await serviceClient

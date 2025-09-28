@@ -4,7 +4,7 @@
  */
 
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest} from 'next/server';
 
 export interface SecurityEvent {
   timestamp: Date;
@@ -114,12 +114,6 @@ export class SecurityMonitor {
   private async persistToDatabase(event: SecurityEvent): Promise<void> {
     try {
       const serviceClient = supabaseManager.getServiceClient();
-    if (!serviceClient) {
-      return NextResponse.json(
-        { error: 'Service client not available' },
-        { status: 500 }
-      );
-    }
 
       await serviceClient.from('security_events').insert({
         timestamp: event.timestamp.toISOString(),
@@ -253,12 +247,6 @@ export class SecurityMonitor {
 
         // データベースにアラート記録
         const serviceClient = supabaseManager.getServiceClient();
-    if (!serviceClient) {
-      return NextResponse.json(
-        { error: 'Service client not available' },
-        { status: 500 }
-      );
-    }
         await serviceClient.from('security_alerts').insert({
           timestamp: new Date().toISOString(),
           level: alert.level,
