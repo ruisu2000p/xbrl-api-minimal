@@ -78,12 +78,12 @@ export async function GET(request: NextRequest) {
     //   .rpc('get_user_api_keys', { p_user_id: user.id });
 
     const data: any[] = [];
-    const error = null;
+    const error: Error | null = null;
 
     console.log('Fetch result:', {
       hasData: !!data,
       dataCount: data?.length,
-      error: error?.message
+      error: error ? error.message : undefined
     });
 
     return NextResponse.json({
