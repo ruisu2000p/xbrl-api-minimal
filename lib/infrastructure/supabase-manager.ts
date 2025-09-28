@@ -94,8 +94,6 @@ export class SupabaseManager {
             autoRefreshToken: true,
             detectSessionInUrl: true,
             flowType: 'pkce',
-            // 重要: アプリ固有のストレージキーを設定（他のSupabaseアプリと競合を避ける）
-            storageKey: 'sb-xbrl-api-auth',
             storage: window.localStorage
           },
           global: {
