@@ -1,5 +1,5 @@
 import { UnifiedKeyHasher } from './key-hasher';
-import { createApiKey } from './unified-apikey';
+import { generateBcryptApiKey } from './bcrypt-apikey';
 import { logger } from '../utils/logger';
 import { supabaseManager } from '../infrastructure/supabase-manager';
 
@@ -293,8 +293,8 @@ export class UnifiedAuthManager {
     name?: string,
     tier: 'free' | 'basic' | 'premium' = 'free'
   ): Promise<{ apiKey: string; keyId: string; masked: string }> {
-    // Generate new API key using unified system
-    const { apiKey, hash, salt, masked } = await createApiKey(32);
+    // Generate new API key using bcrypt system
+    const { apiKey, hash, masked } = await generateBcryptApiKey();
 
     // Store in database
     const { data, error } = await this.supabase
@@ -303,8 +303,7 @@ export class UnifiedAuthManager {
         user_id: userId,
         name: name || 'API Key',
         key_hash: hash,
-        salt,
-        hash_method: 'hmac-sha256',
+        hash_method: 'bcrypt',
         migration_status: 'completed',
         security_version: 2,
         tier,
