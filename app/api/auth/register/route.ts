@@ -51,6 +51,14 @@ export async function POST(request: NextRequest) {
     // 通常のクライアントを使用（Service Roleが設定されていない場合を考慮）
     const supabase = await createClient();
 
+    // Supabaseクライアントの存在を確認
+    if (!supabase) {
+      return createApiResponse.internalError(
+        new Error('Supabase client initialization failed'),
+        'サーバー設定エラーが発生しました'
+      );
+    }
+
     let supabaseAdmin: SupabaseClient | null = null;
     try {
       supabaseAdmin = await createServiceClient();
