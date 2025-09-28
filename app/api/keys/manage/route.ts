@@ -10,6 +10,14 @@ import { UnifiedApiKeyManager } from '@/lib/api-key/unified-api-key-manager';
 
 export async function GET(request: NextRequest) {
   try {
+    // Log environment setup
+    console.log('API Keys GET endpoint called');
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      nodeEnv: process.env.NODE_ENV
+    });
+
     const supabase = await createServerSupabaseClient();
 
     // Try to get the token from Authorization header first
@@ -17,26 +25,37 @@ export async function GET(request: NextRequest) {
     let user = null;
     let authError = null;
 
+    console.log('Auth header present:', !!authHeader);
+
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
+      console.log('Using Bearer token auth');
       const { data, error } = await supabase.auth.getUser(token);
       user = data?.user;
       authError = error;
     } else {
       // Fallback to session-based auth
+      console.log('Using session-based auth');
       const { data, error } = await supabase.auth.getUser();
       user = data?.user;
       authError = error;
     }
 
+    console.log('Auth result:', {
+      hasUser: !!user,
+      authError: authError?.message,
+      userId: user?.id
+    });
+
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized', details: authError?.message },
         { status: 401 }
       );
     }
 
     // Fetch API keys for the user
+    console.log('Fetching API keys for user:', user.id);
     const { data, error } = await supabase
       .from('api_keys')
       .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
@@ -44,10 +63,16 @@ export async function GET(request: NextRequest) {
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
+    console.log('Fetch result:', {
+      hasData: !!data,
+      dataCount: data?.length,
+      error: error?.message
+    });
+
     if (error) {
       console.error('Failed to fetch API keys:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch API keys' },
+        { error: 'Failed to fetch API keys', details: error.message },
         { status: 500 }
       );
     }
@@ -59,8 +84,17 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in GET /api/keys/manage:', error);
+
+    // More detailed error message in non-production
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : error instanceof Error ? error.message : String(error);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: errorMessage,
+        details: process.env.NODE_ENV !== 'production' ? String(error) : undefined
+      },
       { status: 500 }
     );
   }
