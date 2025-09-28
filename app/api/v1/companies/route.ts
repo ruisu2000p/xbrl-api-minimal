@@ -134,6 +134,9 @@ async function handleGetRequest(request: Request) {
     }
     const limits = tierLimits[authResult.tier as keyof typeof tierLimits] || tierLimits.free
 
+    // Check if running in test environment
+    const isTestEnv = process.env.NODE_ENV === 'test'
+
     if (!isTestEnv) {
       const { data: rlResult, error: rateLimitError } = await serviceClient
         .rpc('bump_and_check_rate_limit', {
