@@ -39,6 +39,10 @@ function validateServiceEnvironment() {
   return { url, serviceKey: serviceKey || null }
 }
 
+// グローバルインスタンスキャッシュ
+let cachedServiceClient: SupabaseClient | null = null
+let cachedAdminClient: SupabaseClient | null = null
+
 /**
  * ブラウザクライアント作成
  * クライアントサイドで使用
@@ -122,27 +126,17 @@ export async function createServiceSupabaseClient(): Promise<SupabaseClient | nu
     return null
   }
 
-  // Dynamically import next/headers to avoid build errors
-  const { cookies } = await import('next/headers')
-  const cookieStore = await cookies()
+  // シングルトンパターンで再利用
+  if (!cachedServiceClient) {
+    cachedServiceClient = createBrowserClient(url, serviceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    })
+  }
 
-  return createServerClient(url, serviceKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
-      set(name: string, value: string, options: any) {
-        // Service Roleではcookie操作は不要
-      },
-      remove(name: string, options: any) {
-        // Service Roleではcookie操作は不要
-      },
-    },
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  })
+  return cachedServiceClient
 }
 
 /**
@@ -156,12 +150,17 @@ export function createAdminClient(): SupabaseClient | null {
     return null
   }
 
-  return createBrowserClient(url, serviceKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  })
+  // シングルトンパターンで再利用
+  if (!cachedAdminClient) {
+    cachedAdminClient = createBrowserClient(url, serviceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    })
+  }
+
+  return cachedAdminClient
 }
 
 /**
