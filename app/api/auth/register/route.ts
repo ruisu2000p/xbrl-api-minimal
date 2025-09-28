@@ -49,15 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 通常のクライアントを使用（Service Roleが設定されていない場合を考慮）
-    const supabase = await createClient();
-
-    // Supabaseクライアントの存在を確認
-    if (!supabase) {
-      return createApiResponse.internalError(
-        new Error('Supabase client initialization failed'),
-        'サーバー設定エラーが発生しました'
-      );
-    }
+    const supabase: SupabaseClient = await createClient();
 
     let supabaseAdmin: SupabaseClient | null = null;
     try {
@@ -153,7 +145,9 @@ export async function POST(request: NextRequest) {
       const { apiKey: generatedKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
       apiKey = generatedKey;
 
-      const { data: apiKeyData, error: apiKeyError } = await supabase
+      // privateスキーマへのアクセスにはService Roleが必要な場合があるため、利用可能な方を使用
+      const dbClient = supabaseAdmin || supabase;
+      const { data: apiKeyData, error: apiKeyError } = await dbClient
         .from('api_keys_main')
         .schema('private')
         .insert({
