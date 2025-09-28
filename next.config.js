@@ -5,8 +5,8 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true, // SWCミニファイを有効化（次期バージョンでは必須）
 
-  // Docker用のstandalone出力を有効化
-  output: 'standalone',
+  // Docker用のstandalone出力を無効化（ビルドタイムアウト対策）
+  // output: 'standalone',
 
   // ビルドIDを強制的に変更してキャッシュを無効化
   generateBuildId: async () => {
