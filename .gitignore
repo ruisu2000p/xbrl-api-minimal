@@ -130,7 +130,7 @@ ENV/
 *.zip
 
 # Documentation and reports (local)
-*_REPORT.md
+# *_REPORT.md - コメントアウト: 改善レポートを含める
 *_SUMMARY.md
 *_GUIDE.md
 *_SETUP*.md
