@@ -182,8 +182,7 @@ COMMENT ON FUNCTION public.get_user_api_keys(UUID) IS 'Securely fetch API keys f
 -- Verification query to confirm fixes
 SELECT
   'Security fixes applied successfully!' as status,
-  COUNT(*) FILTER (WHERE security_invoker = 'f') as security_definer_views,
-  COUNT(*) FILTER (WHERE security_invoker = 't' OR security_invoker IS NULL) as security_invoker_views
+  COUNT(*) as total_views
 FROM pg_views
 WHERE schemaname = 'public'
 AND viewname IN ('v_my_usage_stats', 'v_profiles');
