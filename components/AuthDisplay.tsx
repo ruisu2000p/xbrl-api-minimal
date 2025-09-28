@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { type AuthChangeEvent, type Session } from '@supabase/supabase-js';
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
+import { useSupabase } from '@/components/SupabaseProvider';
 
 interface AuthDisplayProps {
   className?: string;
 }
 
 export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
+  const { supabase, user: contextUser, loading: contextLoading } = useSupabase();
   const [user, setUser] = useState<any>(null);
   const [jwt, setJwt] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -18,7 +19,6 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
     // 認証状態を監視
     const getSession = async () => {
       try {
-        const supabase = supabaseManager.getBrowserClient();
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Session error:', error);
@@ -40,7 +40,6 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
     getSession();
 
     // 認証状態変更を監視
-    const supabase = supabaseManager.getBrowserClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
         if (session?.user) {
@@ -55,12 +54,11 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   // ログイン処理
   const handleLogin = async () => {
     try {
-      const supabase = supabaseManager.getBrowserClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github'
       });
@@ -73,7 +71,6 @@ export default function AuthDisplay({ className = '' }: AuthDisplayProps) {
   // ログアウト処理
   const handleLogout = async () => {
     try {
-      const supabase = supabaseManager.getBrowserClient();
       const { error } = await supabase.auth.signOut();
       if (error) console.error('Logout error:', error);
     } catch (error) {
