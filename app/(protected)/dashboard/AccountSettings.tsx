@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
