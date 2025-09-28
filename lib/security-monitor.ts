@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-
 interface SecurityEvent {
   type: 'AUTH_FAILURE' | 'RATE_LIMIT' | 'SUSPICIOUS_ACTIVITY' | 'API_KEY_INVALID' | 'SQL_INJECTION_ATTEMPT' | 'XSS_ATTEMPT';
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';

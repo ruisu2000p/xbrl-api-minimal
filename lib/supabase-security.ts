@@ -3,8 +3,8 @@
  * 開発環境と本番環境で異なるセキュリティ設定を管理
  */
 
-import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserSupabaseClient, createServiceRoleClient } from '@/utils/supabase/unified-client';
 
 // 環境判定
 export const isDevelopment = process.env.NODE_ENV === 'development';
@@ -40,42 +40,16 @@ export const securityConfig = {
 
 /**
  * 環境に応じたSupabaseクライアントを作成
+ * 統一クライアントを使用
  */
 export function createSecureSupabaseClient(): SupabaseClient {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-  if (!supabaseUrl) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured');
-  }
-
   if (isDevelopment && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     // 開発環境: Service Role Keyを使用（RLSバイパス）
     console.warn('⚠️ 開発環境: Service Role Keyを使用しています');
-    return createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
+    return createServiceRoleClient();
   } else {
     // 本番環境: Anon Keyを使用（RLS適用）
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!anonKey) {
-      throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured');
-    }
-
-    return createClient(
-      supabaseUrl,
-      anonKey,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-        },
-      }
-    );
+    return createBrowserSupabaseClient();
   }
 }
 

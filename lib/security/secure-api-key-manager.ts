@@ -5,7 +5,8 @@
  */
 
 import { EncryptionManager } from './encryption-manager'
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { createServiceRoleClient } from '@/utils/supabase/unified-client'
 import crypto from 'crypto'
 
 interface ApiKey {
@@ -74,14 +75,8 @@ export class SecureApiKeyManager {
   }
 
   private constructor(supabaseUrl?: string, supabaseKey?: string) {
-    const url = supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = supabaseKey || process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!url || !key) {
-      throw new Error('Supabase credentials not configured')
-    }
-
-    this.supabase = createClient(url, key)
+    // 統一クライアントを使用
+    this.supabase = createServiceRoleClient()
     this.encryptionKey = process.env.API_KEY_ENCRYPTION_KEY ||
                          EncryptionManager.generateSecurePassword(32)
 

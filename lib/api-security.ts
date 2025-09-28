@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
 const ALGORITHM = 'aes-256-gcm';
 const SALT_LENGTH = 32;
