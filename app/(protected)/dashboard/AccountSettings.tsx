@@ -574,15 +574,17 @@ export default function AccountSettings() {
       // supabase.functions.invokeのみを使用（JWTを自動付与）
       console.log('🔧 Using supabase.functions.invoke (POST with explicit method)...');
 
-      // Edge Functionは'list'アクションをURLパスで受け取る
-      const { data: invokeData, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
-        method: 'POST',
+      // Use local API endpoint instead of Edge Function
+      const response = await fetch('/api/keys/manage', {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}` // 明示的にトークンを付与
-        },
-        body: { action: 'list' }
+          'Authorization': `Bearer ${accessToken}`
+        }
       });
+
+      const invokeData = await response.json();
+      const invokeError = !response.ok ? invokeData.error : null;
 
       console.log('📨 Invoke result:', { data: invokeData, error: invokeError });
 
@@ -788,7 +790,7 @@ export default function AccountSettings() {
       // Edge Function経由でAPIキーを作成（supabase.functions.invoke使用）
       // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 supabase.functions.invoke api-key-manager (create)を呼び出し中...');
+        console.log('🔧 /api/keys/manage (create)を呼び出し中...');
         console.log('📋 パラメータ:', {
           action: 'create',
           key_name: newKeyName.trim(),
@@ -799,18 +801,21 @@ export default function AccountSettings() {
       // 現在のセッションのトークンを取得
       const currentToken = session?.access_token || '';
 
-      const { data: result, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
+      const response = await fetch('/api/keys/manage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentToken}` // 明示的にトークンを付与
+          'Authorization': `Bearer ${currentToken}`
         },
-        body: {
+        body: JSON.stringify({
           action: 'create',
           key_name: newKeyName.trim(),
           tier: 'free'
-        }
+        })
       });
+
+      const result = await response.json();
+      const invokeError = !response.ok ? result.error : null;
 
       if (invokeError) {
         console.error('❌ APIキー作成失敗:', invokeError);
@@ -955,18 +960,21 @@ export default function AccountSettings() {
         return;
       }
 
-      // Edge Function経由でAPIキーを削除（supabase.functions.invoke使用）
-      const { data: result, error: invokeError } = await supabaseClient.functions.invoke('api-key-manager', {
+      // Use local API endpoint to delete API key
+      const response = await fetch('/api/keys/manage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}` // 明示的にトークンを付与
+          'Authorization': `Bearer ${currentSession.access_token}`
         },
-        body: {
+        body: JSON.stringify({
           action: 'delete',
           key_id: deleteKeyId
-        }
+        })
       });
+
+      const result = await response.json();
+      const invokeError = !response.ok ? result.error : null;
 
       if (invokeError) {
         console.error('❌ APIキー削除失敗:', invokeError);
