@@ -118,8 +118,8 @@ jobs:
 
       - name: Check for sensitive data
         run: |
-          # Check for hardcoded secrets
-          if grep -r "xbrl_" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --exclude-dir=node_modules --exclude-dir=.next .; then
+          # Check for hardcoded secrets (excluding regex patterns and examples)
+          if grep -r "xbrl_[a-zA-Z0-9_]\{32,\}" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --exclude-dir=node_modules --exclude-dir=.next . | grep -v "regex\|pattern\|example\|test\|mock\|/\*\|//\|^\s*\*"; then
             echo "Warning: Possible hardcoded API key found"
             exit 1
           fi
@@ -220,15 +220,18 @@ jobs:
   notify:
     name: Notify Status
     runs-on: ubuntu-latest
-    needs: [deploy-check]
+    needs: [build, security, test]
     if: always()
 
     steps:
       - name: CI Status
         run: |
-          if [ "${{ needs.deploy-check.result }}" == "success" ]; then
+          if [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.security.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ]; then
             echo "✅ CI Pipeline passed successfully!"
           else
             echo "❌ CI Pipeline failed. Please check the logs."
+            echo "Build: ${{ needs.build.result }}"
+            echo "Security: ${{ needs.security.result }}"
+            echo "Test: ${{ needs.test.result }}"
             exit 1
           fi

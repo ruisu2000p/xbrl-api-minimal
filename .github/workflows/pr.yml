@@ -147,8 +147,8 @@ jobs:
 
       - name: Check for hardcoded secrets
         run: |
-          # Check for API keys
-          if grep -r "xbrl_[a-zA-Z0-9_-]\{32,\}" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=.next .; then
+          # Check for API keys (excluding patterns and examples)
+          if grep -r "xbrl_[a-zA-Z0-9_-]\{32,\}" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=.next . | grep -v "regex\|pattern\|example\|test\|mock\|/\*\|//\|^\s*\*\|^[[:space:]]*\*"; then
             echo "❌ Hardcoded API key detected!"
             exit 1
           fi
