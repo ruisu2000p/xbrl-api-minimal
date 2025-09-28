@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       apiKey = generatedKey;
 
       // privateスキーマへのアクセスにはService Roleが必要な場合があるため、利用可能な方を使用
-      const dbClient = supabaseAdmin || supabase;
+      const dbClient: SupabaseClient = supabaseAdmin || supabase;
       const { data: apiKeyData, error: apiKeyError } = await dbClient
         .from('api_keys_main')
         .schema('private')
