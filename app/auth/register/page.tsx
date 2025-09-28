@@ -83,7 +83,8 @@ export default function RegisterPage() {
         if (data?.session) {
           setSuccessMessage('登録が完了しました！ダッシュボードへ移動します...')
           setTimeout(() => {
-            router.push('/dashboard')
+            // セッション確立のため、processingページ経由でダッシュボードへ
+            router.push('/auth/processing?next=/dashboard')
           }, 1500)
         } else {
           // メール確認が必要な場合

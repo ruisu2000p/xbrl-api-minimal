@@ -503,7 +503,7 @@ export default function AccountSettings() {
           router.replace('/auth/login'); // replaceを使用して履歴に残さない
         }
         setSessionChecked(true);
-      }, 2000); // 2秒待機（セッション復元により長い時間を与える）
+      }, 5000); // 5秒待機（新規登録後のセッション復元に十分な時間を与える）
 
       setRedirectTimer(timer);
       return () => {

@@ -2,11 +2,12 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { useSupabase } from '@/components/SupabaseProvider'
 
 function ProcessingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { supabase } = useSupabase()
   const [message, setMessage] = useState('登録処理中です...')
   const [dots, setDots] = useState('')
   const next = searchParams.get('next') || '/dashboard'
@@ -19,7 +20,6 @@ function ProcessingContent() {
 
     // セッション交換を試みる
     const handleAuth = async () => {
-      const supabase = supabaseManager.getBrowserClient()
 
       // URLにコードが含まれている場合、セッション交換を試みる
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
