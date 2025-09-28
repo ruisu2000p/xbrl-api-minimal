@@ -149,10 +149,16 @@ export class UnifiedApiKeyManager {
         .single()
 
       if (error) {
-        console.error('Failed to save API key:', error)
+        console.error('Failed to save API key to database:', {
+          error: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          table: `${API_KEY_CONFIG.SCHEMA}.${API_KEY_CONFIG.TABLE}`
+        })
         return {
           success: false,
-          error: 'APIキーの保存に失敗しました',
+          error: `APIキーの保存に失敗しました: ${error.message || 'Unknown error'}`,
         }
       }
 

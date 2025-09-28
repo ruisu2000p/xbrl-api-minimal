@@ -80,15 +80,14 @@ export async function GET(request: NextRequest) {
       if (rpcError) {
         // If the function doesn't exist, try direct query with service role
         if (rpcError.message?.includes('function') && rpcError.message?.includes('does not exist')) {
-          console.log('RPC function not found, trying service role query');
+          console.log('RPC function not found, trying direct query');
 
-          // Use service role client for direct query
-          const serviceClient = await createServiceSupabaseClient();
-          if (serviceClient) {
-            const apiKeyManager = new UnifiedApiKeyManager(serviceClient);
+          // Try with current client first
+          try {
+            const apiKeyManager = new UnifiedApiKeyManager(supabase);
             data = await apiKeyManager.listUserApiKeys(user.id) as any[];
-          } else {
-            console.warn('Service role client not available, returning empty array');
+          } catch (listError) {
+            console.warn('Direct query failed:', listError);
             data = [];
           }
         } else {
@@ -173,12 +172,16 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        console.log('Attempting to generate API key for user:', user.id);
+        console.log('Using service role:', useServiceRole);
+
         // Generate new API key
         let result = await apiKeyManager.generateApiKey(user.id, key_name, 30);
 
-        // If private schema fails and we're using service role, try public schema fallback
-        if (!result.success && useServiceRole) {
-          console.log('Private schema failed, trying public schema fallback');
+        // If primary generation fails, always try fallback
+        if (!result.success) {
+          console.log('Primary generation failed:', result.error);
+          console.log('Attempting fallback generation...');
 
           // Generate a simple API key without database storage
           const simpleKey = `xbrl_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 15)}`;
@@ -196,7 +199,7 @@ export async function POST(request: NextRequest) {
               });
 
             if (publicError) {
-              console.warn('Could not store in public.api_keys:', publicError);
+              console.warn('Could not store in public.api_keys:', publicError.message);
               // Even if storage fails, return the key to the user
             }
 
@@ -219,11 +222,17 @@ export async function POST(request: NextRequest) {
         }
 
         if (!result.success) {
+          console.error('All API key generation attempts failed');
           return NextResponse.json(
             { error: result.error || 'Failed to generate API key' },
             { status: 500 }
           );
         }
+
+        console.log('API key generated successfully:', {
+          keyId: result.keyId,
+          prefix: result.prefix
+        });
 
         return NextResponse.json({
           success: true,
