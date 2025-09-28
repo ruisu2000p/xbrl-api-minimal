@@ -40,14 +40,16 @@ export async function POST(request: NextRequest) {
     let apiKeys = null;
     try {
       const supabaseAdmin = await createServiceClient();
-      const result = await supabaseAdmin
-        .from('api_keys_main')
-        .select('key_prefix, key_suffix, name, is_active')
-        .schema('private')
-        .eq('user_id', authData.user.id)
-        .eq('is_active', true)
-        .limit(1);
-      apiKeys = result.data;
+      if (supabaseAdmin) {
+        const result = await supabaseAdmin
+          .from('api_keys_main')
+          .select('key_prefix, key_suffix, name, is_active')
+          .schema('private')
+          .eq('user_id', authData.user.id)
+          .eq('is_active', true)
+          .limit(1);
+        apiKeys = result.data;
+      }
     } catch (error) {
       // Service Roleが設定されていない場合は無視
       console.log('Service role not configured, skipping API key fetch');

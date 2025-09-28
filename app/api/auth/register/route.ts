@@ -31,7 +31,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Admin Clientを取得
-    const supabaseAdmin = await createServiceClient();
+    let supabaseAdmin;
+    try {
+      supabaseAdmin = await createServiceClient();
+    } catch (error) {
+      console.error('Service role key not configured:', error);
+      return createApiResponse.error(
+        ErrorCodes.INTERNAL_ERROR,
+        'サーバー設定エラー: Service Roleキーが設定されていません'
+      );
+    }
 
     // Supabaseで既存ユーザーをチェック（最適化: メールで直接検索）
     // まずusersテーブルから直接検索を試みる
