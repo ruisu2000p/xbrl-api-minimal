@@ -6,11 +6,11 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
+import { createClient, createServiceClient } from '@/utils/supabase/server';
 
 export async function POST(request: NextRequest) {
   // Create SSR Supabase client
-  const supabase = await supabaseManager.createSSRClient();
+  const supabase = await createClient();
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -37,11 +37,12 @@ export async function POST(request: NextRequest) {
     }
 
     // ユーザーのAPIキー情報を取得
-    const supabaseAdmin = await supabaseManager.createAdminSSRClient();
+    const supabaseAdmin = await createServiceClient();
 
     const { data: apiKeys } = await supabaseAdmin
       .from('api_keys')
       .select('key_prefix, key_suffix, name, is_active')
+      .schema('private')
       .eq('user_id', authData.user.id)
       .eq('is_active', true)
       .limit(1);
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
 // セッション確認用（オプション）
 export async function GET(request: NextRequest) {
   // Create SSR Supabase client
-  const supabase = await supabaseManager.createSSRClient();
+  const supabase = await createClient();
 
   // Supabaseでセッションを検証
   const { data: { user }, error } = await supabase.auth.getUser();

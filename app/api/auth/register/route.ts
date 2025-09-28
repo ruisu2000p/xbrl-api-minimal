@@ -5,14 +5,9 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  generateApiKey,
-  hashApiKey,
-  extractApiKeyPrefix,
-  extractApiKeySuffix
-} from '@/lib/security/apiKey';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
+import { createServiceClient } from '@/utils/supabase/server';
+import { generateBcryptApiKey } from '@/lib/security/bcrypt-apikey';
 
 
 export async function POST(request: NextRequest) {
@@ -38,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Supabase Admin Clientを取得
     let supabaseAdmin;
     try {
-      supabaseAdmin = supabaseManager.getServiceClient();
+      supabaseAdmin = await createServiceClient();
     } catch (error) {
       return createApiResponse.internalError(
         error,
@@ -122,13 +117,11 @@ export async function POST(request: NextRequest) {
     }
 
     // APIキーの生成と保存
-    const apiKey = generateApiKey();
-    const keyHash = await hashApiKey(apiKey);
-    const keyPrefix = extractApiKeyPrefix(apiKey);
-    const keySuffix = extractApiKeySuffix(apiKey);
+    const { apiKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
 
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
       .from('api_keys')
+      .schema('private')
       .insert({
         user_id: userId,
         name: 'Default API Key',  // NOT NULL制約のため必須
