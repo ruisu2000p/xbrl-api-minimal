@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createBrowserClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 
 /**
  * Unified Supabase Client Factory
@@ -81,6 +80,9 @@ export function createBrowserSupabaseClient(): SupabaseClient {
  */
 export async function createServerSupabaseClient(): Promise<SupabaseClient> {
   const { url, anonKey } = validateEnvironment()
+
+  // Dynamically import next/headers to avoid build errors
+  const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
 
   return createServerClient(url, anonKey, {
@@ -120,6 +122,8 @@ export async function createServiceSupabaseClient(): Promise<SupabaseClient | nu
     return null
   }
 
+  // Dynamically import next/headers to avoid build errors
+  const { cookies } = await import('next/headers')
   const cookieStore = await cookies()
 
   return createServerClient(url, serviceKey, {
@@ -165,3 +169,4 @@ export function createAdminClient(): SupabaseClient | null {
  */
 export const createClient = createServerSupabaseClient
 export const createServiceClient = createServiceSupabaseClient
+export const createServiceRoleClient = createAdminClient
