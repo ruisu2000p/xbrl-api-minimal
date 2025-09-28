@@ -1,8 +1,9 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserSupabaseClient } from './unified-client'
 
+/**
+ * Legacy client creation function
+ * 統一クライアントのラッパーとして機能
+ */
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  return createBrowserSupabaseClient()
 }
