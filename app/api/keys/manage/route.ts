@@ -54,24 +54,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch API keys for the user - use service client for private schema
+    // Fetch API keys for the user using RPC function
     console.log('Fetching API keys for user:', user.id);
-    const serviceClient = await createServiceSupabaseClient();
 
-    if (!serviceClient) {
-      console.error('Service client not available for fetching API keys');
-      return NextResponse.json(
-        { error: 'Service configuration error' },
-        { status: 500 }
-      );
-    }
-
-    const { data, error } = await serviceClient
-      .from('private.api_keys_main')
-      .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .rpc('get_user_api_keys', { p_user_id: user.id });
 
     console.log('Fetch result:', {
       hasData: !!data,
@@ -197,13 +184,9 @@ export async function POST(request: NextRequest) {
 
       case 'list':
       default: {
-        // Fetch API keys for the user from private schema
-        const { data, error } = await serviceClient
-          .from('private.api_keys_main')
-          .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+        // Fetch API keys for the user using RPC function
+        const { data, error } = await authClient
+          .rpc('get_user_api_keys', { p_user_id: user.id });
 
         if (error) {
           console.error('Failed to fetch API keys:', error);
