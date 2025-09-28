@@ -33,9 +33,17 @@ export async function POST(request: NextRequest) {
     // 通常のクライアントを使用（Service Roleが設定されていない場合を考慮）
     const supabase = await createClient();
 
+    // Supabaseクライアントの存在を確認
+    if (!supabase) {
+      return createApiResponse.internalError(
+        new Error('Supabase client initialization failed'),
+        'サーバー設定エラーが発生しました'
+      );
+    }
+
     // Supabaseで既存ユーザーをチェック（メールアドレスで確認）
     // 注: auth.usersへの直接アクセスはService Roleが必要
-    const { data: existingUser, error: searchError } = await supabase
+    const { data: existingUser, error: searchError } = await supabase!
       .from('auth.users')
       .select('id, email')
       .eq('email', email)
@@ -45,7 +53,7 @@ export async function POST(request: NextRequest) {
     if (searchError && searchError.code !== 'PGRST116') { // PGRST116 = not found
       // auth.admin.getUserByEmailが存在しない場合のフォールバック
       try {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        const { data: authData, error: authError } = await supabase!.auth.signInWithPassword({
           email,
           password: 'dummy_check_only', // 存在チェックのみ
         });
@@ -68,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Authでユーザーを作成
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase!.auth.signUp({
       email,
       password,
       options: {
@@ -101,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     // public.usersテーブルにも保存
-    const { error: dbUserError } = await supabase
+    const { error: dbUserError } = await supabase!
       .from('users')
       .insert({
         id: userId,
@@ -121,7 +129,7 @@ export async function POST(request: NextRequest) {
       const { apiKey: generatedKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
       apiKey = generatedKey;
 
-      const { data: apiKeyData, error: apiKeyError } = await supabase
+      const { data: apiKeyData, error: apiKeyError } = await supabase!
         .from('api_keys_main')
         .schema('private')
         .insert({
