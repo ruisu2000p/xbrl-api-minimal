@@ -54,10 +54,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch API keys for the user
+    // Fetch API keys for the user - use service client for private schema
     console.log('Fetching API keys for user:', user.id);
-    const { data, error } = await supabase
-      .from('api_keys')
+    const serviceClient = await createServiceSupabaseClient();
+
+    if (!serviceClient) {
+      console.error('Service client not available for fetching API keys');
+      return NextResponse.json(
+        { error: 'Service configuration error' },
+        { status: 500 }
+      );
+    }
+
+    const { data, error } = await serviceClient
+      .from('private.api_keys_main')
       .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
       .eq('user_id', user.id)
       .eq('is_active', true)
@@ -187,9 +197,9 @@ export async function POST(request: NextRequest) {
 
       case 'list':
       default: {
-        // Fetch API keys for the user (use auth client for public api_keys view)
-        const { data, error } = await authClient
-          .from('api_keys')
+        // Fetch API keys for the user from private schema
+        const { data, error } = await serviceClient
+          .from('private.api_keys_main')
           .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
           .eq('user_id', user.id)
           .eq('is_active', true)
