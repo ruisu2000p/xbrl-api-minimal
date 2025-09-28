@@ -92,13 +92,12 @@ macOS:
 {
   "mcpServers": {
     "xbrl-financial": {
-      "command": "node",
-      "args": ["./mcp-server/index.js"],
+      "command": "npx",
+      "args": ["shared-supabase-mcp-minimal@latest"],
       "env": {
-        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app",
         "XBRL_API_KEY": "your-api-key-from-dashboard",
-        "SUPABASE_URL": "https://your-project.supabase.co",
-        "SUPABASE_SERVICE_KEY": "your-service-role-key"
+        "XBRL_JWT_TOKEN": "your-jwt-token",
+        "XBRL_API_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/gateway"
       }
     }
   }
@@ -119,7 +118,7 @@ macOS:
    - `xbrl_v1_` プレフィックス付き
    - PBKDF2ハッシュ化して保存
 
-### APIキーの取得方法
+### APIキーとJWTトークンの取得方法
 
 1. **アカウント登録**
    - https://xbrl-api-minimal.vercel.app/auth/register
@@ -132,8 +131,13 @@ macOS:
    - 名前を入力して「APIキー発行」をクリック
    - ⚠️ APIキーは一度だけ表示されます
 
-4. **MCP設定に追加**
+4. **JWTトークンを取得**
+   - ダッシュボードの「JWT認証状態」セクションで確認
+   - または開発者ツールのネットワークタブで`Authorization`ヘッダーを確認
+
+5. **MCP設定に追加**
    - 取得したAPIキーを`XBRL_API_KEY`に設定
+   - JWTトークンを`XBRL_JWT_TOKEN`に設定
 
 ### その他の推奨MCPサーバー
 
@@ -170,12 +174,13 @@ macOS:
 
 XBRL Financial MCPサーバーで必要な環境変数：
 
-- `XBRL_API_URL`: XBRL APIのエンドポイント（https://xbrl-api-minimal.vercel.app）
-- `XBRL_API_KEY`: ダッシュボードから取得したAPIキー
-- `SUPABASE_URL`: Supabaseプロジェクトの URL
-- `SUPABASE_SERVICE_KEY`: Service Role Key（管理者権限）
+- `XBRL_API_URL`: Supabase Edge Function Gateway（https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/gateway）
+- `XBRL_API_KEY`: ダッシュボードから取得した独自APIキー
+- `XBRL_JWT_TOKEN`: Supabase AuthのJWTトークン（ダッシュボードで確認可能）
 
 追加MCPサーバーの環境変数（オプション）：
+- `SUPABASE_URL`: Supabaseプロジェクトの URL
+- `SUPABASE_SERVICE_KEY`: Service Role Key（管理者権限）
 - `GITHUB_PERSONAL_ACCESS_TOKEN`: GitHub API アクセス用
 
 ### MCPを使った開発ワークフロー
