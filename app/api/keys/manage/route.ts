@@ -5,7 +5,7 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
+import { createServerSupabaseClient, createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 import { UnifiedApiKeyManager } from '@/lib/api-key/unified-api-key-manager';
 
 export async function GET(request: NextRequest) {
@@ -102,10 +102,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
+    // Use regular client for authentication
+    const authClient = await createServerSupabaseClient();
 
     // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -117,7 +118,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, key_name, tier = 'free', key_id } = body;
 
-    const apiKeyManager = new UnifiedApiKeyManager(supabase);
+    // Use service role client for API key operations (private schema access)
+    const serviceClient = await createServiceSupabaseClient();
+    if (!serviceClient) {
+      console.error('Service role client not available');
+      return NextResponse.json(
+        { error: 'Service configuration error' },
+        { status: 500 }
+      );
+    }
+
+    const apiKeyManager = new UnifiedApiKeyManager(serviceClient);
 
     // Handle different actions
     switch (action) {
@@ -176,8 +187,8 @@ export async function POST(request: NextRequest) {
 
       case 'list':
       default: {
-        // Fetch API keys for the user
-        const { data, error } = await supabase
+        // Fetch API keys for the user (use auth client for public api_keys view)
+        const { data, error } = await authClient
           .from('api_keys')
           .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
           .eq('user_id', user.id)

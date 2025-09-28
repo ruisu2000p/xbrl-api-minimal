@@ -133,9 +133,9 @@ export class UnifiedApiKeyManager {
         expiresAt = expiry.toISOString()
       }
 
-      // データベースに保存
+      // データベースに保存（privateスキーマを明示的に指定）
       const { data, error } = await this.supabase
-        .from(API_KEY_CONFIG.TABLE)
+        .from(`${API_KEY_CONFIG.SCHEMA}.${API_KEY_CONFIG.TABLE}`)
         .insert({
           user_id: userId,
           name,
@@ -191,7 +191,7 @@ export class UnifiedApiKeyManager {
 
       // プレフィックスでキーを検索
       const { data: keyData, error } = await this.supabase
-        .from(API_KEY_CONFIG.TABLE)
+        .from(`${API_KEY_CONFIG.SCHEMA}.${API_KEY_CONFIG.TABLE}`)
         .select('id, user_id, key_hash, key_salt, is_active, expires_at')
         .eq('key_prefix', prefix)
         .eq('is_active', true)
@@ -248,7 +248,7 @@ export class UnifiedApiKeyManager {
    */
   private async updateLastUsed(keyId: string): Promise<void> {
     await this.supabase
-      .from(API_KEY_CONFIG.TABLE)
+      .from(`${API_KEY_CONFIG.SCHEMA}.${API_KEY_CONFIG.TABLE}`)
       .update({ last_used_at: new Date().toISOString() })
       .eq('id', keyId)
   }
@@ -259,7 +259,7 @@ export class UnifiedApiKeyManager {
   async revokeApiKey(keyId: string, userId: string): Promise<boolean> {
     try {
       const { error } = await this.supabase
-        .from(API_KEY_CONFIG.TABLE)
+        .from(`${API_KEY_CONFIG.SCHEMA}.${API_KEY_CONFIG.TABLE}`)
         .update({ is_active: false })
         .eq('id', keyId)
         .eq('user_id', userId)
@@ -277,7 +277,7 @@ export class UnifiedApiKeyManager {
   async listUserApiKeys(userId: string): Promise<Partial<ApiKey>[]> {
     try {
       const { data, error } = await this.supabase
-        .from(API_KEY_CONFIG.TABLE)
+        .from(`${API_KEY_CONFIG.SCHEMA}.${API_KEY_CONFIG.TABLE}`)
         .select('id, user_id, name, key_prefix, created_at, last_used_at, is_active, expires_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -300,7 +300,7 @@ export class UnifiedApiKeyManager {
     try {
       // 既存のキー情報を取得
       const { data: oldKey, error: fetchError } = await this.supabase
-        .from(API_KEY_CONFIG.TABLE)
+        .from(`${API_KEY_CONFIG.SCHEMA}.${API_KEY_CONFIG.TABLE}`)
         .select('name')
         .eq('id', oldKeyId)
         .eq('user_id', userId)
