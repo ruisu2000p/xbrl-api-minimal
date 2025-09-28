@@ -196,9 +196,7 @@ export async function signUp(userData: {
       try {
         const admin = await supabaseManager.createAdminSSRClient()
 
-        if (!admin) {
-          console.error('Admin client not available')
-        } else {
+        if (admin) {
           const tier = userData.plan === 'freemium' ? 'free'
             : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
             : 'basic'
@@ -229,6 +227,8 @@ export async function signUp(userData: {
 
           // create_api_key_bcrypt関数のレスポンス形式に合わせて調整
           fullApiKey = result.api_key || result.full_key || null
+        } else {
+          console.error('Admin client not available')
         }
 
         console.log('API Key created successfully:', {
