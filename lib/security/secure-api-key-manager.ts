@@ -76,7 +76,11 @@ export class SecureApiKeyManager {
 
   private constructor(supabaseUrl?: string, supabaseKey?: string) {
     // 統一クライアントを使用
-    this.supabase = createServiceRoleClient()
+    const client = createServiceRoleClient()
+    if (!client) {
+      throw new Error('Failed to create service role client')
+    }
+    this.supabase = client
     this.encryptionKey = process.env.API_KEY_ENCRYPTION_KEY ||
                          EncryptionManager.generateSecurePassword(32)
 

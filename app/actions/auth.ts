@@ -196,39 +196,42 @@ export async function signUp(userData: {
       try {
         const admin = await supabaseManager.createAdminSSRClient()
 
-        const tier = userData.plan === 'freemium' ? 'free'
-          : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
-          : 'basic'
+        if (!admin) {
+          console.error('Admin client not available')
+        } else {
+          const tier = userData.plan === 'freemium' ? 'free'
+            : userData.plan === 'standard' ? 'basic'  // standardをbasicにマッピング
+            : 'basic'
 
-        // Use the create_api_key_bcrypt function for new user registration
-        const { data: result, error: createError } = await admin
-          .rpc('create_api_key_bcrypt', {
+          // Use the create_api_key_bcrypt function for new user registration
+          const { data: result, error: createError } = await admin
+            .rpc('create_api_key_bcrypt', {
             p_user_id: data.user.id,
             p_name: 'Default API Key',
             p_description: 'Default API key for new user',
             p_tier: tier
-          })
+            })
 
-        if (createError) {
-          console.error('API Key creation error:', {
-            message: createError.message,
-            code: createError.code,
-            details: createError,
-            hint: createError.hint
-          })
-          throw new Error(`API Key creation failed: ${createError.message}`)
+          if (createError) {
+            console.error('API Key creation error:', {
+              message: createError.message,
+              code: createError.code,
+              details: createError,
+              hint: createError.hint
+            })
+            throw new Error(`API Key creation failed: ${createError.message}`)
+          }
+
+          if (!result || typeof result !== 'object') {
+            console.error('API Key creation failed:', result)
+            throw new Error('APIキーの作成に失敗しました')
+          }
+
+          // create_api_key_bcrypt関数のレスポンス形式に合わせて調整
+          fullApiKey = result.api_key || result.full_key || null
         }
-
-        if (!result || typeof result !== 'object') {
-          console.error('API Key creation failed:', result)
-          throw new Error('APIキーの作成に失敗しました')
-        }
-
-        // create_api_key_bcrypt関数のレスポンス形式に合わせて調整
-        fullApiKey = result.api_key || result.full_key || null
 
         console.log('API Key created successfully:', {
-          result: result,
           has_api_key: !!fullApiKey
         })
 

@@ -30,6 +30,14 @@ export async function POST(request: NextRequest) {
     // Supabase Admin クライアントでbcrypt APIキーを生成
     const supabaseAdmin = await supabaseManager.createAdminSSRClient()
 
+    if (!supabaseAdmin) {
+      console.error('Admin client not available')
+      return NextResponse.json(
+        { error: 'Admin client not available' },
+        { status: 500 }
+      )
+    }
+
     // O(1)化されたAPIキー生成関数を使用（public_id埋め込み方式）
     const { data: result, error: createError } = await supabaseAdmin
       .rpc('create_api_key_complete_v2', {
@@ -78,6 +86,14 @@ export async function GET(request: NextRequest) {
     }
 
     const supabaseAdmin = await supabaseManager.createAdminSSRClient()
+
+    if (!supabaseAdmin) {
+      console.error('Admin client not available')
+      return NextResponse.json(
+        { error: 'Admin client not available' },
+        { status: 500 }
+      )
+    }
 
     // ユーザーのAPIキーを取得
     const { data: apiKeys, error } = await supabaseAdmin
@@ -133,6 +149,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     const supabaseAdmin = await supabaseManager.createAdminSSRClient()
+
+    if (!supabaseAdmin) {
+      console.error('Admin client not available')
+      return NextResponse.json(
+        { error: 'Admin client not available' },
+        { status: 500 }
+      )
+    }
 
     // APIキーを無効化（削除ではなくstatusを変更）
     const { error } = await supabaseAdmin

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, key_name, tier = 'free', key_id } = body;
 
-    const apiKeyManager = new UnifiedApiKeyManager();
+    const apiKeyManager = new UnifiedApiKeyManager(supabase);
 
     // Handle different actions
     switch (action) {
@@ -111,11 +111,11 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const result = await apiKeyManager.revokeApiKey(key_id, user.id);
+        const success = await apiKeyManager.revokeApiKey(key_id, user.id);
 
-        if (!result.success) {
+        if (!success) {
           return NextResponse.json(
-            { error: result.error || 'Failed to revoke API key' },
+            { error: 'Failed to revoke API key' },
             { status: 500 }
           );
         }

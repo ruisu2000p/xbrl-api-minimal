@@ -47,7 +47,7 @@ export default async function RootLayout({
 }>) {
   // サーバーサイドでセッションを取得
   const cookieStore = await cookies()
-  const supabase = supabaseManager.getServerClient(cookieStore)
+  const supabase = await supabaseManager.getServerClient(cookieStore)
 
   let initialSession = null
   try {

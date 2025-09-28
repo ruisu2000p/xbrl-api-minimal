@@ -42,7 +42,7 @@ export class SupabaseManager {
   /**
    * Service Roleクライアント取得（サーバー側のみ）
    */
-  getServiceClient(): SupabaseClient {
+  getServiceClient(): SupabaseClient | null {
     return createServiceRoleClient();
   }
 
@@ -56,7 +56,7 @@ export class SupabaseManager {
   /**
    * サーバークライアント作成
    */
-  getServerClient(cookieStore?: any) {
+  async getServerClient(cookieStore?: any) {
     // 統一クライアントは内部でcookieStoreを管理
     return createServerSupabaseClient();
   }
@@ -71,7 +71,7 @@ export class SupabaseManager {
   /**
    * 一時的な管理用クライアント作成（トークン検証用）
    */
-  createTemporaryAdminClient(): SupabaseClient {
+  createTemporaryAdminClient(): SupabaseClient | null {
     return createServiceRoleClient();
   }
 }

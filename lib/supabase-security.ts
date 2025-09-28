@@ -46,7 +46,12 @@ export function createSecureSupabaseClient(): SupabaseClient {
   if (isDevelopment && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     // 開発環境: Service Role Keyを使用（RLSバイパス）
     console.warn('⚠️ 開発環境: Service Role Keyを使用しています');
-    return createServiceRoleClient();
+    const client = createServiceRoleClient();
+    if (!client) {
+      // Service Role Clientが利用できない場合はBrowser Clientにフォールバック
+      return createBrowserSupabaseClient();
+    }
+    return client;
   } else {
     // 本番環境: Anon Keyを使用（RLS適用）
     return createBrowserSupabaseClient();
