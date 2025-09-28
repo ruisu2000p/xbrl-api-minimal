@@ -170,13 +170,14 @@ Deno.serve(async (req) => {
       }
     } else {
       // Old format: check against legacy keys for backward compatibility
-      const legacyKeys = [
-        'xbrl_live_QYrHkMaF0cHJn2yUeYn07A6ZmCwoRgqq'
-      ];
+      // Legacy keys should be stored in environment variables for security
+      const legacyKey = Deno.env.get('LEGACY_API_KEY');
 
-      if (legacyKeys.includes(clientKey)) {
+      if (legacyKey && clientKey === legacyKey) {
         isValid = true;
         console.log('[Gateway] Legacy API key accepted');
+      } else {
+        console.log('[Gateway] Legacy API key format not supported without environment variable');
       }
     }
 
