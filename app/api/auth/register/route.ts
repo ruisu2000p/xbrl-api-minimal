@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     const { apiKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
 
     const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
-      .from('api_keys')
+      .from('api_keys_main')
       .schema('private')
       .insert({
         user_id: userId,

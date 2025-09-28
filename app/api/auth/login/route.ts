@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const supabaseAdmin = await createServiceClient();
 
     const { data: apiKeys } = await supabaseAdmin
-      .from('api_keys')
+      .from('api_keys_main')
       .select('key_prefix, key_suffix, name, is_active')
       .schema('private')
       .eq('user_id', authData.user.id)

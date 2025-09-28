@@ -39,16 +39,30 @@ export async function createServiceClient() {
     throw new Error('Service role key not configured')
   }
 
+  const cookieStore = await cookies()
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     serviceKey,
     {
       cookies: {
-        get() {
-          return undefined
+        get(name: string) {
+          return cookieStore.get(name)?.value
         },
-        set() {},
-        remove() {},
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch {
+            // Service Roleではcookie操作は不要
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch {
+            // Service Roleではcookie操作は不要
+          }
+        },
       },
       auth: {
         persistSession: false,
