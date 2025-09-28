@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       // 明示的にSupabaseClientとしてキャスト
       const dbClient: SupabaseClient = tempClient as SupabaseClient;
 
-      const { data: apiKeyData, error: apiKeyError } = await dbClient
+      const { data: apiKeyData, error: apiKeyError } = await dbClient!
         .from('api_keys_main')
         .schema('private')
         .insert({
