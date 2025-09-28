@@ -11,15 +11,25 @@ type JwtPayload = {
   user_metadata?: Record<string, unknown>
 }
 
-const COOKIE_OPTIONS = {
+const BASE_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const,
-  path: '/',
-  // Vercel本番用のドメイン設定
-  ...(process.env.NODE_ENV === 'production' && {
-    domain: '.vercel.app'
-  })
+  path: '/'
+}
+
+function resolveCookieDomain(host: string | null) {
+  if (!host) {
+    return undefined
+  }
+
+  const hostname = host.split(':')[0].toLowerCase()
+
+  if (hostname === 'localhost' || hostname.endsWith('.local') || hostname === '127.0.0.1') {
+    return undefined
+  }
+
+  return hostname
 }
 
 const FALLBACK_EXPIRY_SECONDS = 60 * 60
@@ -83,17 +93,23 @@ export async function POST(request: NextRequest) {
     }
 
     const cookieStore = cookies()
+    const host = request.headers.get('host')
+    const domain = resolveCookieDomain(host)
+    const commonCookieOptions = {
+      ...BASE_COOKIE_OPTIONS,
+      ...(domain ? { domain } : {})
+    }
     const maxAge = secondsUntilExpiry || FALLBACK_EXPIRY_SECONDS
 
     // アクセストークンをCookieに設定
     cookieStore.set('sb-access-token', access_token, {
-      ...COOKIE_OPTIONS,
+      ...commonCookieOptions,
       maxAge
     })
 
     // リフレッシュトークンをCookieに設定
     cookieStore.set('sb-refresh-token', refresh_token, {
-      ...COOKIE_OPTIONS,
+      ...commonCookieOptions,
       maxAge: 60 * 60 * 24 * 30
     })
 
@@ -129,23 +145,25 @@ export async function POST(request: NextRequest) {
 
       const supabaseCookieName = `sb-${projectRef}-auth-token`
       cookieStore.set(supabaseCookieName, JSON.stringify(supabaseCookiePayload), {
-        ...COOKIE_OPTIONS,
+        ...commonCookieOptions,
         maxAge
       })
 
       console.log('✅ Cookie同期: Supabase認証Cookieを設定', {
         cookie: supabaseCookieName,
         expiresAt,
-        maxAge
+        maxAge,
+        domain
       })
     } else {
       console.warn('⚠️ Cookie同期: Supabaseのプロジェクトリファレンスを解析できませんでした')
     }
 
     console.log('✅ Cookie同期: トークンをCookieへ保存', {
-      secure: COOKIE_OPTIONS.secure,
-      sameSite: COOKIE_OPTIONS.sameSite,
-      maxAge
+      secure: BASE_COOKIE_OPTIONS.secure,
+      sameSite: BASE_COOKIE_OPTIONS.sameSite,
+      maxAge,
+      domain
     })
 
     return NextResponse.json(
@@ -161,21 +179,27 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
     console.log('🧹 Cookie同期: トークン削除開始')
     const cookieStore = cookies()
+    const host = request.headers.get('host')
+    const domain = resolveCookieDomain(host)
+    const deleteBase = {
+      path: '/',
+      ...(domain ? { domain } : {})
+    }
 
-    cookieStore.delete('sb-access-token')
-    cookieStore.delete('sb-refresh-token')
+    cookieStore.delete({ name: 'sb-access-token', ...deleteBase })
+    cookieStore.delete({ name: 'sb-refresh-token', ...deleteBase })
 
     const projectRef = getProjectRef()
     if (projectRef) {
       const supabaseCookieName = `sb-${projectRef}-auth-token`
-      cookieStore.delete(supabaseCookieName)
+      cookieStore.delete({ name: supabaseCookieName, ...deleteBase })
     }
 
-    console.log('✅ Cookie同期: トークン削除完了')
+    console.log('✅ Cookie同期: トークン削除完了', { domain })
 
     return NextResponse.json(
       { success: true },
