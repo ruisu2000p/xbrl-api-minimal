@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -32,7 +33,7 @@ export async function createClient() {
 }
 
 // Service Role用のクライアント（管理者操作用）
-export async function createServiceClient() {
+export async function createServiceClient(): Promise<SupabaseClient> {
   const serviceKey = process.env.XBRL_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!serviceKey) {
@@ -69,5 +70,5 @@ export async function createServiceClient() {
         autoRefreshToken: false,
       },
     }
-  )
+  ) as SupabaseClient
 }
