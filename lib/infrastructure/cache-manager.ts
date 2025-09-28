@@ -194,19 +194,37 @@ export class CacheManager {
    * ガベージコレクションの開始
    */
   private startGarbageCollection(): void {
-    this.gcInterval = setInterval(() => {
-      const evicted = this.evictExpired()
-      const memoryUsage = this.getMemoryUsage()
+    // サーバレス環境チェック
+    const isServerless =
+      process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.NETLIFY ||
+      process.env.NODE_ENV === 'test'
 
-      if (evicted > 0) {
-        centralLogger.debug('Cache garbage collection', { evicted, memoryUsage })
-      }
+    if (!isServerless) {
+      this.gcInterval = setInterval(() => {
+        const evicted = this.evictExpired()
+        const memoryUsage = this.getMemoryUsage()
 
-      // メモリ使用量が制限を超えた場合の緊急削除
-      if (memoryUsage > this.config.maxMemoryMB) {
-        this.emergencyCleanup()
+        if (evicted > 0) {
+          centralLogger.debug('Cache garbage collection', { evicted, memoryUsage })
+        }
+
+        // メモリ使用量が制限を超えた場合の緊急削除
+        if (memoryUsage > this.config.maxMemoryMB) {
+          this.emergencyCleanup()
+        }
+      }, this.config.gcInterval)
+
+      // プロセス終了時にクリア
+      if (typeof process !== 'undefined') {
+        process.on('beforeExit', () => {
+          if (this.gcInterval) {
+            clearInterval(this.gcInterval)
+          }
+        })
       }
-    }, this.config.gcInterval)
+    }
   }
 
   /**

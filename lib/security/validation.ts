@@ -280,7 +280,7 @@ export function getSecurityHeaders(): Record<string, string> {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wpwqxhyiglbtlaimrjrx.supabase.co'}`,
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"

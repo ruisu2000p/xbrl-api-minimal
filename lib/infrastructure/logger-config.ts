@@ -239,9 +239,18 @@ class CentralizedLogger {
    * バッファフラッシュの開始
    */
   private startBufferFlush(): void {
-    this.flushInterval = setInterval(() => {
-      this.flushBuffer()
-    }, 5000) // 5秒ごとにフラッシュ
+    // サーバレス環境チェック
+    const isServerless =
+      process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.NETLIFY ||
+      process.env.NODE_ENV === 'test';
+
+    if (!isServerless) {
+      this.flushInterval = setInterval(() => {
+        this.flushBuffer()
+      }, 5000) // 5秒ごとにフラッシュ
+    }
   }
 
   /**

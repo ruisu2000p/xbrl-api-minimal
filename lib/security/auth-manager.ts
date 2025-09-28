@@ -53,7 +53,7 @@ export class UnifiedAuthManager {
       const { hashApiKey } = await import('../security/apiKey');
 
       // First try simple HMAC (used by apiKey.ts)
-      const simpleHmacHash = hashApiKey(apiKey);
+      const simpleHmacHash = await hashApiKey(apiKey);
       const { data: simpleHmacRecord, error: simpleHmacError } = await this.supabase
         .from('api_keys')
         .select('*')

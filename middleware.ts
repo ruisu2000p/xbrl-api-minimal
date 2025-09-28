@@ -53,7 +53,9 @@ export async function middleware(request: NextRequest) {
 
   // Edge Runtime互換: クッキーから直接セッショントークンを確認
   // Supabaseのセッショントークンはsb-<project-ref>-auth-tokenという名前で保存される
-  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
+  // Edge Runtimeではprocess.envが使えるが、念のため直接環境変数を参照
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const projectRef = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
 
   if (!projectRef) {
     console.error('❌ Middleware: Invalid Supabase URL configuration')

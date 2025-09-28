@@ -264,9 +264,30 @@ export class ApiSecurity {
   }
 }
 
-// レート制限クリーンアップを定期的に実行
-setInterval(() => {
-  ApiSecurity.getInstance().cleanupRateLimitStore();
-}, 60000);
+// サーバレス環境での setInterval 問題を回避
+// Vercel, AWS Lambda, Netlify Functions などではsetIntervalを使用しない
+const isServerless =
+  process.env.VERCEL ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.NETLIFY ||
+  process.env.NODE_ENV === 'test';
+
+if (!isServerless) {
+  // 通常のNode.js環境でのみ定期クリーンアップを実行
+  const cleanupInterval = setInterval(() => {
+    ApiSecurity.getInstance().cleanupRateLimitStore();
+  }, 60000);
+
+  // プロセス終了時にインターバルをクリア
+  if (typeof process !== 'undefined') {
+    process.on('beforeExit', () => {
+      clearInterval(cleanupInterval);
+    });
+  }
+} else {
+  // サーバレス環境ではリクエストごとにクリーンアップ
+  // cleanupRateLimitStore() はcheckRateLimit内で自動的に呼ばれる
+  console.log('Running in serverless environment - setInterval disabled');
+}
 
 export default ApiSecurity.getInstance();

@@ -113,7 +113,7 @@ export class SQLInjectionShield {
 
   private static validateFilterInput(input: string): ValidationResult {
     // フィルター値は更に制限的
-    const allowedPattern = /^[a-zA-Z0-9\s\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]*$/;
+    const allowedPattern = /^[a-zA-Z0-9s-぀-ゟ゠-ヿ一-龯]*$/;
 
     if (!allowedPattern.test(input) || input.length > 50) {
       return {

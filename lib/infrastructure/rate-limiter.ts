@@ -36,10 +36,19 @@ export class RateLimiter {
   private cleanupInterval: NodeJS.Timeout | null = null
 
   private constructor() {
-    // メモリストアのクリーンアップを定期実行
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupMemoryStore()
-    }, 60000) // 1分ごと
+    // サーバレス環境チェック
+    const isServerless =
+      process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.NETLIFY ||
+      process.env.NODE_ENV === 'test';
+
+    if (!isServerless) {
+      // メモリストアのクリーンアップを定期実行
+      this.cleanupInterval = setInterval(() => {
+        this.cleanupMemoryStore()
+      }, 60000) // 1分ごと
+    }
   }
 
   static getInstance(): RateLimiter {
