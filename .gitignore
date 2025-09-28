@@ -155,7 +155,7 @@ mcp-server.example.toml
 *.mjs
 _diag/
 _buildManifest.js
-*.sql
+# *.sql - コメントアウト: Supabaseマイグレーションファイルが必要
 query.sql
 
 # Project specific
