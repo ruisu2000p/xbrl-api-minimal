@@ -75,6 +75,11 @@ export default function SupabaseProvider({
     const checkSession = async () => {
       try {
         console.log('📱 初回セッションチェック開始...')
+
+        // localStorage の状態を確認
+        const storageKeys = Object.keys(window.localStorage).filter(k => k.includes('sb-'))
+        console.log('🔍 localStorage keys:', storageKeys)
+
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (!error && session) {

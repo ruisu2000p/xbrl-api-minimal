@@ -94,7 +94,13 @@ export class SupabaseManager {
             autoRefreshToken: true,
             detectSessionInUrl: true,
             flowType: 'pkce',
-            storage: window.localStorage
+            storage: window.localStorage,
+            storageKey: `sb-${url.match(/https:\/\/([^.]+)/)?.[1]}-auth-token`,
+            cookieOptions: {
+              name: `sb-${url.match(/https:\/\/([^.]+)/)?.[1]}-auth-token`,
+              sameSite: 'lax',
+              secure: true
+            }
           },
           global: {
             headers: {

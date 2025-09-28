@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// 保護されたルートのリスト
+// 認証が必要なルートのリスト
 const protectedRoutes = [
   '/dashboard',
   '/profile',
@@ -10,7 +10,7 @@ const protectedRoutes = [
   '/api/api-keys',
 ]
 
-// 認証が不要なルート
+// 認証不要なルート
 const publicRoutes = [
   '/auth/login',
   '/auth/register',
@@ -30,7 +30,7 @@ const publicRoutes = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 静的ファイルとAPIヘルスチェックはスキップ
+  // 静的ファイルやAPIヘルスチェックはスキップ
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
@@ -40,25 +40,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // パスが保護されているかチェック
+  // パスが保護対象かチェック
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route))
 
-  // 公開ルートの場合はそのまま通す
+  // 公開ルートの場合はそのまま続行
   if (!isProtectedRoute || isPublicRoute) {
     return NextResponse.next()
   }
 
   console.log(`🔐 Middleware: Checking auth for ${pathname}`)
 
-  // Edge Runtime互換: クッキーから直接セッショントークンを確認
-  // Supabaseのセッショントークンはsb-<project-ref>-auth-tokenという名前で保存される
-  // Edge Runtimeではprocess.envが使えるが、念のため直接環境変数を参照
+  // Supabaseのプロジェクト情報を解析
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const projectRef = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
 
   if (!projectRef) {
-    console.error('❌ Middleware: Invalid Supabase URL configuration')
+    console.error('⚠️ Middleware: Invalid Supabase URL configuration')
     return new NextResponse(
       JSON.stringify({
         error: 'Configuration error',
@@ -73,13 +71,14 @@ export async function middleware(request: NextRequest) {
     )
   }
 
-  // Supabaseのauth cookieを確認
+  // Supabase標準のauth cookie名
   const authTokenName = `sb-${projectRef}-auth-token`
-  const authToken = request.cookies.get(authTokenName)?.value
+  const hasAuthCookie = request.cookies.has(authTokenName)
+  const hasTokenPair = request.cookies.has('sb-access-token') && request.cookies.has('sb-refresh-token')
 
-  // セッショントークンがない場合はログインページへリダイレクト
-  if (!authToken) {
-    console.log(`❌ Middleware: No auth token for ${pathname}, redirecting to login`)
+  // セッショントークンが存在しない場合はログインページへリダイレクト
+  if (!hasAuthCookie && !hasTokenPair) {
+    console.log(`🚫 Middleware: No auth cookie or token pair for ${pathname}, redirecting to login`)
 
     // APIルートの場合は401を返す
     if (pathname.startsWith('/api/')) {
@@ -104,14 +103,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Edge Runtimeでは完全なセッション検証はできないため、
-  // auth tokenの存在のみをチェック
-  // 実際のセッション検証は各ルートハンドラーで行う
-  console.log(`✅ Middleware: Auth token found for ${pathname}`)
+  const authContext = hasAuthCookie ? 'auth cookie' : 'token pair'
+
+  // Edge Runtimeでは完全なセッション検証は不可のため、トークンの存在のみをチェック
+  // 実際のセッション検証は各ルートハンドラーで実施
+  console.log(`✅ Middleware: ${authContext} found for ${pathname}`)
 
   const response = NextResponse.next()
 
-  // バックフォワードキャッシュを有効にするため、Cache-Controlを調整
+  // バックフォワードキャッシュ無効化・Cookie変更を反映
   response.headers.set('Cache-Control', 'private, no-cache, must-revalidate')
   response.headers.set('Vary', 'Cookie')
 
@@ -120,7 +120,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // 保護されたルートを有効化
+    // 認証が必要なルートを列挙
     '/dashboard/:path*',
     '/profile/:path*',
     '/settings/:path*',
