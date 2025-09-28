@@ -54,25 +54,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch API keys for the user using RPC function
+    // Temporarily return empty array until RPC function is created in database
     console.log('Fetching API keys for user:', user.id);
+    console.warn('RPC function get_user_api_keys not yet created in database. Returning empty array.');
 
-    const { data, error } = await supabase
-      .rpc('get_user_api_keys', { p_user_id: user.id });
+    // TODO: Once the following SQL is executed in Supabase dashboard, uncomment the RPC call below:
+    // CREATE OR REPLACE FUNCTION public.get_user_api_keys(p_user_id UUID)
+    // ...
+
+    // const { data, error } = await supabase
+    //   .rpc('get_user_api_keys', { p_user_id: user.id });
+
+    const data: any[] = [];
+    const error = null;
 
     console.log('Fetch result:', {
       hasData: !!data,
       dataCount: data?.length,
       error: error?.message
     });
-
-    if (error) {
-      console.error('Failed to fetch API keys:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch API keys', details: error.message },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({
       success: true,
@@ -184,17 +184,9 @@ export async function POST(request: NextRequest) {
 
       case 'list':
       default: {
-        // Fetch API keys for the user using RPC function
-        const { data, error } = await authClient
-          .rpc('get_user_api_keys', { p_user_id: user.id });
-
-        if (error) {
-          console.error('Failed to fetch API keys:', error);
-          return NextResponse.json(
-            { error: 'Failed to fetch API keys' },
-            { status: 500 }
-          );
-        }
+        // Temporarily return empty array until RPC function is created
+        console.warn('RPC function not yet created. Returning empty array.');
+        const data: any[] = [];
 
         return NextResponse.json({
           success: true,
