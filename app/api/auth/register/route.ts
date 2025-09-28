@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { createServiceClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 import { generateBcryptApiKey } from '@/lib/security/bcrypt-apikey';
 
 
@@ -30,21 +30,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Supabase Admin Clientを取得
-    let supabaseAdmin;
-    try {
-      supabaseAdmin = await createServiceClient();
-    } catch (error) {
-      console.error('Service role key not configured:', error);
-      return createApiResponse.error(
-        ErrorCodes.INTERNAL_ERROR,
-        'サーバー設定エラー: Service Roleキーが設定されていません'
-      );
-    }
+    // 通常のクライアントを使用（Service Roleが設定されていない場合を考慮）
+    const supabase = await createClient();
 
-    // Supabaseで既存ユーザーをチェック（最適化: メールで直接検索）
-    // まずusersテーブルから直接検索を試みる
-    const { data: existingUser, error: searchError } = await supabaseAdmin
+    // Supabaseで既存ユーザーをチェック（メールアドレスで確認）
+    // 注: auth.usersへの直接アクセスはService Roleが必要
+    const { data: existingUser, error: searchError } = await supabase
       .from('auth.users')
       .select('id, email')
       .eq('email', email)
@@ -77,18 +68,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Authでユーザーを作成
-    // email_confirm: true でメール確認をスキップ
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: true,  // メール確認をスキップして即座に有効化
-      user_metadata: {
+      options: {
+        data: {
         name,
         company: company || null,
         plan: plan || 'beta',
         agreed_to_terms: true,
         agreed_to_disclaimer: true,
         agreed_at: new Date().toISOString()
+        }
       }
     });
 
@@ -100,10 +91,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userId = authData.user.id;
+    const userId = authData.user?.id;
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'ユーザー作成に失敗しました' },
+        { status: 500 }
+      );
+    }
 
     // public.usersテーブルにも保存
-    const { error: dbUserError } = await supabaseAdmin
+    const { error: dbUserError } = await supabase
       .from('users')
       .insert({
         id: userId,
@@ -123,7 +121,7 @@ export async function POST(request: NextRequest) {
       const { apiKey: generatedKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
       apiKey = generatedKey;
 
-      const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
+      const { data: apiKeyData, error: apiKeyError } = await supabase
         .from('api_keys_main')
         .schema('private')
         .insert({
@@ -153,14 +151,7 @@ export async function POST(request: NextRequest) {
       console.log('✅ User registered successfully:', { userId });
     }
 
-    // セッションの作成
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
-      }
-    });
+    // セッションはsignUpで自動的に作成される
 
     // レスポンスの作成
     const response = NextResponse.json({

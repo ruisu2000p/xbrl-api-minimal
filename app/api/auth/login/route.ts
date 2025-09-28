@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { createClient, createServiceClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: NextRequest) {
   // Create SSR Supabase client
@@ -37,23 +37,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ユーザーのAPIキー情報を取得（Service Roleが設定されている場合のみ）
-    let apiKeys = null;
-    try {
-      const supabaseAdmin = await createServiceClient();
-      if (supabaseAdmin) {
-        const result = await supabaseAdmin
-          .from('api_keys_main')
-          .select('key_prefix, key_suffix, name, is_active')
-          .schema('private')
-          .eq('user_id', authData.user.id)
-          .eq('is_active', true)
-          .limit(1);
-        apiKeys = result.data;
-      }
-    } catch (error) {
-      // Service Roleが設定されていない場合は無視
-      console.log('Service role not configured, skipping API key fetch');
-    }
+    // 注: privateスキーマへのアクセスにはService Roleが必要なため、
+    // 現在はAPIキー情報の取得をスキップ
+    const apiKeys = null;
 
     // レスポンスの作成 - SSRクライアントがCookieを自動管理
     return createApiResponse.success({
