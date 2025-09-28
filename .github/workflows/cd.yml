@@ -67,20 +67,30 @@ jobs:
 
       - name: Link to Supabase project
         run: |
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          if [ -n "${{ secrets.SUPABASE_PROJECT_REF }}" ]; then
+            supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          else
+            echo "⚠️ SUPABASE_PROJECT_REF not configured, skipping database migration"
+          fi
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Run migrations
         run: |
-          supabase db push
+          if [ -n "${{ secrets.SUPABASE_PROJECT_REF }}" ] && [ -n "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ]; then
+            supabase db push
+          else
+            echo "⚠️ Supabase not configured, skipping migrations"
+          fi
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Run seed data (if exists)
         run: |
-          if [ -f "supabase/seed.sql" ]; then
+          if [ -n "${{ secrets.SUPABASE_PROJECT_REF }}" ] && [ -f "supabase/seed.sql" ]; then
             supabase db seed
+          else
+            echo "⚠️ No seed data or Supabase not configured"
           fi
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -88,7 +98,7 @@ jobs:
   deploy-vercel:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
-    needs: database-migrations
+    needs: pre-deploy-checks
     timeout-minutes: 15
 
     steps:
@@ -102,16 +112,30 @@ jobs:
           cache: 'npm'
 
       - name: Install Vercel CLI
-        run: npm install -g vercel@latest
+        run: |
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ]; then
+            npm install -g vercel@latest
+          else
+            echo "⚠️ VERCEL_TOKEN not configured, skipping Vercel deployment"
+          fi
 
       - name: Pull Vercel Environment
+        if: env.VERCEL_TOKEN != ''
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Build for Production
+        if: env.VERCEL_TOKEN != ''
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Production
+        if: env.VERCEL_TOKEN != ''
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
   post-deploy-checks:
     name: Post-deployment Verification
