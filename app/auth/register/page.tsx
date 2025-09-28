@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { useSupabase } from '@/components/SupabaseProvider'
 
 const plans = [
   { value: 'free', label: '無料プラン', description: 'ベーシックアクセス' },
@@ -14,6 +14,7 @@ const plans = [
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { supabase } = useSupabase()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -53,8 +54,6 @@ export default function RegisterPage() {
     }
 
     try {
-      const supabase = supabaseManager.getBrowserClient()
-
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
