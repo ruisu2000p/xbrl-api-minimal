@@ -70,9 +70,9 @@ npm run dev
 
 ## MCP (Model Context Protocol) 設定
 
-このプロジェクトは、Claude DesktopでMCPサーバーと連携して使用できます。
+このプロジェクトは、XBRL Financial MCPサーバーとして動作し、JWTと独自APIキーを組み合わせた認証システムを提供します。
 
-### MCP設定方法
+### XBRL Financial MCP設定方法
 
 1. **Claude Desktopの設定ファイルを開く**
 
@@ -86,18 +86,17 @@ macOS:
 ~/Library/Application Support/Claude/claude_desktop_config.json
 ```
 
-2. **Supabase MCPサーバーを追加**
+2. **XBRL Financial MCPサーバーを追加**
 
 ```json
 {
   "mcpServers": {
-    "supabase": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@supabase/mcp"
-      ],
+    "xbrl-financial": {
+      "command": "node",
+      "args": ["./mcp-server/index.js"],
       "env": {
+        "XBRL_API_URL": "https://xbrl-api-minimal.vercel.app",
+        "XBRL_API_KEY": "your-api-key-from-dashboard",
         "SUPABASE_URL": "https://your-project.supabase.co",
         "SUPABASE_SERVICE_KEY": "your-service-role-key"
       }
@@ -106,7 +105,37 @@ macOS:
 }
 ```
 
-3. **その他の推奨MCPサーバー**
+### 認証システムの仕組み
+
+このプロジェクトは2層認証を実装しています：
+
+1. **JWT認証** (Supabase Auth)
+   - ユーザー登録・ログイン
+   - セッション管理
+   - パスワードリセット
+
+2. **独自APIキー** (Private Schema)
+   - ダッシュボードから発行
+   - `xbrl_v1_` プレフィックス付き
+   - PBKDF2ハッシュ化して保存
+
+### APIキーの取得方法
+
+1. **アカウント登録**
+   - https://xbrl-api-minimal.vercel.app/auth/register
+
+2. **ダッシュボードにアクセス**
+   - https://xbrl-api-minimal.vercel.app/dashboard
+
+3. **APIキーを発行**
+   - 「APIキー」タブを選択
+   - 名前を入力して「APIキー発行」をクリック
+   - ⚠️ APIキーは一度だけ表示されます
+
+4. **MCP設定に追加**
+   - 取得したAPIキーを`XBRL_API_KEY`に設定
+
+### その他の推奨MCPサーバー
 
 ```json
 {
@@ -139,24 +168,33 @@ macOS:
 
 ### MCP環境変数
 
-MCPサーバーで必要な環境変数：
+XBRL Financial MCPサーバーで必要な環境変数：
 
+- `XBRL_API_URL`: XBRL APIのエンドポイント（https://xbrl-api-minimal.vercel.app）
+- `XBRL_API_KEY`: ダッシュボードから取得したAPIキー
 - `SUPABASE_URL`: Supabaseプロジェクトの URL
 - `SUPABASE_SERVICE_KEY`: Service Role Key（管理者権限）
-- `GITHUB_PERSONAL_ACCESS_TOKEN`: GitHub API アクセス用（オプション）
+
+追加MCPサーバーの環境変数（オプション）：
+- `GITHUB_PERSONAL_ACCESS_TOKEN`: GitHub API アクセス用
 
 ### MCPを使った開発ワークフロー
 
-1. **データベース操作**
+1. **XBRL財務データ取得**
+   - `mcp__xbrl__get_companies`: 企業情報の取得
+   - `mcp__xbrl__get_documents`: 財務報告書の取得
+   - `mcp__xbrl__search_companies`: 企業検索
+
+2. **データベース操作** (Supabase MCP併用時)
    - `mcp__supabase__execute_sql`: SQLクエリの実行
    - `mcp__supabase__apply_migration`: マイグレーションの適用
    - `mcp__supabase__list_tables`: テーブル一覧の取得
 
-2. **Edge Function管理**
+3. **Edge Function管理** (Supabase MCP併用時)
    - `mcp__supabase__deploy_edge_function`: Edge Functionのデプロイ
    - `mcp__supabase__list_edge_functions`: Edge Function一覧の取得
 
-3. **GitHub連携**
+4. **GitHub連携** (GitHub MCP併用時)
    - `mcp__github__create_pull_request`: プルリクエストの作成
    - `mcp__github__merge_pull_request`: プルリクエストのマージ
 
