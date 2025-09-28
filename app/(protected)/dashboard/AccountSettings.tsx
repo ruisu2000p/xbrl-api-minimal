@@ -499,13 +499,13 @@ export default function AccountSettings() {
       console.log('🔍 セッション復元を待機中...');
       const timer = setTimeout(() => {
         // 再度チェックして、まだユーザーがいなければリダイレクト
-        if (!user && !hasRedirected.current) {
+        if (!user && !supabaseLoading && !hasRedirected.current) {
           console.log('❌ セッション復元タイムアウト。ログインページへリダイレクトします。');
           hasRedirected.current = true; // リダイレクト済みとマーク
           router.replace('/auth/login'); // replaceを使用して履歴に残さない
         }
         setSessionChecked(true);
-      }, 500); // 500ms待機（より確実にセッション復元を待つ）
+      }, 2000); // 2秒待機（セッション復元により長い時間を与える）
 
       setRedirectTimer(timer);
       return () => {
@@ -514,7 +514,7 @@ export default function AccountSettings() {
     }
 
     // セッションチェック済みで、ユーザーがいない場合
-    if (sessionChecked && !user && !hasRedirected.current) {
+    if (sessionChecked && !user && !supabaseLoading && !hasRedirected.current) {
       console.log('❌ 認証されていません。ログインページへリダイレクトします。');
       hasRedirected.current = true; // リダイレクト済みとマーク
       router.replace('/auth/login'); // replaceを使用して履歴に残さない

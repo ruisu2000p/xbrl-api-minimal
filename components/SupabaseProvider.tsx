@@ -28,7 +28,7 @@ export default function SupabaseProvider({
 }) {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(initialSession?.user || null)
-  const [loading, setLoading] = useState(!initialSession)
+  const [loading, setLoading] = useState(true) // 常に初期状態はloading=true
 
   const refreshSession = async () => {
     try {
@@ -108,9 +108,8 @@ export default function SupabaseProvider({
       }
     }
 
-    if (!initialSession) {
-      checkSession()
-    }
+    // 常にセッションチェックを実行（SSRで取得したセッションも再検証）
+    checkSession()
 
     // 認証状態の変更を監視
     const {
