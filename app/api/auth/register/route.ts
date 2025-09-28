@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     if (searchError && searchError.code !== 'PGRST116') { // PGRST116 = not found
       // auth.admin.getUserByEmailが存在しない場合のフォールバック
       try {
-        const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email,
           password: 'dummy_check_only', // 存在チェックのみ
         });
