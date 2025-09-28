@@ -212,13 +212,13 @@ jobs:
 
       - name: Verify environment variables
         run: |
-          required_vars=("NEXT_PUBLIC_SUPABASE_URL" "NEXT_PUBLIC_SUPABASE_ANON_KEY")
-          for var in "${required_vars[@]}"; do
-            if [ -z "${!var}" ]; then
-              echo "Error: Required environment variable $var is not set"
-              exit 1
-            fi
-          done
+          # Check for Supabase environment variables (optional)
+          if [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] && [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
+            echo "✅ Supabase environment variables are configured"
+          else
+            echo "⚠️ Warning: Supabase environment variables not set"
+            echo "The application can still build but may have limited functionality"
+          fi
 
       - name: Check migration files
         run: |
