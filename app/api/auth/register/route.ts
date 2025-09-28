@@ -6,9 +6,27 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { createClient } from '@/utils/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createClient, createServiceClient } from '@/utils/supabase/server';
 import { generateBcryptApiKey } from '@/lib/security/bcrypt-apikey';
 
+
+async function checkUserExistsViaSignIn(
+  supabaseClient: SupabaseClient,
+  email: string
+): Promise<boolean> {
+  try {
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password: 'dummy_check_only', // 存在チェックのみ
+    });
+
+    return Boolean(error?.message?.includes('Invalid login credentials'));
+  } catch (error) {
+    console.warn('User existence check via sign-in failed:', error);
+    return false;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,40 +51,38 @@ export async function POST(request: NextRequest) {
     // 通常のクライアントを使用（Service Roleが設定されていない場合を考慮）
     const supabase = await createClient();
 
-    // Supabaseクライアントの存在を確認
-    if (!supabase) {
-      return createApiResponse.internalError(
-        new Error('Supabase client initialization failed'),
-        'サーバー設定エラーが発生しました'
-      );
+    let supabaseAdmin: SupabaseClient | null = null;
+    try {
+      supabaseAdmin = await createServiceClient();
+    } catch (error) {
+      console.warn('Service role client is not available. Falling back to limited checks.', error);
     }
 
     // Supabaseで既存ユーザーをチェック（メールアドレスで確認）
     // 注: auth.usersへの直接アクセスはService Roleが必要
-    const { data: existingUser, error: searchError } = await supabase!
-      .from('auth.users')
-      .select('id, email')
-      .eq('email', email)
-      .single();
+    let existingUser = null;
+    let searchError: { code?: string } | null = null;
 
-    // auth.usersへの直接アクセスが失敗した場合は、従来の方法にフォールバック
-    if (searchError && searchError.code !== 'PGRST116') { // PGRST116 = not found
-      // auth.admin.getUserByEmailが存在しない場合のフォールバック
-      try {
-        const { data: authData, error: authError } = await supabase!.auth.signInWithPassword({
-          email,
-          password: 'dummy_check_only', // 存在チェックのみ
-        });
+    if (supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('auth.users')
+        .select('id, email')
+        .eq('email', email)
+        .single();
 
-        // メールが存在する場合、パスワードエラーが返る
-        if (authError?.message?.includes('Invalid login credentials')) {
-          return createApiResponse.error(
-            ErrorCodes.ALREADY_EXISTS,
-            'このメールアドレスは既に登録されています'
-          );
-        }
-      } catch (e) {
-        // エラーは無視（ユーザーが存在しない場合）
+      existingUser = data;
+      searchError = error;
+    }
+
+    // auth.usersへの直接アクセスが失敗した場合やService Roleがない場合は、従来の方法にフォールバック
+    if (!supabaseAdmin || (searchError && searchError.code !== 'PGRST116')) { // PGRST116 = not found
+      const userExists = await checkUserExistsViaSignIn(supabase, email);
+
+      if (userExists) {
+        return createApiResponse.error(
+          ErrorCodes.ALREADY_EXISTS,
+          'このメールアドレスは既に登録されています'
+        );
       }
     } else if (!searchError && existingUser) {
       return createApiResponse.error(
@@ -76,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Authでユーザーを作成
-    const { data: authData, error: authError } = await supabase!.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -109,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     // public.usersテーブルにも保存
-    const { error: dbUserError } = await supabase!
+    const { error: dbUserError } = await supabase
       .from('users')
       .insert({
         id: userId,
@@ -129,7 +145,7 @@ export async function POST(request: NextRequest) {
       const { apiKey: generatedKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
       apiKey = generatedKey;
 
-      const { data: apiKeyData, error: apiKeyError } = await supabase!
+      const { data: apiKeyData, error: apiKeyError } = await supabase
         .from('api_keys_main')
         .schema('private')
         .insert({
