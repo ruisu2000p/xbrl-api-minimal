@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 import { apiKeyNameSchema } from '@/lib/security/input-validation'
-// Import bcrypt-apikey functions are handled inline where needed
+import {
+  createApiKey as generateNewApiKey,
+  extractApiKeyPrefix,
+  extractApiKeySuffix
+} from '@/lib/security/bcrypt-apikey'
 
 async function getSessionContext() {
   const supabase = await supabaseManager.createSSRClient()
@@ -83,8 +87,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid API key name' }, { status: 400 })
     }
 
-    const { generateBcryptApiKey } = await import('@/lib/security/bcrypt-apikey')
-    const { apiKey, hash, prefix: keyPrefix, suffix: keySuffix, masked } = await generateBcryptApiKey()
+    const { apiKey, hash, salt, masked } = await generateNewApiKey()
+    const keyPrefix = extractApiKeyPrefix(apiKey)
+    const keySuffix = extractApiKeySuffix(apiKey)
     const timestamp = new Date().toISOString()
 
     const { data, error: insertError } = await supabase
@@ -94,7 +99,7 @@ export async function POST(request: NextRequest) {
         key_prefix: keyPrefix,
         key_suffix: keySuffix,
         key_hash: hash,
-        hash_method: 'bcrypt',
+        salt,
         masked_key: masked,
         user_id: userId,
         tier: 'free',
@@ -190,4 +195,4 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-// Force update
+// Fix type error
