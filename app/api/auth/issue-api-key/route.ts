@@ -39,12 +39,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Supabase admin client
-    let supabaseAdmin;
-    try {
-      supabaseAdmin = supabaseManager.createTemporaryAdminClient();
-    } catch (error) {
+    const supabaseAdmin = supabaseManager.createTemporaryAdminClient();
+    if (!supabaseAdmin) {
       return createApiResponse.internalError(
-        error,
+        new Error('Admin client not available'),
         'Server configuration error'
       );
     }
@@ -175,6 +173,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabaseAdmin = supabaseManager.createTemporaryAdminClient();
+    if (!supabaseAdmin) {
+      return createApiResponse.internalError(
+        new Error('Admin client not available'),
+        'Server configuration error'
+      );
+    }
 
     // トークンを検証してユーザーを確認
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);

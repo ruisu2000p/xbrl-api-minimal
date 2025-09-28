@@ -62,6 +62,9 @@ export async function createApiKeySecure(formData: FormData) {
 
     // 5. セッション認証確認
     const supabase = supabaseManager.getServiceClient();
+    if (!supabase) {
+      throw new Error('Service client not available');
+    }
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -163,6 +166,9 @@ export async function deleteApiKeySecure(formData: FormData) {
 
     // 認証確認
     const supabase = supabaseManager.getServiceClient();
+    if (!supabase) {
+      throw new Error('Service client not available');
+    }
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -306,6 +312,10 @@ async function logSecurityEvent(event: {
 }): Promise<void> {
   try {
     const supabase = supabaseManager.getServiceClient();
+    if (!supabase) {
+      console.error('Service client not available for logging');
+      return;
+    }
 
     await supabase
       .from('security_logs')

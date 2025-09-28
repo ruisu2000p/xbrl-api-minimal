@@ -150,6 +150,9 @@ async function logRateLimitExceeded(
 ) {
   try {
     const supabase = supabaseManager.getServiceClient();
+    if (!supabase) {
+      throw new Error('Service client not available');
+    }
     await supabase.from('rate_limit_violations').insert({
       api_key_id: apiKeyId,
       attempted_requests: attemptedCount,

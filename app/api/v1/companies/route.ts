@@ -42,6 +42,12 @@ async function handleGetRequest(request: Request) {
 
     // Create service client for API key validation
     const serviceClient = supabaseManager.getServiceClient()
+    if (!serviceClient) {
+      return NextResponse.json(
+        { error: 'Service client not available' },
+        { status: 500 }
+      )
+    }
 
     // O(1)化されたAPIキー認証（public_id埋め込み方式）
     const { data: authData, error: keyError } = await serviceClient

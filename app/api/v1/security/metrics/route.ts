@@ -22,6 +22,12 @@ async function handleGetRequest(request: NextRequest) {
     }
 
     const serviceClient = supabaseManager.getServiceClient();
+    if (!serviceClient) {
+      return NextResponse.json(
+        { error: 'Service client not available' },
+        { status: 500 }
+      );
+    }
 
     // APIキー検証
     const { data: authResult, error: authError } = await serviceClient

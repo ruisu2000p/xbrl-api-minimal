@@ -56,6 +56,9 @@ export async function GET(request: NextRequest) {
 
       // 4. Supabaseクライアント作成
       const supabase = supabaseManager.getServiceClient();
+    if (!supabase) {
+      throw new Error('Service client not available');
+    }
 
       // 5. セキュアなクエリ構築
       let query = supabase
@@ -197,6 +200,9 @@ export async function POST(request: NextRequest) {
 
       // Supabaseに挿入
       const supabase = supabaseManager.getServiceClient();
+    if (!supabase) {
+      throw new Error('Service client not available');
+    }
       const { data, error } = await supabase
         .from('markdown_files_metadata')
         .insert(sanitizedData)
@@ -247,6 +253,9 @@ async function authenticateRequest(
   }
 
   const supabase = supabaseManager.getServiceClient();
+    if (!supabase) {
+      throw new Error('Service client not available');
+    }
 
   // APIキー検証（RPC関数使用）
   const { data, error } = await supabase

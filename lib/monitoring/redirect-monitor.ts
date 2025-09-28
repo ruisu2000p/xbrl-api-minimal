@@ -120,6 +120,12 @@ export class RedirectSecurityMonitor {
   private async persistToDatabase(event: RedirectSecurityEvent): Promise<void> {
     try {
       const serviceClient = supabaseManager.getServiceClient();
+    if (!serviceClient) {
+      return NextResponse.json(
+        { error: 'Service client not available' },
+        { status: 500 }
+      );
+    }
 
       await serviceClient.from('security_violations_log').insert({
         timestamp: event.timestamp.toISOString(),
@@ -399,6 +405,12 @@ export class RedirectSecurityMonitor {
 
         // データベースにアラート記録
         const serviceClient = supabaseManager.getServiceClient();
+    if (!serviceClient) {
+      return NextResponse.json(
+        { error: 'Service client not available' },
+        { status: 500 }
+      );
+    }
         await serviceClient.from('security_alerts').insert({
           timestamp: new Date().toISOString(),
           source: 'redirect_monitor',
