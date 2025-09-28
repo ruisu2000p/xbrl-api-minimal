@@ -31,15 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Supabase Admin Clientを取得
-    let supabaseAdmin;
-    try {
-      supabaseAdmin = await createServiceClient();
-    } catch (error) {
-      return createApiResponse.internalError(
-        error,
-        'Server configuration error'
-      );
-    }
+    const supabaseAdmin = await createServiceClient();
 
     // Supabaseで既存ユーザーをチェック（最適化: メールで直接検索）
     // まずusersテーブルから直接検索を試みる
@@ -117,39 +109,34 @@ export async function POST(request: NextRequest) {
     }
 
     // APIキーの生成と保存
-    const { apiKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
+    let apiKey = null;
+    try {
+      const { apiKey: generatedKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
+      apiKey = generatedKey;
 
-    const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
-      .from('api_keys_main')
-      .schema('private')
-      .insert({
-        user_id: userId,
-        name: 'Default API Key',  // NOT NULL制約のため必須
-        key_prefix: keyPrefix,
-        key_suffix: keySuffix,  // suffixも保存
-        key_hash: keyHash,
-        is_active: true
-      })
-      .select()
-      .single();
+      const { data: apiKeyData, error: apiKeyError } = await supabaseAdmin
+        .from('api_keys_main')
+        .schema('private')
+        .insert({
+          user_id: userId,
+          name: 'Default API Key',  // NOT NULL制約のため必須
+          key_prefix: keyPrefix,
+          key_suffix: keySuffix,  // suffixも保存
+          key_hash: keyHash,
+          is_active: true
+        })
+        .select()
+        .single();
 
-    if (apiKeyError) {
-      console.error('API key creation error:', apiKeyError);
-      // Rollback user creation if API key generation fails
-      try {
-        await supabaseAdmin.from('users').delete().eq('id', userId);
-      } catch (dbDeleteError) {
-        console.error('Failed to delete user record during rollback:', dbDeleteError);
+      if (apiKeyError) {
+        console.error('API key creation error:', apiKeyError);
+        // APIキー作成に失敗してもユーザー登録は成功とする
+        apiKey = null;
       }
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(userId);
-      } catch (authDeleteError) {
-        console.error('Failed to delete auth user during rollback:', authDeleteError);
-      }
-      return NextResponse.json(
-        { success: false, error: 'APIキーの作成に失敗しました' },
-        { status: 500 }
-      );
+    } catch (error) {
+      console.error('Failed to generate API key:', error);
+      // APIキー生成に失敗してもユーザー登録は成功とする
+      apiKey = null;
     }
     
     // セキュリティのため、機密情報はログに出力しない
