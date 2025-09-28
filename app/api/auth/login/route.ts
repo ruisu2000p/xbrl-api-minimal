@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // ユーザーのAPIキー情報を取得（Service Roleが設定されている場合のみ）
     // 注: privateスキーマへのアクセスにはService Roleが必要なため、
     // 現在はAPIキー情報の取得をスキップ
-    const apiKeys = null;
+    const apiKeys: any[] = [];
 
     // レスポンスの作成 - SSRクライアントがCookieを自動管理
     return createApiResponse.success({
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         name: authData.user.user_metadata?.name || '',
         company: authData.user.user_metadata?.company || null,
         plan: authData.user.user_metadata?.plan || 'beta',
-        apiKey: apiKeys && apiKeys.length > 0
+        apiKey: apiKeys.length > 0
           ? `${apiKeys[0].key_prefix}...${apiKeys[0].key_suffix}`
           : null,
         createdAt: authData.user.created_at
