@@ -19,6 +19,9 @@ export async function generateCSRFToken(sessionId: string): Promise<string> {
 
   try {
     const supabase = supabaseManager.getServiceClient()
+    if (!supabase) {
+      throw new Error('Service client not available for CSRF protection');
+    }
     await supabase
       .from('csrf_tokens')
       .upsert({
@@ -86,6 +89,9 @@ export async function validateCSRFToken(
     // 4. Verify token against stored hash in database
     const hashedToken = crypto.createHash('sha256').update(tokenToValidate).digest('hex')
     const supabase = supabaseManager.getServiceClient()
+    if (!supabase) {
+      throw new Error('Service client not available for CSRF protection');
+    }
 
     const { data: storedToken, error } = await supabase
       .from('csrf_tokens')
@@ -137,6 +143,9 @@ export async function checkRateLimit(
 ): Promise<boolean> {
   try {
     const supabase = supabaseManager.getServiceClient()
+    if (!supabase) {
+      throw new Error('Service client not available for CSRF protection');
+    }
     const now = Date.now()
     const windowStart = new Date(now - windowMs).toISOString()
 
@@ -180,6 +189,9 @@ export async function checkRateLimit(
 export async function cleanupExpiredData(): Promise<void> {
   try {
     const supabase = supabaseManager.getServiceClient()
+    if (!supabase) {
+      throw new Error('Service client not available for CSRF protection');
+    }
     const now = new Date().toISOString()
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
 

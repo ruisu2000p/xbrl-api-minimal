@@ -95,6 +95,10 @@ export class RateLimiter {
     const windowEnd = new Date(now.getTime() + windowMs)
 
     const supabase = supabaseManager.getServiceClient()
+    if (!supabase) {
+      console.error('Service client not available for rate limiting');
+      return { allowed: true, limit: 100, remaining: 100, resetTime: new Date() };
+    }
 
     // 現在のウィンドウでのリクエスト数を取得
     const { data: entries, error: fetchError } = await supabase
@@ -214,6 +218,10 @@ export class RateLimiter {
    */
   private async cleanupOldEntries(identifier: string, before: Date): Promise<void> {
     const supabase = supabaseManager.getServiceClient()
+    if (!supabase) {
+      console.error('Service client not available for rate limiting');
+      return;
+    }
 
     const { error } = await supabase
       .from('rate_limit_entries')
@@ -258,6 +266,10 @@ export class RateLimiter {
     // Supabaseから削除
     try {
       const supabase = supabaseManager.getServiceClient()
+      if (!supabase) {
+        console.error('Service client not available for rate limiting');
+        return;
+      }
       const { error } = await supabase
         .from('rate_limit_entries')
         .delete()
@@ -282,6 +294,10 @@ export class RateLimiter {
   } | null> {
     try {
       const supabase = supabaseManager.getServiceClient()
+      if (!supabase) {
+        console.error('Service client not available for rate limiting');
+        return null;
+      }
       const now = new Date()
       const config = configManager.getConfig()
       const windowMs = config.rateLimit.windowMs

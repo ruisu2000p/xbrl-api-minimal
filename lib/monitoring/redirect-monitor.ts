@@ -3,6 +3,7 @@
  * GitHub Security Alert #13 - リダイレクトセキュリティ監視
  */
 
+import { NextResponse } from 'next/server';
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
 
 export interface RedirectSecurityEvent {

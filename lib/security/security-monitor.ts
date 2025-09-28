@@ -4,7 +4,7 @@
  */
 
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export interface SecurityEvent {
   timestamp: Date;

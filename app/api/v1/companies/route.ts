@@ -274,12 +274,14 @@ async function handleGetRequest(request: Request) {
     // エラーログ記録
     if (authResult?.key_id) {
       const serviceClient = supabaseManager.getServiceClient()
-      await serviceClient.from('api_key_usage_logs').insert({
+      if (serviceClient) {
+        await serviceClient.from('api_key_usage_logs').insert({
         ...logParams,
         status: 'error',
         responseTime: Date.now() - startTime,
         errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      })
+        })
+      }
     }
 
     // バリデーションエラーの場合
@@ -335,6 +337,9 @@ async function handlePostRequest(request: Request) {
     }
 
     const serviceClient = supabaseManager.getServiceClient()
+    if (!serviceClient) {
+      return NextResponse.json({ error: 'Service client not available' }, { status: 500 })
+    }
     const { data: authResult, error: authError } = await serviceClient
       .rpc('verify_api_key_complete_v2', { p_api_key: apiKey })
 
