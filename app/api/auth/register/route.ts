@@ -146,7 +146,15 @@ export async function POST(request: NextRequest) {
       apiKey = generatedKey;
 
       // privateスキーマへのアクセスにはService Roleが必要な場合があるため、利用可能な方を使用
-      const dbClient: SupabaseClient = supabaseAdmin || supabase;
+      // Service Roleが取れなければsupabaseにフォールバック
+      const dbClient = supabaseAdmin ?? supabase;
+
+      // 万一どちらも無ければエラーに（この状況は発生しないはずだが型安全のため）
+      if (!dbClient) {
+        console.error('No Supabase client available for API key creation');
+        throw new Error('Supabase client initialization failed');
+      }
+
       const { data: apiKeyData, error: apiKeyError } = await dbClient
         .from('api_keys_main')
         .schema('private')
