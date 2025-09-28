@@ -18,7 +18,19 @@ export async function GET(request: NextRequest) {
       nodeEnv: process.env.NODE_ENV
     });
 
-    const supabase = await createServerSupabaseClient();
+    let supabase;
+    try {
+      supabase = await createServerSupabaseClient();
+    } catch (clientError) {
+      console.error('Failed to create Supabase client:', clientError);
+      return NextResponse.json(
+        {
+          error: 'Failed to initialize client',
+          details: clientError instanceof Error ? clientError.message : String(clientError)
+        },
+        { status: 500 }
+      );
+    }
 
     // Try to get the token from Authorization header first
     const authHeader = request.headers.get('authorization');
