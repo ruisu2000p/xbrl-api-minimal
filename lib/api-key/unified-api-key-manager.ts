@@ -274,7 +274,7 @@ export class UnifiedApiKeyManager {
   /**
    * ユーザーのAPIキー一覧取得
    */
-  async listUserApiKeys(userId: string): Promise<ApiKey[]> {
+  async listUserApiKeys(userId: string): Promise<Partial<ApiKey>[]> {
     try {
       const { data, error } = await this.supabase
         .from(API_KEY_CONFIG.TABLE)

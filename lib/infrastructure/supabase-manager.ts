@@ -95,12 +95,7 @@ export class SupabaseManager {
             detectSessionInUrl: true,
             flowType: 'pkce',
             storage: window.localStorage,
-            storageKey: `sb-${url.match(/https:\/\/([^.]+)/)?.[1]}-auth-token`,
-            cookieOptions: {
-              name: `sb-${url.match(/https:\/\/([^.]+)/)?.[1]}-auth-token`,
-              sameSite: 'lax',
-              secure: true
-            }
+            storageKey: `sb-${url.match(/https:\/\/([^.]+)/)?.[1]}-auth-token`
           },
           global: {
             headers: {
