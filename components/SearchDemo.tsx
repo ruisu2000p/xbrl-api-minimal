@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, useCallback, useMemo } from 'react';
 import VideoPlayer from './VideoPlayer';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Types
 interface CompanyData {
@@ -51,6 +52,9 @@ export default function SearchDemo({
   apiEndpoint = '/api/v1/companies/',
   demoMode = true
 }: SearchDemoProps) {
+  // Language hook
+  const { t } = useLanguage();
+
   // State
   const [searchTerm, setSearchTerm] = useState(defaultSearchTerm);
   const [isLoading, setIsLoading] = useState(false);
@@ -204,16 +208,16 @@ export default function SearchDemo({
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-full mb-6">
             <i className="ri-code-s-slash-line text-blue-600 mr-2" aria-hidden="true"></i>
-            <span className="text-blue-700 text-sm font-medium">インタラクティブAPI</span>
+            <span className="text-blue-700 text-sm font-medium">{t('home.searchDemo.badge')}</span>
           </div>
           <h2 className="text-5xl font-bold text-gray-900 mb-6">
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              リアルタイム
+              {t('home.searchDemo.title')}
             </span>
-            財務分析
+            {t('home.searchDemo.titleSuffix')}
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            財務データに瞬時にアクセス。Claudemcpによる分析を提供。
+            {t('home.searchDemo.subtitle')}
           </p>
         </div>
 
@@ -230,7 +234,7 @@ export default function SearchDemo({
                       <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                         <i className="ri-play-circle-line text-white text-lg" aria-hidden="true"></i>
                       </div>
-                      <span className="text-white font-semibold text-lg">XBRL Financial API Demo</span>
+                      <span className="text-white font-semibold text-lg">{t('home.searchDemo.videoHeader')}</span>
                     </div>
                   </div>
                   <button
@@ -240,7 +244,7 @@ export default function SearchDemo({
                     aria-label="Switch to interactive mode"
                   >
                     <i className="ri-code-s-slash-line text-white" aria-hidden="true"></i>
-                    <span className="text-white text-sm font-medium">インタラクティブモード</span>
+                    <span className="text-white text-sm font-medium">{t('home.searchDemo.interactiveMode')}</span>
                   </button>
                 </div>
               </div>
@@ -263,32 +267,31 @@ export default function SearchDemo({
                   <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
                     <i className="ri-information-line text-white text-xl" aria-hidden="true"></i>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">デモビデオ</h3>
+                  <h3 className="text-xl font-bold text-gray-900">{t('home.searchDemo.demoVideoTitle')}</h3>
                 </div>
                 <p className="text-gray-600 leading-relaxed">
-                  XBRL Financial APIの実際の動作をご覧ください。企業の財務データを瞬時に取得し、
-                  AI分析によるインサイトを提供する様子をデモンストレーションしています。
+                  {t('home.searchDemo.demoVideoDescription')}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="flex items-start space-x-3">
                     <i className="ri-check-double-line text-green-500 text-xl mt-1" aria-hidden="true"></i>
                     <div>
-                      <p className="font-semibold text-gray-800">リアルタイムデータ</p>
-                      <p className="text-sm text-gray-600">最新の財務情報を即座に取得</p>
+                      <p className="font-semibold text-gray-800">{t('home.searchDemo.realtimeData')}</p>
+                      <p className="text-sm text-gray-600">{t('home.searchDemo.realtimeDataDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
                     <i className="ri-check-double-line text-green-500 text-xl mt-1" aria-hidden="true"></i>
                     <div>
-                      <p className="font-semibold text-gray-800">AI分析</p>
-                      <p className="text-sm text-gray-600">Claudeによる高度な解析</p>
+                      <p className="font-semibold text-gray-800">{t('home.searchDemo.aiAnalysis')}</p>
+                      <p className="text-sm text-gray-600">{t('home.searchDemo.aiAnalysisDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
                     <i className="ri-check-double-line text-green-500 text-xl mt-1" aria-hidden="true"></i>
                     <div>
-                      <p className="font-semibold text-gray-800">使いやすいAPI</p>
-                      <p className="text-sm text-gray-600">シンプルなRESTful設計</p>
+                      <p className="font-semibold text-gray-800">{t('home.searchDemo.easyApi')}</p>
+                      <p className="text-sm text-gray-600">{t('home.searchDemo.easyApiDesc')}</p>
                     </div>
                   </div>
                 </div>
@@ -321,7 +324,7 @@ export default function SearchDemo({
                     aria-label="Switch to video mode"
                   >
                     <i className="ri-play-circle-line text-white" aria-hidden="true"></i>
-                    <span className="text-white text-sm font-medium">動画モード</span>
+                    <span className="text-white text-sm font-medium">{t('home.searchDemo.videoMode')}</span>
                   </button>
                   <div className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
                     <span className="text-white text-sm font-medium">XBRL Financial API</span>
@@ -353,7 +356,7 @@ export default function SearchDemo({
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="bg-white/20 text-white placeholder-white/70 px-3 py-1 rounded-lg border-0 outline-none text-sm flex-1 focus:ring-2 focus:ring-white/50"
-                      placeholder="企業名またはコード"
+                      placeholder={t('home.searchDemo.inputPlaceholder')}
                       autoComplete="organization"
                       onKeyDown={handleInputKeyDown}
                       aria-label="Search company name or code"
@@ -371,12 +374,12 @@ export default function SearchDemo({
                     {isLoading ? (
                       <div className="flex items-center justify-center">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true"></div>
-                        <span>分析中...</span>
+                        <span>{t('home.searchDemo.analyzing')}</span>
                       </div>
                     ) : (
                       <>
                         <i className="ri-search-line mr-2" aria-hidden="true"></i>
-                        実行
+                        {t('home.searchDemo.execute')}
                       </>
                     )}
                   </button>
@@ -389,7 +392,7 @@ export default function SearchDemo({
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-2xl">
                     <div className="flex items-center space-x-2">
                       <i className="ri-error-warning-line text-red-600" aria-hidden="true"></i>
-                      <span className="font-medium">エラー:</span>
+                      <span className="font-medium">{t('home.searchDemo.error')}</span>
                       <span>{error}</span>
                     </div>
                   </div>
@@ -412,7 +415,7 @@ export default function SearchDemo({
                             <i className="ri-check-line mr-1" aria-hidden="true"></i>
                             200 OK
                           </span>
-                          <span>Response time: {RESPONSE_TIME_MS}ms</span>
+                          <span>{t('home.searchDemo.responseTime').replace('{time}', RESPONSE_TIME_MS.toString())}</span>
                         </div>
                       </div>
                     </div>
@@ -421,7 +424,7 @@ export default function SearchDemo({
                     <div className="p-6">
                       <div className="bg-gray-900 rounded-xl p-6 font-mono text-sm overflow-x-auto">
                         <div className="flex items-center justify-between mb-4">
-                          <div className="text-gray-400 text-xs">JSON Response</div>
+                          <div className="text-gray-400 text-xs">{t('home.searchDemo.jsonResponse')}</div>
                           <button
                             onClick={handleCopyToClipboard}
                             className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-600"
@@ -443,14 +446,15 @@ export default function SearchDemo({
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-2">
                               <i className="ri-lightbulb-line text-orange-600" aria-hidden="true"></i>
-                              <span className="font-semibold text-orange-800">分析結果</span>
+                              <span className="font-semibold text-orange-800">{t('home.searchDemo.analysisResult')}</span>
                             </div>
                           </div>
                           <p className="text-gray-700 text-sm leading-relaxed">
-                            {sampleResponse.company.name}の財務データを取得しました。
-                            ROE {sampleResponse.ratios.roe}%、
-                            時価総額{formatCurrency(sampleResponse.company.market_cap)}の優良企業です。
-                            ESGスコアも{sampleResponse.esg_score.total}と高く、持続可能な経営を行っています。
+                            {t('home.searchDemo.analysisText')
+                              .replace('{company}', sampleResponse.company.name)
+                              .replace('{roe}', sampleResponse.ratios.roe.toString())
+                              .replace('{marketCap}', formatCurrency(sampleResponse.company.market_cap))
+                              .replace('{esg}', sampleResponse.esg_score.total.toString())}
                           </p>
                         </div>
                       </div>
@@ -470,7 +474,7 @@ export default function SearchDemo({
                     </div>
                     <div className="p-6 text-center text-gray-500">
                       <i className="ri-message-3-line text-4xl mb-4 opacity-50" aria-hidden="true"></i>
-                      <p>企業名やコードを入力して分析を開始してください</p>
+                      <p>{t('home.searchDemo.startMessage')}</p>
                     </div>
                   </div>
                 </div>
@@ -486,24 +490,24 @@ export default function SearchDemo({
               <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <i className="ri-robot-2-line text-white text-xl" aria-hidden="true"></i>
               </div>
-              <h3 className="font-bold text-gray-900 mb-2">AI分析</h3>
-              <p className="text-gray-600 text-sm">Claude Desktopスタイルの直感的なインターフェース</p>
+              <h3 className="font-bold text-gray-900 mb-2">{t('home.searchDemo.feature1.title')}</h3>
+              <p className="text-gray-600 text-sm">{t('home.searchDemo.feature1.desc')}</p>
             </div>
 
             <div className="text-center p-6 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-lg">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <i className="ri-database-2-line text-white text-xl" aria-hidden="true"></i>
               </div>
-              <h3 className="font-bold text-gray-900 mb-2">豊富なデータ</h3>
-              <p className="text-gray-600 text-sm">5年分の有価証券報告書データへのアクセス</p>
+              <h3 className="font-bold text-gray-900 mb-2">{t('home.searchDemo.feature2.title')}</h3>
+              <p className="text-gray-600 text-sm">{t('home.searchDemo.feature2.desc')}</p>
             </div>
 
             <div className="text-center p-6 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-lg">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <i className="ri-speed-line text-white text-xl" aria-hidden="true"></i>
               </div>
-              <h3 className="font-bold text-gray-900 mb-2">Claudeによる分析</h3>
-              <p className="text-gray-600 text-sm">データ取得を気軽に行えます。</p>
+              <h3 className="font-bold text-gray-900 mb-2">{t('home.searchDemo.feature3.title')}</h3>
+              <p className="text-gray-600 text-sm">{t('home.searchDemo.feature3.desc')}</p>
             </div>
           </div>
         </div>

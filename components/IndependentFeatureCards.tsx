@@ -4,48 +4,50 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import VideoPlayer from './VideoPlayer';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function IndependentFeatureCards() {
+  const { t } = useLanguage();
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
 
   const features = [
     {
       icon: 'ri-line-chart-line',
-      title: 'リアルタイム財務分析',
-      description: '詳細な財務指標とデータ分析により、企業の財務状況を深く理解できます',
+      title: t('home.features.feature1.title'),
+      description: t('home.features.feature1.description'),
       image: 'https://readdy.ai/api/search-image?query=Professional%20investment%20banking%20trading%20floor%20with%20multiple%20financial%20monitors%20displaying%20advanced%20analytics%2C%20sophisticated%20data%20visualization%20with%20candlestick%20charts%20and%20risk%20metrics%2C%20modern%20dark%20theme%20interface%20with%20blue%20and%20green%20accents%2C%20high-end%20financial%20technology%20environment&width=400&height=300&seq=feature1&orientation=landscape',
       gradient: 'from-blue-500 to-indigo-500',
       hasVideo: true,
       highlights: [
-        '最新の財務データをリアルタイム取得',
-        'AIによる自動分析レポート生成',
-        '複数企業の比較分析機能'
+        t('home.features.feature1.highlight1'),
+        t('home.features.feature1.highlight2'),
+        t('home.features.feature1.highlight3')
       ]
     },
     {
       icon: 'ri-file-text-line',
-      title: '有価証券報告書まとめ',
-      description: 'Claudeが有価証券報告書から重要な情報を自動抽出し、分かりやすくまとめます',
+      title: t('home.features.feature2.title'),
+      description: t('home.features.feature2.description'),
       image: 'https://readdy.ai/api/search-image?query=Professional%20financial%20document%20analysis%20with%20Claude%20AI%20interface%2C%20sophisticated%20document%20processing%20visualization%2C%20clean%20white%20background%20with%20blue%20and%20orange%20accents%2C%20modern%20AI-powered%20document%20summarization%20technology%2C%20organized%20financial%20reports%20layout&width=400&height=300&seq=feature2&orientation=landscape',
       gradient: 'from-orange-500 to-red-500',
       hasVideo: false,
       highlights: [
-        '重要項目の自動抽出',
-        'エグゼクティブサマリー作成',
-        'リスク要因の可視化'
+        t('home.features.feature2.highlight1'),
+        t('home.features.feature2.highlight2'),
+        t('home.features.feature2.highlight3')
       ]
     },
     {
       icon: 'ri-database-2-line',
-      title: '有価証券報告書データ加工',
-      description: 'Claudeによる自動データ加工で、複雑な有価証券報告書データを使いやすい形式に変換',
+      title: t('home.features.feature3.title'),
+      description: t('home.features.feature3.description'),
       image: 'https://readdy.ai/api/search-image?query=Advanced%20data%20processing%20and%20transformation%20interface%20powered%20by%20Claude%20AI%2C%20sophisticated%20financial%20data%20visualization%20with%20clean%20modern%20design%2C%20organized%20data%20tables%20and%20charts%2C%20professional%20fintech%20environment%20with%20white%20and%20blue%20color%20scheme&width=400&height=300&seq=feature3&orientation=landscape',
       gradient: 'from-green-500 to-emerald-500',
       hasVideo: false,
       highlights: [
-        '構造化データへの自動変換',
-        'ExcelやCSVエクスポート',
-        'カスタマイズ可能な出力形式'
+        t('home.features.feature3.highlight1'),
+        t('home.features.feature3.highlight2'),
+        t('home.features.feature3.highlight3')
       ]
     }
   ];
@@ -62,17 +64,17 @@ export default function IndependentFeatureCards() {
         <div className="text-center mb-20">
           <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-full mb-6">
             <i className="ri-award-line text-blue-600 mr-2"></i>
-            <span className="text-blue-700 text-sm font-medium">プレミアム機能</span>
+            <span className="text-blue-700 text-sm font-medium">{t('home.features.badge')}</span>
           </div>
           <h2 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              プロフェッショナル財務分析
+              {t('home.features.title')}
             </span>
-            <br/>で投資の未来を切り拓く
+            <br/>{t('home.features.titleSuffix')}
           </h2>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            高精度な財務データとユーザーフレンドリーなインターフェースで、
-            <br/>投資分析を効率化します。
+            {t('home.features.subtitle1')}
+            <br/>{t('home.features.subtitle2')}
           </p>
         </div>
 
@@ -113,13 +115,13 @@ export default function IndependentFeatureCards() {
                         className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl"
                       >
                         <i className={`${activeVideo === index ? "ri-image-line" : "ri-play-circle-line"} text-xl mr-2`}></i>
-                        {activeVideo === index ? 'イメージに戻す' : 'デモ動画を見る'}
+                        {activeVideo === index ? t('home.features.backToImage') : t('home.features.watchDemo')}
                       </button>
                     )}
                     <Link href="/demo">
                       <button className="flex items-center px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-300">
                         <i className="ri-arrow-right-line text-xl mr-2"></i>
-                        詳細を見る
+                        {t('home.features.viewDetails')}
                       </button>
                     </Link>
                   </div>
@@ -172,13 +174,13 @@ export default function IndependentFeatureCards() {
         <div className="text-center mt-16">
           <div className="inline-flex items-center space-x-6 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 shadow-xl">
             <div className="text-left">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">プロフェッショナル機能を体験</h3>
-              <p className="text-gray-600">スタンダードプランを体験してみてください。</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('home.features.cta.title')}</h3>
+              <p className="text-gray-600">{t('home.features.cta.description')}</p>
             </div>
             <Link href="/pricing">
               <button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 cursor-pointer whitespace-nowrap shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                 <i className="ri-vip-crown-line mr-2"></i>
-                スタンダードを試す
+                {t('home.features.cta.button')}
               </button>
             </Link>
           </div>
