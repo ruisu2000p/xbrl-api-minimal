@@ -43,13 +43,15 @@ function DashboardContent() {
           <p className="text-gray-600 mt-2">アカウント設定と管理機能</p>
         </div>
 
-        {/* JWT認証状態表示 */}
+        {/* JWT認証状態表示 (v8.0.0以降は不要) */}
+        {/*
         <div className="max-w-4xl mx-auto mb-8">
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">JWT認証状態</h2>
             <AuthDisplay />
           </div>
         </div>
+        */}
 
         <div className="max-w-4xl mx-auto">
           <AccountSettings />
