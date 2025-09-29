@@ -93,34 +93,42 @@ macOS:
   "mcpServers": {
     "xbrl-financial": {
       "command": "npx",
-      "args": ["shared-supabase-mcp-minimal@latest"],
+      "args": ["shared-supabase-mcp-minimal@8.1.0"],
       "env": {
-        "XBRL_API_KEY": "your-api-key-from-dashboard",
-        "XBRL_JWT_TOKEN": "your-jwt-token",
-        "XBRL_API_URL": "https://wpwqxhyiglbtlaimrjrx.supabase.co/functions/v1/gateway"
+        "XBRL_API_KEY": "your-api-key-from-dashboard"
       }
     }
   }
 }
 ```
 
-### 認証システムの仕組み
+**注意**: v8.0.0以降、JWT認証は不要になりました。APIキーのみで動作します。
 
-このプロジェクトは2層認証を実装しています：
+### 認証システムの仕組み (v8.0.0+)
 
-1. **JWT認証** (Supabase Auth)
-   - ユーザー登録・ログイン
-   - セッション管理
-   - パスワードリセット
+このプロジェクトはセキュアなAPIキー認証を実装しています：
 
-2. **独自APIキー** (Private Schema)
+1. **独自APIキー** (Private Schema)
    - ダッシュボードから発行
-   - `xbrl_v1_` プレフィックス付き
-   - PBKDF2ハッシュ化して保存
+   - `xbrl_` プレフィックス付き
+   - Edge Function内部でService Role Keyに変換
+   - RPC (SECURITY DEFINER) で安全に検証
 
-### APIキーとJWTトークンの取得方法
+2. **セキュリティ強化**
+   - 直クエリ完全排除（RPC一択）
+   - APIキーのマスキングログ
+   - 入力バリデーション（二重）
+   - trigram GIN高速検索
 
-1. **アカウント登録**
+### APIキーの取得方法
+
+開発用APIキー（テスト用）:
+```
+xbrl_zed68j6eu7_y2y9mneqg4q
+```
+
+本番用APIキーの発行:
+1. **アカウント登録** (将来実装予定)
    - https://xbrl-api-minimal.vercel.app/auth/register
 
 2. **ダッシュボードにアクセス**
@@ -131,6 +139,7 @@ macOS:
    - 名前を入力して「APIキー発行」をクリック
    - ⚠️ APIキーは一度だけ表示されます
 
+<!-- 旧JWT認証方式（v7.x以前）
 4. **JWTトークンを取得**
    - ダッシュボードの「JWT認証状態」セクションで確認
    - または開発者ツールのネットワークタブで`Authorization`ヘッダーを確認
@@ -138,6 +147,7 @@ macOS:
 5. **MCP設定に追加**
    - 取得したAPIキーを`XBRL_API_KEY`に設定
    - JWTトークンを`XBRL_JWT_TOKEN`に設定
+-->
 
 ### その他の推奨MCPサーバー
 
