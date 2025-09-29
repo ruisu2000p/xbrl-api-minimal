@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { supabaseManager } from "@/lib/infrastructure/supabase-manager";
 import SupabaseProvider from "@/components/SupabaseProvider";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import "./globals.css";
 
 const pacifico = Pacifico({
@@ -69,8 +70,10 @@ export default async function RootLayout({
         className={`${inter.variable} ${pacifico.variable} antialiased`}
       >
         <SupabaseProvider>
-          {children}
-          <SpeedInsights />
+          <LanguageProvider>
+            {children}
+            <SpeedInsights />
+          </LanguageProvider>
         </SupabaseProvider>
       </body>
     </html>

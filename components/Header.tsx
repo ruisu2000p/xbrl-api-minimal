@@ -1,6 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Header() {
+  const { language, setLanguage, t } = useLanguage();
+
   return (
     <header className="w-full bg-white/95 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -17,21 +22,28 @@ export default function Header() {
 
           <nav className="hidden md:flex items-center space-x-8">
             <Link href="/pricing" className="relative text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium group">
-              料金プラン
+              {t('nav.pricing')}
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
             </Link>
             <Link href="/docs" className="relative text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium group">
-              ドキュメント
+              {t('nav.docs')}
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
             </Link>
           </nav>
 
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setLanguage(language === 'ja' ? 'en' : 'ja')}
+              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg transition-colors font-medium"
+              aria-label="Switch language"
+            >
+              {language === 'ja' ? 'EN' : 'JA'}
+            </button>
             <Link href="/login" className="border-2 border-gray-300 text-gray-700 hover:border-blue-600 hover:text-blue-600 px-5 py-2 rounded-lg transition-all duration-300 cursor-pointer font-medium">
-              ログイン
+              {t('nav.login')}
             </Link>
             <Link href="/signup" className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 cursor-pointer whitespace-nowrap font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-              <span className="relative z-10">無料で始める</span>
+              <span className="relative z-10">{t('nav.signup')}</span>
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
             </Link>
           </div>
