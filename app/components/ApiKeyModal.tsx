@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ApiKeyModalProps {
   apiKey: string;
@@ -10,6 +11,7 @@ interface ApiKeyModalProps {
 
 export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -35,10 +37,10 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
             <i className="ri-shield-keyhole-line text-white text-2xl"></i>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            APIキーが発行されました
+            {t('apiKeyModal.title')}
           </h2>
           <p className="text-gray-600">
-            このキーは二度と表示されません。必ず安全な場所に保存してください。
+            {t('apiKeyModal.subtitle')}
           </p>
         </div>
 
@@ -46,12 +48,12 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
           <div className="flex items-center justify-between mb-3">
             <label className="text-sm font-semibold text-gray-700">
               <i className="ri-key-2-line mr-2"></i>
-              あなたのAPIキー
+              {t('apiKeyModal.yourKey')}
             </label>
             {copied && (
               <span className="text-sm text-green-600 font-medium">
                 <i className="ri-checkbox-circle-line mr-1"></i>
-                コピーしました！
+                {t('apiKeyModal.copied')}
               </span>
             )}
           </div>
@@ -63,7 +65,7 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
             <button
               onClick={handleCopy}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              aria-label="APIキーをコピー"
+              aria-label={t('apiKeyModal.copyButton')}
             >
               <i className={`${copied ? 'ri-checkbox-line' : 'ri-file-copy-line'} text-sm`}></i>
             </button>
@@ -74,11 +76,11 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
           <div className="flex items-start space-x-3">
             <i className="ri-alert-line text-amber-600 text-xl mt-0.5"></i>
             <div className="text-sm">
-              <p className="font-semibold text-amber-800 mb-1">重要な注意事項</p>
+              <p className="font-semibold text-amber-800 mb-1">{t('apiKeyModal.warning.title')}</p>
               <ul className="space-y-1 text-gray-700">
-                <li>• このキーは今回のみ表示されます</li>
-                <li>• 他人と共有しないでください</li>
-                <li>• 紛失した場合は新しいキーを再発行してください</li>
+                <li>{t('apiKeyModal.warning.item1')}</li>
+                <li>{t('apiKeyModal.warning.item2')}</li>
+                <li>{t('apiKeyModal.warning.item3')}</li>
               </ul>
             </div>
           </div>
@@ -90,14 +92,14 @@ export function ApiKeyModal({ apiKey, onClose }: ApiKeyModalProps) {
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-medium transition-colors flex items-center justify-center"
           >
             <i className="ri-arrow-right-line mr-2"></i>
-            ダッシュボードへ進む
+            {t('apiKeyModal.continue')}
           </button>
           <button
             onClick={handleCopy}
             className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors flex items-center"
           >
             <i className="ri-file-copy-line mr-2"></i>
-            コピー
+            {t('apiKeyModal.copy')}
           </button>
         </div>
       </div>

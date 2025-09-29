@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -20,7 +22,7 @@ export default function LoginPage() {
     setLoading(true)
 
     if (!formData.email || !formData.password) {
-      setError('メールアドレスとパスワードを入力してください')
+      setError(t('login.error.required'))
       setLoading(false)
       return
     }
@@ -35,9 +37,9 @@ export default function LoginPage() {
 
       if (error) {
         if (error.message?.includes('Invalid login credentials')) {
-          setError('メールアドレスまたはパスワードが正しくありません')
+          setError(t('login.error.invalid'))
         } else {
-          setError(error.message || 'ログイン中にエラーが発生しました')
+          setError(error.message || t('login.error.general'))
         }
       } else if (data?.user) {
         // ログイン成功 - ブラウザクライアントが認証を処理
@@ -45,7 +47,7 @@ export default function LoginPage() {
         router.refresh()
       }
     } catch (err: any) {
-      setError('ログイン中にエラーが発生しました')
+      setError(t('login.error.general'))
     } finally {
       setLoading(false)
     }
@@ -55,10 +57,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          XBRL API ログイン
+          {t('login.title')}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          アカウントにログインしてAPIキーを管理
+          {t('login.subtitle')}
         </p>
       </div>
 
@@ -73,7 +75,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                メールアドレス
+                {t('login.email')}
               </label>
               <input
                 id="email"
@@ -89,7 +91,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                パスワード
+                {t('login.password')}
               </label>
               <input
                 id="password"
@@ -109,7 +111,7 @@ export default function LoginPage() {
                   href="/auth/forgot-password"
                   className="font-medium text-blue-600 hover:text-blue-500"
                 >
-                  パスワードを忘れた方
+                  {t('login.forgot')}
                 </Link>
               </div>
             </div>
@@ -124,7 +126,7 @@ export default function LoginPage() {
                     : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
                 }`}
               >
-                {loading ? 'ログイン中...' : 'ログイン'}
+                {loading ? t('login.loading') : t('login.button')}
               </button>
             </div>
 
@@ -134,17 +136,17 @@ export default function LoginPage() {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">または</span>
+                  <span className="px-2 bg-white text-gray-500">{t('login.or')}</span>
                 </div>
               </div>
 
               <div className="mt-6 text-center">
-                <span className="text-sm text-gray-600">アカウントをお持ちでない方は</span>{' '}
+                <span className="text-sm text-gray-600">{t('login.noAccount')}</span>{' '}
                 <Link
                   href="/signup"
                   className="font-medium text-blue-600 hover:text-blue-500"
                 >
-                  新規登録
+                  {t('login.signup')}
                 </Link>
               </div>
             </div>

@@ -1,6 +1,9 @@
 'use client';
 
+import { useLanguage } from '@/contexts/LanguageContext';
+
 export default function DocsContent() {
+  const { t } = useLanguage();
   const codeExamples = {
     python: `import requests
 
@@ -66,29 +69,29 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
     {
       method: 'GET',
       path: '/v1/companies',
-      description: '企業一覧を取得',
+      description: t('docs.apiReference.endpoint1.description'),
       params: [
-        { name: 'industry', type: 'string', description: '業界でフィルタ（オプション）' },
-        { name: 'market', type: 'string', description: '市場でフィルタ（オプション）' },
-        { name: 'limit', type: 'number', description: '取得件数（デフォルト: 20）' }
+        { name: t('docs.apiReference.endpoint1.param1.name'), type: 'string', description: t('docs.apiReference.endpoint1.param1.description') },
+        { name: t('docs.apiReference.endpoint1.param2.name'), type: 'string', description: t('docs.apiReference.endpoint1.param2.description') },
+        { name: t('docs.apiReference.endpoint1.param3.name'), type: 'number', description: t('docs.apiReference.endpoint1.param3.description') }
       ]
     },
     {
       method: 'GET',
       path: '/v1/companies/{id}',
-      description: '特定企業の詳細情報を取得',
+      description: t('docs.apiReference.endpoint2.description'),
       params: [
-        { name: 'id', type: 'string', description: '企業ID（必須）' }
+        { name: t('docs.apiReference.endpoint2.param1.name'), type: 'string', description: t('docs.apiReference.endpoint2.param1.description') }
       ]
     },
     {
       method: 'GET',
       path: '/v1/companies/{id}/financials',
-      description: '企業の財務データを取得',
+      description: t('docs.apiReference.endpoint3.description'),
       params: [
-        { name: 'id', type: 'string', description: '企業ID（必須）' },
-        { name: 'year', type: 'number', description: '対象年度（オプション）' },
-        { name: 'quarter', type: 'number', description: '四半期（1-4、オプション）' }
+        { name: t('docs.apiReference.endpoint3.param1.name'), type: 'string', description: t('docs.apiReference.endpoint3.param1.description') },
+        { name: t('docs.apiReference.endpoint3.param2.name'), type: 'number', description: t('docs.apiReference.endpoint3.param2.description') },
+        { name: t('docs.apiReference.endpoint3.param3.name'), type: 'number', description: t('docs.apiReference.endpoint3.param3.description') }
       ]
     }
   ];
@@ -97,22 +100,22 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
     <div className="space-y-8">
       {/* はじめに */}
       <section id="introduction" className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">概要</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('docs.introduction.title')}</h2>
         <div className="prose prose-gray max-w-none">
           <p className="text-gray-700 leading-relaxed mb-4">
-            財務データAPIは、日本の上場企業の財務情報や企業データにアクセスするためのRESTful APIです。
-            有価証券報告書のデータをClaudeが解析し、構造化された形式で提供します。
+            {t('docs.introduction.description1')}
+            {t('docs.introduction.description2')}
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="flex items-start space-x-3">
               <i className="ri-information-line text-blue-600 mt-0.5"></i>
               <div>
-                <h4 className="font-medium text-blue-800">主な機能</h4>
+                <h4 className="font-medium text-blue-800">{t('docs.introduction.features.title')}</h4>
                 <ul className="text-sm text-blue-700 mt-2 space-y-1">
-                  <li>• 企業の基本情報とプロフィール</li>
-                  <li>• 財務諸表データ（貸借対照表、損益計算書、キャッシュフロー計算書）</li>
-                  <li>• Claudeによる財務分析とインサイト</li>
-                  <li>• 有価証券報告書の自動要約</li>
+                  <li>• {t('docs.introduction.features.item1')}</li>
+                  <li>• {t('docs.introduction.features.item2')}</li>
+                  <li>• {t('docs.introduction.features.item3')}</li>
+                  <li>• {t('docs.introduction.features.item4')}</li>
                 </ul>
               </div>
             </div>
@@ -122,26 +125,26 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
 
       {/* クイックスタート */}
       <section id="quick-start" className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">クイックスタート</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('docs.quickstart.title')}</h2>
 
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">1. APIキーの取得</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('docs.quickstart.step1.title')}</h3>
             <p className="text-gray-700 mb-4">
-              まず、ダッシュボードからAPIキーを作成してください。
+              {t('docs.quickstart.step1.description')}
             </p>
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <i className="ri-arrow-right-line"></i>
-                <span>ダッシュボード → アカウント設定 → APIキー → 新しいキーを作成</span>
+                <span>{t('docs.quickstart.step1.path')}</span>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">2. 最初のリクエスト</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('docs.quickstart.step2.title')}</h3>
             <p className="text-gray-700 mb-4">
-              企業データを取得する基本的な例：
+              {t('docs.quickstart.step2.description')}
             </p>
             <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
               <pre className="text-green-400 text-sm">
@@ -151,9 +154,9 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">3. レスポンス形式</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('docs.quickstart.step3.title')}</h3>
             <p className="text-gray-700 mb-4">
-              APIは以下の形式でJSONレスポンスを返します：
+              {t('docs.quickstart.step3.description')}
             </p>
             <div className="bg-gray-50 rounded-lg p-4 overflow-x-auto">
               <pre className="text-sm text-gray-700">
@@ -180,21 +183,20 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
 
       {/* 認証 */}
       <section id="authentication" className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">認証</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('docs.authentication.title')}</h2>
 
         <div className="space-y-4">
           <p className="text-gray-700">
-            すべてのAPIリクエストには、HTTPヘッダーにBearerトークン形式でAPIキーを含める必要があります。
+            {t('docs.authentication.description')}
           </p>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <i className="ri-shield-keyhole-line text-yellow-600 mt-0.5"></i>
               <div>
-                <h4 className="font-medium text-yellow-800">セキュリティについて</h4>
+                <h4 className="font-medium text-yellow-800">{t('docs.authentication.security.title')}</h4>
                 <p className="text-sm text-yellow-700 mt-1">
-                  APIキーは機密情報です。クライアントサイドのコードに直接記述せず、
-                  サーバーサイドまたは環境変数として安全に管理してください。
+                  {t('docs.authentication.security.description')}
                 </p>
               </div>
             </div>
@@ -210,7 +212,7 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
 
       {/* API リファレンス */}
       <section id="api-reference" className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">API リファレンス</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('docs.apiReference.title')}</h2>
 
         <div className="space-y-6">
           {endpoints.map((endpoint, index) => (
@@ -230,14 +232,14 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
 
               {endpoint.params.length > 0 && (
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">パラメータ</h4>
+                  <h4 className="font-medium text-gray-900 mb-3">{t('docs.apiReference.parameters')}</h4>
                   <div className="overflow-hidden border border-gray-200 rounded-lg">
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">名前</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">型</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">説明</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('docs.apiReference.parameterTable.name')}</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('docs.apiReference.parameterTable.type')}</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('docs.apiReference.parameterTable.description')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
@@ -260,7 +262,7 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
 
       {/* 使用例 */}
       <section id="examples" className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">使用例</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('docs.examples.title')}</h2>
 
         <div className="space-y-8">
           {Object.entries(codeExamples).map(([language, code]) => (
@@ -285,7 +287,7 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
 
       {/* データ分析ガイド */}
       <section id="data-analysis" className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">データ分析ガイド</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('docs.dataAnalysis.title')}</h2>
 
         <div className="space-y-6">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
@@ -294,59 +296,59 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
                 <i className="ri-brain-line text-white text-xl"></i>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-blue-900">Claudeによる分析機能</h3>
-                <p className="text-blue-700">有価証券報告書を自動分析し、重要なインサイトを提供</p>
+                <h3 className="text-lg font-semibold text-blue-900">{t('docs.dataAnalysis.claude.title')}</h3>
+                <p className="text-blue-700">{t('docs.dataAnalysis.claude.description')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white/50 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">財務分析</h4>
-                <p className="text-sm text-blue-700">収益性、成長性、安全性の指標を自動計算</p>
+                <h4 className="font-medium text-blue-900 mb-2">{t('docs.dataAnalysis.feature1.title')}</h4>
+                <p className="text-sm text-blue-700">{t('docs.dataAnalysis.feature1.description')}</p>
               </div>
               <div className="bg-white/50 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">リスク評価</h4>
-                <p className="text-sm text-blue-700">企業の潜在的リスクを特定・評価</p>
+                <h4 className="font-medium text-blue-900 mb-2">{t('docs.dataAnalysis.feature2.title')}</h4>
+                <p className="text-sm text-blue-700">{t('docs.dataAnalysis.feature2.description')}</p>
               </div>
               <div className="bg-white/50 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">業界比較</h4>
-                <p className="text-sm text-blue-700">同業他社との詳細な比較分析</p>
+                <h4 className="font-medium text-blue-900 mb-2">{t('docs.dataAnalysis.feature3.title')}</h4>
+                <p className="text-sm text-blue-700">{t('docs.dataAnalysis.feature3.description')}</p>
               </div>
               <div className="bg-white/50 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">予測モデル</h4>
-                <p className="text-sm text-blue-700">将来の業績予測とシナリオ分析</p>
+                <h4 className="font-medium text-blue-900 mb-2">{t('docs.dataAnalysis.feature4.title')}</h4>
+                <p className="text-sm text-blue-700">{t('docs.dataAnalysis.feature4.description')}</p>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">分析データの活用方法</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('docs.dataAnalysis.usage.title')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-3">
                   <i className="ri-line-chart-line text-green-600"></i>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">投資判断</h4>
+                <h4 className="font-medium text-gray-900 mb-2">{t('docs.dataAnalysis.usage1.title')}</h4>
                 <p className="text-sm text-gray-600">
-                  財務指標と分析結果を基にした投資戦略の策定
+                  {t('docs.dataAnalysis.usage1.description')}
                 </p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
                   <i className="ri-file-chart-line text-purple-600"></i>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">レポート作成</h4>
+                <h4 className="font-medium text-gray-900 mb-2">{t('docs.dataAnalysis.usage2.title')}</h4>
                 <p className="text-sm text-gray-600">
-                  クライアント向けの詳細な財務分析レポート
+                  {t('docs.dataAnalysis.usage2.description')}
                 </p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-3">
                   <i className="ri-alarm-warning-line text-orange-600"></i>
                 </div>
-                <h4 className="font-medium text-gray-900 mb-2">リスク監視</h4>
+                <h4 className="font-medium text-gray-900 mb-2">{t('docs.dataAnalysis.usage3.title')}</h4>
                 <p className="text-sm text-gray-600">
-                  定期的な財務健全性チェックとアラート設定
+                  {t('docs.dataAnalysis.usage3.description')}
                 </p>
               </div>
             </div>
@@ -356,25 +358,25 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
 
       {/* よくある質問 */}
       <section className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">よくある質問</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('docs.faq.title')}</h2>
 
         <div className="space-y-4">
           {[
             {
-              question: 'APIの利用制限はありますか？',
-              answer: 'プランに応じて月間のリクエスト数に制限があります。スタンダードプランでは月間10,000リクエストまで利用可能です。'
+              question: t('docs.faq.q1'),
+              answer: t('docs.faq.a1')
             },
             {
-              question: 'データの更新頻度はどのくらいですか？',
-              answer: '有価証券報告書の提出後、通常24時間以内にデータが更新されます。四半期報告書は提出から48時間以内です。'
+              question: t('docs.faq.q2'),
+              answer: t('docs.faq.a2')
             },
             {
-              question: 'どの企業のデータが利用できますか？',
-              answer: '東証プライム、スタンダード、グロース市場に上場している全企業のデータを提供しています。'
+              question: t('docs.faq.q3'),
+              answer: t('docs.faq.a3')
             },
             {
-              question: 'APIキーが漏洩した場合はどうすればよいですか？',
-              answer: 'すぐにダッシュボードから該当のAPIキーを削除し、新しいAPIキーを作成してください。'
+              question: t('docs.faq.q4'),
+              answer: t('docs.faq.a4')
             }
           ].map((faq, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4">

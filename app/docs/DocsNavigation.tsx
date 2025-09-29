@@ -1,56 +1,58 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function DocsNavigation() {
+  const { t } = useLanguage();
   const [activeSection, setActiveSection] = useState('getting-started');
 
   const sections = [
     {
       id: 'getting-started',
-      title: 'はじめに',
+      title: t('docs.section.gettingStarted'),
       icon: 'ri-rocket-line',
       items: [
-        { id: 'introduction', title: '概要' },
-        { id: 'quick-start', title: 'クイックスタート' },
-        { id: 'authentication', title: '認証' }
+        { id: 'introduction', title: t('docs.section.gettingStarted.introduction') },
+        { id: 'quick-start', title: t('docs.section.gettingStarted.quickStart') },
+        { id: 'authentication', title: t('docs.section.gettingStarted.authentication') }
       ]
     },
     {
       id: 'api-reference',
-      title: 'API リファレンス',
+      title: t('docs.section.apiReference'),
       icon: 'ri-code-line',
       items: [
-        { id: 'companies', title: '企業データ' },
-        { id: 'financials', title: '財務データ' },
-        { id: 'analysis', title: '分析データ' }
+        { id: 'companies', title: t('docs.section.apiReference.companies') },
+        { id: 'financials', title: t('docs.section.apiReference.financials') },
+        { id: 'analysis', title: t('docs.section.apiReference.analysis') }
       ]
     },
     {
       id: 'guides',
-      title: 'ガイド',
+      title: t('docs.section.guides'),
       icon: 'ri-book-line',
       items: [
-        { id: 'data-analysis', title: 'データ分析' },
-        { id: 'reporting', title: 'レポート作成' },
-        { id: 'automation', title: '自動化' }
+        { id: 'data-analysis', title: t('docs.section.guides.dataAnalysis') },
+        { id: 'reporting', title: t('docs.section.guides.reporting') },
+        { id: 'automation', title: t('docs.section.guides.automation') }
       ]
     },
     {
       id: 'examples',
-      title: '使用例',
+      title: t('docs.section.examples'),
       icon: 'ri-lightbulb-line',
       items: [
-        { id: 'python', title: 'Python' },
-        { id: 'javascript', title: 'JavaScript' },
-        { id: 'curl', title: 'cURL' }
+        { id: 'python', title: t('docs.section.examples.python') },
+        { id: 'javascript', title: t('docs.section.examples.javascript') },
+        { id: 'curl', title: t('docs.section.examples.curl') }
       ]
     }
   ];
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">目次</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('docs.nav.tableOfContents')}</h3>
 
       <nav className="space-y-1">
         {sections.map((section) => (
@@ -94,13 +96,13 @@ export default function DocsNavigation() {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <i className="ri-question-line text-white text-sm"></i>
           </div>
-          <h4 className="font-medium text-blue-900">サポート</h4>
+          <h4 className="font-medium text-blue-900">{t('docs.nav.support')}</h4>
         </div>
         <p className="text-sm text-blue-700 mb-3">
-          ご不明な点がございましたら、お気軽にお問い合わせください。
+          {t('docs.nav.support.description')}
         </p>
         <a href="mailto:support@xbrl-api.com?subject=APIドキュメントについてのお問い合わせ" className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-blue-700 transition-colors cursor-pointer whitespace-nowrap text-center block">
-          サポートに連絡
+          {t('docs.nav.support.contact')}
         </a>
       </div>
     </div>

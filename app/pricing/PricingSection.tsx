@@ -3,37 +3,39 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function PricingSection() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const { t } = useLanguage();
 
   const plans = [
     {
-      name: 'フリーミアム',
+      name: t('pricing.plan.freemium.name'),
       price: { monthly: 0, yearly: 0 },
-      description: '直近1年間のデータに限定アクセス',
+      description: t('pricing.plan.freemium.description'),
       features: [
-        '直近1年間の財務データアクセス'
+        t('pricing.plan.freemium.feature1')
       ],
       limitations: [
-        '過去データは1年間のみ'
+        t('pricing.plan.freemium.limitation1')
       ],
-      buttonText: '無料で始める',
+      buttonText: t('pricing.plan.freemium.button'),
       buttonStyle: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700',
       popular: false,
       icon: 'ri-seedling-line',
       gradient: 'from-gray-400 to-gray-500'
     },
     {
-      name: 'スタンダード',
+      name: t('pricing.plan.standard.name'),
       price: { monthly: 2980, yearly: 29800 },
-      description: 'すべてのデータに無制限アクセス',
+      description: t('pricing.plan.standard.description'),
       features: [
-        '全期間の財務データアクセス',
-        '基本的なサポート'
+        t('pricing.plan.standard.feature1'),
+        t('pricing.plan.standard.feature2')
       ],
       limitations: [],
-      buttonText: 'スタンダードを選択',
+      buttonText: t('pricing.plan.standard.button'),
       buttonStyle: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700',
       popular: true,
       icon: 'ri-vip-crown-line',
@@ -54,17 +56,17 @@ export default function PricingSection() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-full mb-6">
             <i className="ri-price-tag-3-line text-blue-600 mr-2"></i>
-            <span className="text-blue-700 text-sm font-medium">透明な料金体系</span>
+            <span className="text-blue-700 text-sm font-medium">{t('pricing.badge')}</span>
           </div>
           <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              シンプルで分かりやすい
+              {t('pricing.title1')}
             </span>
-            <br/>料金プラン
+            <br/>{t('pricing.title2')}
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            あなたのニーズに合わせて選択できる2つのプラン。
-            <br/>いつでもアップグレード・ダウングレード可能です。
+            {t('pricing.subtitle1')}
+            <br/>{t('pricing.subtitle2')}
           </p>
         </div>
 
@@ -80,7 +82,7 @@ export default function PricingSection() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                月額プラン
+                {t('pricing.monthly')}
               </button>
               <button
                 onClick={() => setBillingPeriod('yearly')}
@@ -90,9 +92,9 @@ export default function PricingSection() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                年額プラン
+                {t('pricing.yearly')}
                 <span className="absolute -top-2 -right-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                  20%お得
+                  {t('pricing.yearlyDiscount')}
                 </span>
               </button>
             </div>
@@ -115,7 +117,7 @@ export default function PricingSection() {
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
                     <i className="ri-fire-line mr-1"></i>
-                    最も人気
+                    {t('pricing.popular')}
                   </div>
                 </div>
               )}
@@ -136,12 +138,12 @@ export default function PricingSection() {
                     ¥{plan.price[billingPeriod].toLocaleString()}
                   </span>
                   <span className="text-gray-500 ml-2">
-                    /{billingPeriod === 'monthly' ? '月' : '年'}
+                    /{billingPeriod === 'monthly' ? t('pricing.perMonth') : t('pricing.perYear')}
                   </span>
                 </div>
                 {billingPeriod === 'yearly' && plan.price.yearly > 0 && (
                   <div className="text-sm text-green-600 font-medium">
-                    月額換算 ¥{Math.floor(plan.price.yearly / 12).toLocaleString()}
+                    {t('pricing.monthlyEquivalent')} ¥{Math.floor(plan.price.yearly / 12).toLocaleString()}
                   </div>
                 )}
               </div>
@@ -150,7 +152,7 @@ export default function PricingSection() {
               <div className="mb-8">
                 <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
                   <i className="ri-check-line text-green-500 mr-2"></i>
-                  含まれる機能
+                  {t('pricing.features')}
                 </h4>
                 <ul className="space-y-3">
                   {plan.features.map((feature, featureIndex) => (
@@ -167,7 +169,7 @@ export default function PricingSection() {
                 <div className="mb-8">
                   <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
                     <i className="ri-information-line text-amber-500 mr-2"></i>
-                    制限事項
+                    {t('pricing.limitations')}
                   </h4>
                   <ul className="space-y-3">
                     {plan.limitations.map((limitation, limitIndex) => (
@@ -189,15 +191,15 @@ export default function PricingSection() {
 
               {/* Additional info */}
               <div className="text-center mt-6 text-sm text-gray-500">
-                {plan.name === 'フリーミアム' ? (
+                {plan.name === t('pricing.plan.freemium.name') ? (
                   <>
                     <i className="ri-time-line mr-1"></i>
-                    クレジットカード不要
+                    {t('pricing.noCard')}
                   </>
                 ) : (
                   <>
                     <i className="ri-shield-check-line mr-1"></i>
-                    すぐに利用開始
+                    {t('pricing.startNow')}
                   </>
                 )}
               </div>
@@ -207,42 +209,42 @@ export default function PricingSection() {
 
         {/* FAQ Section */}
         <div className="mt-20 bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">料金に関するよくある質問</h3>
+          <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">{t('pricing.faqTitle')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
                 <i className="ri-question-line text-blue-500 mr-2"></i>
-                プラン変更はいつでも可能ですか？
+                {t('pricing.faq1.q')}
               </h4>
               <p className="text-gray-600 text-sm">
-                はい、いつでもプランのアップグレード・ダウングレードが可能です。変更は次の請求サイクルから適用されます。
+                {t('pricing.faq1.a')}
               </p>
             </div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
                 <i className="ri-question-line text-blue-500 mr-2"></i>
-                支払い方法は何がありますか？
+                {t('pricing.faq2.q')}
               </h4>
               <p className="text-gray-600 text-sm">
-                Stripeによる安全な決済システムでクレジットカード決済に対応しています。
+                {t('pricing.faq2.a')}
               </p>
             </div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
                 <i className="ri-question-line text-blue-500 mr-2"></i>
-                解約手続きは簡単ですか？
+                {t('pricing.faq3.q')}
               </h4>
               <p className="text-gray-600 text-sm">
-                管理画面からいつでも簡単に解約できます。解約後も契約期間終了まではサービスをご利用いただけます。
+                {t('pricing.faq3.a')}
               </p>
             </div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
                 <i className="ri-question-line text-blue-500 mr-2"></i>
-                年額プランの割引について
+                {t('pricing.faq4.q')}
               </h4>
               <p className="text-gray-600 text-sm">
-                年額プランをお選びいただくと20%の割引が適用され、大変お得にご利用いただけます。
+                {t('pricing.faq4.a')}
               </p>
             </div>
           </div>

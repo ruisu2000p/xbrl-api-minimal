@@ -4,9 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signUp } from '@/app/actions/auth';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function SignupPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [selectedPlan, setSelectedPlan] = useState('standard');
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,10 +26,10 @@ export default function SignupPage() {
   const plans = [
     {
       id: 'freemium',
-      name: 'フリーミアム',
+      name: t('signup.plan.freemium.name'),
       price: { monthly: 0, yearly: 0 },
-      description: '直近1年間のデータに限定アクセス',
-      features: ['直近1年間の財務データアクセス'],
+      description: t('signup.plan.freemium.description'),
+      features: [t('signup.plan.freemium.feature1')],
       icon: 'ri-seedling-line',
       gradient: 'from-emerald-400 to-emerald-600',
       borderColor: 'border-emerald-200 hover:border-emerald-300',
@@ -36,10 +38,10 @@ export default function SignupPage() {
     },
     {
       id: 'standard',
-      name: 'スタンダード',
+      name: t('signup.plan.standard.name'),
       price: { monthly: 2980, yearly: 29800 },
-      description: 'すべてのデータに無制限アクセス',
-      features: ['全期間の財務データアクセス', 'APIアクセス'],
+      description: t('signup.plan.standard.description'),
+      features: [t('signup.plan.standard.feature1'), t('signup.plan.standard.feature2')],
       icon: 'ri-vip-crown-line',
       gradient: 'from-blue-500 to-purple-600',
       borderColor: 'border-blue-200 hover:border-blue-300',
@@ -63,44 +65,44 @@ export default function SignupPage() {
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('パスワードが一致しません');
+      setError(t('signup.error.passwordMismatch'));
       return;
     }
     if (!formData.agreeToTerms) {
-      setError('利用規約に同意してください');
+      setError(t('signup.error.terms'));
       return;
     }
     if (!formData.understandInvestmentAdvice) {
-      setError('投資助言に関する注意事項をご確認ください');
+      setError(t('signup.error.investment'));
       return;
     }
     // Enhanced password validation
     if (formData.password.length < 8) {
-      setError('パスワードは8文字以上で入力してください');
+      setError(t('signup.error.passwordLength'));
       return;
     }
 
     // Check for uppercase letter
     if (!/[A-Z]/.test(formData.password)) {
-      setError('パスワードには少なくとも1つの大文字（A-Z）を含めてください');
+      setError(t('signup.error.passwordUppercase'));
       return;
     }
 
     // Check for lowercase letter
     if (!/[a-z]/.test(formData.password)) {
-      setError('パスワードには少なくとも1つの小文字（a-z）を含めてください');
+      setError(t('signup.error.passwordLowercase'));
       return;
     }
 
     // Check for number
     if (!/[0-9]/.test(formData.password)) {
-      setError('パスワードには少なくとも1つの数字（0-9）を含めてください');
+      setError(t('signup.error.passwordNumber'));
       return;
     }
 
     // Check for special character (Supabase might require this)
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password)) {
-      setError('パスワードには少なくとも1つの特殊文字（!@#$%など）を含めてください');
+      setError(t('signup.error.passwordSpecial'));
       return;
     }
 
@@ -126,10 +128,10 @@ export default function SignupPage() {
         router.push('/dashboard?newAccount=true');
         return; // これ以降の処理をスキップ
       } else {
-        setError(result.error || 'アカウント作成に失敗しました');
+        setError(result.error || t('signup.error.failed'));
       }
     } catch (err) {
-      setError('アカウント作成中にエラーが発生しました');
+      setError(t('signup.error.general'));
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +139,7 @@ export default function SignupPage() {
 
   const getButtonText = () => {
     const plan = plans.find(p => p.id === selectedPlan);
-    return plan?.id === 'freemium' ? '無料アカウントを作成' : 'アカウント作成';
+    return plan?.id === 'freemium' ? t('signup.button.free') : t('signup.button.paid');
   };
 
   const formatPrice = (planId: string) => {
@@ -151,7 +153,7 @@ export default function SignupPage() {
   };
 
   const getPeriodText = () => {
-    return billingPeriod === 'monthly' ? '/月' : '/年';
+    return billingPeriod === 'monthly' ? t('signup.plan.perMonth') : t('signup.plan.perYear');
   };
 
   return (
@@ -162,10 +164,10 @@ export default function SignupPage() {
             <i className="ri-user-add-line text-white text-2xl"></i>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-4">
-            アカウント作成
+            {t('signup.title')}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            財務データAPIの利用を開始して、ビジネスの可能性を広げましょう
+            {t('signup.subtitle')}
           </p>
         </div>
 
@@ -176,8 +178,8 @@ export default function SignupPage() {
               <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl mb-4 shadow-lg">
                 <i className="ri-vip-crown-2-line text-white text-xl"></i>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">プランを選択</h2>
-              <p className="text-gray-600">あなたのビジネスに最適なプランをお選びください</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('signup.plan.title')}</h2>
+              <p className="text-gray-600">{t('signup.plan.subtitle')}</p>
             </div>
 
             {/* 請求期間切り替え */}
@@ -192,7 +194,7 @@ export default function SignupPage() {
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    月額
+                    {t('signup.plan.monthly')}
                   </button>
                   <button
                     onClick={() => setBillingPeriod('yearly')}
@@ -202,9 +204,9 @@ export default function SignupPage() {
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    年額
+                    {t('signup.plan.yearly')}
                     <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
-                      20%お得
+                      {t('signup.plan.yearlyDiscount')}
                     </span>
                   </button>
                 </div>
@@ -226,7 +228,7 @@ export default function SignupPage() {
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
                         <i className="ri-star-fill mr-1"></i>
-                        おすすめ
+                        {t('signup.plan.recommended')}
                       </div>
                     </div>
                   )}
@@ -248,7 +250,7 @@ export default function SignupPage() {
                       </div>
                       {billingPeriod === 'yearly' && plan.price.yearly > 0 && (
                         <div className="text-sm text-green-600 font-medium mt-1">
-                          月額換算 ¥{Math.floor(plan.price.yearly / 12).toLocaleString()}
+                          {t('signup.plan.monthlyEquivalent')} ¥{Math.floor(plan.price.yearly / 12).toLocaleString()}
                         </div>
                       )}
                     </div>
@@ -287,8 +289,8 @@ export default function SignupPage() {
               <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl mb-4 shadow-lg">
                 <i className="ri-user-line text-white text-xl"></i>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">アカウント情報</h2>
-              <p className="text-gray-600">必要な情報を入力してください</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('signup.account.title')}</h2>
+              <p className="text-gray-600">{t('signup.account.subtitle')}</p>
             </div>
 
             {error && (
@@ -305,7 +307,7 @@ export default function SignupPage() {
                 <div>
                   <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-3">
                     <i className="ri-user-line mr-2 text-gray-500"></i>
-                    お名前 *
+                    {t('signup.name')} *
                   </label>
                   <input
                     id="name"
@@ -316,14 +318,14 @@ export default function SignupPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
-                    placeholder="山田太郎"
+                    placeholder={t('signup.name.placeholder')}
                   />
                 </div>
 
                 <div>
                   <label htmlFor="company" className="block text-sm font-semibold text-gray-700 mb-3">
                     <i className="ri-building-line mr-2 text-gray-500"></i>
-                    会社名
+                    {t('signup.company')}
                   </label>
                   <input
                     id="company"
@@ -333,7 +335,7 @@ export default function SignupPage() {
                     value={formData.company}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
-                    placeholder="株式会社サンプル"
+                    placeholder={t('signup.company.placeholder')}
                   />
                 </div>
               </div>
@@ -341,7 +343,7 @@ export default function SignupPage() {
               <div>
                 <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-3">
                   <i className="ri-mail-line mr-2 text-gray-500"></i>
-                  メールアドレス *
+                  {t('signup.email')} *
                 </label>
                 <input
                   id="email"
@@ -352,7 +354,7 @@ export default function SignupPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
-                  placeholder="example@company.com"
+                  placeholder={t('signup.email.placeholder')}
                 />
               </div>
 
@@ -360,7 +362,7 @@ export default function SignupPage() {
                 <div>
                   <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-3">
                     <i className="ri-lock-line mr-2 text-gray-500"></i>
-                    パスワード *
+                    {t('signup.password')} *
                   </label>
                   <input
                     id="password"
@@ -371,30 +373,30 @@ export default function SignupPage() {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
-                    placeholder="パスワードを入力"
+                    placeholder={t('signup.password.placeholder')}
                   />
                   <div className="mt-2 text-xs space-y-1">
-                    <p className="text-gray-600 mb-2">パスワード要件：</p>
+                    <p className="text-gray-600 mb-2">{t('signup.password.requirements')}</p>
                     <ul className="space-y-1">
                       <li className={`flex items-center ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-400'}`}>
                         <i className={`ri-${formData.password.length >= 8 ? 'check' : 'close'}-line mr-2 text-xs`}></i>
-                        8文字以上
+                        {t('signup.password.length')}
                       </li>
                       <li className={`flex items-center ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
                         <i className={`ri-${/[A-Z]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
-                        大文字を含む (A-Z)
+                        {t('signup.password.uppercase')}
                       </li>
                       <li className={`flex items-center ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
                         <i className={`ri-${/[a-z]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
-                        小文字を含む (a-z)
+                        {t('signup.password.lowercase')}
                       </li>
                       <li className={`flex items-center ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
                         <i className={`ri-${/[0-9]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
-                        数字を含む (0-9)
+                        {t('signup.password.number')}
                       </li>
                       <li className={`flex items-center ${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
                         <i className={`ri-${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? 'check' : 'close'}-line mr-2 text-xs`}></i>
-                        特殊文字を含む (!@#$%など)
+                        {t('signup.password.special')}
                       </li>
                     </ul>
                   </div>
@@ -403,7 +405,7 @@ export default function SignupPage() {
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-3">
                     <i className="ri-lock-2-line mr-2 text-gray-500"></i>
-                    パスワード確認 *
+                    {t('signup.confirmPassword')} *
                   </label>
                   <input
                     id="confirmPassword"
@@ -414,7 +416,7 @@ export default function SignupPage() {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500 transition-all duration-300"
-                    placeholder="パスワードを再入力"
+                    placeholder={t('signup.confirmPassword.placeholder')}
                   />
                 </div>
               </div>
@@ -429,12 +431,13 @@ export default function SignupPage() {
                   className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded-lg focus:ring-blue-500 cursor-pointer"
                 />
                 <label htmlFor="agreeToTerms" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
+                  {t('signup.terms')}
                   <Link href="/terms" className="text-blue-600 hover:text-blue-700 font-semibold underline decoration-2 underline-offset-2">
-                    利用規約
+                    {t('signup.terms.link')}
                   </Link>
-                  と
+                  {t('signup.terms.and')}
                   <Link href="/privacy" className="text-blue-600 hover:text-blue-700 font-semibold underline decoration-2 underline-offset-2">
-                    プライバシーポリシー
+                    {t('signup.privacy.link')}
                   </Link>
                   に同意します
                 </label>
@@ -453,9 +456,9 @@ export default function SignupPage() {
                   <div className="flex items-start space-x-2">
                     <i className="ri-alert-line text-amber-600 mt-0.5 flex-shrink-0"></i>
                     <div>
-                      <span className="font-semibold text-amber-800">投資助言に関する重要な注意事項</span>
+                      <span className="font-semibold text-amber-800">{t('signup.investment.title')}</span>
                       <div className="mt-1 text-gray-600">
-                        当サービスは投資助言業ではなく、情報提供のみを行います。投資判断はお客様ご自身の責任で行ってください。データの正確性は保証されません。
+                        {t('signup.investment.text')}
                       </div>
                     </div>
                   </div>
@@ -471,7 +474,7 @@ export default function SignupPage() {
                   {isLoading ? (
                     <>
                       <i className="ri-loader-4-line animate-spin mr-2"></i>
-                      アカウントを作成中...
+                      {t('signup.button.loading')}
                     </>
                   ) : (
                     getButtonText()
@@ -480,9 +483,9 @@ export default function SignupPage() {
               </div>
 
               <div className="text-center text-sm text-gray-600">
-                すでにアカウントをお持ちですか？{' '}
+                {t('signup.hasAccount')}{' '}
                 <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                  ログイン
+                  {t('signup.login')}
                 </Link>
               </div>
             </form>

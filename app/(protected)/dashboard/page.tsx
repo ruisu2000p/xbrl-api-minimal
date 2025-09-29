@@ -6,9 +6,11 @@ import { useSearchParams } from 'next/navigation';
 import AccountSettings from './AccountSettings';
 import { ApiKeyModal } from '@/app/components/ApiKeyModal';
 import AuthDisplay from '@/components/AuthDisplay';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 function DashboardContent() {
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
 
@@ -39,8 +41,8 @@ function DashboardContent() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
-          <p className="text-gray-600 mt-2">アカウント設定と管理機能</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
+          <p className="text-gray-600 mt-2">{t('dashboard.subtitle')}</p>
         </div>
 
         {/* JWT認証状態表示 (v8.0.0以降は不要) */}
