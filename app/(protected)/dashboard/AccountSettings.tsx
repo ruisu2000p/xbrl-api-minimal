@@ -348,7 +348,7 @@ function ApiKeyTab({
               onChange={(event) => onChangeName(event.target.value)}
               placeholder="例: Production Key"
               autoComplete="off"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex gap-2">
