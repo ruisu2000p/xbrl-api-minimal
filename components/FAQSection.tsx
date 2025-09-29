@@ -1,35 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const { t } = useLanguage();
 
   const faqs = [
-    {
-      question: 'このサービスは投資助言を提供しますか？',
-      answer: 'いいえ、当サービスは投資助言業ではありません。財務データの分析ツールとして情報提供のみを行っており、具体的な投資判断や推奨は行いません。投資に関する最終的な判断は、必ずお客様ご自身の責任で行ってください。'
-    },
-    {
-      question: 'どのようなデータが取得できますか？',
-      answer: '日本の上場企業の有価証券報告書から抽出した財務データ、業績指標、企業情報などを提供しています。すべてのデータは公開情報に基づいています。'
-    },
-    {
-      question: 'APIの利用制限はありますか？',
-      answer: 'フリーミアムプランでは直近１年間のデータアクセス、スタンダードプランではすべてのデータアクセス利用可能です。'
-    },
-    {
-      question: 'データの正確性は保証されますか？',
-      answer: '公開されている有価証券報告書に基づいてデータを提供していますが、データの正確性や完全性について保証するものではありません。重要な投資判断の際は、必ず一次情報をご確認ください。'
-    },
-    {
-      question: 'どの企業のデータが利用できますか？',
-      answer: '東証プライム、スタンダード、グロース市場に上場している企業のデータを提供しています。対象企業は定期的に更新されます。'
-    },
-    {
-      question: '商用利用は可能ですか？',
-      answer: 'はい、商用利用が可能です。ただし、取得したデータを第三者に販売した損害。または、AI分析結果に基づく損害について当社は一切の責任を負いかねます。'
-    }
+    { question: t('faq.q1'), answer: t('faq.a1') },
+    { question: t('faq.q2'), answer: t('faq.a2') },
+    { question: t('faq.q3'), answer: t('faq.a3') },
+    { question: t('faq.q4'), answer: t('faq.a4') },
+    { question: t('faq.q5'), answer: t('faq.a5') },
+    { question: t('faq.q6'), answer: t('faq.a6') },
   ];
 
   const toggleFAQ = (index: number) => {
@@ -41,10 +25,10 @@ export default function FAQSection() {
       <div className="max-w-4xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            よくある質問
+            {t('faq.title')}
           </h2>
           <p className="text-xl text-gray-600">
-            XBRL Financial APIについてのよくある質問にお答えします
+            {t('faq.description')}
           </p>
         </div>
 
