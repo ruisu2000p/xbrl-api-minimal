@@ -494,15 +494,16 @@ export class SecureLogger {
       // 暗号化されている場合は復号化
       if (this.options.encryptLogs && this.encryptionKey) {
         const lines = content.trim().split('\n')
-        content = lines.map(line => {
+        const decryptedLines = await Promise.all(lines.map(async line => {
           try {
             const encrypted = JSON.parse(line)
-            const decrypted = EncryptionManager.decrypt(encrypted, this.encryptionKey!)
+            const decrypted = await EncryptionManager.decrypt(encrypted, this.encryptionKey!)
             return decrypted.data
           } catch {
             return line
           }
-        }).join('\n')
+        }))
+        content = decryptedLines.join('\n')
       }
 
       // 各行をパース
