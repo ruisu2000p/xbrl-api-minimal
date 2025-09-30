@@ -558,10 +558,13 @@ export default function AccountSettings() {
     }
   }, [user, supabaseLoading, sessionChecked]); // router と redirectTimer を依存配列から削除
 
-  // ユーザー情報でプロフィールを初期化
+  // プロフィールが読み込み済みかどうかを追跡
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
+  // ユーザー情報でプロフィールを初期化（一度だけ実行）
   useEffect(() => {
     const loadUserProfile = async () => {
-      if (user && profile.email === '') {
+      if (user && !profileLoaded) {
         console.log('📋 Loading user profile:', {
           email: user.email,
           metadata: user.user_metadata,
@@ -578,12 +581,13 @@ export default function AccountSettings() {
           company: company
         });
 
+        setProfileLoaded(true);
         console.log('✅ Profile loaded:', { email: user.email, name, company });
       }
     };
 
     void loadUserProfile();
-  }, [user, profile.email]);
+  }, [user, profileLoaded]);
 
   const loadApiKeys = useCallback(async () => {
     setApiStatus('loading');
