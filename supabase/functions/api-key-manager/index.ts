@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import * as bcrypt from 'https://esm.sh/bcryptjs@2.4.3';
+import bcrypt from 'https://esm.sh/bcryptjs@2.4.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,9 +56,6 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
-    // bcryptのみを使用（pepperは不要 - 一貫性のため削除）
-    const BCRYPT_COST = Number(Deno.env.get('BCRYPT_COST') || '10');
-
     if (!SUPABASE_URL || !ANON_KEY) {
       console.error('❌ Missing Supabase environment variables');
       return json(500, {
@@ -71,27 +68,54 @@ Deno.serve(async (req) => {
     }
 
     console.log('✅ Environment variables OK');
-    console.log('🔐 Security config: bcrypt cost:', BCRYPT_COST);
+    console.log('🔐 Using bcrypt for API key hashing');
 
     // Initialize Supabase client with ANON_KEY (not Service Role Key)
     // SECURITY DEFINER functions will handle RLS bypass internally
     const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+
+    console.log('🔍 Authorization header present:', !!authHeader);
+    console.log('🔍 Authorization header starts with Bearer:', authHeader?.startsWith('Bearer '));
+
+    if (!authHeader) {
+      console.error('❌ Missing authorization header');
+      return json(401, { error: 'Missing authorization header' });
+    }
+
+    if (!authHeader.startsWith('Bearer ')) {
+      console.error('❌ Invalid authorization header format:', authHeader.substring(0, 20));
+      return json(401, { error: 'Invalid authorization header format' });
+    }
+
+    // Extract JWT token from Bearer header
+    const token = authHeader.substring(7);
+    console.log('🔑 Token extracted, length:', token.length, 'prefix:', token.substring(0, 20));
 
     const supabase = createClient(SUPABASE_URL, ANON_KEY, {
       auth: {
         persistSession: false
       },
       global: {
-        headers: authHeader ? { Authorization: authHeader } : {}
+        headers: { Authorization: authHeader }
       }
     });
 
-    // Verify user is authenticated via JWT
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Verify user is authenticated via JWT (pass token explicitly)
+    console.log('🔐 Attempting to get user from token...');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (authError || !user) {
-      console.error('❌ Authentication failed:', authError);
-      return json(401, { error: 'Invalid or expired token' });
+    if (authError) {
+      console.error('❌ Authentication error:', {
+        message: authError.message,
+        status: authError.status,
+        name: authError.name
+      });
+      return json(401, { error: 'Authentication failed', details: authError.message });
+    }
+
+    if (!user) {
+      console.error('❌ No user found in token');
+      return json(401, { error: 'No user found in token' });
     }
 
     console.log('✅ Authenticated user:', user.id);
@@ -170,23 +194,30 @@ Deno.serve(async (req) => {
         apiKey += chars[array[i] % chars.length];
       }
 
-      // Hash the API key (without pepper for consistency with Next.js registration)
-      console.log('🔐 Hashing API key...');
-      const keyHash = await bcrypt.hash(apiKey, BCRYPT_COST);
       const keyPrefix = apiKey.substring(0, 12);
       const keySuffix = apiKey.substring(apiKey.length - 4);
 
       console.log('🔑 Generated key with prefix:', keyPrefix);
+      console.log('🔑 Generated key suffix:', keySuffix);
+
+      // Hash the API key using bcryptjs (Deno-compatible)
+      console.log('🔐 Hashing API key with bcryptjs...');
+      const salt = await bcrypt.genSalt(10);
+      const hashedKey = await bcrypt.hash(apiKey, salt);
+      console.log('✅ API key hashed successfully');
 
       // Create new key using SECURITY DEFINER function
       console.log('📞 Calling create_api_key_secure RPC...');
+
       const { data, error } = await supabase.rpc('create_api_key_secure', {
-        key_name: key_name.trim(),
-        key_hash_input: keyHash,
-        key_prefix_input: keyPrefix,
-        key_suffix_input: keySuffix,
-        tier_input: tier
+        p_key_name: key_name.trim(),
+        p_key_hash: hashedKey,
+        p_key_prefix: keyPrefix,
+        p_key_suffix: keySuffix,
+        p_tier: tier
       });
+
+      console.log('📞 RPC call completed:', { hasData: !!data, hasError: !!error });
 
       if (error) {
         console.error('❌ Database error (create):', {
@@ -242,7 +273,7 @@ Deno.serve(async (req) => {
 
       // Delete key using SECURITY DEFINER function
       const { data, error } = await supabase.rpc('revoke_api_key_secure', {
-        key_id_input: key_id
+        p_key_id: key_id
       });
 
       if (error) {
@@ -269,10 +300,16 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Unhandled error:', error);
+    console.error('Error details:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack
+    });
 
     return json(500, {
       error: 'InternalError',
-      message: 'An unexpected error occurred'
+      message: error?.message || 'An unexpected error occurred',
+      details: error?.stack
     });
   }
 });
