@@ -27,25 +27,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Supabase Admin クライアントでbcrypt APIキーを生成
-    const supabaseAdmin = await supabaseManager.createAdminSSRClient()
+    // Edge Functionを呼び出してAPIキーを生成
+    const { data: { session } } = await supabase.auth.getSession()
 
-    if (!supabaseAdmin) {
-      console.error('Admin client not available')
+    if (!session) {
       return NextResponse.json(
-        { error: 'Admin client not available' },
-        { status: 500 }
+        { error: 'セッションが見つかりません' },
+        { status: 401 }
       )
     }
 
-    // O(1)化されたAPIキー生成関数を使用（public_id埋め込み方式）
-    const { data: result, error: createError } = await supabaseAdmin
-      .rpc('create_api_key_complete_v2', {
-        p_user_id: user.id,
-        p_name: name,
-        p_description: description,
-        p_tier: tier
-      })
+    const { data: result, error: createError } = await supabase.functions.invoke('api-key-manager', {
+      body: {
+        action: 'rotate',
+        key_name: name,
+        tier: tier || 'free'
+      }
+    })
 
     if (createError || !result?.success) {
       console.error('Failed to create API key:', createError)
@@ -58,8 +56,12 @@ export async function POST(request: NextRequest) {
     // 生成されたキーを返す（この時だけ平文で返す）
     return NextResponse.json({
       success: true,
-      apiKey: result.api_key,
-      keyData: result.key_info
+      apiKey: result.apiKey,
+      keyData: {
+        id: result.keyId,
+        name: result.name,
+        tier: result.tier
+      }
     })
 
   } catch (error) {
@@ -85,24 +87,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabaseAdmin = await supabaseManager.createAdminSSRClient()
+    // Edge Functionを呼び出してAPIキー一覧を取得
+    const { data: result, error } = await supabase.functions.invoke('api-key-manager', {
+      body: {
+        action: 'list'
+      }
+    })
 
-    if (!supabaseAdmin) {
-      console.error('Admin client not available')
-      return NextResponse.json(
-        { error: 'Admin client not available' },
-        { status: 500 }
-      )
-    }
-
-    // ユーザーのAPIキーを取得
-    const { data: apiKeys, error } = await supabaseAdmin
-      .from('api_keys')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-
-    if (error) {
+    if (error || !result?.success) {
       console.error('Failed to fetch API keys:', error)
       return NextResponse.json(
         { error: 'APIキーの取得に失敗しました' },
@@ -112,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      apiKeys: apiKeys || []
+      apiKeys: result.keys || []
     })
 
   } catch (error) {
@@ -148,24 +140,15 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const supabaseAdmin = await supabaseManager.createAdminSSRClient()
+    // Edge Functionを呼び出してAPIキーを削除
+    const { data: result, error } = await supabase.functions.invoke('api-key-manager', {
+      body: {
+        action: 'delete',
+        key_id: keyId
+      }
+    })
 
-    if (!supabaseAdmin) {
-      console.error('Admin client not available')
-      return NextResponse.json(
-        { error: 'Admin client not available' },
-        { status: 500 }
-      )
-    }
-
-    // APIキーを無効化（削除ではなくstatusを変更）
-    const { error } = await supabaseAdmin
-      .from('api_keys')
-      .update({ status: 'revoked' })
-      .eq('id', keyId)
-      .eq('user_id', user.id)
-
-    if (error) {
+    if (error || !result?.success) {
       console.error('Failed to revoke API key:', error)
       return NextResponse.json(
         { error: 'APIキーの無効化に失敗しました' },

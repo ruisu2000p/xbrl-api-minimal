@@ -56,8 +56,7 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
-    // Use a default pepper if not configured (for development)
-    const PEPPER = Deno.env.get('API_KEY_PEPPER') || 'default-pepper-for-development';
+    // bcryptのみを使用（pepperは不要 - 一貫性のため削除）
     const BCRYPT_COST = Number(Deno.env.get('BCRYPT_COST') || '10');
 
     if (!SUPABASE_URL || !ANON_KEY) {
@@ -171,9 +170,9 @@ Deno.serve(async (req) => {
         apiKey += chars[array[i] % chars.length];
       }
 
-      // Hash the API key
+      // Hash the API key (without pepper for consistency with Next.js registration)
       console.log('🔐 Hashing API key...');
-      const keyHash = await bcrypt.hash(apiKey + PEPPER, BCRYPT_COST);
+      const keyHash = await bcrypt.hash(apiKey, BCRYPT_COST);
       const keyPrefix = apiKey.substring(0, 12);
       const keySuffix = apiKey.substring(apiKey.length - 4);
 
