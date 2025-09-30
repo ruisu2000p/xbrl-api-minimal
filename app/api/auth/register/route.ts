@@ -111,30 +111,12 @@ export async function POST(request: NextRequest) {
     }
 
     // APIキーの生成と保存
+    // 注: 登録直後はauth.uid()が使えないため、APIキーはダッシュボードから作成してもらう
     let apiKey = null;
-    try {
-      const { apiKey: generatedKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
-      apiKey = generatedKey;
 
-      // SECURITY DEFINER関数を使用してAPIキーを作成
-      // 認証されたsupabaseクライアントを使用（Service Role Keyは不要）
-      const { data: apiKeyData, error: apiKeyError } = await supabase.rpc('create_api_key_secure', {
-        key_name: 'Default API Key',
-        key_hash_input: keyHash,
-        key_prefix_input: keyPrefix,
-        key_suffix_input: keySuffix,
-        tier_input: 'free'
-      });
-
-      if (apiKeyError) {
-        console.error('API key creation error:', apiKeyError);
-        // APIキー作成に失敗してもユーザー登録は成功とする
-        apiKey = null;
-      }
-    } catch (error) {
-      console.error('Failed to generate API key:', error);
-      // APIキー生成に失敗してもユーザー登録は成功とする
-      apiKey = null;
+    // デバッグログ
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ APIキーは登録直後には作成しません。ダッシュボードから作成してください。');
     }
     
     // セキュリティのため、機密情報はログに出力しない

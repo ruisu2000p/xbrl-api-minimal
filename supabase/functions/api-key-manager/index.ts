@@ -179,6 +179,7 @@ Deno.serve(async (req) => {
       console.log('🔑 Generated key with prefix:', keyPrefix);
 
       // Create new key using SECURITY DEFINER function
+      console.log('📞 Calling create_api_key_secure RPC...');
       const { data, error } = await supabase.rpc('create_api_key_secure', {
         key_name: key_name.trim(),
         key_hash_input: keyHash,
@@ -188,17 +189,33 @@ Deno.serve(async (req) => {
       });
 
       if (error) {
-        console.error('❌ Database error (create):', error);
+        console.error('❌ Database error (create):', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return json(500, {
           error: 'Database error',
-          details: error.message
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
         });
       }
 
-      console.log('✅ API key created successfully');
+      console.log('✅ API key created successfully, data:', data);
 
       // data is an array with one element
       const keyData = Array.isArray(data) ? data[0] : data;
+
+      if (!keyData) {
+        console.error('❌ No data returned from create_api_key_secure');
+        return json(500, {
+          error: 'No data returned',
+          message: 'Function executed but returned no data'
+        });
+      }
 
       return json(200, {
         success: true,
