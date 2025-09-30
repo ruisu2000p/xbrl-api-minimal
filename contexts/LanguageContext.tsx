@@ -765,7 +765,7 @@ const translations = {
     'dashboard.settings.plan.freemium.feature2': '',
     'dashboard.settings.plan.freemium.feature3': '',
     'dashboard.settings.plan.standard.name': 'Standard',
-    'dashboard.settings.plan.standard.price': '$29/month',
+    'dashboard.settings.plan.standard.price': '$20/month',
     'dashboard.settings.plan.standard.description': '',
     'dashboard.settings.plan.standard.feature1': 'All-time financial data',
     'dashboard.settings.plan.standard.feature2': '',
