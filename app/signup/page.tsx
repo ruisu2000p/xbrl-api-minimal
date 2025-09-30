@@ -9,7 +9,7 @@ import Header from '@/components/Header';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [selectedPlan, setSelectedPlan] = useState('standard');
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [isLoading, setIsLoading] = useState(false);
@@ -169,9 +169,17 @@ export default function SignupPage() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-4">
             {t('signup.title')}
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
             {t('signup.subtitle')}
           </p>
+          <button
+            onClick={() => setLanguage(language === 'ja' ? 'en' : 'ja')}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+            aria-label="Switch language"
+          >
+            <i className="ri-translate-2 text-gray-600"></i>
+            <span className="text-sm font-medium text-gray-700">{language === 'ja' ? 'EN' : 'JA'}</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 items-start">

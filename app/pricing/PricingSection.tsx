@@ -7,7 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function PricingSection() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
 
   const plans = [
     {
@@ -64,10 +64,18 @@ export default function PricingSection() {
             </span>
             <br/>{t('pricing.title2')}
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-6">
             {t('pricing.subtitle1')}
             <br/>{t('pricing.subtitle2')}
           </p>
+          <button
+            onClick={() => setLanguage(language === 'ja' ? 'en' : 'ja')}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+            aria-label="Switch language"
+          >
+            <i className="ri-translate-2 text-gray-600"></i>
+            <span className="text-sm font-medium text-gray-700">{language === 'ja' ? 'EN' : 'JA'}</span>
+          </button>
         </div>
 
         {/* Billing toggle */}
