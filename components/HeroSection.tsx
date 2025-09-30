@@ -58,13 +58,6 @@ export default function HeroSection() {
               <i className="ri-user-line mr-2"></i>
               {t('hero.cta.login')}
             </Link>
-            <Link
-              href="/demo"
-              className="group border-2 border-blue-400/50 text-blue-100 px-10 py-4 rounded-xl text-lg font-semibold hover:bg-blue-400/10 hover:border-blue-400 transition-all duration-300 cursor-pointer whitespace-nowrap text-center backdrop-blur-sm"
-            >
-              <i className="ri-play-circle-line mr-2"></i>
-              {t('hero.cta.demo')}
-            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
