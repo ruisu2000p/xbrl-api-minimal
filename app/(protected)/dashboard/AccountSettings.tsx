@@ -579,13 +579,13 @@ export default function AccountSettings() {
     }
   }, [user, supabaseLoading, sessionChecked]); // router と redirectTimer を依存配列から削除
 
-  // プロフィールが読み込み済みかどうかを追跡
-  const [profileLoaded, setProfileLoaded] = useState(false);
+  // プロフィールが読み込み済みかどうかを追跡（useRefで再レンダリングを防ぐ）
+  const profileLoadedRef = useRef(false);
 
   // ユーザー情報でプロフィールを初期化（一度だけ実行）
   useEffect(() => {
     const loadUserProfile = async () => {
-      if (user && !profileLoaded) {
+      if (user && !profileLoadedRef.current) {
         console.log('📋 Loading user profile:', {
           email: user.email,
           metadata: user.user_metadata,
@@ -605,13 +605,13 @@ export default function AccountSettings() {
         setProfile(profileData);
         setOriginalProfile(profileData); // 元の値も保存
 
-        setProfileLoaded(true);
+        profileLoadedRef.current = true;
         console.log('✅ Profile loaded:', { email: user.email, name, company });
       }
     };
 
     void loadUserProfile();
-  }, [user, profileLoaded]);
+  }, [user]); // profileLoadedを依存配列から削除
 
   const loadApiKeys = useCallback(async () => {
     setApiStatus('loading');
@@ -720,6 +720,24 @@ export default function AccountSettings() {
   const handleProfileSave = useCallback(async () => {
     setProfileMessage(null);
 
+    // 変更チェック - 変更がない場合は何もしない
+    const emailChanged = profile.email !== originalProfile.email;
+    const nameChanged = profile.name !== originalProfile.name;
+    const companyChanged = profile.company !== originalProfile.company;
+    const hasChanges = emailChanged || nameChanged || companyChanged;
+
+    if (!hasChanges) {
+      console.log('⏭️ No changes detected, skipping update');
+      setProfileMessage({ type: 'success', text: t('dashboard.settings.profile.noChanges') });
+      return;
+    }
+
+    console.log('🔍 Changes detected:', JSON.stringify({
+      emailChanged,
+      nameChanged,
+      companyChanged
+    }, null, 2));
+
     try {
       // セッションを確認
       const { data: { session } } = await supabaseClient.auth.getSession();
@@ -736,12 +754,11 @@ export default function AccountSettings() {
         hasToken: !!session.access_token
       }, null, 2));
 
-      const emailChanged = profile.email !== originalProfile.email;
-
-      console.log('🔍 Email change detection:', JSON.stringify({
+      console.log('📤 Profile data:', JSON.stringify({
         currentEmail: profile.email,
         originalEmail: originalProfile.email,
-        emailChanged
+        currentName: profile.name,
+        originalName: originalProfile.name
       }, null, 2));
 
       // メールアドレスが変更されている場合のみemailを含める
