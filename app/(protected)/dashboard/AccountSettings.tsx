@@ -6,6 +6,7 @@ import type { ApiKey } from '@/types/api-key';
 import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useSupabase } from '@/components/SupabaseProvider';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -22,36 +23,39 @@ type ProfileState = {
 
 type ApiState = 'idle' | 'loading' | 'ready' | 'error';
 
-const TABS: Array<{ id: TabId; label: string; icon: string }> = [
-  { id: 'profile', label: 'プロフィール', icon: 'ri-user-line' },
-  { id: 'plan', label: 'プラン管理', icon: 'ri-vip-crown-line' },
-  { id: 'api', label: 'APIキー', icon: 'ri-key-line' }
-];
-
-// デフォルトの現在プラン
-const DEFAULT_CURRENT_PLAN = {
+// Plan structures will use translation keys
+const getDefaultCurrentPlan = (t: (key: string) => string) => ({
   id: 'standard',
-  name: 'スタンダード',
-  price: '¥2,980/月',
+  name: t('dashboard.settings.plan.standard.name'),
+  price: t('dashboard.settings.plan.standard.price'),
   nextBilling: '2024-02-15',
-  status: 'アクティブ'
-};
+  status: t('dashboard.settings.plan.currentPlanStatus')
+});
 
-const PLAN_OPTIONS = [
+const getPlanOptions = (t: (key: string) => string) => [
   {
     id: 'freemium',
-    name: 'フリーミアム',
-    price: '¥0/月',
-    description: '個人投資家や検証用途向け',
-    highlights: ['直近1年間の財務データ', '月間5,000リクエスト', '標準サポート'],
+    name: t('dashboard.settings.plan.freemium.name'),
+    price: t('dashboard.settings.plan.freemium.price'),
+    description: t('dashboard.settings.plan.freemium.description'),
+    highlights: [
+      t('dashboard.settings.plan.freemium.feature1'),
+      t('dashboard.settings.plan.freemium.feature2'),
+      t('dashboard.settings.plan.freemium.feature3')
+    ],
     recommended: false
   },
   {
     id: 'standard',
-    name: 'スタンダード',
-    price: '¥2,980/月',
-    description: '本番利用向けの標準プラン',
-    highlights: ['全期間の財務データ', 'APIリクエスト無制限', '優先サポート', 'レポート生成機能'],
+    name: t('dashboard.settings.plan.standard.name'),
+    price: t('dashboard.settings.plan.standard.price'),
+    description: t('dashboard.settings.plan.standard.description'),
+    highlights: [
+      t('dashboard.settings.plan.standard.feature1'),
+      t('dashboard.settings.plan.standard.feature2'),
+      t('dashboard.settings.plan.standard.feature3'),
+      t('dashboard.settings.plan.standard.feature4')
+    ],
     recommended: true
   }
 ] as const;
@@ -71,9 +75,10 @@ interface ProfileTabProps {
   message: Message;
   onChange: (field: keyof ProfileState, value: string) => void;
   onSave: () => void;
+  t: (key: string) => string;
 }
 
-function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
+function ProfileTab({ profile, message, onChange, onSave, t }: ProfileTabProps) {
   return (
     <div className="space-y-6">
       {message && (
@@ -90,7 +95,7 @@ function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
 
       <section className="grid gap-6 md:grid-cols-2">
         <div>
-          <label htmlFor="profile-email" className="mb-2 block text-sm font-medium text-gray-700">メールアドレス</label>
+          <label htmlFor="profile-email" className="mb-2 block text-sm font-medium text-gray-700">{t('dashboard.settings.profile.emailLabel')}</label>
           <input
             id="profile-email"
             name="email"
@@ -98,12 +103,12 @@ function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
             value={profile.email}
             onChange={(event) => onChange('email', event.target.value)}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="your@email.com"
+            placeholder={t('dashboard.settings.profile.emailPlaceholder')}
             autoComplete="email"
           />
         </div>
         <div>
-          <label htmlFor="profile-name" className="mb-2 block text-sm font-medium text-gray-700">ユーザー名</label>
+          <label htmlFor="profile-name" className="mb-2 block text-sm font-medium text-gray-700">{t('dashboard.settings.profile.nameLabel')}</label>
           <input
             id="profile-name"
             name="name"
@@ -111,14 +116,14 @@ function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
             value={profile.name}
             onChange={(event) => onChange('name', event.target.value)}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="田中太郎"
+            placeholder={t('dashboard.settings.profile.namePlaceholder')}
             autoComplete="name"
           />
         </div>
       </section>
 
       <div>
-        <label htmlFor="profile-company" className="mb-2 block text-sm font-medium text-gray-700">会社名</label>
+        <label htmlFor="profile-company" className="mb-2 block text-sm font-medium text-gray-700">{t('dashboard.settings.profile.companyLabel')}</label>
         <input
           id="profile-company"
           name="company"
@@ -126,7 +131,7 @@ function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
           value={profile.company}
           onChange={(event) => onChange('company', event.target.value)}
           className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="株式会社サンプル"
+          placeholder={t('dashboard.settings.profile.companyPlaceholder')}
           autoComplete="organization"
         />
       </div>
@@ -137,7 +142,7 @@ function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
           className="flex items-center space-x-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
         >
           <i className="ri-save-line"></i>
-          <span>変更を保存</span>
+          <span>{t('dashboard.settings.profile.saveButton')}</span>
         </button>
       </div>
     </div>
@@ -145,14 +150,16 @@ function ProfileTab({ profile, message, onChange, onSave }: ProfileTabProps) {
 }
 
 interface PlanTabProps {
-  currentPlan: typeof DEFAULT_CURRENT_PLAN;
+  currentPlan: ReturnType<typeof getDefaultCurrentPlan>;
   selectedPlan: string;
   message: Message;
   onSelectPlan: (planId: string) => void;
   onUpdatePlan: () => void;
+  planOptions: ReturnType<typeof getPlanOptions>;
+  t: (key: string) => string;
 }
 
-function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePlan }: PlanTabProps) {
+function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePlan, planOptions, t }: PlanTabProps) {
   return (
     <div className="space-y-8">
       {message && (
@@ -183,13 +190,13 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
               <i className="ri-check-line mr-1"></i>
               {currentPlan.status}
             </span>
-            <span className="text-xs text-gray-600">次回請求日: {currentPlan.nextBilling}</span>
+            <span className="text-xs text-gray-600">{t('dashboard.settings.plan.nextBillingLabel')} {currentPlan.nextBilling}</span>
           </div>
         </div>
       </section>
 
       <section className="grid gap-6 md:grid-cols-2">
-        {PLAN_OPTIONS.map((plan) => {
+        {planOptions.map((plan) => {
           const isSelected = plan.id === selectedPlan;
           const isCurrent = plan.id === currentPlan.id;
 
@@ -205,7 +212,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
             >
               {plan.recommended && (
                 <span className="absolute right-4 top-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 px-3 py-1 text-xs font-semibold text-white">
-                  おすすめ
+                  {t('dashboard.settings.plan.recommendedBadge')}
                 </span>
               )}
 
@@ -216,7 +223,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
                 </div>
                 {isCurrent && (
                   <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-                    現在のプラン
+                    {t('dashboard.settings.plan.currentPlanBadge')}
                   </span>
                 )}
               </div>
@@ -234,7 +241,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
 
               <div className="mt-6 flex items-center justify-between text-sm">
                 <span className="font-medium text-gray-700">
-                  {isSelected ? '選択中' : 'クリックして選択'}
+                  {isSelected ? t('dashboard.settings.plan.selectedLabel') : t('dashboard.settings.plan.clickSelectLabel')}
                 </span>
                 <span className={`h-4 w-4 rounded-full border ${
                   isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-400'
@@ -246,7 +253,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
       </section>
 
       <div className="space-y-4 rounded-2xl border border-gray-200 p-6">
-        <h4 className="text-sm font-semibold text-gray-900">請求履歴</h4>
+        <h4 className="text-sm font-semibold text-gray-900">{t('dashboard.settings.plan.billingHistoryTitle')}</h4>
         {BILLING_HISTORY.length > 0 ? (
           <ul className="space-y-3 text-sm text-gray-600">
             {BILLING_HISTORY.map((item) => (
@@ -260,7 +267,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500">請求履歴はありません</p>
+          <p className="text-sm text-gray-500">{t('dashboard.settings.plan.noBillingHistory')}</p>
         )}
       </div>
 
@@ -269,7 +276,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
           onClick={onUpdatePlan}
           className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
         >
-          プランを更新
+          {t('dashboard.settings.plan.updateButton')}
         </button>
       </div>
     </div>
@@ -288,6 +295,7 @@ interface ApiKeyTabProps {
   onDelete: (id: string) => void;
   onChangeName: (value: string) => void;
   onCopy: (value: string) => void;
+  t: (key: string) => string;
 }
 
 function ApiKeyTab({
@@ -301,7 +309,8 @@ function ApiKeyTab({
   onCreate,
   onDelete,
   onChangeName,
-  onCopy
+  onCopy,
+  t
 }: ApiKeyTabProps) {
   const isLoading = status === 'loading' || status === 'idle';
 
@@ -321,8 +330,8 @@ function ApiKeyTab({
 
       {generatedKey && (
         <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-5">
-          <h4 className="text-sm font-semibold text-yellow-800">新しいAPIキー</h4>
-          <p className="mt-2 text-xs text-yellow-700">⚠️ このキーは一度しか表示されません。安全な場所に保存してください。</p>
+          <h4 className="text-sm font-semibold text-yellow-800">{t('dashboard.settings.api.newKeyTitle')}</h4>
+          <p className="mt-2 text-xs text-yellow-700">{t('dashboard.settings.api.newKeyWarning')}</p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <code className="flex-1 break-all rounded-lg bg-white px-4 py-3 text-sm text-gray-800 shadow-inner">{generatedKey}</code>
             <button
@@ -330,7 +339,7 @@ function ApiKeyTab({
               className="flex items-center space-x-2 rounded-lg border border-yellow-300 px-4 py-2 text-sm font-medium text-yellow-800 transition-colors hover:bg-yellow-100"
             >
               <i className="ri-file-copy-line"></i>
-              <span>コピー</span>
+              <span>{t('dashboard.settings.api.copyButton')}</span>
             </button>
           </div>
         </div>
@@ -339,14 +348,14 @@ function ApiKeyTab({
       <section className="rounded-2xl border border-gray-200 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex-1">
-            <label htmlFor="api-key-name" className="mb-2 block text-sm font-medium text-gray-700">新しいAPIキー名</label>
+            <label htmlFor="api-key-name" className="mb-2 block text-sm font-medium text-gray-700">{t('dashboard.settings.api.newKeyLabel')}</label>
             <input
               id="api-key-name"
               name="apiKeyName"
               type="text"
               value={newKeyName}
               onChange={(event) => onChangeName(event.target.value)}
-              placeholder="例: Production Key"
+              placeholder={t('dashboard.settings.api.newKeyPlaceholder')}
               autoComplete="off"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -358,7 +367,7 @@ function ApiKeyTab({
               className="flex items-center space-x-2 rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             >
               <i className="ri-refresh-line"></i>
-              <span>再読み込み</span>
+              <span>{t('dashboard.settings.api.reloadButton')}</span>
             </button>
             <button
               onClick={onCreate}
@@ -366,7 +375,7 @@ function ApiKeyTab({
               className="flex items-center space-x-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
               <i className="ri-add-line"></i>
-              <span>{isCreating ? '作成中...' : 'APIキーを作成'}</span>
+              <span>{isCreating ? t('dashboard.settings.api.creatingButton') : t('dashboard.settings.api.createButton')}</span>
             </button>
           </div>
         </div>
@@ -374,19 +383,19 @@ function ApiKeyTab({
 
       <section className="rounded-2xl border border-gray-200 p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">APIキー一覧</h3>
-          <span className="text-sm text-gray-500">{apiKeys.length} 件</span>
+          <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.settings.api.listTitle')}</h3>
+          <span className="text-sm text-gray-500">{t('dashboard.settings.api.countLabel').replace('{count}', String(apiKeys.length))}</span>
         </div>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center space-y-3 py-12 text-gray-500">
             <i className="ri-loader-4-line animate-spin text-2xl"></i>
-            <span>APIキーを読み込み中...</span>
+            <span>{t('dashboard.settings.api.loadingMessage')}</span>
           </div>
         ) : apiKeys.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center text-gray-500">
             <i className="ri-key-line text-3xl"></i>
-            <p className="mt-3 text-sm">まだAPIキーがありません。上のフォームから作成できます。</p>
+            <p className="mt-3 text-sm">{t('dashboard.settings.api.noKeysMessage')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -399,12 +408,12 @@ function ApiKeyTab({
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-gray-900">{key.name}</span>
                     <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-600">
-                      アクティブ
+                      {t('dashboard.settings.api.activeBadge')}
                     </span>
                   </div>
                   <div className="mt-1 flex flex-col gap-1 text-xs text-gray-500 md:flex-row md:items-center md:gap-4">
-                    <span>作成: {key.created}</span>
-                    <span>最終使用: {key.lastUsed}</span>
+                    <span>{t('dashboard.settings.api.createdLabel')} {key.created}</span>
+                    <span>{t('dashboard.settings.api.lastUsedLabel')} {key.lastUsed}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -413,14 +422,14 @@ function ApiKeyTab({
                     className="flex items-center space-x-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
                   >
                     <i className="ri-file-copy-line"></i>
-                    <span>コピー</span>
+                    <span>{t('dashboard.settings.api.copyButton')}</span>
                   </button>
                   <button
                     onClick={() => onDelete(key.id)}
                     className="flex items-center space-x-1 rounded-lg border border-red-300 px-3 py-2 text-xs font-medium text-red-700 transition-colors hover:bg-red-50"
                   >
                     <i className="ri-delete-bin-line"></i>
-                    <span>削除</span>
+                    <span>{t('dashboard.settings.api.deleteButton')}</span>
                   </button>
                 </div>
               </div>
@@ -436,6 +445,7 @@ export default function AccountSettings() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: supabaseLoading, supabase: supabaseClient } = useSupabase();
+  const { t } = useLanguage();
 
   // 新規アカウントの場合はAPIキータブを初期表示
   const isNewAccount = searchParams.get('newAccount') === 'true';
@@ -445,8 +455,12 @@ export default function AccountSettings() {
   const [profile, setProfile] = useState<ProfileState>(INITIAL_PROFILE);
   const [profileMessage, setProfileMessage] = useState<Message>(null);
 
-  const [selectedPlan, setSelectedPlan] = useState<string>(DEFAULT_CURRENT_PLAN.id);
-  const [currentPlan, setCurrentPlan] = useState(DEFAULT_CURRENT_PLAN);
+  // Create plan options using translation function
+  const planOptions = useMemo(() => getPlanOptions(t), [t]);
+  const defaultCurrentPlan = useMemo(() => getDefaultCurrentPlan(t), [t]);
+
+  const [selectedPlan, setSelectedPlan] = useState<string>(defaultCurrentPlan.id);
+  const [currentPlan, setCurrentPlan] = useState(defaultCurrentPlan);
   const [planMessage, setPlanMessage] = useState<Message>(null);
 
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -541,7 +555,7 @@ export default function AccountSettings() {
       if (!session?.user) {
         console.log('❌ セッションが存在しません');
         setApiStatus('error');
-        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
+        setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorLoginRequired') });
         return;
       }
 
@@ -564,7 +578,7 @@ export default function AccountSettings() {
 
       if (!currentSession.data.session?.access_token) {
         console.error('❌ No JWT token available in session');
-        setApiMessage({ type: 'error', text: '認証セッションが見つかりません。再度ログインしてください。' });
+        setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorSessionNotFound') });
         setApiStatus('error');
         return;
       }
@@ -620,9 +634,9 @@ export default function AccountSettings() {
     } catch (error) {
       console.error('Failed to load API keys:', error);
       setApiStatus('error');
-      setApiMessage({ type: 'error', text: 'APIキーの読み込みに失敗しました。' });
+      setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorLoad') });
     }
-  }, [supabaseClient]);
+  }, [supabaseClient, t]);
 
   useEffect(() => {
     if (activeTab === 'api' && apiStatus === 'idle') {
@@ -635,8 +649,8 @@ export default function AccountSettings() {
   }, []);
 
   const handleProfileSave = useCallback(() => {
-    setProfileMessage({ type: 'success', text: 'プロフィール情報を更新しました。' });
-  }, []);
+    setProfileMessage({ type: 'success', text: t('dashboard.settings.profile.successMessage') });
+  }, [t]);
 
   const handlePlanSelect = useCallback((planId: string) => {
     setSelectedPlan(planId);
@@ -644,10 +658,10 @@ export default function AccountSettings() {
 
   const handlePlanUpdate = useCallback(() => {
     if (selectedPlan === currentPlan.id) {
-      setPlanMessage({ type: 'success', text: `既に${currentPlan.name}プランをご利用中です。` });
+      setPlanMessage({ type: 'success', text: t('dashboard.settings.plan.successCurrentPlan').replace('{name}', currentPlan.name) });
     } else {
       // 選択したプラン情報を取得
-      const newPlan = PLAN_OPTIONS.find(p => p.id === selectedPlan);
+      const newPlan = planOptions.find(p => p.id === selectedPlan);
       if (newPlan) {
         // 現在のプランを更新
         setCurrentPlan({
@@ -655,12 +669,12 @@ export default function AccountSettings() {
           name: newPlan.name,
           price: newPlan.price,
           nextBilling: '2024-02-15', // 今は固定値
-          status: 'アクティブ'
+          status: t('dashboard.settings.plan.currentPlanStatus')
         });
-        setPlanMessage({ type: 'success', text: 'プラン変更のリクエストを受け付けました。' });
+        setPlanMessage({ type: 'success', text: t('dashboard.settings.plan.successPlanChange') });
       }
     }
-  }, [selectedPlan, currentPlan]);
+  }, [selectedPlan, currentPlan, planOptions, t]);
 
   const handleCreateKey = useCallback(async () => {
     // eslint-disable-next-line no-console
@@ -770,7 +784,7 @@ export default function AccountSettings() {
 
       if (!userId || !userEmail) {
         console.error('❌ 認証セッションが存在しません (Supabase + localStorage両方とも無効)');
-        setApiMessage({ type: 'error', text: 'ログインが必要です。認証ページにリダイレクトします。' });
+        setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorLoginRequired') });
         setIsCreatingKey(false);
         // 3秒後に認証ページにリダイレクト
         setTimeout(() => {
@@ -827,7 +841,7 @@ export default function AccountSettings() {
 
       if (!result.success) {
         console.error('❌ APIキー作成失敗:', result);
-        setApiMessage({ type: 'error', text: result?.error || 'APIキーの作成に失敗しました。' });
+        setApiMessage({ type: 'error', text: result?.error || t('dashboard.settings.api.errorCreate') });
         setIsCreatingKey(false);
         return;
       }
@@ -838,7 +852,7 @@ export default function AccountSettings() {
 
       if (!newApiKey) {
         console.error('❌ APIキー作成失敗 - 新規キーが返されませんでした:', result);
-        setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
+        setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorCreate') });
         setIsCreatingKey(false);
         return;
       }
@@ -861,7 +875,7 @@ export default function AccountSettings() {
         name: result.name,
         key: newApiKey, // 作成時のみ完全なキーを表示
         created: new Date().toLocaleDateString('ja-JP'),
-        lastUsed: '未使用',
+        lastUsed: t('dashboard.settings.api.notUsedLabel'),
         tier: (result.tier || 'free') as ApiKey['tier']
       };
 
@@ -881,7 +895,7 @@ export default function AccountSettings() {
       
       setGeneratedKey(newApiKey);
       setNewKeyName('');
-      setApiMessage({ type: 'success', text: '新しいAPIキーを作成しました。' });
+      setApiMessage({ type: 'success', text: t('dashboard.settings.api.successCreated') });
       
       // eslint-disable-next-line no-console
       if (process.env.NODE_ENV === 'development') {
@@ -892,7 +906,7 @@ export default function AccountSettings() {
       if (process.env.NODE_ENV === 'development') {
         console.error('🔍 エラースタック:', error instanceof Error ? error.stack : 'スタックなし');
       }
-      setApiMessage({ type: 'error', text: 'APIキーの作成に失敗しました。' });
+      setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorCreate') });
     }
 
     // eslint-disable-next-line no-console
@@ -900,7 +914,7 @@ export default function AccountSettings() {
       console.log('🏁 作成処理終了 - ローディング状態をfalseに');
     }
     setIsCreatingKey(false);
-  }, [newKeyName, supabaseClient]);
+  }, [newKeyName, supabaseClient, t]);
 
   const handleDeleteKey = useCallback((id: string) => {
     setDeleteKeyId(id);
@@ -944,7 +958,7 @@ export default function AccountSettings() {
       }
 
       if (!userId) {
-        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
+        setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorLoginRequired') });
         setDeleteKeyId(null);
         return;
       }
@@ -953,7 +967,7 @@ export default function AccountSettings() {
       const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
 
       if (!currentSession?.access_token) {
-        setApiMessage({ type: 'error', text: 'ログインが必要です。' });
+        setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorLoginRequired') });
         setDeleteKeyId(null);
         return;
       }
@@ -976,26 +990,26 @@ export default function AccountSettings() {
 
       if (invokeError) {
         console.error('❌ APIキー削除失敗:', invokeError);
-        setApiMessage({ type: 'error', text: invokeError.message || 'APIキーの削除に失敗しました。' });
+        setApiMessage({ type: 'error', text: invokeError.message || t('dashboard.settings.api.errorDelete') });
       } else if (!result?.success) {
         console.error('❌ APIキー削除失敗:', result);
-        setApiMessage({ type: 'error', text: result?.error || 'APIキーの削除に失敗しました。' });
+        setApiMessage({ type: 'error', text: result?.error || t('dashboard.settings.api.errorDelete') });
       } else {
         setApiKeys((prev) => prev.filter((key) => key.id !== deleteKeyId));
-        setApiMessage({ type: 'success', text: 'APIキーを削除しました。' });
+        setApiMessage({ type: 'success', text: t('dashboard.settings.api.successDeleted') });
       }
     } catch (error) {
       console.error('Failed to delete API key:', error);
-      setApiMessage({ type: 'error', text: 'APIキーの削除に失敗しました。' });
+      setApiMessage({ type: 'error', text: t('dashboard.settings.api.errorDelete') });
     }
 
     setDeleteKeyId(null);
-  }, [deleteKeyId, supabaseClient]);
+  }, [deleteKeyId, supabaseClient, t]);
 
   const handleCopyKey = useCallback((value: string) => {
     void navigator.clipboard.writeText(value);
-    setApiMessage({ type: 'success', text: 'APIキーをコピーしました。' });
-  }, []);
+    setApiMessage({ type: 'success', text: t('dashboard.settings.api.successCopied') });
+  }, [t]);
 
   const handleLogout = useCallback(() => {
     setShowLogoutDialog(true);
@@ -1015,7 +1029,14 @@ export default function AccountSettings() {
     router.push('/login');
   }, [router, supabaseClient]);
 
-  const activeTabLabel = useMemo(() => TABS.find((tab) => tab.id === activeTab)?.label ?? '', [activeTab]);
+  // Define tabs using translation
+  const tabs = useMemo(() => [
+    { id: 'profile' as TabId, label: t('dashboard.settings.tabs.profile'), icon: 'ri-user-line' },
+    { id: 'plan' as TabId, label: t('dashboard.settings.tabs.plan'), icon: 'ri-vip-crown-line' },
+    { id: 'api' as TabId, label: t('dashboard.settings.tabs.api'), icon: 'ri-key-line' }
+  ], [t]);
+
+  const activeTabLabel = useMemo(() => tabs.find((tab) => tab.id === activeTab)?.label ?? '', [activeTab, tabs]);
 
   // 削除対象のAPIキー名を取得（ダイアログ表示用）
   const deleteKeyName = useMemo(() => {
@@ -1030,7 +1051,7 @@ export default function AccountSettings() {
       <div className="flex items-center justify-center min-h-[400px] rounded-2xl bg-white shadow-lg">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">認証状態を確認中...</p>
+          <p className="text-gray-600">{t('dashboard.settings.auth.checking')}</p>
         </div>
       </div>
     );
@@ -1042,8 +1063,8 @@ export default function AccountSettings() {
       <div className="flex items-center justify-center min-h-[400px] rounded-2xl bg-white shadow-lg">
         <div className="text-center space-y-4">
           <i className="ri-lock-line text-4xl text-gray-400"></i>
-          <p className="text-gray-600">ログインが必要です</p>
-          <p className="text-sm text-gray-500">リダイレクト中...</p>
+          <p className="text-gray-600">{t('dashboard.settings.auth.required')}</p>
+          <p className="text-sm text-gray-500">{t('dashboard.settings.auth.redirecting')}</p>
         </div>
       </div>
     );
@@ -1055,7 +1076,7 @@ export default function AccountSettings() {
         <div className="border-b border-gray-200">
           <div className="flex flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
             <nav className="flex gap-4 overflow-x-auto">
-              {TABS.map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
@@ -1075,7 +1096,7 @@ export default function AccountSettings() {
               className="flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
             >
               <i className="ri-logout-box-line"></i>
-              <span>ログアウト</span>
+              <span>{t('dashboard.settings.tabs.logout')}</span>
             </button>
           </div>
         </div>
@@ -1083,9 +1104,9 @@ export default function AccountSettings() {
         <div className="space-y-6 border-b border-gray-100 px-6 pb-4 pt-6">
           <h2 className="text-lg font-semibold text-gray-900">{activeTabLabel}</h2>
           <p className="text-sm text-gray-500">
-            {activeTab === 'profile' && 'アカウントに紐づく基本情報を管理します。'}
-            {activeTab === 'plan' && '契約中のプランや請求履歴を確認し、プラン変更をリクエストできます。'}
-            {activeTab === 'api' && 'APIキーの発行・管理・削除が行えます。'}
+            {activeTab === 'profile' && t('dashboard.settings.profile.description')}
+            {activeTab === 'plan' && t('dashboard.settings.plan.description')}
+            {activeTab === 'api' && t('dashboard.settings.api.description')}
           </p>
         </div>
 
@@ -1096,6 +1117,7 @@ export default function AccountSettings() {
               message={profileMessage}
               onChange={handleProfileChange}
               onSave={handleProfileSave}
+              t={t}
             />
           )}
 
@@ -1106,6 +1128,8 @@ export default function AccountSettings() {
               message={planMessage}
               onSelectPlan={handlePlanSelect}
               onUpdatePlan={handlePlanUpdate}
+              planOptions={planOptions}
+              t={t}
             />
           )}
 
@@ -1122,6 +1146,7 @@ export default function AccountSettings() {
               onDelete={handleDeleteKey}
               onChangeName={setNewKeyName}
               onCopy={handleCopyKey}
+              t={t}
             />
           )}
         </div>
@@ -1130,10 +1155,10 @@ export default function AccountSettings() {
       {/* APIキー削除確認ダイアログ */}
       <ConfirmDialog
         isOpen={deleteKeyId !== null}
-        title="APIキーの削除"
-        message={`APIキー「${deleteKeyName}」を削除しますか？この操作は取り消せません。`}
-        confirmText="削除"
-        cancelText="キャンセル"
+        title={t('dashboard.settings.dialog.deleteKey.title')}
+        message={t('dashboard.settings.dialog.deleteKey.message').replace('{name}', deleteKeyName)}
+        confirmText={t('dashboard.settings.dialog.deleteKey.confirm')}
+        cancelText={t('dashboard.settings.dialog.deleteKey.cancel')}
         confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
         icon="danger"
         onConfirm={confirmDeleteKey}
@@ -1143,10 +1168,10 @@ export default function AccountSettings() {
       {/* ログアウト確認ダイアログ */}
       <ConfirmDialog
         isOpen={showLogoutDialog}
-        title="ログアウト"
-        message="ログアウトしてもよろしいですか？"
-        confirmText="ログアウト"
-        cancelText="キャンセル"
+        title={t('dashboard.settings.dialog.logout.title')}
+        message={t('dashboard.settings.dialog.logout.message')}
+        confirmText={t('dashboard.settings.dialog.logout.confirm')}
+        cancelText={t('dashboard.settings.dialog.logout.cancel')}
         confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
         icon="warning"
         onConfirm={confirmLogout}
