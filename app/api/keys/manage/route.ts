@@ -5,8 +5,7 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, createServiceSupabaseClient } from '@/utils/supabase/unified-client';
-import { UnifiedApiKeyManager } from '@/lib/api-key/unified-api-key-manager';
+import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,51 +75,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Try to fetch API keys
+    // Edge Functionを呼び出してAPIキー一覧を取得
     console.log('Fetching API keys for user:', user.id);
 
-    // First, try to call the RPC function if it exists
-    let data: any[] = [];
-    let fetchError = null;
-
-    try {
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('get_user_api_keys', { p_user_id: user.id });
-
-      if (rpcError) {
-        // If the function doesn't exist, try direct query with service role
-        if (rpcError.message?.includes('function') && rpcError.message?.includes('does not exist')) {
-          console.log('RPC function not found, trying direct query');
-
-          // Try with current client first
-          try {
-            const apiKeyManager = new UnifiedApiKeyManager(supabase);
-            data = await apiKeyManager.listUserApiKeys(user.id) as any[];
-          } catch (listError) {
-            console.warn('Direct query failed:', listError);
-            data = [];
-          }
-        } else {
-          throw rpcError;
-        }
-      } else {
-        data = rpcData || [];
+    const { data: result, error: fetchError } = await supabase.functions.invoke('api-key-manager', {
+      body: {
+        action: 'list'
       }
-    } catch (err) {
-      fetchError = err;
-      console.error('Error fetching API keys:', err);
-      data = [];
+    });
+
+    if (fetchError || !result?.success) {
+      console.error('Error fetching API keys:', fetchError);
+      return NextResponse.json({
+        success: true,
+        keys: []
+      });
     }
 
     console.log('Fetch result:', {
       hasData: true,
-      dataCount: data.length,
-      error: fetchError
+      dataCount: result.keys?.length || 0
     });
 
     return NextResponse.json({
       success: true,
-      keys: data || []
+      keys: result.keys || []
     });
 
   } catch (error) {
@@ -159,18 +138,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, key_name, tier = 'free', key_id } = body;
 
-    // Try to use service role client, fallback to regular client
-    let dbClient = await createServiceSupabaseClient();
-    let useServiceRole = true;
-
-    if (!dbClient) {
-      console.warn('Service role client not available, using regular client with limited access');
-      dbClient = authClient;
-      useServiceRole = false;
-    }
-
-    const apiKeyManager = new UnifiedApiKeyManager(dbClient);
-
     // Handle different actions
     switch (action) {
       case 'create':
@@ -183,39 +150,26 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('Attempting to generate API key for user:', user.id);
-        console.log('Using service role:', useServiceRole);
 
-        // TEMPORARY: Direct generation without database until migrations are run
-        // This ensures users can always get an API key
-        const tempKey = `xbrl_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 15)}`;
-
-        // Try database storage but don't fail if it doesn't work
-        let result: any = {
-          success: true,
-          apiKey: tempKey,
-          keyId: 'temp-' + Date.now(),
-          prefix: tempKey.substring(0, 8)
-        };
-
-        try {
-          // Attempt proper generation
-          const dbResult = await apiKeyManager.generateApiKey(user.id, key_name, 30);
-          if (dbResult.success) {
-            result = dbResult;
-          } else {
-            console.warn('Database storage failed, returning temporary key');
+        // Edge Functionを呼び出してAPIキーを生成
+        const { data: result, error: createError } = await authClient.functions.invoke('api-key-manager', {
+          body: {
+            action: 'rotate',
+            key_name: key_name,
+            tier: tier || 'free'
           }
-        } catch (genError) {
-          console.error('API key generation error:', genError);
-          // Continue with temporary key
+        });
+
+        if (createError || !result?.success) {
+          console.error('Failed to create API key:', createError);
+          return NextResponse.json(
+            { error: 'APIキーの作成に失敗しました' },
+            { status: 500 }
+          );
         }
 
-        // No additional fallback needed since we always generate a key above
-
-        // The result always has success:true at this point
         console.log('API key generated successfully:', {
           keyId: result.keyId,
-          prefix: result.prefix,
           success: result.success
         });
 
@@ -223,8 +177,8 @@ export async function POST(request: NextRequest) {
           success: true,
           apiKey: result.apiKey,
           keyId: result.keyId,
-          name: key_name,
-          tier: tier,
+          name: result.name,
+          tier: result.tier,
           message: 'このAPIキーは一度だけ表示されます。安全な場所に保管してください。'
         });
       }
@@ -240,29 +194,22 @@ export async function POST(request: NextRequest) {
 
         console.log('Attempting to delete API key:', key_id);
 
-        // Check if this is a temporary key
-        if (key_id.startsWith('temp-')) {
-          console.log('Temporary key detected, marking as deleted without DB operation');
-          // Temporary keys aren't in the database, so just return success
-          return NextResponse.json({
-            success: true,
-            message: 'APIキーが正常に削除されました（一時キー）'
-          });
-        }
-
-        // Try to revoke in database
-        try {
-          const success = await apiKeyManager.revokeApiKey(key_id, user.id);
-
-          if (!success) {
-            console.warn('Database revocation failed, but returning success');
+        // Edge Functionを呼び出してAPIキーを削除
+        const { data: result, error: deleteError } = await authClient.functions.invoke('api-key-manager', {
+          body: {
+            action: 'delete',
+            key_id: key_id
           }
-        } catch (revokeError) {
-          console.error('Error revoking API key:', revokeError);
-          // Continue anyway - the key might not exist in DB
+        });
+
+        if (deleteError || !result?.success) {
+          console.error('Failed to revoke API key:', deleteError);
+          return NextResponse.json(
+            { error: 'APIキーの無効化に失敗しました' },
+            { status: 500 }
+          );
         }
 
-        // Always return success to allow UI to remove the key
         return NextResponse.json({
           success: true,
           message: 'APIキーが正常に削除されました'
@@ -271,33 +218,24 @@ export async function POST(request: NextRequest) {
 
       case 'list':
       default: {
-        // Use the same logic as GET endpoint for fetching keys
-        let data: any[] = [];
-
-        try {
-          // Try RPC function first
-          const { data: rpcData, error: rpcError } = await authClient
-            .rpc('get_user_api_keys', { p_user_id: user.id });
-
-          if (rpcError) {
-            // Fallback to service role query
-            if (rpcError.message?.includes('function') && rpcError.message?.includes('does not exist')) {
-              const apiKeys = await apiKeyManager.listUserApiKeys(user.id);
-              data = apiKeys as any[];
-            } else {
-              throw rpcError;
-            }
-          } else {
-            data = rpcData || [];
+        // Edge Functionを呼び出してAPIキー一覧を取得
+        const { data: result, error: listError } = await authClient.functions.invoke('api-key-manager', {
+          body: {
+            action: 'list'
           }
-        } catch (err) {
-          console.error('Error fetching API keys:', err);
-          data = [];
+        });
+
+        if (listError || !result?.success) {
+          console.error('Error fetching API keys:', listError);
+          return NextResponse.json({
+            success: true,
+            keys: []
+          });
         }
 
         return NextResponse.json({
           success: true,
-          keys: data || []
+          keys: result.keys || []
         });
       }
     }
