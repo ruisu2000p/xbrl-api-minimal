@@ -442,7 +442,6 @@ export default function SignupPage() {
                   className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded-lg focus:ring-blue-500 cursor-pointer"
                 />
                 <label htmlFor="agreeToTerms" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
-                  {t('signup.terms')}
                   <Link href="/terms" className="text-blue-600 hover:text-blue-700 font-semibold underline decoration-2 underline-offset-2">
                     {t('signup.terms.link')}
                   </Link>
@@ -450,7 +449,7 @@ export default function SignupPage() {
                   <Link href="/privacy" className="text-blue-600 hover:text-blue-700 font-semibold underline decoration-2 underline-offset-2">
                     {t('signup.privacy.link')}
                   </Link>
-                  に同意します
+                  {t('signup.agreeTerms')}
                 </label>
               </div>
 
