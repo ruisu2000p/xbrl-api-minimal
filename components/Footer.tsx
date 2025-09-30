@@ -12,8 +12,19 @@ export default function Footer() {
         {/* Bottom section */}
         <div className="pt-8">
           <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
-            <div className="text-sm text-gray-400">
-              {t('footer.copyright')}
+            <div className="flex flex-col items-center lg:items-start space-y-2">
+              <div className="text-sm text-gray-400">
+                {t('footer.copyright')}
+              </div>
+              <div className="flex items-center space-x-4 text-sm">
+                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+                  プライバシーポリシー
+                </Link>
+                <span className="text-gray-600">|</span>
+                <Link href="/legal" className="text-gray-400 hover:text-white transition-colors">
+                  特定商取引法
+                </Link>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <a
