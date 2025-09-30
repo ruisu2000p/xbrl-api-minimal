@@ -159,7 +159,7 @@ export class SecureConfigManager {
       }
 
       // 復号化
-      const decrypted = EncryptionManager.decryptEnvVar(
+      const decrypted = await EncryptionManager.decryptEnvVar(
         encryptedConfig.data,
         'CONFIG_MASTER_KEY'
       )
@@ -194,7 +194,7 @@ export class SecureConfigManager {
     }
 
     // 暗号化
-    const encrypted = EncryptionManager.encryptEnvVar(
+    const encrypted = await EncryptionManager.encryptEnvVar(
       JSON.stringify(this.config),
       'CONFIG_MASTER_KEY'
     )

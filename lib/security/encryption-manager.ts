@@ -50,11 +50,11 @@ export class EncryptionManager {
   /**
    * データを暗号化
    */
-  static encrypt(
+  static async encrypt(
     data: string,
     password: string,
     options: EncryptionOptions = {}
-  ): EncryptedData {
+  ): Promise<EncryptedData> {
     const {
       algorithm = this.DEFAULT_ALGORITHM,
       saltLength = this.SALT_LENGTH,
@@ -77,7 +77,7 @@ export class EncryptionManager {
     const iv = crypto.randomBytes(this.IV_LENGTH)
 
     // キー導出
-    const key = this.deriveKey(password, salt, iterations, keyLength)
+    const key = await this.deriveKey(password, salt, iterations, keyLength)
 
     // 暗号化
     const cipher = crypto.createCipheriv(algorithm, Uint8Array.from(key), Uint8Array.from(iv))
@@ -105,10 +105,10 @@ export class EncryptionManager {
   /**
    * データを復号化
    */
-  static decrypt(
+  static async decrypt(
     encryptedData: EncryptedData,
     password: string
-  ): DecryptedResult {
+  ): Promise<DecryptedResult> {
     // 入力検証
     if (!encryptedData || !encryptedData.encrypted) {
       throw new Error('Invalid encrypted data')
@@ -138,7 +138,7 @@ export class EncryptionManager {
     const tagBuffer = Buffer.from(tag, 'base64')
 
     // キー導出
-    const key = this.deriveKey(
+    const key = await this.deriveKey(
       password,
       saltBuffer,
       this.ITERATIONS,
@@ -174,17 +174,17 @@ export class EncryptionManager {
   /**
    * 環境変数を暗号化
    */
-  static encryptEnvVar(
+  static async encryptEnvVar(
     value: string,
     envKey: string = 'ENCRYPTION_KEY'
-  ): string {
+  ): Promise<string> {
     const password = process.env[envKey]
 
     if (!password) {
       throw new Error(`Environment variable ${envKey} not set`)
     }
 
-    const encrypted = this.encrypt(value, password)
+    const encrypted = await this.encrypt(value, password)
 
     // コンパクトな形式で保存
     return Buffer.from(JSON.stringify(encrypted)).toString('base64')
@@ -193,10 +193,10 @@ export class EncryptionManager {
   /**
    * 環境変数を復号化
    */
-  static decryptEnvVar(
+  static async decryptEnvVar(
     encryptedValue: string,
     envKey: string = 'ENCRYPTION_KEY'
-  ): string {
+  ): Promise<string> {
     const password = process.env[envKey]
 
     if (!password) {
@@ -208,7 +208,7 @@ export class EncryptionManager {
         Buffer.from(encryptedValue, 'base64').toString('utf8')
       )
 
-      const result = this.decrypt(encryptedData, password)
+      const result = await this.decrypt(encryptedData, password)
       return result.data
     } catch (error) {
       throw new Error('Failed to decrypt environment variable')
@@ -218,22 +218,22 @@ export class EncryptionManager {
   /**
    * JSONオブジェクトを暗号化
    */
-  static encryptJSON<T extends object>(
+  static async encryptJSON<T extends object>(
     obj: T,
     password: string
-  ): EncryptedData {
+  ): Promise<EncryptedData> {
     const jsonString = JSON.stringify(obj)
-    return this.encrypt(jsonString, password)
+    return await this.encrypt(jsonString, password)
   }
 
   /**
    * JSONオブジェクトを復号化
    */
-  static decryptJSON<T extends object>(
+  static async decryptJSON<T extends object>(
     encryptedData: EncryptedData,
     password: string
-  ): T {
-    const result = this.decrypt(encryptedData, password)
+  ): Promise<T> {
+    const result = await this.decrypt(encryptedData, password)
 
     try {
       return JSON.parse(result.data)
@@ -254,7 +254,7 @@ export class EncryptionManager {
     const path = await import('path')
 
     const data = await fs.readFile(filePath, 'utf8')
-    const encrypted = this.encrypt(data, password)
+    const encrypted = await this.encrypt(data, password)
 
     const output = outputPath || `${filePath}.enc`
     await fs.writeFile(output, JSON.stringify(encrypted, null, 2))
@@ -276,7 +276,7 @@ export class EncryptionManager {
     const encryptedContent = await fs.readFile(encryptedFilePath, 'utf8')
     const encryptedData = JSON.parse(encryptedContent)
 
-    const result = this.decrypt(encryptedData, password)
+    const result = await this.decrypt(encryptedData, password)
 
     const output = outputPath || encryptedFilePath.replace('.enc', '')
     await fs.writeFile(output, result.data)
@@ -287,12 +287,12 @@ export class EncryptionManager {
   /**
    * パスワードからキーを導出（PBKDF2）
    */
-  private static deriveKey(
+  private static async deriveKey(
     password: string,
     salt: Buffer,
     iterations: number,
     keyLength: number
-  ): Buffer {
+  ): Promise<Buffer> {
     const cacheKey = `${password}-${salt.toString('base64')}`
 
     // キャッシュチェック
@@ -302,7 +302,12 @@ export class EncryptionManager {
     }
 
     // キー導出
-    const key = crypto.pbkdf2Sync(password, Uint8Array.from(salt), iterations, keyLength, 'sha256')
+    const key = await new Promise<Buffer>((resolve, reject) => {
+      crypto.pbkdf2(password, Uint8Array.from(salt), iterations, keyLength, 'sha256', (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(derivedKey);
+      });
+    });
 
     // キャッシュに保存（サイズ制限付き）
     if (this.keyCache.size >= this.MAX_CACHE_SIZE) {

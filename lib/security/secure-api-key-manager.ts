@@ -353,16 +353,19 @@ export class SecureApiKeyManager {
     const iterations = 100000
     const keyLength = 32
 
-    return crypto
-      .pbkdf2Sync(apiKey, salt, iterations, keyLength, 'sha256')
-      .toString('hex')
+    return new Promise((resolve, reject) => {
+      crypto.pbkdf2(apiKey, salt, iterations, keyLength, 'sha256', (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(derivedKey.toString('hex'));
+      });
+    });
   }
 
   /**
    * 暗号化されたキーを保存（バックアップ用）
    */
   private async storeEncryptedKey(keyId: string, apiKey: string): Promise<void> {
-    const encrypted = EncryptionManager.encrypt(apiKey, this.encryptionKey)
+    const encrypted = await EncryptionManager.encrypt(apiKey, this.encryptionKey)
 
     const encryptedKey: EncryptedApiKey = {
       encrypted_key: JSON.stringify(encrypted),

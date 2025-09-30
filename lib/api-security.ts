@@ -29,13 +29,18 @@ export class ApiSecurity {
     return ApiSecurity.instance;
   }
 
-  deriveKey(secret: string, salt: Buffer): Buffer {
-    return crypto.pbkdf2Sync(secret, salt as unknown as crypto.BinaryLike, 100000, KEY_LENGTH, 'sha256');
+  async deriveKey(secret: string, salt: Buffer): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      crypto.pbkdf2(secret, salt as unknown as crypto.BinaryLike, 100000, KEY_LENGTH, 'sha256', (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(derivedKey);
+      });
+    });
   }
 
-  encryptApiKey(apiKey: string, secret: string): string {
+  async encryptApiKey(apiKey: string, secret: string): Promise<string> {
     const salt = crypto.randomBytes(SALT_LENGTH);
-    const key = this.deriveKey(secret, salt);
+    const key = await this.deriveKey(secret, salt);
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
 
@@ -50,7 +55,7 @@ export class ApiSecurity {
     return combined.toString('base64');
   }
 
-  decryptApiKey(encryptedKey: string, secret: string): string | null {
+  async decryptApiKey(encryptedKey: string, secret: string): Promise<string | null> {
     try {
       const combined = Buffer.from(encryptedKey, 'base64');
 
@@ -59,7 +64,7 @@ export class ApiSecurity {
       const tag = combined.slice(SALT_LENGTH + IV_LENGTH, SALT_LENGTH + IV_LENGTH + TAG_LENGTH);
       const encrypted = combined.slice(SALT_LENGTH + IV_LENGTH + TAG_LENGTH);
 
-      const key = this.deriveKey(secret, salt);
+      const key = await this.deriveKey(secret, salt);
       const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
       decipher.setAuthTag(new Uint8Array(tag));
 
@@ -75,20 +80,34 @@ export class ApiSecurity {
     }
   }
 
-  hashApiKey(apiKey: string): string {
+  async hashApiKey(apiKey: string): Promise<string> {
     // Use PBKDF2 for better security instead of simple SHA256
     const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.pbkdf2Sync(apiKey, salt, 100000, 64, 'sha512').toString('hex');
-    return `${salt}:${hash}`;
+    return new Promise((resolve, reject) => {
+      crypto.pbkdf2(apiKey, salt, 100000, 64, 'sha512', (err, derivedKey) => {
+        if (err) reject(err);
+        else {
+          const hash = derivedKey.toString('hex');
+          resolve(`${salt}:${hash}`);
+        }
+      });
+    });
   }
 
-  verifyApiKeyHash(apiKey: string, storedHash: string): boolean {
+  async verifyApiKeyHash(apiKey: string, storedHash: string): Promise<boolean> {
     const [salt, hash] = storedHash.split(':');
     if (!salt || !hash) return false;
 
-    const testHash = crypto.pbkdf2Sync(apiKey, salt, 100000, 64, 'sha512').toString('hex');
-    // Use timing-safe comparison
-    return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(testHash));
+    return new Promise((resolve, reject) => {
+      crypto.pbkdf2(apiKey, salt, 100000, 64, 'sha512', (err, derivedKey) => {
+        if (err) reject(err);
+        else {
+          const testHash = derivedKey.toString('hex');
+          // Use timing-safe comparison
+          resolve(crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(testHash)));
+        }
+      });
+    });
   }
 
   async verifyApiKey(apiKey: string, supabase: any): Promise<boolean> {
@@ -106,7 +125,7 @@ export class ApiSecurity {
       // Check each key with timing-safe comparison
       let validKey = null;
       for (const key of keys) {
-        if (this.verifyApiKeyHash(apiKey, key.key_hash)) {
+        if (await this.verifyApiKeyHash(apiKey, key.key_hash)) {
           validKey = key;
           break;
         }
