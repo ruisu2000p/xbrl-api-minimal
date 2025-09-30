@@ -10,7 +10,33 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400'
 };
 
-console.log('🚀 API Key Manager Function (SECURITY DEFINER Version)');
+console.log('🚀 API Key Manager Function Starting (Simplified Version)');
+
+// 軽量JWT解析（署名検証なし）
+function getUserIdFromJWT(bearer: string | null): string | null {
+  if (!bearer) return null;
+  const token = bearer.startsWith('Bearer ') ? bearer.slice(7) : bearer;
+  try {
+    const [, payload] = token.split('.');
+    if (!payload) return null;
+
+    // base64url to base64 conversion
+    const base64 = payload
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(payload.length / 4) * 4, '=');
+
+    const json = atob(base64);
+    const obj = JSON.parse(json);
+
+    // Check expiration
+    if (obj?.exp && Date.now() / 1000 > obj.exp) return null;
+
+    return obj?.sub ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function json(status: number, body: any) {
   return new Response(JSON.stringify(body), {
@@ -54,19 +80,19 @@ Deno.serve(async (req) => {
 
     // Environment check
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+    const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     // Use a default pepper if not configured (for development)
     const PEPPER = Deno.env.get('API_KEY_PEPPER') || 'default-pepper-for-development';
     const BCRYPT_COST = Number(Deno.env.get('BCRYPT_COST') || '10');
 
-    if (!SUPABASE_URL || !ANON_KEY) {
+    if (!SUPABASE_URL || !SERVICE_KEY) {
       console.error('❌ Missing Supabase environment variables');
       return json(500, {
         error: 'Missing environment variables',
         missing: {
           SUPABASE_URL: !SUPABASE_URL,
-          ANON_KEY: !ANON_KEY
+          SERVICE_KEY: !SERVICE_KEY
         }
       });
     }
@@ -74,28 +100,23 @@ Deno.serve(async (req) => {
     console.log('✅ Environment variables OK');
     console.log('🔐 Security config: bcrypt cost:', BCRYPT_COST);
 
-    // Initialize Supabase client with ANON_KEY (not Service Role Key)
-    // SECURITY DEFINER functions will handle RLS bypass internally
-    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
-
-    const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+    // Initialize Supabase client
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: {
         persistSession: false
-      },
-      global: {
-        headers: authHeader ? { Authorization: authHeader } : {}
       }
     });
 
-    // Verify user is authenticated via JWT
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Extract user ID from JWT
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    const userId = getUserIdFromJWT(authHeader);
 
-    if (authError || !user) {
-      console.error('❌ Authentication failed:', authError);
+    if (!userId) {
+      console.error('❌ Invalid or missing JWT token');
       return json(401, { error: 'Invalid or expired token' });
     }
 
-    console.log('✅ Authenticated user:', user.id);
+    console.log('✅ Authenticated user:', userId);
 
     // Parse request body
     let body: any = {};
@@ -127,11 +148,17 @@ Deno.serve(async (req) => {
     const action = normalizeAction(actualBody?.action);
     console.log('🎯 Action:', action);
 
-    // Handle list action using SECURITY DEFINER function
+    // Handle list action
     if (action === 'list') {
-      console.log('📋 Fetching API keys via SECURITY DEFINER function...');
+      console.log('📋 Fetching API keys...');
 
-      const { data, error } = await supabase.rpc('list_api_keys_secure');
+      // Use private schema tables
+      const { data, error } = await admin
+        .from('api_keys')
+        .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('❌ Database error (list):', error);
@@ -149,7 +176,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Handle rotate action (create/reissue/regenerate) using SECURITY DEFINER function
+    // Handle rotate action (create/reissue/regenerate)
     if (action === 'rotate') {
       const { key_name, tier = 'free' } = actualBody;
 
@@ -175,18 +202,46 @@ Deno.serve(async (req) => {
       console.log('🔐 Hashing API key...');
       const keyHash = await bcrypt.hash(apiKey + PEPPER, BCRYPT_COST);
       const keyPrefix = apiKey.substring(0, 12);
-      const keySuffix = apiKey.substring(apiKey.length - 4);
 
       console.log('🔑 Generated key with prefix:', keyPrefix);
 
-      // Create new key using SECURITY DEFINER function
-      const { data, error } = await supabase.rpc('create_api_key_secure', {
-        key_name: key_name.trim(),
-        key_hash_input: keyHash,
-        key_prefix_input: keyPrefix,
-        key_suffix_input: keySuffix,
-        tier_input: tier
-      });
+      // Deactivate old keys - try both tables
+      const { error: deactivateError1 } = await admin
+        .from('api_keys_main')
+        .update({ is_active: false })
+        .eq('user_id', userId)
+        .eq('is_active', true);
+
+      if (deactivateError1?.message?.includes('relation')) {
+        const { error: deactivateError2 } = await admin
+          .from('api_keys')
+          .update({ is_active: false })
+          .eq('user_id', userId)
+          .eq('is_active', true);
+        if (deactivateError2) {
+          console.error('⚠️ Failed to deactivate old keys:', deactivateError2);
+        }
+      } else if (deactivateError1) {
+        console.error('⚠️ Failed to deactivate old keys:', deactivateError1);
+      }
+
+      if (deactivateError) {
+        console.error('⚠️ Failed to deactivate old keys:', deactivateError);
+      }
+
+      // Insert new key
+      const { data, error } = await admin
+        .from('api_keys')
+        .insert({
+          user_id: userId,
+          name: key_name.trim(),
+          key_hash: keyHash,
+          key_prefix: keyPrefix,
+          tier: tier,
+          is_active: true
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('❌ Database error (create):', error);
@@ -198,20 +253,17 @@ Deno.serve(async (req) => {
 
       console.log('✅ API key created successfully');
 
-      // data is an array with one element
-      const keyData = Array.isArray(data) ? data[0] : data;
-
       return json(200, {
         success: true,
         apiKey: apiKey,
-        keyId: keyData?.id,
-        name: keyData?.name,
-        tier: keyData?.tier,
+        keyId: data?.id,
+        name: data?.name,
+        tier: data?.tier,
         message: 'このAPIキーは一度だけ表示されます。安全な場所に保管してください。'
       });
     }
 
-    // Handle delete action using SECURITY DEFINER function
+    // Handle delete action
     if (action === 'delete') {
       const { key_id } = actualBody;
 
@@ -224,10 +276,12 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Delete key using SECURITY DEFINER function
-      const { data, error } = await supabase.rpc('revoke_api_key_secure', {
-        key_id_input: key_id
-      });
+      // Delete key (deactivate)
+      const { error } = await admin
+        .from('api_keys')
+        .update({ is_active: false })
+        .eq('id', key_id)
+        .eq('user_id', userId);
 
       if (error) {
         console.error('❌ Database error (delete):', error);
@@ -237,7 +291,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      console.log('✅ API key deleted successfully:', data);
+      console.log('✅ API key deleted successfully');
 
       return json(200, {
         success: true,

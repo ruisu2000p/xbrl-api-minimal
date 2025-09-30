@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { createClient, createServiceClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 import { generateBcryptApiKey } from '@/lib/security/bcrypt-apikey';
 
 
@@ -48,43 +48,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 通常のクライアントを使用（Service Roleが設定されていない場合を考慮）
+    // 通常のクライアントを使用（Service Role Keyは不要）
     const supabase: SupabaseClient = await createClient();
 
-    let supabaseAdmin: SupabaseClient | null = null;
-    try {
-      supabaseAdmin = await createServiceClient();
-    } catch (error) {
-      console.warn('Service role client is not available. Falling back to limited checks.', error);
-    }
+    // 既存ユーザーをチェック（サインイン試行による確認）
+    // Service Role Keyを使用せず、より安全な方法で確認
+    const userExists = await checkUserExistsViaSignIn(supabase, email);
 
-    // Supabaseで既存ユーザーをチェック（メールアドレスで確認）
-    // 注: auth.usersへの直接アクセスはService Roleが必要
-    let existingUser = null;
-    let searchError: { code?: string } | null = null;
-
-    if (supabaseAdmin) {
-      const { data, error } = await supabaseAdmin
-        .from('auth.users')
-        .select('id, email')
-        .eq('email', email)
-        .single();
-
-      existingUser = data;
-      searchError = error;
-    }
-
-    // auth.usersへの直接アクセスが失敗した場合やService Roleがない場合は、従来の方法にフォールバック
-    if (!supabaseAdmin || (searchError && searchError.code !== 'PGRST116')) { // PGRST116 = not found
-      const userExists = await checkUserExistsViaSignIn(supabase, email);
-
-      if (userExists) {
-        return createApiResponse.error(
-          ErrorCodes.ALREADY_EXISTS,
-          'このメールアドレスは既に登録されています'
-        );
-      }
-    } else if (!searchError && existingUser) {
+    if (userExists) {
       return createApiResponse.error(
         ErrorCodes.ALREADY_EXISTS,
         'このメールアドレスは既に登録されています'
@@ -145,32 +116,15 @@ export async function POST(request: NextRequest) {
       const { apiKey: generatedKey, hash: keyHash, prefix: keyPrefix, suffix: keySuffix } = await generateBcryptApiKey();
       apiKey = generatedKey;
 
-      // privateスキーマへのアクセスにはService Roleが必要な場合があるため、利用可能な方を使用
-      // Service Roleが取れなければsupabaseにフォールバック
-      const tempClient = supabaseAdmin ?? supabase;
-
-      // 万一どちらも無ければエラーに（この状況は発生しないはずだが型安全のため）
-      if (!tempClient) {
-        console.error('No Supabase client available for API key creation');
-        throw new Error('Supabase client initialization failed');
-      }
-
-      // 明示的にSupabaseClientとしてキャスト
-      const dbClient: SupabaseClient = tempClient as SupabaseClient;
-
-      const { data: apiKeyData, error: apiKeyError } = await (dbClient as any)
-        .from('api_keys')
-        .schema('private')
-        .insert({
-          user_id: userId,
-          name: 'Default API Key',  // NOT NULL制約のため必須
-          key_prefix: keyPrefix,
-          key_suffix: keySuffix,  // suffixも保存
-          key_hash: keyHash,
-          is_active: true
-        })
-        .select()
-        .single();
+      // SECURITY DEFINER関数を使用してAPIキーを作成
+      // 認証されたsupabaseクライアントを使用（Service Role Keyは不要）
+      const { data: apiKeyData, error: apiKeyError } = await supabase.rpc('create_api_key_secure', {
+        key_name: 'Default API Key',
+        key_hash_input: keyHash,
+        key_prefix_input: keyPrefix,
+        key_suffix_input: keySuffix,
+        tier_input: 'free'
+      });
 
       if (apiKeyError) {
         console.error('API key creation error:', apiKeyError);
