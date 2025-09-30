@@ -81,7 +81,8 @@ interface ProfileTabProps {
 
 function ProfileTab({ profile, originalProfile, message, onChange, onSave, t }: ProfileTabProps) {
   // 変更があるかどうかをチェック
-  const hasChanges = profile.name !== originalProfile.name || profile.company !== originalProfile.company;
+  const hasChanges = profile.email !== originalProfile.email || profile.name !== originalProfile.name || profile.company !== originalProfile.company;
+  const emailChanged = profile.email !== originalProfile.email;
 
   return (
     <div className="space-y-6">
@@ -104,6 +105,11 @@ function ProfileTab({ profile, originalProfile, message, onChange, onSave, t }: 
             <i className="ri-alert-line text-amber-600"></i>
             <span className="text-amber-800 font-medium">{t('dashboard.settings.profile.unsavedChanges')}</span>
           </div>
+          {emailChanged && (
+            <p className="mt-2 text-xs text-amber-700">
+              {t('dashboard.settings.profile.emailChangeNote')}
+            </p>
+          )}
         </div>
       )}
 
@@ -140,8 +146,8 @@ function ProfileTab({ profile, originalProfile, message, onChange, onSave, t }: 
             name="email"
             type="email"
             value={profile.email}
-            readOnly
-            className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-sm text-gray-900 cursor-not-allowed"
+            onChange={(event) => onChange('email', event.target.value)}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={t('dashboard.settings.profile.emailPlaceholder')}
             autoComplete="email"
           />
@@ -715,13 +721,22 @@ export default function AccountSettings() {
     setProfileMessage(null);
 
     try {
-      // Supabaseのユーザーメタデータを更新
-      const { data, error } = await supabaseClient.auth.updateUser({
+      const emailChanged = profile.email !== originalProfile.email;
+
+      // Supabaseのユーザー情報を更新
+      const updateData: any = {
         data: {
           name: profile.name,
           company: profile.company
         }
-      });
+      };
+
+      // メールアドレスが変更されている場合
+      if (emailChanged) {
+        updateData.email = profile.email;
+      }
+
+      const { data, error } = await supabaseClient.auth.updateUser(updateData);
 
       if (error) {
         console.error('プロフィール更新エラー:', error);
@@ -730,13 +745,22 @@ export default function AccountSettings() {
       }
 
       console.log('✅ プロフィール更新成功:', data);
-      setOriginalProfile(profile); // 保存成功時に元の値を更新
-      setProfileMessage({ type: 'success', text: t('dashboard.settings.profile.successMessage') });
+
+      // メールアドレス変更の場合は確認メッセージを表示
+      if (emailChanged) {
+        setProfileMessage({
+          type: 'success',
+          text: t('dashboard.settings.profile.emailConfirmationSent')
+        });
+      } else {
+        setOriginalProfile(profile); // 保存成功時に元の値を更新
+        setProfileMessage({ type: 'success', text: t('dashboard.settings.profile.successMessage') });
+      }
     } catch (error) {
       console.error('プロフィール更新失敗:', error);
       setProfileMessage({ type: 'error', text: t('dashboard.settings.profile.errorUpdate') });
     }
-  }, [profile, supabaseClient, t]);
+  }, [profile, originalProfile, supabaseClient, t]);
 
   const handlePlanSelect = useCallback((planId: string) => {
     setSelectedPlan(planId);
