@@ -31,8 +31,7 @@ export default function PricingSection() {
       price: { monthly: 2980, yearly: 29800 },
       description: t('pricing.plan.standard.description'),
       features: [
-        t('pricing.plan.standard.feature1'),
-        t('pricing.plan.standard.feature2')
+        t('pricing.plan.standard.feature1')
       ],
       limitations: [],
       buttonText: t('pricing.plan.standard.button'),
