@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +31,7 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setError('メールアドレスまたはパスワードが正しくありません');
+        setError(t('login2.error.invalid'));
         setIsLoading(false);
         return;
       }
@@ -55,7 +57,7 @@ export default function LoginPage() {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Login error:', err);
-      setError('ログイン中にエラーが発生しました');
+      setError(t('login2.error.general'));
     } finally {
       setIsLoading(false);
     }
@@ -69,12 +71,12 @@ export default function LoginPage() {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              アカウントにログイン
+              {t('login2.title')}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              または{' '}
+              {t('login2.orCreate')}{' '}
               <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer">
-                無料でアカウントを作成
+                {t('login2.createAccount')}
               </Link>
             </p>
           </div>
@@ -88,7 +90,7 @@ export default function LoginPage() {
               )}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  メールアドレス
+                  {t('login2.email')}
                 </label>
                 <input
                   id="email"
@@ -99,13 +101,13 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500"
-                  placeholder="your@email.com"
+                  placeholder={t('login2.emailPlaceholder')}
                 />
               </div>
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  パスワード
+                  {t('login2.password')}
                 </label>
                 <div className="relative">
                   <input
@@ -117,7 +119,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white text-gray-900 placeholder:text-gray-500"
-                    placeholder="パスワードを入力"
+                    placeholder={t('login2.passwordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -140,13 +142,13 @@ export default function LoginPage() {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
-                    ログイン状態を保持
+                    {t('login2.rememberMe')}
                   </label>
                 </div>
 
                 <div className="text-sm">
                   <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer">
-                    パスワードを忘れた方
+                    {t('login2.forgotPassword')}
                   </Link>
                 </div>
               </div>
@@ -160,10 +162,10 @@ export default function LoginPage() {
                   {isLoading ? (
                     <div className="flex items-center">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      ログイン中...
+                      {t('login2.loggingIn')}
                     </div>
                   ) : (
-                    'ログイン'
+                    t('login2.loginButton')
                   )}
                 </button>
               </div>
@@ -172,9 +174,9 @@ export default function LoginPage() {
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              アカウントをお持ちでない方は{' '}
+              {t('login2.noAccount')}{' '}
               <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer">
-                こちらから無料登録
+                {t('login2.signupLink')}
               </Link>
             </p>
           </div>
