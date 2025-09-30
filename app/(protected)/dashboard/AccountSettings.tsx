@@ -560,13 +560,29 @@ export default function AccountSettings() {
 
   // ユーザー情報でプロフィールを初期化
   useEffect(() => {
-    if (user && profile.email === '') {
-      setProfile({
-        email: user.email || '',
-        name: user.user_metadata?.name || '',
-        company: user.user_metadata?.company || ''
-      });
-    }
+    const loadUserProfile = async () => {
+      if (user && profile.email === '') {
+        console.log('📋 Loading user profile:', {
+          email: user.email,
+          metadata: user.user_metadata,
+          app_metadata: user.app_metadata
+        });
+
+        // user_metadataから情報を取得
+        const name = user.user_metadata?.name || user.user_metadata?.full_name || '';
+        const company = user.user_metadata?.company || '';
+
+        setProfile({
+          email: user.email || '',
+          name: name,
+          company: company
+        });
+
+        console.log('✅ Profile loaded:', { email: user.email, name, company });
+      }
+    };
+
+    void loadUserProfile();
   }, [user, profile.email]);
 
   const loadApiKeys = useCallback(async () => {
