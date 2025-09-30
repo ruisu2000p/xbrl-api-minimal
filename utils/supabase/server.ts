@@ -21,16 +21,8 @@ export async function createClient(): Promise<SupabaseClient> {
 /**
  * @deprecated createServiceSupabaseClient を使用してください
  *
- * Service Keyが設定されていない場合は通常のクライアントを返す
+ * 常にSupabaseClientを返す（環境変数がない場合はエラーをスロー）
  */
 export async function createServiceClient(): Promise<SupabaseClient> {
-  const serviceClient = await createServiceSupabaseClient()
-
-  // Service Keyが設定されていない場合は通常のクライアントを返す
-  if (!serviceClient) {
-    console.warn('Service role key not configured, falling back to regular client')
-    return createServerSupabaseClient()
-  }
-
-  return serviceClient
+  return createServiceSupabaseClient()
 }

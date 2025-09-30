@@ -116,14 +116,17 @@ export async function createServerSupabaseClient(): Promise<SupabaseClient> {
  * Service Roleクライアント作成（管理者権限）
  * バックエンド処理でのみ使用
  *
- * @returns Service Keyが設定されていない場合はnullを返す
+ * @returns 常にSupabaseClientを返す（環境変数がない場合はエラーをスロー）
+ * @throws Error Service Keyが設定されていない場合
  */
-export async function createServiceSupabaseClient(): Promise<SupabaseClient | null> {
+export async function createServiceSupabaseClient(): Promise<SupabaseClient> {
   const { url, serviceKey } = validateServiceEnvironment()
 
-  // Service Keyが設定されていない場合はnullを返す
+  // Service Keyが設定されていない場合はエラーをスロー
   if (!serviceKey) {
-    return null
+    throw new Error(
+      'Service role key is required but not configured. Set XBRL_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY environment variable.'
+    )
   }
 
   // シングルトンパターンで再利用
@@ -142,12 +145,17 @@ export async function createServiceSupabaseClient(): Promise<SupabaseClient | nu
 /**
  * 管理用の同期的なクライアント作成
  * Edge FunctionsやWorkerで使用
+ *
+ * @returns 常にSupabaseClientを返す（環境変数がない場合はエラーをスロー）
+ * @throws Error Service Keyが設定されていない場合
  */
-export function createAdminClient(): SupabaseClient | null {
+export function createAdminClient(): SupabaseClient {
   const { url, serviceKey } = validateServiceEnvironment()
 
   if (!serviceKey) {
-    return null
+    throw new Error(
+      'Service role key is required but not configured. Set XBRL_SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY environment variable.'
+    )
   }
 
   // シングルトンパターンで再利用
