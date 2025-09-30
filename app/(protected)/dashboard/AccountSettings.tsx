@@ -723,20 +723,29 @@ export default function AccountSettings() {
     try {
       const emailChanged = profile.email !== originalProfile.email;
 
-      // Supabaseのユーザー情報を更新
-      const updateData: any = {
-        data: {
-          name: profile.name,
-          company: profile.company
-        }
-      };
+      // メールアドレスが変更されている場合のみemailを含める
+      let updatePayload: any;
 
-      // メールアドレスが変更されている場合
       if (emailChanged) {
-        updateData.email = profile.email;
+        // メールアドレス変更の場合
+        updatePayload = {
+          email: profile.email,
+          data: {
+            name: profile.name,
+            company: profile.company
+          }
+        };
+      } else {
+        // メタデータのみ更新
+        updatePayload = {
+          data: {
+            name: profile.name,
+            company: profile.company
+          }
+        };
       }
 
-      const { data, error } = await supabaseClient.auth.updateUser(updateData);
+      const { data, error } = await supabaseClient.auth.updateUser(updatePayload);
 
       if (error) {
         console.error('プロフィール更新エラー:', error);
