@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       const dbClient: SupabaseClient = tempClient as SupabaseClient;
 
       const { data: apiKeyData, error: apiKeyError } = await (dbClient as any)
-        .from('api_keys_main')
+        .from('api_keys')
         .schema('private')
         .insert({
           user_id: userId,

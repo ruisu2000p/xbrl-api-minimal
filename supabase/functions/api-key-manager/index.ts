@@ -152,33 +152,13 @@ Deno.serve(async (req) => {
     if (action === 'list') {
       console.log('📋 Fetching API keys...');
 
-      // Use private schema tables - try both possible table names
-      let data = null;
-      let error = null;
-
-      // Try private.api_keys_main first
-      const result1 = await admin
-        .from('api_keys_main')
+      // Use private schema tables
+      const { data, error } = await admin
+        .from('api_keys')
         .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
         .eq('user_id', userId)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
-
-      if (result1.error?.message?.includes('relation') || result1.error?.message?.includes('does not exist')) {
-        // Fallback to private.api_keys
-        console.log('⚠️ api_keys_main not found, trying api_keys...');
-        const result2 = await admin
-          .from('api_keys')
-          .select('id, name, key_prefix, tier, is_active, created_at, last_used_at')
-          .eq('user_id', userId)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
-        data = result2.data;
-        error = result2.error;
-      } else {
-        data = result1.data;
-        error = result1.error;
-      }
 
       if (error) {
         console.error('❌ Database error (list):', error);
@@ -249,48 +229,19 @@ Deno.serve(async (req) => {
         console.error('⚠️ Failed to deactivate old keys:', deactivateError);
       }
 
-      // Insert new key - try api_keys_main first
-      let data = null;
-      let error = null;
-
-      const insertData = {
-        user_id: userId,
-        name: key_name.trim(),
-        key_hash: keyHash,
-        key_prefix: keyPrefix,
-        tier: tier,
-        is_active: true,
-        key_salt: 'temp_salt', // Add required fields for api_keys_main
-        request_count: 0
-      };
-
-      const result1 = await admin
-        .from('api_keys_main')
-        .insert(insertData)
+      // Insert new key
+      const { data, error } = await admin
+        .from('api_keys')
+        .insert({
+          user_id: userId,
+          name: key_name.trim(),
+          key_hash: keyHash,
+          key_prefix: keyPrefix,
+          tier: tier,
+          is_active: true
+        })
         .select()
         .single();
-
-      if (result1.error?.message?.includes('relation')) {
-        // Fallback to api_keys
-        console.log('⚠️ api_keys_main not found, trying api_keys...');
-        const result2 = await admin
-          .from('api_keys')
-          .insert({
-            user_id: userId,
-            name: key_name.trim(),
-            key_hash: keyHash,
-            key_prefix: keyPrefix,
-            tier: tier,
-            is_active: true
-          })
-          .select()
-          .single();
-        data = result2.data;
-        error = result2.error;
-      } else {
-        data = result1.data;
-        error = result1.error;
-      }
 
       if (error) {
         console.error('❌ Database error (create):', error);
@@ -325,22 +276,12 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Delete key - try both tables
-      const { error: error1 } = await admin
-        .from('api_keys_main')
+      // Delete key (deactivate)
+      const { error } = await admin
+        .from('api_keys')
         .update({ is_active: false })
         .eq('id', key_id)
         .eq('user_id', userId);
-
-      let error = error1;
-      if (error1?.message?.includes('relation')) {
-        const { error: error2 } = await admin
-          .from('api_keys')
-          .update({ is_active: false })
-          .eq('id', key_id)
-          .eq('user_id', userId);
-        error = error2;
-      }
 
       if (error) {
         console.error('❌ Database error (delete):', error);

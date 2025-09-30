@@ -22,7 +22,7 @@ const API_KEY_CONFIG = {
   ITERATIONS: 100000, // PBKDF2のイテレーション数
   DIGEST: 'sha256',
   SALT_LENGTH: 32,
-  TABLE: 'api_keys_main',
+  TABLE: 'api_keys',
   SCHEMA: 'private',
 } as const
 

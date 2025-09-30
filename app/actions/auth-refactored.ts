@@ -137,7 +137,7 @@ async function fetchUserApiKey(
 ): Promise<string | null> {
   try {
     const { data } = await supabase
-      .from('api_keys_main')
+      .from('api_keys')
       .select('key_prefix')
       .eq('user_id', userId)
       .eq('is_active', true)
