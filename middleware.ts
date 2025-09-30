@@ -46,13 +46,13 @@ export async function middleware(request: NextRequest) {
 
     // ページの場合はログインページへリダイレクト
     const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/auth/login'
+    redirectUrl.pathname = '/login'
     redirectUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
   // ログインページにアクセスした認証済みユーザーをダッシュボードにリダイレクト
-  if (sessionCookie && pathname === '/auth/login') {
+  if (sessionCookie && (pathname === '/login' || pathname === '/auth/login')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

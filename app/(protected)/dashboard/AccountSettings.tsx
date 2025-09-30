@@ -500,7 +500,7 @@ export default function AccountSettings() {
         if (!user && !supabaseLoading && !hasRedirected.current) {
           console.log('❌ セッション復元タイムアウト。ログインページへリダイレクトします。');
           hasRedirected.current = true; // リダイレクト済みとマーク
-          router.replace('/auth/login'); // replaceを使用して履歴に残さない
+          router.replace('/login'); // replaceを使用して履歴に残さない
         }
         setSessionChecked(true);
       }, 5000); // 5秒待機（新規登録後のセッション復元に十分な時間を与える）
@@ -515,7 +515,7 @@ export default function AccountSettings() {
     if (sessionChecked && !user && !supabaseLoading && !hasRedirected.current) {
       console.log('❌ 認証されていません。ログインページへリダイレクトします。');
       hasRedirected.current = true; // リダイレクト済みとマーク
-      router.replace('/auth/login'); // replaceを使用して履歴に残さない
+      router.replace('/login'); // replaceを使用して履歴に残さない
     }
   }, [user, supabaseLoading, sessionChecked]); // router と redirectTimer を依存配列から削除
 
@@ -1012,7 +1012,7 @@ export default function AccountSettings() {
       console.log('✅ ログアウト成功');
     }
 
-    router.push('/auth/login');
+    router.push('/login');
   }, [router, supabaseClient]);
 
   const activeTabLabel = useMemo(() => TABS.find((tab) => tab.id === activeTab)?.label ?? '', [activeTab]);
