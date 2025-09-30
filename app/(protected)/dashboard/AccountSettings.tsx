@@ -279,7 +279,9 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
               <div className="flex items-start justify-between">
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900">{plan.name}</h4>
-                  <p className="mt-1 text-sm text-gray-600">{plan.description}</p>
+                  {plan.description && !plan.description.startsWith('dashboard.') && (
+                    <p className="mt-1 text-sm text-gray-600">{plan.description}</p>
+                  )}
                 </div>
                 {isCurrent && (
                   <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
@@ -291,7 +293,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
               <div className="mt-4 text-2xl font-bold text-gray-900">{plan.price}</div>
 
               <ul className="mt-4 space-y-2 text-sm text-gray-600">
-                {plan.highlights.filter(item => item.trim() !== '').map((item) => (
+                {plan.highlights.filter(item => item.trim() !== '' && !item.startsWith('dashboard.')).map((item) => (
                   <li key={item} className="flex items-center">
                     <i className="ri-check-line mr-2 text-green-500"></i>
                     {item}
