@@ -76,10 +76,11 @@ interface ProfileTabProps {
   message: Message;
   onChange: (field: keyof ProfileState, value: string) => void;
   onSave: () => void;
+  isSaving: boolean;
   t: (key: string) => string;
 }
 
-function ProfileTab({ profile, originalProfile, message, onChange, onSave, t }: ProfileTabProps) {
+function ProfileTab({ profile, originalProfile, message, onChange, onSave, isSaving, t }: ProfileTabProps) {
   // 変更があるかどうかをチェック
   const hasChanges = profile.email !== originalProfile.email || profile.name !== originalProfile.name || profile.company !== originalProfile.company;
   const emailChanged = profile.email !== originalProfile.email;
@@ -184,10 +185,24 @@ function ProfileTab({ profile, originalProfile, message, onChange, onSave, t }: 
       <div className="flex justify-end">
         <button
           onClick={onSave}
-          className="flex items-center space-x-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+          disabled={isSaving || !hasChanges}
+          className={`flex items-center space-x-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors ${
+            isSaving || !hasChanges
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700'
+          }`}
         >
-          <i className="ri-save-line"></i>
-          <span>{t('dashboard.settings.profile.saveButton')}</span>
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>{t('dashboard.settings.profile.saving')}</span>
+            </>
+          ) : (
+            <>
+              <i className="ri-save-line"></i>
+              <span>{t('dashboard.settings.profile.saveButton')}</span>
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -500,6 +515,7 @@ export default function AccountSettings() {
   const [profile, setProfile] = useState<ProfileState>(INITIAL_PROFILE);
   const [originalProfile, setOriginalProfile] = useState<ProfileState>(INITIAL_PROFILE); // 元の値を保持
   const [profileMessage, setProfileMessage] = useState<Message>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Create plan options using translation function
   const planOptions = useMemo(() => getPlanOptions(t), [t]);
@@ -718,6 +734,12 @@ export default function AccountSettings() {
   }, []);
 
   const handleProfileSave = useCallback(async () => {
+    // 既に保存中の場合は何もしない（ダブルクリック防止）
+    if (isSavingProfile) {
+      console.log('⏭️ Already saving, skipping...');
+      return;
+    }
+
     setProfileMessage(null);
 
     // 変更チェック - 変更がない場合は何もしない
@@ -737,6 +759,8 @@ export default function AccountSettings() {
       nameChanged,
       companyChanged
     }, null, 2));
+
+    setIsSavingProfile(true);
 
     try {
       // セッションを確認
@@ -793,7 +817,16 @@ export default function AccountSettings() {
           status: error.status,
           name: error.name
         });
-        setProfileMessage({ type: 'error', text: t('dashboard.settings.profile.errorUpdate') });
+
+        // レート制限エラーの場合は特別なメッセージを表示
+        if (error.status === 429) {
+          setProfileMessage({
+            type: 'error',
+            text: t('dashboard.settings.profile.rateLimitError')
+          });
+        } else {
+          setProfileMessage({ type: 'error', text: t('dashboard.settings.profile.errorUpdate') });
+        }
         return;
       }
 
@@ -812,8 +845,10 @@ export default function AccountSettings() {
     } catch (error) {
       console.error('プロフィール更新失敗:', error);
       setProfileMessage({ type: 'error', text: t('dashboard.settings.profile.errorUpdate') });
+    } finally {
+      setIsSavingProfile(false);
     }
-  }, [profile, originalProfile, supabaseClient, t]);
+  }, [profile, originalProfile, supabaseClient, t, isSavingProfile]);
 
   const handlePlanSelect = useCallback((planId: string) => {
     setSelectedPlan(planId);
@@ -1281,6 +1316,7 @@ export default function AccountSettings() {
               message={profileMessage}
               onChange={handleProfileChange}
               onSave={handleProfileSave}
+              isSaving={isSavingProfile}
               t={t}
             />
           )}
