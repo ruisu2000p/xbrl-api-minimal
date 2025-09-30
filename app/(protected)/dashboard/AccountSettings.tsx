@@ -730,13 +730,19 @@ export default function AccountSettings() {
         return;
       }
 
-      console.log('📋 Current session:', {
+      console.log('📋 Current session:', JSON.stringify({
         user_id: session.user?.id,
         email: session.user?.email,
         hasToken: !!session.access_token
-      });
+      }, null, 2));
 
       const emailChanged = profile.email !== originalProfile.email;
+
+      console.log('🔍 Email change detection:', JSON.stringify({
+        currentEmail: profile.email,
+        originalEmail: originalProfile.email,
+        emailChanged
+      }, null, 2));
 
       // メールアドレスが変更されている場合のみemailを含める
       let updatePayload: any;
@@ -760,7 +766,7 @@ export default function AccountSettings() {
         };
       }
 
-      console.log('📤 Updating user with payload:', updatePayload);
+      console.log('📤 Updating user with payload:', JSON.stringify(updatePayload, null, 2));
 
       const { data, error } = await supabaseClient.auth.updateUser(updatePayload);
 
