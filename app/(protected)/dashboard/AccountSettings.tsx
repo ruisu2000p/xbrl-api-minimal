@@ -72,13 +72,17 @@ const INITIAL_PROFILE: ProfileState = {
 
 interface ProfileTabProps {
   profile: ProfileState;
+  originalProfile: ProfileState;
   message: Message;
   onChange: (field: keyof ProfileState, value: string) => void;
   onSave: () => void;
   t: (key: string) => string;
 }
 
-function ProfileTab({ profile, message, onChange, onSave, t }: ProfileTabProps) {
+function ProfileTab({ profile, originalProfile, message, onChange, onSave, t }: ProfileTabProps) {
+  // 変更があるかどうかをチェック
+  const hasChanges = profile.name !== originalProfile.name || profile.company !== originalProfile.company;
+
   return (
     <div className="space-y-6">
       {message && (
@@ -93,25 +97,35 @@ function ProfileTab({ profile, message, onChange, onSave, t }: ProfileTabProps) 
         </div>
       )}
 
+      {/* 未保存の変更警告 */}
+      {hasChanges && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm">
+          <div className="flex items-center gap-2">
+            <i className="ri-alert-line text-amber-600"></i>
+            <span className="text-amber-800 font-medium">{t('dashboard.settings.profile.unsavedChanges')}</span>
+          </div>
+        </div>
+      )}
+
       {/* Current Profile Information */}
-      {profile.email && (
+      {originalProfile.email && (
         <section className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('dashboard.settings.profile.currentInfoTitle')}</h3>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <p className="text-xs text-gray-600 mb-1">{t('dashboard.settings.profile.emailLabel')}</p>
-              <p className="text-sm font-medium text-gray-900">{profile.email}</p>
+              <p className="text-sm font-medium text-gray-900">{originalProfile.email}</p>
             </div>
-            {profile.name && (
+            {originalProfile.name && (
               <div>
                 <p className="text-xs text-gray-600 mb-1">{t('dashboard.settings.profile.nameLabel')}</p>
-                <p className="text-sm font-medium text-gray-900">{profile.name}</p>
+                <p className="text-sm font-medium text-gray-900">{originalProfile.name}</p>
               </div>
             )}
-            {profile.company && (
+            {originalProfile.company && (
               <div>
                 <p className="text-xs text-gray-600 mb-1">{t('dashboard.settings.profile.companyLabel')}</p>
-                <p className="text-sm font-medium text-gray-900">{profile.company}</p>
+                <p className="text-sm font-medium text-gray-900">{originalProfile.company}</p>
               </div>
             )}
           </div>
@@ -126,8 +140,8 @@ function ProfileTab({ profile, message, onChange, onSave, t }: ProfileTabProps) 
             name="email"
             type="email"
             value={profile.email}
-            onChange={(event) => onChange('email', event.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            readOnly
+            className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-sm text-gray-900 cursor-not-allowed"
             placeholder={t('dashboard.settings.profile.emailPlaceholder')}
             autoComplete="email"
           />
@@ -478,6 +492,7 @@ export default function AccountSettings() {
 
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [profile, setProfile] = useState<ProfileState>(INITIAL_PROFILE);
+  const [originalProfile, setOriginalProfile] = useState<ProfileState>(INITIAL_PROFILE); // 元の値を保持
   const [profileMessage, setProfileMessage] = useState<Message>(null);
 
   // Create plan options using translation function
@@ -575,11 +590,14 @@ export default function AccountSettings() {
         const name = user.user_metadata?.name || user.user_metadata?.full_name || '';
         const company = user.user_metadata?.company || '';
 
-        setProfile({
+        const profileData = {
           email: user.email || '',
           name: name,
           company: company
-        });
+        };
+
+        setProfile(profileData);
+        setOriginalProfile(profileData); // 元の値も保存
 
         setProfileLoaded(true);
         console.log('✅ Profile loaded:', { email: user.email, name, company });
@@ -712,6 +730,7 @@ export default function AccountSettings() {
       }
 
       console.log('✅ プロフィール更新成功:', data);
+      setOriginalProfile(profile); // 保存成功時に元の値を更新
       setProfileMessage({ type: 'success', text: t('dashboard.settings.profile.successMessage') });
     } catch (error) {
       console.error('プロフィール更新失敗:', error);
@@ -1181,6 +1200,7 @@ export default function AccountSettings() {
           {activeTab === 'profile' && (
             <ProfileTab
               profile={profile}
+              originalProfile={originalProfile}
               message={profileMessage}
               onChange={handleProfileChange}
               onSave={handleProfileSave}
