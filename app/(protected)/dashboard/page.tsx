@@ -6,7 +6,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AccountSettings from './AccountSettings';
 import { ApiKeyModal } from '@/app/components/ApiKeyModal';
-import AuthDisplay from '@/components/AuthDisplay';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSupabase } from '@/components/SupabaseProvider';
 
