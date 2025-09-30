@@ -291,7 +291,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
               <div className="mt-4 text-2xl font-bold text-gray-900">{plan.price}</div>
 
               <ul className="mt-4 space-y-2 text-sm text-gray-600">
-                {plan.highlights.map((item) => (
+                {plan.highlights.filter(item => item.trim() !== '').map((item) => (
                   <li key={item} className="flex items-center">
                     <i className="ri-check-line mr-2 text-green-500"></i>
                     {item}
