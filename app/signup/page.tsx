@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signUp } from '@/app/actions/auth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import Header from '@/components/Header';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -157,7 +158,9 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+      <Header />
+      <div className="flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl w-full">
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg shadow-blue-200/50">
@@ -497,6 +500,7 @@ export default function SignupPage() {
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );
