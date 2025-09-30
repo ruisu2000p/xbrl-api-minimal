@@ -721,6 +721,21 @@ export default function AccountSettings() {
     setProfileMessage(null);
 
     try {
+      // セッションを確認
+      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      if (!session) {
+        console.error('❌ セッションが存在しません');
+        setProfileMessage({ type: 'error', text: t('dashboard.settings.profile.errorUpdate') });
+        return;
+      }
+
+      console.log('📋 Current session:', {
+        user_id: session.user?.id,
+        email: session.user?.email,
+        hasToken: !!session.access_token
+      });
+
       const emailChanged = profile.email !== originalProfile.email;
 
       // メールアドレスが変更されている場合のみemailを含める
@@ -745,10 +760,16 @@ export default function AccountSettings() {
         };
       }
 
+      console.log('📤 Updating user with payload:', updatePayload);
+
       const { data, error } = await supabaseClient.auth.updateUser(updatePayload);
 
       if (error) {
-        console.error('プロフィール更新エラー:', error);
+        console.error('プロフィール更新エラー:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
         setProfileMessage({ type: 'error', text: t('dashboard.settings.profile.errorUpdate') });
         return;
       }
