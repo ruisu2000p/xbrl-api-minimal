@@ -50,9 +50,11 @@ export default function LoginPage() {
           credentials: 'include'
         });
 
+        // Cookieが反映されるまで少し待機
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         // ダッシュボードにリダイレクト
-        router.push('/dashboard');
-        router.refresh();
+        window.location.href = '/dashboard';
       }
     } catch (err) {
       // eslint-disable-next-line no-console

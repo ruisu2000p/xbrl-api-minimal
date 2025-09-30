@@ -125,8 +125,12 @@ export default function SignupPage() {
           // APIキーをセッションストレージに保存（ダッシュボードで表示）
           sessionStorage.setItem('newApiKey', result.apiKey);
         }
+
+        // Cookieが反映されるまで少し待機
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         // すぐにダッシュボードへリダイレクト（ローディング表示のまま）
-        router.push('/dashboard?newAccount=true');
+        window.location.href = '/dashboard?newAccount=true';
         return; // これ以降の処理をスキップ
       } else {
         setError(result.error || t('signup.error.failed'));
