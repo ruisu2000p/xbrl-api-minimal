@@ -93,6 +93,31 @@ function ProfileTab({ profile, message, onChange, onSave, t }: ProfileTabProps) 
         </div>
       )}
 
+      {/* Current Profile Information */}
+      {profile.email && (
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('dashboard.settings.profile.currentInfoTitle')}</h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-xs text-gray-600 mb-1">{t('dashboard.settings.profile.emailLabel')}</p>
+              <p className="text-sm font-medium text-gray-900">{profile.email}</p>
+            </div>
+            {profile.name && (
+              <div>
+                <p className="text-xs text-gray-600 mb-1">{t('dashboard.settings.profile.nameLabel')}</p>
+                <p className="text-sm font-medium text-gray-900">{profile.name}</p>
+              </div>
+            )}
+            {profile.company && (
+              <div>
+                <p className="text-xs text-gray-600 mb-1">{t('dashboard.settings.profile.companyLabel')}</p>
+                <p className="text-sm font-medium text-gray-900">{profile.company}</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       <section className="grid gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="profile-email" className="mb-2 block text-sm font-medium text-gray-700">{t('dashboard.settings.profile.emailLabel')}</label>
@@ -102,7 +127,7 @@ function ProfileTab({ profile, message, onChange, onSave, t }: ProfileTabProps) 
             type="email"
             value={profile.email}
             onChange={(event) => onChange('email', event.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={t('dashboard.settings.profile.emailPlaceholder')}
             autoComplete="email"
           />
@@ -115,7 +140,7 @@ function ProfileTab({ profile, message, onChange, onSave, t }: ProfileTabProps) 
             type="text"
             value={profile.name}
             onChange={(event) => onChange('name', event.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={t('dashboard.settings.profile.namePlaceholder')}
             autoComplete="name"
           />
@@ -130,7 +155,7 @@ function ProfileTab({ profile, message, onChange, onSave, t }: ProfileTabProps) 
           type="text"
           value={profile.company}
           onChange={(event) => onChange('company', event.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder={t('dashboard.settings.profile.companyPlaceholder')}
           autoComplete="organization"
         />
