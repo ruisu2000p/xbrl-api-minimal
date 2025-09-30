@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 // 保護されたルート（認証が必要）
 const protectedPaths = [
@@ -12,22 +13,47 @@ const protectedPaths = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Supabaseプロジェクトの識別子を取得
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const projectRef = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1]
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-  if (!projectRef) {
-    return NextResponse.next()
-  }
+  // Supabaseクライアントを作成
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: any) {
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+        },
+      },
+    }
+  )
 
-  // Cookieの存在をチェック（簡易的な認証チェック）
-  const sessionCookie = request.cookies.get(`sb-${projectRef}-auth-token`)
+  // セッションを取得
+  const { data: { session } } = await supabase.auth.getSession()
 
   // パスが保護されているかチェック
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
 
-  // 保護されたパスで認証Cookieがない場合
-  if (isProtectedPath && !sessionCookie) {
+  // 保護されたパスで認証がない場合
+  if (isProtectedPath && !session) {
     // APIルートの場合は401を返す
     if (pathname.startsWith('/api/')) {
       return new NextResponse(
@@ -52,11 +78,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // ログインページにアクセスした認証済みユーザーをダッシュボードにリダイレクト
-  if (sessionCookie && (pathname === '/login' || pathname === '/auth/login')) {
+  if (session && (pathname === '/login' || pathname === '/auth/login')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {

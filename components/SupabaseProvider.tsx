@@ -43,15 +43,31 @@ export default function SupabaseProvider({
   const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
-    // 初回のユーザー取得
+    console.log('⏳ Supabaseセッション読み込み中...')
+
+    // 初回のセッション復元
     const initializeUser = async () => {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser()
-        if (!error && user) {
-          setUser(user)
+        // まずセッションを復元
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+        if (sessionError) {
+          console.error('❌ セッション復元エラー:', sessionError)
+          setUser(null)
+          setLoading(false)
+          return
+        }
+
+        if (session?.user) {
+          console.log('✅ 認証済みユーザー:', session.user.email)
+          setUser(session.user)
+        } else {
+          console.log('ℹ️ セッションが見つかりません')
+          setUser(null)
         }
       } catch (error) {
-        console.error('Failed to get initial user:', error)
+        console.error('Failed to get initial session:', error)
+        setUser(null)
       } finally {
         setLoading(false)
       }
@@ -62,7 +78,8 @@ export default function SupabaseProvider({
     // 認証状態の変更を監視
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 Auth state changed:', event, session?.user?.email)
       setUser(session?.user ?? null)
       setLoading(false)
     })
