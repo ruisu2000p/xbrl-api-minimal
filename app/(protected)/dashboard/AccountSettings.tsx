@@ -689,9 +689,31 @@ export default function AccountSettings() {
     setProfile((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleProfileSave = useCallback(() => {
-    setProfileMessage({ type: 'success', text: t('dashboard.settings.profile.successMessage') });
-  }, [t]);
+  const handleProfileSave = useCallback(async () => {
+    setProfileMessage(null);
+
+    try {
+      // Supabaseのユーザーメタデータを更新
+      const { data, error } = await supabaseClient.auth.updateUser({
+        data: {
+          name: profile.name,
+          company: profile.company
+        }
+      });
+
+      if (error) {
+        console.error('プロフィール更新エラー:', error);
+        setProfileMessage({ type: 'error', text: t('dashboard.settings.profile.errorUpdate') });
+        return;
+      }
+
+      console.log('✅ プロフィール更新成功:', data);
+      setProfileMessage({ type: 'success', text: t('dashboard.settings.profile.successMessage') });
+    } catch (error) {
+      console.error('プロフィール更新失敗:', error);
+      setProfileMessage({ type: 'error', text: t('dashboard.settings.profile.errorUpdate') });
+    }
+  }, [profile, supabaseClient, t]);
 
   const handlePlanSelect = useCallback((planId: string) => {
     setSelectedPlan(planId);
