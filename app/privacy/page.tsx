@@ -287,7 +287,7 @@ export default function PrivacyPage() {
                   <h2 className="text-2xl font-bold mb-4">{t.article3Title}</h2>
                   <p className="text-gray-700 mb-4">The purposes for which the Company collects and uses personal information are as follows:</p>
                   <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                    <li>To provide and operate the Company's services</li>
+                    <li>To provide and operate the Company&apos;s services</li>
                     <li>To respond to inquiries from users (including identity verification)</li>
                     <li>To send emails about new features, updates, campaigns, and other services provided by the Company</li>
                     <li>To communicate as necessary, such as for maintenance and important notices</li>
@@ -309,7 +309,7 @@ export default function PrivacyPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article5Title}</h2>
                   <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                    <li>The Company will not provide personal information to third parties without obtaining the user's prior consent, except in the following cases. However, this does not apply to cases permitted by the Personal Information Protection Act and other laws and regulations.
+                    <li>The Company will not provide personal information to third parties without obtaining the user&apos;s prior consent, except in the following cases. However, this does not apply to cases permitted by the Personal Information Protection Act and other laws and regulations.
                       <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
                         <li>When it is necessary for the protection of human life, body, or property and it is difficult to obtain the consent of the person</li>
                         <li>When it is particularly necessary for improving public health or promoting the sound growth of children and it is difficult to obtain the consent of the person</li>
@@ -341,7 +341,7 @@ export default function PrivacyPage() {
                     <li>When the Company is requested by a person to disclose personal information, it shall disclose it to the person without delay. However, if the disclosure falls under any of the following, all or part of it may not be disclosed, and if a decision is made not to disclose, the Company shall notify the person without delay.
                       <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
                         <li>When there is a risk of harming the life, body, property, or other rights and interests of the person or a third party</li>
-                        <li>When there is a risk of significantly hindering the proper implementation of the Company's business</li>
+                        <li>When there is a risk of significantly hindering the proper implementation of the Company&apos;s business</li>
                         <li>In other cases where it would violate laws and regulations</li>
                       </ul>
                     </li>
@@ -352,7 +352,7 @@ export default function PrivacyPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article7Title}</h2>
                   <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                    <li>If the personal information held by the Company is incorrect, users may request the Company to correct, add, or delete (hereinafter referred to as "correction, etc.") the personal information by following the procedures prescribed by the Company.</li>
+                    <li>If the personal information held by the Company is incorrect, users may request the Company to correct, add, or delete (hereinafter referred to as &quot;correction, etc.&quot;) the personal information by following the procedures prescribed by the Company.</li>
                     <li>If the Company receives a request from a user as described in the preceding paragraph and determines that there are reasonable grounds for the request, it shall make corrections, etc., to the personal information without delay.</li>
                     <li>The Company shall notify the user without delay when corrections, etc., are made based on the provisions of the preceding paragraph, or when a decision is made not to make corrections, etc.</li>
                   </ol>
