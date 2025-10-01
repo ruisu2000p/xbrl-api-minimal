@@ -272,7 +272,7 @@ export default function PrivacyPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article1Title}</h2>
                   <p className="text-gray-700">
-                    "Personal Information" refers to "personal information" as defined by the Personal Information Protection Act, which is information about living individuals that can identify specific individuals through descriptions contained in the information, such as email addresses, names, and company names.
+                    &quot;Personal Information&quot; refers to &quot;personal information&quot; as defined by the Personal Information Protection Act, which is information about living individuals that can identify specific individuals through descriptions contained in the information, such as email addresses, names, and company names.
                   </p>
                 </section>
 
@@ -361,7 +361,7 @@ export default function PrivacyPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article8Title}</h2>
                   <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                    <li>If the Company is requested by a person to suspend or delete (hereinafter referred to as "suspension of use, etc.") the use of personal information on the grounds that the personal information is being handled beyond the scope of the purpose of use or that it has been obtained by fraudulent means, the Company shall conduct necessary investigations without delay.</li>
+                    <li>If the Company is requested by a person to suspend or delete (hereinafter referred to as &quot;suspension of use, etc.&quot;) the use of personal information on the grounds that the personal information is being handled beyond the scope of the purpose of use or that it has been obtained by fraudulent means, the Company shall conduct necessary investigations without delay.</li>
                     <li>Based on the results of the investigation in the preceding paragraph, if it is determined that there are reasonable grounds for the request, the Company shall suspend the use, etc., of the personal information without delay.</li>
                     <li>The Company shall notify the user without delay when suspension of use, etc., is performed based on the provisions of the preceding paragraph, or when a decision is made not to suspend the use, etc.</li>
                     <li>Notwithstanding the preceding two paragraphs, if suspension of use, etc., involves a large amount of expense or if it is otherwise difficult to suspend the use, etc., and alternative measures necessary to protect the rights and interests of the user can be taken, these alternative measures shall be taken.</li>
@@ -411,7 +411,7 @@ export default function PrivacyPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article13Title}</h2>
                   <p className="text-gray-700">
-                    The Company may process users' personal information on servers located outside of Japan for the purpose of providing the Service. In such cases, the Company shall take appropriate security measures and handle the information appropriately in accordance with the Personal Information Protection Act and other related laws and regulations.
+                    The Company may process users&apos; personal information on servers located outside of Japan for the purpose of providing the Service. In such cases, the Company shall take appropriate security measures and handle the information appropriately in accordance with the Personal Information Protection Act and other related laws and regulations.
                   </p>
                 </section>
 

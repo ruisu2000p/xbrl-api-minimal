@@ -306,7 +306,7 @@ export default function TermsPage() {
                     <li>Acts that infringe on copyrights, trademark rights, and other intellectual property rights included in the content of the Service</li>
                     <li>Acts that destroy or interfere with the function of the server or network of the Company, other users, or other third parties</li>
                     <li>Acts of commercially using information obtained through the Service</li>
-                    <li>Acts that may interfere with the operation of the Company's Service</li>
+                    <li>Acts that may interfere with the operation of the Company&apos;s Service</li>
                     <li>Acts of unauthorized access or attempts thereof</li>
                     <li>Acts of collecting or accumulating personal information about other users</li>
                     <li>Acts of using the Service for illegal, improper, or inappropriate purposes</li>
@@ -333,7 +333,7 @@ export default function TermsPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article7Title}</h2>
                   <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                    <li>The Company may, without prior notice, delete posted data, restrict the User's use of all or part of the Service, or cancel the User's registration if the User falls under any of the following:
+                    <li>The Company may, without prior notice, delete posted data, restrict the User&apos;s use of all or part of the Service, or cancel the User&apos;s registration if the User falls under any of the following:
                       <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
                         <li>If any provision of these Terms is violated</li>
                         <li>If it is found that there are false facts in the registered information</li>
@@ -357,7 +357,7 @@ export default function TermsPage() {
                   <ol className="list-decimal list-inside space-y-2 text-gray-700">
                     <li>The Company does not guarantee, either expressly or implicitly, that the Service is free from factual or legal defects (including defects related to safety, reliability, accuracy, completeness, effectiveness, fitness for a particular purpose, security, etc., as well as errors, bugs, infringement of rights, etc.).</li>
                     <li>The Company shall not be liable for any damage caused to the User arising from the Service. However, this disclaimer shall not apply if the contract between the Company and the User regarding the Service (including these Terms) constitutes a consumer contract as defined by the Consumer Contract Act.</li>
-                    <li>Even in the cases specified in the proviso of the preceding paragraph, the Company shall not be liable for any damage arising from special circumstances (including cases where the Company or the User foresaw or could have foreseen the occurrence of damage) among damages caused to the User due to the Company's negligence (excluding gross negligence) or tort. Furthermore, compensation for damages caused to the User due to the Company's negligence (excluding gross negligence) or tort shall be limited to the amount of the usage fee received from the User in the month in which the damage occurred.</li>
+                    <li>Even in the cases specified in the proviso of the preceding paragraph, the Company shall not be liable for any damage arising from special circumstances (including cases where the Company or the User foresaw or could have foreseen the occurrence of damage) among damages caused to the User due to the Company&apos;s negligence (excluding gross negligence) or tort. Furthermore, compensation for damages caused to the User due to the Company&apos;s negligence (excluding gross negligence) or tort shall be limited to the amount of the usage fee received from the User in the month in which the damage occurred.</li>
                     <li>The Company shall not be responsible for any transactions, communications, or disputes that occur between the User and other users or third parties regarding the Service.</li>
                   </ol>
                 </section>
@@ -382,7 +382,7 @@ export default function TermsPage() {
 
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article12Title}</h2>
-                  <p className="text-gray-700">The Company shall appropriately handle personal information acquired through the use of the Service in accordance with the Company's "Privacy Policy."</p>
+                  <p className="text-gray-700">The Company shall appropriately handle personal information acquired through the use of the Service in accordance with the Company&apos;s &quot;Privacy Policy.&quot;</p>
                 </section>
 
                 <section className="mb-8">
@@ -392,14 +392,14 @@ export default function TermsPage() {
 
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article14Title}</h2>
-                  <p className="text-gray-700">The User may not transfer their status under the usage contract or their rights or obligations under these Terms to a third party or use them as collateral without the Company's prior written consent.</p>
+                  <p className="text-gray-700">The User may not transfer their status under the usage contract or their rights or obligations under these Terms to a third party or use them as collateral without the Company&apos;s prior written consent.</p>
                 </section>
 
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold mb-4">{t.article15Title}</h2>
                   <ol className="list-decimal list-inside space-y-2 text-gray-700">
                     <li>These Terms shall be governed by Japanese law.</li>
-                    <li>In the event of any dispute arising in connection with the Service, the court having jurisdiction over the location of the Company's head office shall have exclusive agreed jurisdiction.</li>
+                    <li>In the event of any dispute arising in connection with the Service, the court having jurisdiction over the location of the Company&apos;s head office shall have exclusive agreed jurisdiction.</li>
                   </ol>
                 </section>
               </>
