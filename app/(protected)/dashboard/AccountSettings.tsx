@@ -407,6 +407,45 @@ function ApiKeyTab({
         </div>
       )}
 
+      <section className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
+        <div className="flex items-start gap-3">
+          <i className="ri-information-line text-xl text-blue-600"></i>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-blue-900">{t('dashboard.settings.api.mcpTitle')}</h3>
+            <p className="mt-2 text-sm text-blue-700">{t('dashboard.settings.api.mcpDescription')}</p>
+
+            <div className="mt-4">
+              <p className="text-sm font-medium text-blue-800">{t('dashboard.settings.api.mcpConfigPath')}</p>
+              <code className="mt-1 block rounded-lg bg-white px-3 py-2 text-xs text-gray-800">
+                {typeof navigator !== 'undefined' && navigator.platform.includes('Win')
+                  ? '%APPDATA%\\Claude\\claude_desktop_config.json'
+                  : typeof navigator !== 'undefined' && navigator.platform.includes('Mac')
+                  ? '~/Library/Application Support/Claude/claude_desktop_config.json'
+                  : '~/.config/Claude/claude_desktop_config.json'}
+              </code>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-sm font-medium text-blue-800">{t('dashboard.settings.api.mcpConfigExample')}</p>
+              <pre className="mt-1 overflow-x-auto rounded-lg bg-gray-900 p-4 text-xs text-green-400">
+{`{
+  "mcpServers": {
+    "xbrl-financial": {
+      "command": "npx",
+      "args": ["shared-supabase-mcp-minimal@8.2.9"],
+      "env": {
+        "XBRL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}`}</pre>
+            </div>
+
+            <p className="mt-3 text-xs text-blue-600">{t('dashboard.settings.api.mcpRestart')}</p>
+          </div>
+        </div>
+      </section>
+
       <section className="rounded-2xl border border-gray-200 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex-1">
