@@ -47,6 +47,8 @@ const translations = {
     'faq.a6': 'はい、商用利用が可能です。ただし、取得したデータを第三者に販売した損害。または、AI分析結果に基づく損害について当社は一切の責任を負いかねます。',
     'footer.copyright': '© 2025 Financial Information next (FIN). All rights reserved.',
     'footer.github': 'GitHub',
+    'footer.privacy': 'プライバシーポリシー',
+    'footer.legal': '特定商取引法',
     // Login page (alternative /login route)
     'login2.title': 'アカウントにログイン',
     'login2.orCreate': 'または',
@@ -531,6 +533,8 @@ const translations = {
     'faq.a6': 'Yes, commercial use is permitted. However, we assume no responsibility for any damages resulting from selling acquired data to third parties or from AI analysis results.',
     'footer.copyright': '© 2025 Financial Information next (FIN). All rights reserved.',
     'footer.github': 'GitHub',
+    'footer.privacy': 'Privacy Policy',
+    'footer.legal': 'Specified Commercial Transaction Act',
     // Login page (alternative /login route)
     'login2.title': 'Login to Your Account',
     'login2.orCreate': 'or',

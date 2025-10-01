@@ -18,11 +18,11 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-4 text-sm">
                 <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
-                  プライバシーポリシー
+                  {t('footer.privacy')}
                 </Link>
                 <span className="text-gray-600">|</span>
                 <Link href="/legal" className="text-gray-400 hover:text-white transition-colors">
-                  特定商取引法
+                  {t('footer.legal')}
                 </Link>
               </div>
             </div>
