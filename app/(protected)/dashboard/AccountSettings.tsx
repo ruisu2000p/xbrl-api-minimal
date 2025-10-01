@@ -572,6 +572,7 @@ export default function AccountSettings() {
   const [newKeyName, setNewKeyName] = useState('');
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [isKeyCopied, setIsKeyCopied] = useState(false);
 
   // ダイアログ関連の状態
   const [deleteKeyId, setDeleteKeyId] = useState<string | null>(null);
@@ -769,6 +770,23 @@ export default function AccountSettings() {
       void loadApiKeys();
     }
   }, [activeTab, apiStatus, loadApiKeys]);
+
+  // APIキーが生成されていて、まだコピーされていない場合、ページ離脱時に警告を表示
+  useEffect(() => {
+    if (!generatedKey || isKeyCopied) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [generatedKey, isKeyCopied]);
 
   const handleProfileChange = useCallback((field: keyof ProfileState, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -1133,6 +1151,7 @@ export default function AccountSettings() {
       });
       
       setGeneratedKey(newApiKey);
+      setIsKeyCopied(false); // 新しいキーを生成したのでコピー済みフラグをリセット
       setNewKeyName('');
       setApiMessage({ type: 'success', text: t('dashboard.settings.api.successCreated') });
       
@@ -1248,7 +1267,12 @@ export default function AccountSettings() {
   const handleCopyKey = useCallback((value: string) => {
     void navigator.clipboard.writeText(value);
     setApiMessage({ type: 'success', text: t('dashboard.settings.api.successCopied') });
-  }, [t]);
+
+    // generatedKeyをコピーした場合は、コピー済みフラグを立てる（ページ離脱警告を解除）
+    if (generatedKey && value === generatedKey) {
+      setIsKeyCopied(true);
+    }
+  }, [t, generatedKey]);
 
   const handleLogout = useCallback(() => {
     setShowLogoutDialog(true);
