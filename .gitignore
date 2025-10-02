@@ -191,3 +191,15 @@ supabase-*.js
 supabase.exe
 supabase_*.log
 .claude/
+
+# Encryption keys (NEVER commit these)
+.env.key
+*.env.key
+.env.encrypted
+*.env.encrypted
+
+# Environment files (additional protection)
+.env
+.env.production
+.env.test
+.env.development
