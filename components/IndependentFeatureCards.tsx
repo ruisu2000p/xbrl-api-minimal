@@ -118,12 +118,6 @@ export default function IndependentFeatureCards() {
                         {activeVideo === index ? t('home.features.backToImage') : t('home.features.watchDemo')}
                       </button>
                     )}
-                    <Link href="/demo">
-                      <button className="flex items-center px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-300">
-                        <i className="ri-arrow-right-line text-xl mr-2"></i>
-                        {t('home.features.viewDetails')}
-                      </button>
-                    </Link>
                   </div>
                 </div>
 
