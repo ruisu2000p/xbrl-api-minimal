@@ -195,7 +195,7 @@ xbrl_zed68j6eu7_y2y9mneqg4q
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem"],
       "env": {
-        "FILESYSTEM_ROOT": "C:/Users/pumpk"
+        "FILESYSTEM_ROOT": "C:/Users/＊＊"
       }
     }
   }
