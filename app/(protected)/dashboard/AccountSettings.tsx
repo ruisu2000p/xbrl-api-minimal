@@ -24,12 +24,20 @@ type ProfileState = {
 type ApiState = 'idle' | 'loading' | 'ready' | 'error';
 
 // Plan structures will use translation keys
-const getDefaultCurrentPlan = (t: (key: string) => string) => ({
-  id: 'standard',
-  name: t('dashboard.settings.plan.standard.name'),
-  price: t('dashboard.settings.plan.standard.price'),
-  nextBilling: '2024-02-15',
-  status: t('dashboard.settings.plan.currentPlanStatus')
+const getDefaultCurrentPlan = (t: (key: string) => string, subscription?: any) => ({
+  id: subscription?.subscription_plans?.name || 'freemium',
+  name: subscription?.subscription_plans?.name === 'standard'
+    ? t('dashboard.settings.plan.standard.name')
+    : t('dashboard.settings.plan.freemium.name'),
+  price: subscription?.subscription_plans?.name === 'standard'
+    ? t('dashboard.settings.plan.standard.price')
+    : t('dashboard.settings.plan.freemium.price'),
+  nextBilling: subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString('ja-JP')
+    : '未設定',
+  status: subscription?.status === 'active'
+    ? t('dashboard.settings.plan.currentPlanStatus')
+    : '未契約'
 });
 
 const getPlanOptions = (t: (key: string) => string) => [
@@ -560,7 +568,8 @@ export default function AccountSettings() {
 
   // Create plan options using translation function
   const planOptions = useMemo(() => getPlanOptions(t), [t]);
-  const defaultCurrentPlan = useMemo(() => getDefaultCurrentPlan(t), [t]);
+  const [userSubscription, setUserSubscription] = useState<any>(null);
+  const defaultCurrentPlan = useMemo(() => getDefaultCurrentPlan(t, userSubscription), [t, userSubscription]);
 
   const [selectedPlan, setSelectedPlan] = useState<string>(defaultCurrentPlan.id);
   const [currentPlan, setCurrentPlan] = useState(defaultCurrentPlan);
@@ -670,6 +679,37 @@ export default function AccountSettings() {
 
     void loadUserProfile();
   }, [user]); // profileLoadedを依存配列から削除
+
+  // サブスクリプション情報を取得
+  useEffect(() => {
+    const loadSubscription = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_subscriptions')
+          .select(`*, subscription_plans (*)`)
+          .eq('user_id', user.id)
+          .single();
+
+        if (data && !error) {
+          console.log('✅ Subscription loaded:', data);
+          setUserSubscription(data);
+          setCurrentPlan(getDefaultCurrentPlan(t, data));
+          setSelectedPlan(data.subscription_plans?.name || 'freemium');
+        } else {
+          console.log('📋 No subscription found, using freemium');
+          setUserSubscription(null);
+          setCurrentPlan(getDefaultCurrentPlan(t, null));
+          setSelectedPlan('freemium');
+        }
+      } catch (err) {
+        console.error('❌ Error loading subscription:', err);
+      }
+    };
+
+    void loadSubscription();
+  }, [user, t, supabaseClient]);
 
   const loadApiKeys = useCallback(async () => {
     setApiStatus('loading');
