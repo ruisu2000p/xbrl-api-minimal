@@ -688,7 +688,17 @@ export default function AccountSettings() {
       try {
         const { data, error } = await supabaseClient
           .from('user_subscriptions')
-          .select(`*, subscription_plans (*)`)
+          .select(`
+            *,
+            subscription_plans:plan_id (
+              id,
+              name,
+              description,
+              price_monthly,
+              price_yearly,
+              features
+            )
+          `)
           .eq('user_id', user.id)
           .single();
 
