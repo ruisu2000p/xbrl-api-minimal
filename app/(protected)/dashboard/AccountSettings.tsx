@@ -708,7 +708,7 @@ export default function AccountSettings() {
           setCurrentPlan(getDefaultCurrentPlan(t, data));
           setSelectedPlan(data.subscription_plans?.name || 'freemium');
         } else {
-          console.log('📋 No subscription found, using freemium');
+          console.log('📋 No subscription found, using freemium', { error, data });
           setUserSubscription(null);
           setCurrentPlan(getDefaultCurrentPlan(t, null));
           setSelectedPlan('freemium');
