@@ -976,27 +976,81 @@ export default function AccountSettings() {
     setSelectedPlan(planId);
   }, []);
 
-  const handlePlanUpdate = useCallback(() => {
+  const handlePlanUpdate = useCallback(async () => {
     if (selectedPlan === currentPlan.id) {
       setPlanMessage({ type: 'success', text: t('dashboard.settings.plan.successCurrentPlan').replace('{name}', currentPlan.name) });
-    } else {
-      // 選択したプラン情報を取得
-      const newPlan = planOptions.find(p => p.id === selectedPlan);
-      if (newPlan) {
-        // 現在のプランを更新
-        setCurrentPlan({
-          id: newPlan.id,
-          name: newPlan.name,
-          price: newPlan.price,
-          nextBilling: userSubscription?.current_period_end
-            ? new Date(userSubscription.current_period_end).toLocaleDateString()
-            : '未設定',
-          status: t('dashboard.settings.plan.currentPlanStatus')
-        });
-        setPlanMessage({ type: 'success', text: t('dashboard.settings.plan.successPlanChange') });
-      }
+      return;
     }
-  }, [selectedPlan, currentPlan, planOptions, t, userSubscription]);
+
+    // 選択したプラン情報を取得
+    const newPlan = planOptions.find(p => p.id === selectedPlan);
+    if (!newPlan) {
+      setPlanMessage({ type: 'error', text: 'プランが見つかりませんでした' });
+      return;
+    }
+
+    try {
+      const user = await supabaseClient.auth.getUser();
+      if (!user.data.user) {
+        setPlanMessage({ type: 'error', text: '認証エラーが発生しました' });
+        return;
+      }
+
+      // subscription_plansテーブルから新しいプランIDを取得
+      const { data: planData, error: planError } = await supabaseClient
+        .from('subscription_plans')
+        .select('id')
+        .eq('name', selectedPlan)
+        .single();
+
+      if (planError || !planData) {
+        console.error('Error fetching plan:', planError);
+        setPlanMessage({ type: 'error', text: 'プラン情報の取得に失敗しました' });
+        return;
+      }
+
+      // user_subscriptionsを更新
+      const { error: updateError } = await supabaseClient
+        .from('user_subscriptions')
+        .update({
+          plan_id: planData.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.data.user.id);
+
+      if (updateError) {
+        console.error('Error updating subscription:', updateError);
+        setPlanMessage({ type: 'error', text: 'プランの更新に失敗しました' });
+        return;
+      }
+
+      // 成功したら表示を更新
+      setCurrentPlan({
+        id: newPlan.id,
+        name: newPlan.name,
+        price: newPlan.price,
+        nextBilling: userSubscription?.current_period_end
+          ? new Date(userSubscription.current_period_end).toLocaleDateString()
+          : '未設定',
+        status: t('dashboard.settings.plan.currentPlanStatus')
+      });
+      setPlanMessage({ type: 'success', text: t('dashboard.settings.plan.successPlanChange') });
+
+      // サブスクリプション情報を再読み込み
+      const { data: updatedSubscription } = await supabaseClient
+        .from('user_subscriptions')
+        .select('*, subscription_plans(*)')
+        .eq('user_id', user.data.user.id)
+        .single();
+
+      if (updatedSubscription) {
+        setUserSubscription(updatedSubscription);
+      }
+    } catch (error) {
+      console.error('Error in handlePlanUpdate:', error);
+      setPlanMessage({ type: 'error', text: 'プランの更新に失敗しました' });
+    }
+  }, [selectedPlan, currentPlan, planOptions, t, userSubscription, supabaseClient]);
 
   const handleCreateKey = useCallback(async () => {
     // eslint-disable-next-line no-console
