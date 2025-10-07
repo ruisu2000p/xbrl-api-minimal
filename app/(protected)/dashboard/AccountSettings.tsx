@@ -686,33 +686,46 @@ export default function AccountSettings() {
       if (!user) return;
 
       try {
-        const { data, error } = await supabaseClient
+        // Step 1: Get user subscription
+        const { data: subscriptionData, error: subError } = await supabaseClient
           .from('user_subscriptions')
-          .select(`
-            *,
-            subscription_plans:plan_id (
-              id,
-              name,
-              description,
-              price_monthly,
-              price_yearly,
-              features
-            )
-          `)
+          .select('*')
           .eq('user_id', user.id)
           .single();
 
-        if (data && !error) {
-          console.log('✅ Subscription loaded:', data);
-          setUserSubscription(data);
-          setCurrentPlan(getDefaultCurrentPlan(t, data));
-          setSelectedPlan(data.subscription_plans?.name || 'freemium');
-        } else {
-          console.log('📋 No subscription found, using freemium', { error, data });
+        if (subError || !subscriptionData) {
+          console.log('📋 No subscription found, using freemium', { error: subError });
           setUserSubscription(null);
           setCurrentPlan(getDefaultCurrentPlan(t, null));
           setSelectedPlan('freemium');
+          return;
         }
+
+        // Step 2: Get plan details
+        const { data: planData, error: planError } = await supabaseClient
+          .from('subscription_plans')
+          .select('*')
+          .eq('id', subscriptionData.plan_id)
+          .single();
+
+        if (planError || !planData) {
+          console.error('❌ Error loading plan:', planError);
+          setUserSubscription(null);
+          setCurrentPlan(getDefaultCurrentPlan(t, null));
+          setSelectedPlan('freemium');
+          return;
+        }
+
+        // Combine data
+        const combinedData = {
+          ...subscriptionData,
+          subscription_plans: planData
+        };
+
+        console.log('✅ Subscription loaded:', combinedData);
+        setUserSubscription(combinedData);
+        setCurrentPlan(getDefaultCurrentPlan(t, combinedData));
+        setSelectedPlan(planData.name || 'freemium');
       } catch (err) {
         console.error('❌ Error loading subscription:', err);
       }
