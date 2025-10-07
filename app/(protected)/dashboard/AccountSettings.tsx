@@ -33,7 +33,7 @@ const getDefaultCurrentPlan = (t: (key: string) => string, subscription?: any) =
     ? t('dashboard.settings.plan.standard.price')
     : t('dashboard.settings.plan.freemium.price'),
   nextBilling: subscription?.current_period_end
-    ? new Date(subscription.current_period_end).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })
+    ? new Date(subscription.current_period_end).toLocaleDateString()
     : '未設定',
   status: subscription?.status === 'active'
     ? t('dashboard.settings.plan.currentPlanStatus')
