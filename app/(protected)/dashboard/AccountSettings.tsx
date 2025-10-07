@@ -988,13 +988,15 @@ export default function AccountSettings() {
           id: newPlan.id,
           name: newPlan.name,
           price: newPlan.price,
-          nextBilling: '2024-02-15', // 今は固定値
+          nextBilling: userSubscription?.current_period_end
+            ? new Date(userSubscription.current_period_end).toLocaleDateString()
+            : '未設定',
           status: t('dashboard.settings.plan.currentPlanStatus')
         });
         setPlanMessage({ type: 'success', text: t('dashboard.settings.plan.successPlanChange') });
       }
     }
-  }, [selectedPlan, currentPlan, planOptions, t]);
+  }, [selectedPlan, currentPlan, planOptions, t, userSubscription]);
 
   const handleCreateKey = useCallback(async () => {
     // eslint-disable-next-line no-console
