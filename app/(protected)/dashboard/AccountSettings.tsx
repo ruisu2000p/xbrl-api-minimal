@@ -1009,19 +1009,39 @@ export default function AccountSettings() {
         return;
       }
 
-      // 次回請求日を計算
-      const now = new Date();
-      let nextBillingDate: Date;
+      // Standardプランに変更する場合はStripe決済へ
+      if (selectedPlan === 'standard') {
+        setPlanMessage({ type: 'success', text: '決済ページへリダイレクト中...' });
 
-      if (selectedPlan === 'freemium') {
-        // Freemiumプランは100年後（実質lifetime）
-        nextBillingDate = new Date(now);
-        nextBillingDate.setFullYear(now.getFullYear() + 100);
-      } else {
-        // Standardプランは1ヶ月後
-        nextBillingDate = new Date(now);
-        nextBillingDate.setMonth(now.getMonth() + 1);
+        // Stripe Checkout Sessionを作成
+        const response = await fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.data.user.id,
+            planId: planData.id,
+          }),
+        });
+
+        const { sessionUrl, error: checkoutError } = await response.json();
+
+        if (checkoutError || !sessionUrl) {
+          console.error('Error creating checkout session:', checkoutError);
+          setPlanMessage({ type: 'error', text: '決済ページの作成に失敗しました' });
+          return;
+        }
+
+        // Stripe Checkoutページへリダイレクト
+        window.location.href = sessionUrl;
+        return;
       }
+
+      // Freemiumプランに変更する場合は直接更新
+      const now = new Date();
+      const nextBillingDate = new Date(now);
+      nextBillingDate.setFullYear(now.getFullYear() + 100); // 100年後
 
       // user_subscriptionsを更新
       const { error: updateError } = await supabaseClient
@@ -1044,9 +1064,7 @@ export default function AccountSettings() {
         id: newPlan.id,
         name: newPlan.name,
         price: newPlan.price,
-        nextBilling: userSubscription?.current_period_end
-          ? new Date(userSubscription.current_period_end).toLocaleDateString()
-          : '未設定',
+        nextBilling: nextBillingDate.toLocaleDateString(),
         status: t('dashboard.settings.plan.currentPlanStatus')
       });
       setPlanMessage({ type: 'success', text: t('dashboard.settings.plan.successPlanChange') });
