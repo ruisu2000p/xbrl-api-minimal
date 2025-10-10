@@ -9,9 +9,18 @@ export async function POST(req: NextRequest) {
   });
 
   // Supabaseクライアントの初期化（実行時）
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.XBRL_SUPABASE_SERVICE_KEY;
+
+  console.log('🔑 Environment check:', {
+    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    hasXbrlServiceKey: !!process.env.XBRL_SUPABASE_SERVICE_KEY,
+    usingKey: serviceKey ? `${serviceKey.substring(0, 20)}...` : 'NONE'
+  });
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.XBRL_SUPABASE_SERVICE_KEY!
+    serviceKey!
   );
   try {
     // リクエストボディから必要な情報を取得
