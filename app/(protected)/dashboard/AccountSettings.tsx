@@ -1009,11 +1009,26 @@ export default function AccountSettings() {
         return;
       }
 
+      // 次回請求日を計算
+      const now = new Date();
+      let nextBillingDate: Date;
+
+      if (selectedPlan === 'freemium') {
+        // Freemiumプランは100年後（実質lifetime）
+        nextBillingDate = new Date(now);
+        nextBillingDate.setFullYear(now.getFullYear() + 100);
+      } else {
+        // Standardプランは1ヶ月後
+        nextBillingDate = new Date(now);
+        nextBillingDate.setMonth(now.getMonth() + 1);
+      }
+
       // user_subscriptionsを更新
       const { error: updateError } = await supabaseClient
         .from('user_subscriptions')
         .update({
           plan_id: planData.id,
+          current_period_end: nextBillingDate.toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.data.user.id);
