@@ -86,11 +86,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // Stripeのサブスクリプション情報を取得
   const subscriptionId = session.subscription as string;
-  const subscriptionResponse = await stripe.subscriptions.retrieve(subscriptionId);
-  const subscription = subscriptionResponse as Stripe.Subscription;
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-  // 次回請求日を計算
-  const currentPeriodEnd = new Date((subscription.current_period_end || 0) * 1000);
+  // 次回請求日を計算（型キャストで対応）
+  const subscriptionData = subscription as any;
+  const currentPeriodEnd = new Date((subscriptionData.current_period_end || 0) * 1000);
 
   // user_subscriptionsを更新
   const { error: updateError } = await supabase
@@ -100,7 +100,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       status: 'active',
       stripe_subscription_id: subscriptionId,
       stripe_customer_id: session.customer as string,
-      current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
+      current_period_start: new Date((subscriptionData.current_period_start || 0) * 1000).toISOString(),
       current_period_end: currentPeriodEnd.toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -116,27 +116,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 // サブスクリプション更新時の処理
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const subscriptionData = subscription as any;
   const { error } = await supabase
     .from('user_subscriptions')
     .update({
-      status: subscription.status,
-      current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
-      current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end || false,
+      status: subscriptionData.status,
+      current_period_start: new Date((subscriptionData.current_period_start || 0) * 1000).toISOString(),
+      current_period_end: new Date((subscriptionData.current_period_end || 0) * 1000).toISOString(),
+      cancel_at_period_end: subscriptionData.cancel_at_period_end || false,
       updated_at: new Date().toISOString(),
     })
-    .eq('stripe_subscription_id', subscription.id);
+    .eq('stripe_subscription_id', subscriptionData.id);
 
   if (error) {
     console.error('Error updating subscription:', error);
     throw error;
   }
 
-  console.log(`✅ Subscription updated: ${subscription.id}`);
+  console.log(`✅ Subscription updated: ${subscriptionData.id}`);
 }
 
 // サブスクリプション削除時の処理
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const subscriptionData = subscription as any;
   // Freemiumプランに戻す
   const { data: freemiumPlan } = await supabase
     .from('subscription_plans')
@@ -159,12 +161,12 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       stripe_customer_id: null,
       updated_at: new Date().toISOString(),
     })
-    .eq('stripe_subscription_id', subscription.id);
+    .eq('stripe_subscription_id', subscriptionData.id);
 
   if (error) {
     console.error('Error cancelling subscription:', error);
     throw error;
   }
 
-  console.log(`✅ Subscription cancelled: ${subscription.id}`);
+  console.log(`✅ Subscription cancelled: ${subscriptionData.id}`);
 }
