@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
+// Force dynamic rendering for webhook endpoint
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   // Stripeクライアントの初期化（実行時）
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -14,6 +17,8 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  // Get raw body as text for Stripe signature verification
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
 
