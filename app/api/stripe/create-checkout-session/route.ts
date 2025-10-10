@@ -4,7 +4,15 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
   // Stripeクライアントの初期化（実行時）
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+  console.log('🔐 Stripe key check:', {
+    hasStripeKey: !!stripeKey,
+    keyPrefix: stripeKey ? stripeKey.substring(0, 20) : 'NONE',
+    keyLength: stripeKey?.length || 0
+  });
+
+  const stripe = new Stripe(stripeKey!, {
     apiVersion: '2025-09-30.clover',
   });
 
