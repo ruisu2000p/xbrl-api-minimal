@@ -997,11 +997,15 @@ export default function AccountSettings() {
       }
 
       // subscription_plansテーブルから新しいプランIDを取得
+      console.log('🔍 Looking up plan:', { selectedPlan });
+
       const { data: planData, error: planError } = await supabaseClient
         .from('subscription_plans')
         .select('id')
         .eq('name', selectedPlan)
         .single();
+
+      console.log('📋 Plan lookup result:', { planData, planError });
 
       if (planError || !planData) {
         console.error('Error fetching plan:', planError);
@@ -1009,9 +1013,19 @@ export default function AccountSettings() {
         return;
       }
 
+      console.log('✅ Found plan ID:', planData.id);
+
       // Standardプランに変更する場合はStripe決済へ
       if (selectedPlan === 'standard') {
         setPlanMessage({ type: 'success', text: '決済ページへリダイレクト中...' });
+
+        const requestBody = {
+          userId: user.data.user.id,
+          planId: planData.id,
+          userEmail: user.data.user.email,
+        };
+
+        console.log('📤 Sending to Stripe API:', requestBody);
 
         // Stripe Checkout Sessionを作成
         const response = await fetch('/api/stripe/create-checkout-session', {
@@ -1019,11 +1033,7 @@ export default function AccountSettings() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            userId: user.data.user.id,
-            planId: planData.id,
-            userEmail: user.data.user.email,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         const { sessionUrl, error: checkoutError } = await response.json();

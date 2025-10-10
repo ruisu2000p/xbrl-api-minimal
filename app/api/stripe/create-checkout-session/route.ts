@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
     // リクエストボディから必要な情報を取得
     const { userId, planId, userEmail } = await req.json();
 
+    console.log('📋 Received request:', { userId, planId, userEmail });
+
     if (!userId || !planId || !userEmail) {
       return NextResponse.json(
         { error: 'userId, planId, and userEmail are required' },
@@ -31,7 +33,10 @@ export async function POST(req: NextRequest) {
       .eq('id', planId)
       .single();
 
+    console.log('🔍 Plan lookup result:', { planData, planError });
+
     if (planError || !planData) {
+      console.error('❌ Plan not found:', { planId, error: planError });
       return NextResponse.json(
         { error: 'Plan not found' },
         { status: 404 }
