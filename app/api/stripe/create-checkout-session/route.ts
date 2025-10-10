@@ -15,22 +15,12 @@ export async function POST(req: NextRequest) {
   );
   try {
     // リクエストボディから必要な情報を取得
-    const { userId, planId } = await req.json();
+    const { userId, planId, userEmail } = await req.json();
 
-    if (!userId || !planId) {
+    if (!userId || !planId || !userEmail) {
       return NextResponse.json(
-        { error: 'userId and planId are required' },
+        { error: 'userId, planId, and userEmail are required' },
         { status: 400 }
-      );
-    }
-
-    // ユーザー情報を取得
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
-
-    if (userError || !userData) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
       );
     }
 
@@ -60,7 +50,7 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      customer_email: userData.user.email,
+      customer_email: userEmail,
       line_items: [
         {
           price: process.env.STRIPE_STANDARD_PRICE_ID!,

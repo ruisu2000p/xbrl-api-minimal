@@ -1022,6 +1022,7 @@ export default function AccountSettings() {
           body: JSON.stringify({
             userId: user.data.user.id,
             planId: planData.id,
+            userEmail: user.data.user.email,
           }),
         });
 
