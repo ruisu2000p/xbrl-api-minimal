@@ -38,7 +38,14 @@ export async function POST(req: NextRequest) {
     if (planError || !planData) {
       console.error('❌ Plan not found:', { planId, error: planError });
       return NextResponse.json(
-        { error: 'Plan not found' },
+        {
+          error: 'Plan not found',
+          details: {
+            planId,
+            errorMessage: planError?.message,
+            errorCode: planError?.code
+          }
+        },
         { status: 404 }
       );
     }
