@@ -9,9 +9,10 @@ export async function POST(req: NextRequest) {
   });
 
   // Supabaseクライアントの初期化（実行時）
+  // RLSポリシーでanon readを許可したので、anonキーを使用
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.XBRL_SUPABASE_SERVICE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
