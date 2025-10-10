@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
 async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
   stripe: Stripe,
-  supabase: ReturnType<typeof createClient>
+  supabase: any
 ) {
   const userId = session.metadata?.userId;
   const planId = session.metadata?.planId;
@@ -122,7 +122,7 @@ async function handleCheckoutCompleted(
 // サブスクリプション更新時の処理
 async function handleSubscriptionUpdated(
   subscription: Stripe.Subscription,
-  supabase: ReturnType<typeof createClient>
+  supabase: any
 ) {
   const subscriptionData = subscription as any;
   const { error } = await supabase
@@ -147,7 +147,7 @@ async function handleSubscriptionUpdated(
 // サブスクリプション削除時の処理
 async function handleSubscriptionDeleted(
   subscription: Stripe.Subscription,
-  supabase: ReturnType<typeof createClient>
+  supabase: any
 ) {
   const subscriptionData = subscription as any;
   // Freemiumプランに戻す
