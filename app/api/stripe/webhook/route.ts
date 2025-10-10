@@ -86,10 +86,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // Stripeのサブスクリプション情報を取得
   const subscriptionId = session.subscription as string;
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscriptionResponse = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = subscriptionResponse as Stripe.Subscription;
 
   // 次回請求日を計算
-  const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  const currentPeriodEnd = new Date((subscription.current_period_end || 0) * 1000);
 
   // user_subscriptionsを更新
   const { error: updateError } = await supabase
@@ -99,7 +100,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       status: 'active',
       stripe_subscription_id: subscriptionId,
       stripe_customer_id: session.customer as string,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
       current_period_end: currentPeriodEnd.toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -119,9 +120,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     .from('user_subscriptions')
     .update({
       status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
+      current_period_start: new Date((subscription.current_period_start || 0) * 1000).toISOString(),
+      current_period_end: new Date((subscription.current_period_end || 0) * 1000).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end || false,
       updated_at: new Date().toISOString(),
     })
     .eq('stripe_subscription_id', subscription.id);
