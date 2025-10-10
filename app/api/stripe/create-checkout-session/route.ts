@@ -2,18 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-// Stripeクライアントの初期化
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
-
-// Supabaseクライアントの初期化
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.XBRL_SUPABASE_SERVICE_KEY!
-);
-
 export async function POST(req: NextRequest) {
+  // Stripeクライアントの初期化（実行時）
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-09-30.clover',
+  });
+
+  // Supabaseクライアントの初期化（実行時）
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.XBRL_SUPABASE_SERVICE_KEY!
+  );
   try {
     // リクエストボディから必要な情報を取得
     const { userId, planId } = await req.json();

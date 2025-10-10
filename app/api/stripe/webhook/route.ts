@@ -2,16 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.XBRL_SUPABASE_SERVICE_KEY!
-);
-
 export async function POST(req: NextRequest) {
+  // Stripeクライアントの初期化（実行時）
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-09-30.clover',
+  });
+
+  // Supabaseクライアントの初期化（実行時）
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.XBRL_SUPABASE_SERVICE_KEY!
+  );
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
 
@@ -44,19 +45,19 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutCompleted(session);
+        await handleCheckoutCompleted(session, stripe, supabase);
         break;
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionUpdated(subscription);
+        await handleSubscriptionUpdated(subscription, supabase);
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionDeleted(subscription);
+        await handleSubscriptionDeleted(subscription, supabase);
         break;
       }
 
@@ -75,7 +76,11 @@ export async function POST(req: NextRequest) {
 }
 
 // Checkout完了時の処理
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(
+  session: Stripe.Checkout.Session,
+  stripe: Stripe,
+  supabase: ReturnType<typeof createClient>
+) {
   const userId = session.metadata?.userId;
   const planId = session.metadata?.planId;
 
@@ -115,7 +120,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 }
 
 // サブスクリプション更新時の処理
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+async function handleSubscriptionUpdated(
+  subscription: Stripe.Subscription,
+  supabase: ReturnType<typeof createClient>
+) {
   const subscriptionData = subscription as any;
   const { error } = await supabase
     .from('user_subscriptions')
@@ -137,7 +145,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 }
 
 // サブスクリプション削除時の処理
-async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+async function handleSubscriptionDeleted(
+  subscription: Stripe.Subscription,
+  supabase: ReturnType<typeof createClient>
+) {
   const subscriptionData = subscription as any;
   // Freemiumプランに戻す
   const { data: freemiumPlan } = await supabase
