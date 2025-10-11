@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION private.create_api_key_secure(
 RETURNS TABLE(id uuid, name text, key_prefix text, tier text, created_at timestamp with time zone)
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'public'
+SET search_path TO 'private', 'public'
 AS $$
 DECLARE
   v_user_id uuid;
@@ -25,8 +25,8 @@ BEGIN
     RAISE EXCEPTION 'User not authenticated';
   END IF;
 
-  -- Insert new API key
-  INSERT INTO public.api_keys (
+  -- Insert new API key into private.api_keys table
+  INSERT INTO private.api_keys (
     user_id,
     name,
     key_hash,
@@ -54,7 +54,7 @@ BEGIN
     api_keys.key_prefix,
     api_keys.tier,
     api_keys.created_at
-  FROM public.api_keys
+  FROM private.api_keys
   WHERE api_keys.id = v_key_id;
 END;
 $$;
@@ -66,7 +66,7 @@ CREATE OR REPLACE FUNCTION private.revoke_api_key_secure(
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'public'
+SET search_path TO 'private', 'public'
 AS $$
 DECLARE
   v_user_id uuid;
@@ -79,8 +79,8 @@ BEGIN
     RAISE EXCEPTION 'User not authenticated';
   END IF;
 
-  -- Delete the API key (only if it belongs to the user)
-  DELETE FROM public.api_keys
+  -- Delete the API key from private.api_keys (only if it belongs to the user)
+  DELETE FROM private.api_keys
   WHERE id = key_id_input
     AND user_id = v_user_id
   RETURNING true INTO v_deleted;
