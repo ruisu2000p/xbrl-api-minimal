@@ -51,12 +51,14 @@ const getPlanOptions = (t: (key: string) => string) => [
       t('dashboard.settings.plan.freemium.feature2'),
       t('dashboard.settings.plan.freemium.feature3')
     ],
-    recommended: false
+    recommended: false,
+    billingPeriod: null
   },
   {
-    id: 'standard',
+    id: 'standard-monthly',
     name: t('dashboard.settings.plan.standard.name'),
-    price: t('dashboard.settings.plan.standard.price'),
+    price: t('dashboard.settings.plan.standard.monthlyPrice'),
+    billingPeriodLabel: t('dashboard.settings.plan.billingPeriod.monthly'),
     description: t('dashboard.settings.plan.standard.description'),
     highlights: [
       t('dashboard.settings.plan.standard.feature1'),
@@ -64,7 +66,27 @@ const getPlanOptions = (t: (key: string) => string) => [
       t('dashboard.settings.plan.standard.feature3'),
       t('dashboard.settings.plan.standard.feature4')
     ],
-    recommended: true
+    recommended: false,
+    billingPeriod: 'monthly' as const,
+    stripeProductId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_MONTHLY_PRICE_ID || 'price_1SGVArBhdDcfCsmvM54B7xdN'
+  },
+  {
+    id: 'standard-yearly',
+    name: t('dashboard.settings.plan.standard.name'),
+    price: t('dashboard.settings.plan.standard.yearlyPrice'),
+    priceSubtext: t('dashboard.settings.plan.standard.yearlyEquivalent'),
+    billingPeriodLabel: t('dashboard.settings.plan.billingPeriod.yearly'),
+    description: t('dashboard.settings.plan.standard.description'),
+    highlights: [
+      t('dashboard.settings.plan.standard.feature1'),
+      t('dashboard.settings.plan.standard.feature2'),
+      t('dashboard.settings.plan.standard.feature3'),
+      t('dashboard.settings.plan.standard.feature4')
+    ],
+    recommended: true,
+    discountBadge: t('dashboard.settings.plan.yearlyDiscount'),
+    billingPeriod: 'yearly' as const,
+    stripeProductId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_YEARLY_PRICE_ID || 'price_1SGVLZBhdDcfCsmvFa5iVe8r'
   }
 ] as const;
 
@@ -263,7 +285,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
         </div>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-2">
+      <section className="grid gap-6 md:grid-cols-3">
         {planOptions.map((plan) => {
           const isSelected = plan.id === selectedPlan;
           const isCurrent = plan.id === currentPlan.id;
@@ -276,17 +298,27 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
                 isSelected
                   ? 'border-blue-400 bg-blue-50'
                   : 'border-gray-200 hover:border-blue-200'
-              } ${plan.recommended ? 'relative overflow-hidden' : ''}`}
+              } ${plan.recommended || ('discountBadge' in plan && plan.discountBadge) ? 'relative overflow-hidden' : ''}`}
             >
               {plan.recommended && (
                 <span className="absolute right-4 top-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 px-3 py-1 text-xs font-semibold text-white">
                   {t('dashboard.settings.plan.recommendedBadge')}
                 </span>
               )}
+              {'discountBadge' in plan && plan.discountBadge && (
+                <span className="absolute right-4 top-4 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 px-3 py-1 text-xs font-semibold text-white">
+                  {plan.discountBadge}
+                </span>
+              )}
 
               <div className="flex items-start justify-between">
-                <div>
+                <div className="flex-1">
                   <h4 className="text-lg font-semibold text-gray-900">{plan.name}</h4>
+                  {'billingPeriodLabel' in plan && plan.billingPeriodLabel && (
+                    <span className="mt-1 inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                      {plan.billingPeriodLabel}
+                    </span>
+                  )}
                   {plan.description && !plan.description.startsWith('dashboard.') && (
                     <p className="mt-1 text-sm text-gray-600">{plan.description}</p>
                   )}
@@ -298,7 +330,12 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
                 )}
               </div>
 
-              <div className="mt-4 text-2xl font-bold text-gray-900">{plan.price}</div>
+              <div className="mt-4">
+                <div className="text-2xl font-bold text-gray-900">{plan.price}</div>
+                {'priceSubtext' in plan && plan.priceSubtext && (
+                  <div className="mt-1 text-xs text-gray-500">{plan.priceSubtext}</div>
+                )}
+              </div>
 
               <ul className="mt-4 space-y-2 text-sm text-gray-600">
                 {plan.highlights.filter(item => item.trim() !== '' && !item.startsWith('dashboard.')).map((item) => (
@@ -996,13 +1033,16 @@ export default function AccountSettings() {
         return;
       }
 
+      // Determine base plan name (remove billing period suffix)
+      const basePlanName = selectedPlan.startsWith('standard-') ? 'standard' : selectedPlan;
+
       // subscription_plansテーブルから新しいプランIDを取得
-      console.log('🔍 Looking up plan:', { selectedPlan });
+      console.log('🔍 Looking up plan:', { selectedPlan, basePlanName });
 
       const { data: planData, error: planError } = await supabaseClient
         .from('subscription_plans')
         .select('id')
-        .eq('name', selectedPlan)
+        .eq('name', basePlanName)
         .single();
 
       console.log('📋 Plan lookup result:', { planData, planError });
@@ -1015,14 +1055,18 @@ export default function AccountSettings() {
 
       console.log('✅ Found plan ID:', planData.id);
 
-      // Standardプランに変更する場合はStripe決済へ
-      if (selectedPlan === 'standard') {
+      // Standardプランに変更する場合はStripe決済へ (monthly or yearly)
+      if (selectedPlan.startsWith('standard-')) {
         setPlanMessage({ type: 'success', text: '決済ページへリダイレクト中...' });
+
+        // Get billing period from selected plan
+        const billingPeriod = selectedPlan === 'standard-monthly' ? 'monthly' : 'yearly';
 
         const requestBody = {
           userId: user.data.user.id,
           planId: planData.id,
           userEmail: user.data.user.email,
+          billingPeriod: billingPeriod
         };
 
         console.log('📤 Sending to Stripe API:', requestBody);
