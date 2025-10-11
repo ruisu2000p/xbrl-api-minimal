@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { headers } from 'next/headers';
 
 // Force dynamic rendering for webhook endpoint
 export const dynamic = 'force-dynamic';
@@ -18,11 +19,12 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Get raw body as text for Stripe signature verification
+  // Get raw body as buffer for Stripe signature verification
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
 
   if (!signature) {
+    console.error('No stripe-signature header found');
     return NextResponse.json(
       { error: 'No signature provided' },
       { status: 400 }
@@ -33,13 +35,18 @@ export async function POST(req: NextRequest) {
 
   try {
     // Webhookの署名を検証
+    // Use the raw body string directly
     event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err) {
+    console.log(`✅ Webhook verified: ${event.type}`);
+  } catch (err: any) {
     console.error('Webhook signature verification failed:', err);
+    console.error('Signature:', signature);
+    console.error('Body preview:', body.substring(0, 100));
+    console.error('Secret configured:', !!process.env.STRIPE_WEBHOOK_SECRET);
     return NextResponse.json(
       { error: 'Invalid signature' },
       { status: 400 }

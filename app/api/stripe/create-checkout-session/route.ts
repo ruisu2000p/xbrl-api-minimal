@@ -75,9 +75,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // メタデータの詳細ログ
+    console.log('🔍 Metadata values before Stripe API call:', {
+      userId,
+      planId,
+      userEmail,
+      hasUserId: !!userId,
+      hasPlanId: !!planId,
+      userIdType: typeof userId,
+      planIdType: typeof planId,
+      userIdValue: userId,
+      planIdValue: planId,
+    });
+
     // Stripe Checkout Sessionを作成
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
+    const sessionPayload = {
+      mode: 'subscription' as const,
       payment_method_types: ['card'],
       customer_email: userEmail,
       line_items: [
@@ -92,6 +105,16 @@ export async function POST(req: NextRequest) {
         userId: userId,
         planId: planId,
       },
+    };
+
+    console.log('📦 Session payload:', JSON.stringify(sessionPayload, null, 2));
+
+    const session = await stripe.checkout.sessions.create(sessionPayload);
+
+    console.log('✅ Session created:', {
+      sessionId: session.id,
+      sessionMetadata: session.metadata,
+      sessionUrl: session.url,
     });
 
     return NextResponse.json({ sessionUrl: session.url });

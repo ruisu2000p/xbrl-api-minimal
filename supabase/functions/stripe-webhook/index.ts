@@ -208,19 +208,22 @@ async function handleInvoicePaymentSucceeded(
     ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
     : null
 
-  // サブスクリプションからユーザーIDを取得
-  const { data: subscription } = await supabase
-    .from('user_subscriptions')
-    .select('user_id')
-    .eq('stripe_subscription_id', subscriptionId)
-    .single()
+  // サブスクリプションからユーザーIDを取得（RPC経由）
+  console.log(`🔍 Looking up user for subscription: ${subscriptionId}`)
+  const { data: userId, error: userIdError } = await supabase.rpc(
+    'get_user_id_from_subscription',
+    { p_stripe_subscription_id: subscriptionId }
+  )
 
-  if (!subscription) {
-    console.error('Subscription not found for invoice:', invoice.id)
+  console.log(`📝 RPC result - userId: ${userId}, error:`, userIdError)
+
+  if (userIdError || !userId) {
+    console.error('❌ Subscription not found for invoice:', invoice.id, userIdError)
   } else {
     // 請求書情報を保存
+    console.log(`💾 Saving invoice: ${invoice.id} for user: ${userId}`)
     const { error: invoiceError } = await supabase.rpc('upsert_invoice_from_webhook', {
-      p_user_id: subscription.user_id,
+      p_user_id: userId,
       p_stripe_invoice_id: invoice.id,
       p_stripe_subscription_id: subscriptionId,
       p_amount_due: invoice.amount_due,
@@ -236,9 +239,9 @@ async function handleInvoicePaymentSucceeded(
     })
 
     if (invoiceError) {
-      console.error('Error saving invoice:', invoiceError)
+      console.error('❌ Error saving invoice:', invoiceError)
     } else {
-      console.log(`✅ Invoice saved: ${invoice.id}`)
+      console.log(`✅ Invoice saved successfully: ${invoice.id}`)
     }
   }
 
