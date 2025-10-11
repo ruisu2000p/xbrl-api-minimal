@@ -54,13 +54,45 @@ export function createBrowserSupabaseClient(): SupabaseClient {
   if (typeof window !== 'undefined') {
     const global = window as any
     if (!global.__supabaseClient) {
-      global.__supabaseClient = createBrowserClient(url, anonKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          flowType: 'pkce',
-          storage: window.localStorage,
+      // Use @supabase/ssr for browser client to properly sync cookies
+      global.__supabaseClient = createServerClient(url, anonKey, {
+        cookies: {
+          get(name: string) {
+            // Read cookies from document.cookie
+            const cookies = document.cookie.split('; ')
+            const cookie = cookies.find(c => c.startsWith(name + '='))
+            return cookie?.split('=')[1]
+          },
+          set(name: string, value: string, options: any) {
+            // Write cookies to document.cookie
+            const cookieOptions = {
+              ...options,
+              path: options.path || '/',
+              sameSite: options.sameSite || 'lax',
+            }
+            let cookieString = `${name}=${value}`
+            if (cookieOptions.maxAge) {
+              cookieString += `; max-age=${cookieOptions.maxAge}`
+            }
+            if (cookieOptions.path) {
+              cookieString += `; path=${cookieOptions.path}`
+            }
+            if (cookieOptions.sameSite) {
+              cookieString += `; samesite=${cookieOptions.sameSite}`
+            }
+            if (cookieOptions.secure) {
+              cookieString += '; secure'
+            }
+            document.cookie = cookieString
+          },
+          remove(name: string, options: any) {
+            // Remove cookie by setting expiration to the past
+            const cookieOptions = {
+              ...options,
+              path: options.path || '/',
+            }
+            document.cookie = `${name}=; path=${cookieOptions.path}; max-age=0`
+          },
         },
       })
     }

@@ -37,24 +37,12 @@ export default function LoginPage() {
       }
 
       if (data?.user) {
-        // Cookie同期
-        await fetch('/api/auth/sync', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            access_token: data.session?.access_token,
-            refresh_token: data.session?.refresh_token,
-          }),
-          credentials: 'include'
-        });
+        // Supabase SSR client automatically syncs cookies
+        // Wait a moment for cookies to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Cookieが反映されるまで少し待機
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // ダッシュボードにリダイレクト
-        window.location.href = '/dashboard';
+        // Redirect to dashboard
+        router.push('/dashboard');
       }
     } catch (err) {
       // eslint-disable-next-line no-console

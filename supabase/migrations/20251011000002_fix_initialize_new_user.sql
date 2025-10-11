@@ -1,5 +1,3 @@
--- Fix initialize_new_user function to create user_subscriptions with selected plan
-
 CREATE OR REPLACE FUNCTION public.initialize_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
