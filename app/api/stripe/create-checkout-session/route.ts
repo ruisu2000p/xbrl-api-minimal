@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
     });
 
     // Stripe Checkout Sessionを作成
-    const sessionPayload = {
-      mode: 'subscription' as const,
+    const sessionPayload: Stripe.Checkout.SessionCreateParams = {
+      mode: 'subscription',
       payment_method_types: ['card'],
       customer_email: userEmail,
       line_items: [
