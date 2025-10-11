@@ -54,44 +54,50 @@ export function createBrowserSupabaseClient(): SupabaseClient {
   if (typeof window !== 'undefined') {
     const global = window as any
     if (!global.__supabaseClient) {
-      // Use @supabase/ssr for browser client to properly sync cookies
+      // Use @supabase/ssr createServerClient for browser with proper cookie handlers
+      // This ensures cookies are synced between client and server
       global.__supabaseClient = createServerClient(url, anonKey, {
         cookies: {
           get(name: string) {
-            // Read cookies from document.cookie
+            // Parse document.cookie to get specific cookie value
             const cookies = document.cookie.split('; ')
-            const cookie = cookies.find(c => c.startsWith(name + '='))
-            return cookie?.split('=')[1]
+            for (const cookie of cookies) {
+              const [cookieName, ...cookieValue] = cookie.split('=')
+              if (cookieName === name) {
+                return decodeURIComponent(cookieValue.join('='))
+              }
+            }
+            return undefined
           },
           set(name: string, value: string, options: any) {
-            // Write cookies to document.cookie
-            const cookieOptions = {
-              ...options,
-              path: options.path || '/',
-              sameSite: options.sameSite || 'lax',
+            // Build cookie string with all options
+            // Important: Do NOT set httpOnly from client-side (it's ignored anyway)
+            let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`
+
+            if (options.maxAge) {
+              cookieString += `; max-age=${options.maxAge}`
             }
-            let cookieString = `${name}=${value}`
-            if (cookieOptions.maxAge) {
-              cookieString += `; max-age=${cookieOptions.maxAge}`
+            if (options.path) {
+              cookieString += `; path=${options.path}`
             }
-            if (cookieOptions.path) {
-              cookieString += `; path=${cookieOptions.path}`
+            if (options.sameSite) {
+              cookieString += `; samesite=${options.sameSite}`
             }
-            if (cookieOptions.sameSite) {
-              cookieString += `; samesite=${cookieOptions.sameSite}`
-            }
-            if (cookieOptions.secure) {
+            if (options.secure) {
               cookieString += '; secure'
             }
+
             document.cookie = cookieString
           },
           remove(name: string, options: any) {
-            // Remove cookie by setting expiration to the past
-            const cookieOptions = {
-              ...options,
-              path: options.path || '/',
+            // Remove by setting max-age=0
+            let cookieString = `${encodeURIComponent(name)}=; max-age=0`
+
+            if (options.path) {
+              cookieString += `; path=${options.path}`
             }
-            document.cookie = `${name}=; path=${cookieOptions.path}; max-age=0`
+
+            document.cookie = cookieString
           },
         },
       })
