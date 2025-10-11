@@ -94,11 +94,19 @@ async function handleCheckoutCompleted(
   stripe: Stripe,
   supabase: any
 ) {
-  const userId = session.metadata?.userId;
-  const planId = session.metadata?.planId;
+  const userId = session.metadata?.user_id;
+  const plan = session.metadata?.plan;
+  const billingPeriod = session.metadata?.billing_period;
 
-  if (!userId || !planId) {
-    console.error('Missing metadata in checkout session');
+  console.log('📦 Processing checkout completion:', {
+    userId,
+    plan,
+    billingPeriod,
+    sessionId: session.id
+  });
+
+  if (!userId || !plan) {
+    console.error('❌ Missing metadata in checkout session:', session.metadata);
     return;
   }
 
@@ -106,30 +114,39 @@ async function handleCheckoutCompleted(
   const subscriptionId = session.subscription as string;
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-  // 次回請求日を計算（型キャストで対応）
-  const subscriptionData = subscription as any;
-  const currentPeriodEnd = new Date((subscriptionData.current_period_end || 0) * 1000);
+  // 次回請求日を計算
+  const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
 
-  // user_subscriptionsを更新
-  const { error: updateError } = await supabase
-    .from('user_subscriptions')
-    .update({
-      plan_id: planId,
-      status: 'active',
-      stripe_subscription_id: subscriptionId,
-      stripe_customer_id: session.customer as string,
-      current_period_start: new Date((subscriptionData.current_period_start || 0) * 1000).toISOString(),
-      current_period_end: currentPeriodEnd.toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId);
+  // Use service role client to update user metadata (admin privileges needed)
+  const { createAdminClient } = await import('@/utils/supabase/unified-client');
+  const adminClient = createAdminClient();
+
+  // Update user metadata with plan information
+  const { error: updateError } = await adminClient.auth.admin.updateUserById(
+    userId,
+    {
+      user_metadata: {
+        plan: plan,
+        billing_period: billingPeriod,
+        stripe_subscription_id: subscriptionId,
+        stripe_customer_id: session.customer as string,
+        subscription_status: 'active',
+        current_period_end: currentPeriodEnd.toISOString(),
+      }
+    }
+  );
 
   if (updateError) {
-    console.error('Error updating subscription:', updateError);
+    console.error('❌ Error updating user metadata:', updateError);
     throw updateError;
   }
 
-  console.log(`✅ Subscription activated for user ${userId}`);
+  console.log(`✅ Subscription activated for user ${userId}:`, {
+    plan,
+    billingPeriod,
+    subscriptionId,
+    nextBillingDate: currentPeriodEnd.toISOString()
+  });
 }
 
 // サブスクリプション更新時の処理
@@ -137,24 +154,49 @@ async function handleSubscriptionUpdated(
   subscription: Stripe.Subscription,
   supabase: any
 ) {
-  const subscriptionData = subscription as any;
-  const { error } = await supabase
-    .from('user_subscriptions')
-    .update({
-      status: subscriptionData.status,
-      current_period_start: new Date((subscriptionData.current_period_start || 0) * 1000).toISOString(),
-      current_period_end: new Date((subscriptionData.current_period_end || 0) * 1000).toISOString(),
-      cancel_at_period_end: subscriptionData.cancel_at_period_end || false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('stripe_subscription_id', subscriptionData.id);
+  const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  const userId = subscription.metadata?.user_id;
+
+  console.log('🔄 Processing subscription update:', {
+    subscriptionId: subscription.id,
+    userId,
+    status: subscription.status
+  });
+
+  if (!userId) {
+    console.error('❌ Missing user_id in subscription metadata');
+    return;
+  }
+
+  // Use service role client to update user metadata
+  const { createAdminClient } = await import('@/utils/supabase/unified-client');
+  const adminClient = createAdminClient();
+
+  const { data: user, error: getUserError } = await adminClient.auth.admin.getUserById(userId);
+
+  if (getUserError || !user) {
+    console.error('❌ Error getting user:', getUserError);
+    return;
+  }
+
+  const { error } = await adminClient.auth.admin.updateUserById(
+    userId,
+    {
+      user_metadata: {
+        ...user.user.user_metadata,
+        subscription_status: subscription.status,
+        current_period_end: currentPeriodEnd.toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end || false,
+      }
+    }
+  );
 
   if (error) {
-    console.error('Error updating subscription:', error);
+    console.error('❌ Error updating subscription:', error);
     throw error;
   }
 
-  console.log(`✅ Subscription updated: ${subscriptionData.id}`);
+  console.log(`✅ Subscription updated: ${subscription.id}`);
 }
 
 // サブスクリプション削除時の処理
@@ -162,35 +204,48 @@ async function handleSubscriptionDeleted(
   subscription: Stripe.Subscription,
   supabase: any
 ) {
-  const subscriptionData = subscription as any;
-  // Freemiumプランに戻す
-  const { data: freemiumPlan } = await supabase
-    .from('subscription_plans')
-    .select('id')
-    .eq('name', 'freemium')
-    .single();
+  const userId = subscription.metadata?.user_id;
 
-  if (!freemiumPlan) {
-    console.error('Freemium plan not found');
+  console.log('🗑️ Processing subscription deletion:', {
+    subscriptionId: subscription.id,
+    userId
+  });
+
+  if (!userId) {
+    console.error('❌ Missing user_id in subscription metadata');
     return;
   }
 
-  const { error } = await supabase
-    .from('user_subscriptions')
-    .update({
-      plan_id: freemiumPlan.id,
-      status: 'cancelled',
-      cancelled_at: new Date().toISOString(),
-      stripe_subscription_id: null,
-      stripe_customer_id: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('stripe_subscription_id', subscriptionData.id);
+  // Use service role client to revert user to freemium plan
+  const { createAdminClient } = await import('@/utils/supabase/unified-client');
+  const adminClient = createAdminClient();
+
+  const { data: user, error: getUserError } = await adminClient.auth.admin.getUserById(userId);
+
+  if (getUserError || !user) {
+    console.error('❌ Error getting user:', getUserError);
+    return;
+  }
+
+  const { error } = await adminClient.auth.admin.updateUserById(
+    userId,
+    {
+      user_metadata: {
+        ...user.user.user_metadata,
+        plan: 'freemium',
+        subscription_status: 'cancelled',
+        stripe_subscription_id: null,
+        stripe_customer_id: null,
+        current_period_end: null,
+        cancelled_at: new Date().toISOString(),
+      }
+    }
+  );
 
   if (error) {
-    console.error('Error cancelling subscription:', error);
+    console.error('❌ Error cancelling subscription:', error);
     throw error;
   }
 
-  console.log(`✅ Subscription cancelled: ${subscriptionData.id}`);
+  console.log(`✅ Subscription cancelled, user reverted to freemium: ${subscription.id}`);
 }

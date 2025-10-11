@@ -129,9 +129,42 @@ export default function SignupPage() {
         // Cookieが反映されるまで少し待機
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // すぐにダッシュボードへリダイレクト（ローディング表示のまま）
+        // 有料プランの場合は、Stripe Checkoutにリダイレクト
+        if (selectedPlan === 'standard') {
+          try {
+            const checkoutResponse = await fetch('/api/stripe/create-checkout-session', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                plan: selectedPlan,
+                billingPeriod: billingPeriod,
+              }),
+            });
+
+            const checkoutData = await checkoutResponse.json();
+
+            if (checkoutResponse.ok && checkoutData.url) {
+              // Stripe Checkoutページにリダイレクト
+              window.location.href = checkoutData.url;
+              return;
+            } else {
+              setError('決済ページの作成に失敗しました: ' + (checkoutData.error || ''));
+              setIsLoading(false);
+              return;
+            }
+          } catch (checkoutError) {
+            console.error('Checkout error:', checkoutError);
+            setError('決済ページの作成に失敗しました');
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Freemiumプランの場合は直接ダッシュボードへ
         window.location.href = '/dashboard?newAccount=true';
-        return; // これ以降の処理をスキップ
+        return;
       } else {
         setError(result.error || t('signup.error.failed'));
       }

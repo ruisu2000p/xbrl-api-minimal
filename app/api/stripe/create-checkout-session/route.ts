@@ -1,127 +1,109 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-12-18.acacia',
+});
 
 export async function POST(req: NextRequest) {
-  // Stripeクライアントの初期化（実行時）
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-
-  console.log('🔐 Stripe key check:', {
-    hasStripeKey: !!stripeKey,
-    keyPrefix: stripeKey ? stripeKey.substring(0, 20) : 'NONE',
-    keyLength: stripeKey?.length || 0
-  });
-
-  const stripe = new Stripe(stripeKey!, {
-    apiVersion: '2025-09-30.clover',
-  });
-
-  // Supabaseクライアントの初期化（実行時）
-  // RLSポリシーでanon readを許可したので、anonキーを使用
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  console.log('🔑 Environment check:', {
-    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    usingKey: anonKey ? `${anonKey.substring(0, 20)}...` : 'NONE'
-  });
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    anonKey
-  );
   try {
-    // リクエストボディから必要な情報を取得
-    const { userId, planId, userEmail } = await req.json();
+    const supabase = await createServerSupabaseClient();
 
-    console.log('📋 Received request:', { userId, planId, userEmail });
+    // Check if user is authenticated
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
 
-    if (!userId || !planId || !userEmail) {
+    if (authError || !session?.user) {
       return NextResponse.json(
-        { error: 'userId, planId, and userEmail are required' },
-        { status: 400 }
+        { error: '認証が必要です' },
+        { status: 401 }
       );
     }
 
-    // プラン情報を取得
-    const { data: planData, error: planError } = await supabase
-      .from('subscription_plans')
-      .select('*')
-      .eq('id', planId)
-      .single();
+    const body = await req.json();
+    const { plan, billingPeriod } = body;
 
-    console.log('🔍 Plan lookup result:', { planData, planError });
-
-    if (planError || !planData) {
-      console.error('❌ Plan not found:', { planId, error: planError });
-      return NextResponse.json(
-        {
-          error: 'Plan not found',
-          details: {
-            planId,
-            errorMessage: planError?.message,
-            errorCode: planError?.code
-          }
-        },
-        { status: 404 }
-      );
-    }
-
-    // Standardプラン以外は決済不要
-    if (planData.name !== 'standard') {
-      return NextResponse.json(
-        { error: 'This plan does not require payment' },
-        { status: 400 }
-      );
-    }
-
-    // メタデータの詳細ログ
-    console.log('🔍 Metadata values before Stripe API call:', {
-      userId,
-      planId,
-      userEmail,
-      hasUserId: !!userId,
-      hasPlanId: !!planId,
-      userIdType: typeof userId,
-      planIdType: typeof planId,
-      userIdValue: userId,
-      planIdValue: planId,
+    console.log('📋 Received checkout request:', {
+      userId: session.user.id,
+      plan,
+      billingPeriod,
+      email: session.user.email
     });
 
-    // Stripe Checkout Sessionを作成
-    const sessionPayload: Stripe.Checkout.SessionCreateParams = {
+    if (!plan || !billingPeriod) {
+      return NextResponse.json(
+        { error: 'プランと請求期間を指定してください' },
+        { status: 400 }
+      );
+    }
+
+    // Freemium plan doesn't require payment
+    if (plan === 'freemium') {
+      return NextResponse.json(
+        { error: 'Freemiumプランは支払い不要です' },
+        { status: 400 }
+      );
+    }
+
+    // Get the price ID from environment variables
+    const priceId = billingPeriod === 'monthly'
+      ? process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID
+      : process.env.STRIPE_STANDARD_YEARLY_PRICE_ID;
+
+    if (!priceId) {
+      console.error('❌ Stripe price ID not configured:', { plan, billingPeriod });
+      return NextResponse.json(
+        { error: 'プラン設定が見つかりません' },
+        { status: 500 }
+      );
+    }
+
+    console.log('💳 Creating Stripe checkout session:', {
+      priceId,
+      userId: session.user.id,
+      email: session.user.email
+    });
+
+    // Create Stripe checkout session
+    const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      customer_email: userEmail,
       line_items: [
         {
-          price: process.env.STRIPE_STANDARD_PRICE_ID!,
+          price: priceId,
           quantity: 1,
         },
       ],
-      success_url: `${req.headers.get('origin')}/dashboard?payment=success`,
-      cancel_url: `${req.headers.get('origin')}/dashboard?payment=cancelled`,
+      success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}&payment_success=true`,
+      cancel_url: `${req.headers.get('origin')}/signup?payment_cancelled=true`,
+      customer_email: session.user.email,
+      client_reference_id: session.user.id,
       metadata: {
-        userId: userId,
-        planId: planId,
+        user_id: session.user.id,
+        plan: plan,
+        billing_period: billingPeriod,
       },
-    };
-
-    console.log('📦 Session payload:', JSON.stringify(sessionPayload, null, 2));
-
-    const session = await stripe.checkout.sessions.create(sessionPayload);
-
-    console.log('✅ Session created:', {
-      sessionId: session.id,
-      sessionMetadata: session.metadata,
-      sessionUrl: session.url,
+      subscription_data: {
+        metadata: {
+          user_id: session.user.id,
+          plan: plan,
+        },
+      },
     });
 
-    return NextResponse.json({ sessionUrl: session.url });
+    console.log('✅ Checkout session created:', {
+      sessionId: checkoutSession.id,
+      url: checkoutSession.url
+    });
+
+    return NextResponse.json({
+      sessionId: checkoutSession.id,
+      url: checkoutSession.url,
+    });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('❌ Stripe checkout session creation error:', error);
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: 'チェックアウトセッションの作成に失敗しました' },
       { status: 500 }
     );
   }
