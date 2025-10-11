@@ -13,8 +13,15 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
+  console.log('🚀 Edge Function called:', {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers.entries())
+  })
+
   // CORS preflight request
   if (req.method === 'OPTIONS') {
+    console.log('✅ CORS preflight request handled')
     return new Response('ok', { headers: corsHeaders })
   }
 

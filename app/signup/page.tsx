@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { signUp } from '@/app/actions/auth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Header from '@/components/Header';
-import { createClientSupabaseClient } from '@/utils/supabase/unified-client';
+import { createBrowserSupabaseClient } from '@/utils/supabase/unified-client';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -134,7 +134,7 @@ export default function SignupPage() {
         if (selectedPlan === 'standard') {
           try {
             // Supabaseクライアントを取得
-            const supabase = createClientSupabaseClient();
+            const supabase = createBrowserSupabaseClient();
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session) {
