@@ -1444,16 +1444,20 @@ export default function AccountSettings() {
   const confirmLogout = useCallback(async () => {
     setShowLogoutDialog(false);
 
-    // Supabaseからログアウト
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) {
-      console.error('ログアウトエラー:', error);
-    } else {
+    try {
+      // Try to sign out from Supabase
+      await supabaseClient.auth.signOut();
       console.log('✅ ログアウト成功');
+    } catch (error) {
+      // If signOut fails, just log the error and continue with redirect
+      // The middleware will handle clearing the session
+      console.error('ログアウトエラー:', error);
     }
 
-    router.push('/login');
-  }, [router, supabaseClient]);
+    // Clear local client state and redirect
+    // Force reload to clear any cached state
+    window.location.href = '/login';
+  }, [supabaseClient]);
 
   // Define tabs using translation
   const tabs = useMemo(() => [
