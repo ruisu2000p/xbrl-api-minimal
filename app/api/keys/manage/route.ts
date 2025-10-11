@@ -175,10 +175,12 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          apiKey: result.apiKey,
-          keyId: result.keyId,
-          name: result.name,
-          tier: result.tier,
+          newKey: result.apiKey,  // フロントエンドが期待するフィールド名
+          apiKey: result.apiKey,  // 後方互換性のため
+          key_id: result.keyId,
+          keyId: result.keyId,    // 後方互換性のため
+          name: result.name || key_name,
+          tier: result.tier || tier,
           message: 'このAPIキーは一度だけ表示されます。安全な場所に保管してください。'
         });
       }
