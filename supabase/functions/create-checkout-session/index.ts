@@ -76,12 +76,24 @@ Deno.serve(async (req) => {
     }
 
     // Get the price ID from environment variables
-    const priceId = billingPeriod === 'monthly'
-      ? Deno.env.get('STRIPE_STANDARD_MONTHLY_PRICE_ID')
-      : Deno.env.get('STRIPE_STANDARD_YEARLY_PRICE_ID')
+    const monthlyPriceId = Deno.env.get('STRIPE_STANDARD_MONTHLY_PRICE_ID')
+    const yearlyPriceId = Deno.env.get('STRIPE_STANDARD_YEARLY_PRICE_ID')
+
+    console.log('🔍 Environment variables check:', {
+      monthlyPriceId: monthlyPriceId ? `${monthlyPriceId.substring(0, 10)}...` : 'NOT SET',
+      yearlyPriceId: yearlyPriceId ? `${yearlyPriceId.substring(0, 10)}...` : 'NOT SET',
+      billingPeriod,
+    })
+
+    const priceId = billingPeriod === 'monthly' ? monthlyPriceId : yearlyPriceId
 
     if (!priceId) {
-      console.error('❌ Stripe price ID not configured:', { plan, billingPeriod })
+      console.error('❌ Stripe price ID not configured:', {
+        plan,
+        billingPeriod,
+        monthlyPriceId: !!monthlyPriceId,
+        yearlyPriceId: !!yearlyPriceId,
+      })
       return new Response(
         JSON.stringify({ error: 'プラン設定が見つかりません' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
