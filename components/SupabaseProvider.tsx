@@ -1,8 +1,8 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
 import type { User, SupabaseClient } from '@supabase/supabase-js'
+import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 
 type SupabaseContextType = {
   user: User | null
@@ -20,17 +20,9 @@ export const useSupabase = () => {
   return context
 }
 
-// ブラウザ用Supabaseクライアントの作成（シングルトン）
-let browserClient: SupabaseClient | undefined
-
+// Use the unified Supabase manager to get browser client
 function getSupabaseBrowserClient() {
-  if (!browserClient) {
-    browserClient = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  }
-  return browserClient
+  return supabaseManager.getBrowserClient()
 }
 
 export default function SupabaseProvider({
