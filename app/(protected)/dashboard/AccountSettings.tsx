@@ -24,21 +24,43 @@ type ProfileState = {
 type ApiState = 'idle' | 'loading' | 'ready' | 'error';
 
 // Plan structures will use translation keys
-const getDefaultCurrentPlan = (t: (key: string) => string, subscription?: any) => ({
-  id: subscription?.subscription_plans?.name || 'freemium',
-  name: subscription?.subscription_plans?.name === 'standard'
+const getDefaultCurrentPlan = (t: (key: string) => string, subscription?: any) => {
+  const planName = subscription?.subscription_plans?.name || 'freemium';
+  const billingCycle = subscription?.billing_cycle; // 'monthly' or 'yearly'
+
+  // Determine the plan ID based on name and billing cycle
+  let planId = planName;
+  if (planName === 'standard' && billingCycle) {
+    planId = `standard-${billingCycle}`;
+  }
+
+  // Determine the display name
+  let displayName = planName === 'standard'
     ? t('dashboard.settings.plan.standard.name')
-    : t('dashboard.settings.plan.freemium.name'),
-  price: subscription?.subscription_plans?.name === 'standard'
-    ? t('dashboard.settings.plan.standard.price')
-    : t('dashboard.settings.plan.freemium.price'),
-  nextBilling: subscription?.current_period_end
-    ? new Date(subscription.current_period_end).toLocaleDateString()
-    : '未設定',
-  status: subscription?.status === 'active'
-    ? t('dashboard.settings.plan.currentPlanStatus')
-    : '未契約'
-});
+    : t('dashboard.settings.plan.freemium.name');
+
+  // Determine the price display
+  let displayPrice = t('dashboard.settings.plan.freemium.price');
+  if (planName === 'standard') {
+    if (billingCycle === 'yearly') {
+      displayPrice = t('dashboard.settings.plan.standard.yearlyPrice');
+    } else {
+      displayPrice = t('dashboard.settings.plan.standard.monthlyPrice');
+    }
+  }
+
+  return {
+    id: planId,
+    name: displayName,
+    price: displayPrice,
+    nextBilling: subscription?.current_period_end
+      ? new Date(subscription.current_period_end).toLocaleDateString()
+      : '未設定',
+    status: subscription?.status === 'active'
+      ? t('dashboard.settings.plan.currentPlanStatus')
+      : '未契約'
+  };
+};
 
 const getPlanOptions = (t: (key: string) => string) => [
   {
