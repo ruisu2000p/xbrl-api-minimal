@@ -1446,10 +1446,24 @@ export default function AccountSettings() {
 
     try {
       // Call server-side logout API to properly clear cookies
-      await fetch('/api/auth/logout', {
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
       });
-      console.log('✅ ログアウト成功');
+
+      if (response.ok) {
+        console.log('✅ サーバー側ログアウト成功');
+
+        // Also clear client-side session
+        try {
+          await supabaseClient.auth.signOut({ scope: 'local' });
+          console.log('✅ クライアント側ログアウト成功');
+        } catch (clientError) {
+          console.error('クライアント側ログアウトエラー:', clientError);
+        }
+
+        // Wait a moment for cookies to be processed
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     } catch (error) {
       // If logout fails, just log the error and continue with redirect
       // The middleware will handle clearing the session
@@ -1459,7 +1473,7 @@ export default function AccountSettings() {
     // Clear local client state and redirect
     // Force reload to clear any cached state
     window.location.href = '/login';
-  }, []);
+  }, [supabaseClient]);
 
   // Define tabs using translation
   const tabs = useMemo(() => [
