@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { signUp } from '@/app/actions/auth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Header from '@/components/Header';
+import { createClientSupabaseClient } from '@/utils/supabase/unified-client';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -132,16 +133,31 @@ export default function SignupPage() {
         // 有料プランの場合は、Stripe Checkoutにリダイレクト
         if (selectedPlan === 'standard') {
           try {
-            const checkoutResponse = await fetch('/api/stripe/create-checkout-session', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                plan: selectedPlan,
-                billingPeriod: billingPeriod,
-              }),
-            });
+            // Supabaseクライアントを取得
+            const supabase = createClientSupabaseClient();
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+              setError('認証エラーが発生しました');
+              setIsLoading(false);
+              return;
+            }
+
+            // Supabase Edge Functionを呼び出し
+            const checkoutResponse = await fetch(
+              `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/stripe-create-checkout`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                  plan: selectedPlan,
+                  billingPeriod: billingPeriod,
+                }),
+              }
+            );
 
             const checkoutData = await checkoutResponse.json();
 
