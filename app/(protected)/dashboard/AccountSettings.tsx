@@ -1445,11 +1445,13 @@ export default function AccountSettings() {
     setShowLogoutDialog(false);
 
     try {
-      // Try to sign out from Supabase
-      await supabaseClient.auth.signOut();
+      // Call server-side logout API to properly clear cookies
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
       console.log('✅ ログアウト成功');
     } catch (error) {
-      // If signOut fails, just log the error and continue with redirect
+      // If logout fails, just log the error and continue with redirect
       // The middleware will handle clearing the session
       console.error('ログアウトエラー:', error);
     }
@@ -1457,7 +1459,7 @@ export default function AccountSettings() {
     // Clear local client state and redirect
     // Force reload to clear any cached state
     window.location.href = '/login';
-  }, [supabaseClient]);
+  }, []);
 
   // Define tabs using translation
   const tabs = useMemo(() => [
