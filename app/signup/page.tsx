@@ -145,7 +145,7 @@ export default function SignupPage() {
 
             // Supabase Edge Functionを呼び出し
             const checkoutResponse = await fetch(
-              `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/stripe-create-checkout`,
+              `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-checkout-session`,
               {
                 method: 'POST',
                 headers: {
@@ -155,6 +155,7 @@ export default function SignupPage() {
                 body: JSON.stringify({
                   plan: selectedPlan,
                   billingPeriod: billingPeriod,
+                  source: 'signup',
                 }),
               }
             );
