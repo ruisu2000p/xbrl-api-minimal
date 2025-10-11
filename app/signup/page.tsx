@@ -40,7 +40,7 @@ export default function SignupPage() {
     {
       id: 'standard',
       name: t('signup.plan.standard.name'),
-      price: { monthly: 2980, yearly: 29800 },
+      price: { monthly: 25, yearly: 240 },
       description: t('signup.plan.standard.description'),
       features: [t('signup.plan.standard.feature1'), t('signup.plan.standard.feature2')],
       icon: 'ri-vip-crown-line',
@@ -182,12 +182,12 @@ export default function SignupPage() {
 
   const formatPrice = (planId: string) => {
     const plan = plans.find(p => p.id === planId);
-    if (!plan) return '¥0';
+    if (!plan) return '$0';
 
     const price = plan.price[billingPeriod];
-    if (price === 0) return '¥0';
+    if (price === 0) return '$0';
 
-    return `¥${price.toLocaleString()}`;
+    return `$${price.toLocaleString()}`;
   };
 
   const getPeriodText = () => {
@@ -290,7 +290,7 @@ export default function SignupPage() {
                       </div>
                       {billingPeriod === 'yearly' && plan.price.yearly > 0 && (
                         <div className="text-sm text-green-600 font-medium mt-1">
-                          {t('signup.plan.monthlyEquivalent')} ¥{Math.floor(plan.price.yearly / 12).toLocaleString()}
+                          {t('signup.plan.monthlyEquivalent')} ${Math.floor(plan.price.yearly / 12).toLocaleString()}
                         </div>
                       )}
                     </div>
