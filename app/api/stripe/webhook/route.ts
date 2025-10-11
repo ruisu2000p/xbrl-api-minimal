@@ -115,7 +115,7 @@ async function handleCheckoutCompleted(
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
   // 次回請求日を計算
-  const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
 
   // Use service role client to update user metadata (admin privileges needed)
   const { createAdminClient } = await import('@/utils/supabase/unified-client');
@@ -154,7 +154,7 @@ async function handleSubscriptionUpdated(
   subscription: Stripe.Subscription,
   supabase: any
 ) {
-  const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
   const userId = subscription.metadata?.user_id;
 
   console.log('🔄 Processing subscription update:', {
