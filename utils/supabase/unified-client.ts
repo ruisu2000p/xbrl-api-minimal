@@ -1,5 +1,5 @@
-import { createServerClient } from '@supabase/ssr'
-import { createClient as createBrowserClient } from '@supabase/supabase-js'
+import { createServerClient, createBrowserClient as createSSRBrowserClient } from '@supabase/ssr'
+import { createClient as createSupabaseJSClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
@@ -54,12 +54,10 @@ export function createBrowserSupabaseClient(): SupabaseClient {
   if (typeof window !== 'undefined') {
     const global = window as any
     if (!global.__supabaseClient) {
-      // Use @supabase/ssr createServerClient for browser with proper cookie handlers
-      // This ensures cookies are synced between client and server
-      global.__supabaseClient = createServerClient(url, anonKey, {
+      // Use @supabase/ssr's createBrowserClient which handles cookies automatically
+      global.__supabaseClient = createSSRBrowserClient(url, anonKey, {
         cookies: {
           get(name: string) {
-            // Parse document.cookie to get specific cookie value
             const cookies = document.cookie.split('; ')
             for (const cookie of cookies) {
               const [cookieName, ...cookieValue] = cookie.split('=')
@@ -70,8 +68,6 @@ export function createBrowserSupabaseClient(): SupabaseClient {
             return undefined
           },
           set(name: string, value: string, options: any) {
-            // Build cookie string with all options
-            // Important: Do NOT set httpOnly from client-side (it's ignored anyway)
             let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`
 
             if (options.maxAge) {
@@ -90,7 +86,6 @@ export function createBrowserSupabaseClient(): SupabaseClient {
             document.cookie = cookieString
           },
           remove(name: string, options: any) {
-            // Remove by setting max-age=0
             let cookieString = `${encodeURIComponent(name)}=; max-age=0`
 
             if (options.path) {
@@ -106,7 +101,7 @@ export function createBrowserSupabaseClient(): SupabaseClient {
   }
 
   // SSRの場合はセッションを保持しないクライアントを返す
-  return createBrowserClient(url, anonKey, {
+  return createSupabaseJSClient(url, anonKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -169,7 +164,7 @@ export async function createServiceSupabaseClient(): Promise<SupabaseClient> {
 
   // シングルトンパターンで再利用
   if (!cachedServiceClient) {
-    cachedServiceClient = createBrowserClient(url, serviceKey, {
+    cachedServiceClient = createSupabaseJSClient(url, serviceKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
@@ -198,7 +193,7 @@ export function createAdminClient(): SupabaseClient {
 
   // シングルトンパターンで再利用
   if (!cachedAdminClient) {
-    cachedAdminClient = createBrowserClient(url, serviceKey, {
+    cachedAdminClient = createSupabaseJSClient(url, serviceKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
