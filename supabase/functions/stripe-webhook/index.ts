@@ -190,7 +190,17 @@ async function handleInvoicePaymentSucceeded(
   invoice: Stripe.Invoice,
   supabase: any
 ) {
-  const subscriptionId = invoice.subscription as string
+  // Stripe API 2025-09-30以降、subscriptionはparent.subscription_details.subscriptionに移動
+  const subscriptionId = (invoice.subscription as string) ||
+                        (invoice as any).parent?.subscription_details?.subscription
+
+  console.log('📋 Invoice object:', {
+    id: invoice.id,
+    subscription: invoice.subscription,
+    parentSubscription: (invoice as any).parent?.subscription_details?.subscription,
+    subscriptionId: subscriptionId,
+    hasSubscription: !!subscriptionId,
+  })
 
   if (!subscriptionId) {
     console.log('Invoice has no subscription, skipping')
