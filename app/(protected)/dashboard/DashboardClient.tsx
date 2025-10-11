@@ -54,6 +54,23 @@ interface UserSubscription {
   subscription_plans?: SubscriptionPlan
 }
 
+interface Invoice {
+  id: string
+  stripe_invoice_id: string
+  stripe_subscription_id: string
+  amount_due: number
+  amount_paid: number
+  currency: string
+  status: string
+  invoice_pdf: string | null
+  hosted_invoice_url: string | null
+  billing_reason: string
+  period_start: string
+  period_end: string
+  created_at: string
+  paid_at: string | null
+}
+
 export default function DashboardClient({ user, apiKeys }: DashboardClientProps) {
   const router = useRouter()
   const { supabase } = useSupabase()
@@ -64,7 +81,7 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
   const [success, setSuccess] = useState('')
   const [generatedKey, setGeneratedKey] = useState<string | null>(null)
   const [showKeyModal, setShowKeyModal] = useState(false)
-  const [activeTab, setActiveTab] = useState<'api' | 'account' | 'plan'>('api')
+  const [activeTab, setActiveTab] = useState<'api' | 'account' | 'plan' | 'billing'>('api')
 
   // アカウント設定用
   const [formData, setFormData] = useState({
@@ -80,10 +97,21 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
 
+  // 請求管理用
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [invoicesLoading, setInvoicesLoading] = useState(false)
+
   useEffect(() => {
     loadSubscriptionData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'billing') {
+      loadInvoices()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
 
   const handleGenerateKey = async () => {
     if (!keyName) {
@@ -198,6 +226,39 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
       }
     } catch (err) {
       console.error('Error loading subscription data:', err)
+    }
+  }
+
+  const loadInvoices = async () => {
+    setInvoicesLoading(true)
+    setError('')
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        setError('認証が必要です')
+        return
+      }
+
+      const response = await fetch('/api/invoices', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setInvoices(data.invoices || [])
+      } else {
+        const data = await response.json()
+        setError(data.error || '請求書の取得に失敗しました')
+      }
+    } catch (err) {
+      console.error('Error loading invoices:', err)
+      setError('エラーが発生しました')
+    } finally {
+      setInvoicesLoading(false)
     }
   }
 
@@ -392,6 +453,16 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
               }`}
             >
               プラン管理
+            </button>
+            <button
+              onClick={() => setActiveTab('billing')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'billing'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              請求履歴
             </button>
           </nav>
         </div>
@@ -814,6 +885,109 @@ export default function DashboardClient({ user, apiKeys }: DashboardClientProps)
                 <p className="text-sm text-gray-500 text-center mt-2">
                   既に選択されているプランです
                 </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 請求履歴タブ */}
+        {activeTab === 'billing' && (
+          <div className="space-y-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">請求履歴</h2>
+
+              {invoicesLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">読み込み中...</p>
+                </div>
+              ) : invoices.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          請求日
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          期間
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          金額
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          ステータス
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          アクション
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {invoices.map((invoice) => (
+                        <tr key={invoice.id}>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {new Date(invoice.created_at).toLocaleDateString('ja-JP')}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(invoice.period_start).toLocaleDateString('ja-JP')} -{' '}
+                            {new Date(invoice.period_end).toLocaleDateString('ja-JP')}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ¥{(invoice.amount_paid / 100).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                invoice.status === 'paid'
+                                  ? 'bg-green-100 text-green-800'
+                                  : invoice.status === 'open'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {invoice.status === 'paid'
+                                ? '支払済'
+                                : invoice.status === 'open'
+                                ? '未払い'
+                                : invoice.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm">
+                            <div className="flex space-x-2">
+                              {invoice.invoice_pdf && (
+                                <a
+                                  href={invoice.invoice_pdf}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  PDF
+                                </a>
+                              )}
+                              {invoice.hosted_invoice_url && (
+                                <a
+                                  href={invoice.hosted_invoice_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  詳細
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">請求履歴がありません</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    サブスクリプションに登録すると、請求履歴が表示されます
+                  </p>
+                </div>
               )}
             </div>
           </div>
