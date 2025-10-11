@@ -210,11 +210,11 @@ Deno.serve(async (req) => {
       console.log('📞 Calling create_api_key_secure RPC...');
 
       const { data, error } = await supabase.rpc('create_api_key_secure', {
-        p_key_name: key_name.trim(),
-        p_key_hash: hashedKey,
-        p_key_prefix: keyPrefix,
-        p_key_suffix: keySuffix,
-        p_tier: tier
+        key_name: key_name.trim(),
+        key_hash_input: hashedKey,
+        key_prefix_input: keyPrefix,
+        key_suffix_input: keySuffix,
+        tier_input: tier
       });
 
       console.log('📞 RPC call completed:', { hasData: !!data, hasError: !!error });
@@ -273,7 +273,7 @@ Deno.serve(async (req) => {
 
       // Delete key using SECURITY DEFINER function
       const { data, error } = await supabase.rpc('revoke_api_key_secure', {
-        p_key_id: key_id
+        key_id_input: key_id
       });
 
       if (error) {
