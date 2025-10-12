@@ -16,11 +16,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { billingPeriod = 'monthly' } = body
+    const { billingCycle = 'monthly' } = body
 
     console.log('📋 Checkout request:', {
       userId: session.user.id,
-      billingPeriod,
+      billingCycle,
       body
     })
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
       body: {
         plan: 'standard',
-        billingPeriod: billingPeriod,
+        billingPeriod: billingCycle,
         source: 'dashboard'
       }
     })
