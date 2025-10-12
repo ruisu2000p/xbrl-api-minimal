@@ -739,59 +739,140 @@ export default function AccountSettings() {
     void loadUserProfile();
   }, [user]); // profileLoadedを依存配列から削除
 
-  // サブスクリプション情報を取得
-  useEffect(() => {
-    const loadSubscription = async () => {
-      if (!user) return;
+  // サブスクリプション情報を取得（再利用可能なコールバック）
+  const refreshSubscription = useCallback(async () => {
+    if (!user) return;
 
-      try {
-        // Step 1: Get user subscription
-        const { data: subscriptionData, error: subError } = await supabaseClient
-          .from('user_subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+    try {
+      console.log('🔄 Refreshing subscription data...');
 
-        if (subError || !subscriptionData) {
-          console.log('📋 No subscription found, using freemium', { error: subError });
-          setUserSubscription(null);
-          setCurrentPlan(getDefaultCurrentPlan(t, null));
-          setSelectedPlan('freemium');
-          return;
-        }
+      // Use new subscription status API
+      const response = await fetch('/api/subscription/status');
+      const data = await response.json();
 
-        // Step 2: Get plan details
-        const { data: planData, error: planError } = await supabaseClient
-          .from('subscription_plans')
-          .select('*')
-          .eq('id', subscriptionData.plan_id)
-          .single();
-
-        if (planError || !planData) {
-          console.error('❌ Error loading plan:', planError);
-          setUserSubscription(null);
-          setCurrentPlan(getDefaultCurrentPlan(t, null));
-          setSelectedPlan('freemium');
-          return;
-        }
-
-        // Combine data
-        const combinedData = {
-          ...subscriptionData,
-          subscription_plans: planData
-        };
-
-        console.log('✅ Subscription loaded:', combinedData);
-        setUserSubscription(combinedData);
-        setCurrentPlan(getDefaultCurrentPlan(t, combinedData));
-        setSelectedPlan(planData.name || 'freemium');
-      } catch (err) {
-        console.error('❌ Error loading subscription:', err);
+      if (!response.ok) {
+        console.error('❌ Error fetching subscription:', data.error);
+        setUserSubscription(null);
+        setCurrentPlan(getDefaultCurrentPlan(t, null));
+        setSelectedPlan('freemium');
+        return;
       }
-    };
 
-    void loadSubscription();
-  }, [user, t, supabaseClient]);
+      const { subscription } = data;
+
+      if (!subscription || !subscription.subscription_plans) {
+        console.log('📋 No subscription found, using freemium');
+        setUserSubscription(null);
+        setCurrentPlan(getDefaultCurrentPlan(t, null));
+        setSelectedPlan('freemium');
+        return;
+      }
+
+      console.log('✅ Subscription refreshed:', subscription);
+      setUserSubscription(subscription);
+      setCurrentPlan(getDefaultCurrentPlan(t, subscription));
+
+      // Set selected plan based on plan name and billing cycle
+      const planName = subscription.subscription_plans.name;
+      const billingCycle = subscription.billing_cycle;
+
+      if (planName === 'standard' && billingCycle) {
+        setSelectedPlan(`standard-${billingCycle}`);
+      } else {
+        setSelectedPlan(planName || 'freemium');
+      }
+    } catch (err) {
+      console.error('❌ Error loading subscription:', err);
+    }
+  }, [user, t]);
+
+  // Load subscription on mount
+  useEffect(() => {
+    void refreshSubscription();
+  }, [refreshSubscription]);
+
+  // Poll subscription after Stripe Checkout success
+  useEffect(() => {
+    const paymentSuccess = searchParams.get('payment_success');
+    const sessionId = searchParams.get('session_id');
+
+    if (paymentSuccess === 'true' && sessionId) {
+      console.log('💳 Payment success detected, polling for subscription update...');
+
+      let pollCount = 0;
+      const maxPolls = 10; // Poll for up to 20 seconds (10 * 2s)
+      const pollInterval = 2000; // 2 seconds
+
+      const pollTimer = setInterval(async () => {
+        pollCount++;
+        console.log(`🔄 Polling subscription status (attempt ${pollCount}/${maxPolls})...`);
+
+        try {
+          const response = await fetch('/api/subscription/status');
+          const data = await response.json();
+
+          if (response.ok && data.subscription) {
+            const { subscription } = data;
+
+            // Check if subscription is active and has a Stripe subscription ID
+            if (subscription.status === 'active' && subscription.stripe_subscription_id) {
+              console.log('✅ Subscription updated successfully!');
+
+              // Update UI
+              setUserSubscription(subscription);
+              setCurrentPlan(getDefaultCurrentPlan(t, subscription));
+
+              const planName = subscription.subscription_plans?.name;
+              const billingCycle = subscription.billing_cycle;
+
+              if (planName === 'standard' && billingCycle) {
+                setSelectedPlan(`standard-${billingCycle}`);
+              } else {
+                setSelectedPlan(planName || 'freemium');
+              }
+
+              setPlanMessage({
+                type: 'success',
+                text: t('dashboard.settings.plan.successPlanChange')
+              });
+
+              clearInterval(pollTimer);
+
+              // Clean up URL parameters
+              router.replace('/dashboard');
+              return;
+            }
+          }
+
+          // Stop polling after max attempts
+          if (pollCount >= maxPolls) {
+            console.log('⏰ Polling timeout - subscription may take longer to update');
+            setPlanMessage({
+              type: 'success',
+              text: '決済が完了しました。プランの反映まで少しお待ちください。'
+            });
+            clearInterval(pollTimer);
+
+            // Clean up URL parameters
+            router.replace('/dashboard');
+          }
+        } catch (error) {
+          console.error('❌ Error polling subscription:', error);
+
+          // Stop polling on error
+          if (pollCount >= maxPolls) {
+            clearInterval(pollTimer);
+            router.replace('/dashboard');
+          }
+        }
+      }, pollInterval);
+
+      // Cleanup on unmount
+      return () => {
+        clearInterval(pollTimer);
+      };
+    }
+  }, [searchParams, router, t, refreshSubscription]);
 
   const loadApiKeys = useCallback(async () => {
     setApiStatus('loading');
@@ -1084,11 +1165,10 @@ export default function AccountSettings() {
         // Get billing period from selected plan
         const billingPeriod = selectedPlan === 'standard-monthly' ? 'monthly' : 'yearly';
 
+        // サーバー側で認証とPrice ID解決を行うため、planTypeとbillingCycleのみ送信
         const requestBody = {
-          userId: user.data.user.id,
-          planId: planData.id,
-          userEmail: user.data.user.email,
-          billingPeriod: billingPeriod
+          planType: 'standard', // 'freemium' | 'standard' | 'premium'
+          billingCycle: billingPeriod // 'monthly' | 'yearly'
         };
 
         console.log('📤 Sending to Stripe API:', requestBody);
@@ -1115,52 +1195,40 @@ export default function AccountSettings() {
         return;
       }
 
-      // Freemiumプランに変更する場合は直接更新
-      const now = new Date();
-      const nextBillingDate = new Date(now);
-      nextBillingDate.setFullYear(now.getFullYear() + 100); // 100年後
+      // Freemiumプランに変更する場合は新しいAPIを使用
+      console.log('⬇️ Downgrading to freemium via API...');
 
-      // user_subscriptionsを更新
-      const { error: updateError } = await supabaseClient
-        .from('user_subscriptions')
-        .update({
-          plan_id: planData.id,
-          current_period_end: nextBillingDate.toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.data.user.id);
+      // Call freemium downgrade API
+      const downgradeResponse = await fetch('/api/subscription/change', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'downgrade',
+          planType: 'freemium'
+        }),
+      });
 
-      if (updateError) {
-        console.error('Error updating subscription:', updateError);
-        setPlanMessage({ type: 'error', text: 'プランの更新に失敗しました' });
+      const downgradeResult = await downgradeResponse.json();
+
+      if (!downgradeResponse.ok || !downgradeResult.success) {
+        console.error('Error downgrading to freemium:', downgradeResult.error);
+        setPlanMessage({ type: 'error', text: downgradeResult.error || 'プランの更新に失敗しました' });
         return;
       }
 
-      // 成功したら表示を更新
-      setCurrentPlan({
-        id: newPlan.id,
-        name: newPlan.name,
-        price: newPlan.price,
-        nextBilling: nextBillingDate.toLocaleDateString(),
-        status: t('dashboard.settings.plan.currentPlanStatus')
-      });
+      console.log('✅ Downgrade successful, refreshing subscription data...');
+
+      // Refresh subscription data from status API
+      await refreshSubscription();
+
       setPlanMessage({ type: 'success', text: t('dashboard.settings.plan.successPlanChange') });
-
-      // サブスクリプション情報を再読み込み
-      const { data: updatedSubscription } = await supabaseClient
-        .from('user_subscriptions')
-        .select('*, subscription_plans(*)')
-        .eq('user_id', user.data.user.id)
-        .single();
-
-      if (updatedSubscription) {
-        setUserSubscription(updatedSubscription);
-      }
     } catch (error) {
       console.error('Error in handlePlanUpdate:', error);
       setPlanMessage({ type: 'error', text: 'プランの更新に失敗しました' });
     }
-  }, [selectedPlan, currentPlan, planOptions, t, userSubscription, supabaseClient]);
+  }, [selectedPlan, currentPlan, planOptions, t, supabaseClient, refreshSubscription]);
 
   const handleCreateKey = useCallback(async () => {
     // eslint-disable-next-line no-console
