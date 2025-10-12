@@ -87,13 +87,37 @@ async function handleCheckoutCompleted(
   stripe: Stripe,
   supabase: any
 ) {
-  const userId = session.metadata?.userId
-  const planId = session.metadata?.planId
+  const userId = session.metadata?.user_id
+  const plan = session.metadata?.plan
 
-  if (!userId || !planId) {
-    console.error('Missing metadata in checkout session')
+  console.log('📋 Checkout session metadata:', {
+    userId,
+    plan,
+    allMetadata: session.metadata,
+  })
+
+  if (!userId || !plan) {
+    console.error('Missing metadata in checkout session', {
+      userId,
+      plan,
+      metadata: session.metadata,
+    })
     return
   }
+
+  // プランIDを取得
+  const { data: planData, error: planError } = await supabase
+    .from('subscription_plans')
+    .select('id')
+    .eq('name', plan)
+    .single()
+
+  if (planError || !planData) {
+    console.error('Plan not found:', plan, planError)
+    return
+  }
+
+  const planId = planData.id
 
   // Stripeのサブスクリプション情報を取得
   const subscriptionId = session.subscription as string

@@ -93,7 +93,9 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, ANON_KEY, {
       auth: {
-        persistSession: false
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
       },
       global: {
         headers: { Authorization: authHeader }
@@ -103,6 +105,14 @@ Deno.serve(async (req) => {
     // Verify user is authenticated via JWT (pass token explicitly)
     console.log('🔐 Attempting to get user from token...');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    // IMPORTANT: Set the session explicitly so auth.uid() works in RPC calls
+    if (user) {
+      await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: '' // Not needed for single request
+      });
+    }
 
     if (authError) {
       console.error('❌ Authentication error:', {
