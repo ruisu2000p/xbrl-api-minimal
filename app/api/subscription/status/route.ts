@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         subscription_plans (
           id,
           name,
-          display_name,
+          description,
           price_monthly,
           price_yearly,
           features
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
             cancelled_at: null,
             subscription_plans: freemiumPlan || {
               name: 'freemium',
-              display_name: 'Freemium',
+              description: 'Freemium plan with basic features',
               price_monthly: 0,
               price_yearly: 0,
               features: {}
