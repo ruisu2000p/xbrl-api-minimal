@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-api-key, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, Authorization, x-api-key, X-API-Key, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
   'Access-Control-Max-Age': '86400'
 };
@@ -33,6 +33,7 @@ interface Env {
   SUPABASE_SERVICE_ROLE_KEY: string;
 }
 
+// JWT検証をオフ（独自APIキー認証を使用）
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS });
@@ -52,23 +53,29 @@ serve(async (req: Request) => {
     }
 
     // APIキー取得（Authorization / x-api-key / apikey / ?api_key）
-    const authHeader = req.headers.get('authorization') || '';
-    const xApiKeyHdr = req.headers.get('x-api-key') || '';
-    const apikeyHdr = req.headers.get('apikey') || '';
-    const xApiKeyQry = url.searchParams.get('api_key') || '';
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    const xApiKeyHdr = req.headers.get('x-api-key') ?? req.headers.get('X-API-Key') ?? req.headers.get('apikey');
+    const xApiKeyQry = url.searchParams.get('api_key');
     let apiKey: string | null = null;
 
-    const tryBearer = authHeader.replace(/^Bearer\s+/i, '').trim();
-    if (tryBearer.startsWith('xbrl_')) apiKey = tryBearer;
-    if (!apiKey && xApiKeyHdr.startsWith('xbrl_')) apiKey = xApiKeyHdr.trim();
-    if (!apiKey && apikeyHdr.startsWith('xbrl_')) apiKey = apikeyHdr.trim();
-    if (!apiKey && xApiKeyQry.startsWith('xbrl_')) apiKey = xApiKeyQry.trim();
+    if (authHeader) {
+      const tryBearer = authHeader.replace(/^Bearer\s+/i, '').trim();
+      if (tryBearer.startsWith('xbrl_v1_')) apiKey = tryBearer;
+    }
+    if (!apiKey && xApiKeyHdr?.startsWith('xbrl_v1_')) apiKey = xApiKeyHdr.trim();
+    if (!apiKey && xApiKeyQry?.startsWith('xbrl_v1_')) apiKey = xApiKeyQry.trim();
 
+    const mask = (k?: string | null) => !k ? '' : (k.length <= 10 ? '***' : `${k.slice(0, 4)}...${k.slice(-4)}`);
     console.log('[Gateway] Request:', {
       method: req.method,
       path: url.pathname,
       hasApiKey: !!apiKey,
-      apiKeyMasked: maskKey(apiKey)
+      apiKeyMasked: mask(apiKey),
+      headers: {
+        authHeader: !!authHeader,
+        xApiKeyHdr: !!xApiKeyHdr,
+        xApiKeyQry: !!xApiKeyQry
+      }
     });
 
     if (!apiKey) {
@@ -83,18 +90,15 @@ serve(async (req: Request) => {
       auth: { persistSession: false }
     });
 
-    // ルーティング
-    // URL例: /functions/v1/xbrl-gateway/markdown-files/toc
-    // pathSegments: ['functions', 'v1', 'xbrl-gateway', 'markdown-files', 'toc']
-    // endpoint: 'markdown-files/toc' (slice(3)で取得)
-    const pathSegments = url.pathname.split('/').filter(Boolean);
-    // /functions/v1/xbrl-gateway/ の場合は slice(3)、それ以外は slice(1)
-    const isFullPath = pathSegments[0] === 'functions' && pathSegments[1] === 'v1';
-    const endpoint = (isFullPath ? pathSegments.slice(3) : pathSegments.slice(1)).join('/') || '';
+    // ルーティング - Path normalize (both local and prod: with or without /functions/v1)
+    const fnBase = 'xbrl-gateway';
+    const segs = url.pathname.split('/').filter(Boolean); // e.g. ["functions","v1","xbrl-gateway","markdown-files"]
+    const idx = segs.findIndex(s => s === fnBase);
+    const endpoint = idx >= 0 ? segs.slice(idx + 1).join('/') : url.pathname.replace(/^\//, '');
 
     console.log('[Gateway] Debug:', {
       pathname: url.pathname,
-      pathSegments,
+      segs,
       endpoint,
       method: req.method,
       search: url.search
@@ -199,7 +203,7 @@ serve(async (req: Request) => {
         debug: {
           endpoint,
           pathname: url.pathname,
-          pathSegments,
+          segs,
           searchParams: {
             search,
             fiscalYear,
@@ -208,7 +212,7 @@ serve(async (req: Request) => {
             offset
           },
           apiKeyProvided: !!apiKey,
-          apiKeyMasked: maskKey(apiKey)
+          apiKeyMasked: mask(apiKey)
         }
       });
     }
