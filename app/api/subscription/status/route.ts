@@ -93,9 +93,19 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      console.error('❌ Error fetching subscription:', subError);
+      console.error('❌ Error fetching subscription:', {
+        code: subError.code,
+        message: subError.message,
+        details: subError.details,
+        hint: subError.hint
+      });
       return NextResponse.json(
-        { error: 'Failed to fetch subscription' },
+        {
+          error: 'Failed to fetch subscription',
+          code: subError.code,
+          message: subError.message,
+          details: subError.details
+        },
         { status: 500 }
       );
     }
