@@ -164,6 +164,30 @@ export async function POST(request: NextRequest) {
           console.error('Failed to create API key:', createError);
           console.error('Result object:', result);
 
+          // If there's a FunctionsHttpError with 409 status, extract the response body
+          if (createError && 'context' in createError && createError.context) {
+            const errorResponse = createError.context as Response;
+            console.error('Error response status:', errorResponse.status);
+
+            if (errorResponse.status === 409) {
+              try {
+                const errorBody = await errorResponse.json();
+                console.error('Error body:', errorBody);
+
+                return NextResponse.json(
+                  {
+                    error: errorBody.error || 'AlreadyExists',
+                    message: errorBody.message || '既にAPIキーが存在します',
+                    details: errorBody.details || '新しいキーを作成する前に、既存のキーを削除してください。'
+                  },
+                  { status: 409 }
+                );
+              } catch (parseError) {
+                console.error('Failed to parse error response:', parseError);
+              }
+            }
+          }
+
           // Check if it's a 409 AlreadyExists error (from properly formatted response)
           if (result?.error === 'AlreadyExists') {
             return NextResponse.json(
