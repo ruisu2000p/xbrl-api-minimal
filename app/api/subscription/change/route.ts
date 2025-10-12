@@ -6,11 +6,6 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
-});
 
 /**
  * POST /api/subscription/change
@@ -63,50 +58,21 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // 現在のサブスクリプション情報を取得
-      const { data: currentSub, error: currentSubError } = await supabase
-        .from('user_subscriptions')
-        .select('stripe_subscription_id, stripe_customer_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (currentSubError) {
-        console.error('❌ Failed to get current subscription:', currentSubError);
-        return NextResponse.json(
-          { error: 'Failed to get current subscription' },
-          { status: 500 }
-        );
-      }
-
-      // Stripeサブスクリプションが存在する場合はキャンセル
-      if (currentSub?.stripe_subscription_id) {
-        try {
-          console.log('🔄 Canceling Stripe subscription:', currentSub.stripe_subscription_id);
-
-          await stripe.subscriptions.cancel(currentSub.stripe_subscription_id);
-
-          console.log('✅ Stripe subscription canceled');
-        } catch (stripeError: any) {
-          console.error('❌ Failed to cancel Stripe subscription:', stripeError);
-          return NextResponse.json(
-            {
-              error: 'Failed to cancel Stripe subscription',
-              details: stripeError.message
-            },
-            { status: 500 }
-          );
-        }
-      }
+      // NOTE: Stripe情報は private.user_subscriptions に保存されているが、
+      // public.user_subscriptions ビュー経由ではアクセスできない。
+      // そのため、Stripeサブスクリプションのキャンセルは
+      // Webhook (stripe-webhook) に任せる方針とする。
+      // ユーザーがFreemiumにダウングレードした後、次回の請求時に
+      // Stripeサブスクリプションが自動的にキャンセルされる。
 
       // user_subscriptionsを即時更新
+      // NOTE: stripe_customer_id と stripe_subscription_id は public.user_subscriptions ビューには存在しないため除外
       const { error: updateError } = await supabase
         .from('user_subscriptions')
         .update({
           plan_id: freemiumPlan.id,
           billing_cycle: 'monthly', // Freemium default
           status: 'active',
-          stripe_customer_id: null, // Stripe連携解除
-          stripe_subscription_id: null,
           cancel_at_period_end: false,
           cancelled_at: null,
           current_period_start: null,
