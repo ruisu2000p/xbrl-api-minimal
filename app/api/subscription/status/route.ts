@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('user_id', user.id)
-      .single();
+      .single() as any;
 
     if (subError) {
       // サブスクリプションが存在しない場合は、デフォルトでFreemiumを返す
