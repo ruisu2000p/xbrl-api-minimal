@@ -75,7 +75,18 @@ export default function ApiKeyManager() {
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error);
+      if (!response.ok) {
+        // Check for specific error types
+        if (data.error === 'AlreadyExists' || response.status === 409) {
+          // Show detailed message for "already exists" error
+          const message = data.message || '既にAPIキーが存在します';
+          const details = data.details || '新しいキーを作成する前に、既存のキーを削除してください。';
+          alert(`${message}\n\n${details}`);
+          throw new Error(message);
+        }
+        // Generic error
+        throw new Error(data.error || 'APIキーの作成に失敗しました');
+      }
 
       // 新しく作成されたキーを表示 (check multiple possible field names for backward compatibility)
       setShowNewKey(data.apiKey || data.api_key || data.newKey);
@@ -86,7 +97,10 @@ export default function ApiKeyManager() {
       return data.apiKey || data.api_key || data.newKey;
     } catch (error) {
       console.error('Error creating API key:', error);
-      alert('APIキーの作成に失敗しました');
+      // Only show alert if we haven't already shown one
+      if (error instanceof Error && !error.message.includes('既にAPIキーが存在します')) {
+        alert('APIキーの作成に失敗しました');
+      }
     } finally {
       setCreatingKey(false);
     }
