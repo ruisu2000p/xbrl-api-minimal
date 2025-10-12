@@ -162,8 +162,24 @@ export async function POST(request: NextRequest) {
 
         if (createError || !result?.success) {
           console.error('Failed to create API key:', createError);
+
+          // Check if it's a 409 AlreadyExists error
+          if (result?.error === 'AlreadyExists') {
+            return NextResponse.json(
+              {
+                error: 'AlreadyExists',
+                message: result.message || '既にAPIキーが存在します',
+                details: result.details || '新しいキーを作成する前に、既存のキーを削除してください。'
+              },
+              { status: 409 }
+            );
+          }
+
           return NextResponse.json(
-            { error: 'APIキーの作成に失敗しました' },
+            {
+              error: 'APIキーの作成に失敗しました',
+              details: result?.message || createError?.message
+            },
             { status: 500 }
           );
         }

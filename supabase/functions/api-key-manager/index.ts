@@ -106,14 +106,6 @@ Deno.serve(async (req) => {
     console.log('🔐 Attempting to get user from token...');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    // IMPORTANT: Set the session explicitly so auth.uid() works in RPC calls
-    if (user) {
-      await supabase.auth.setSession({
-        access_token: token,
-        refresh_token: '' // Not needed for single request
-      });
-    }
-
     if (authError) {
       console.error('❌ Authentication error:', {
         message: authError.message,
@@ -129,6 +121,7 @@ Deno.serve(async (req) => {
     }
 
     console.log('✅ Authenticated user:', user.id);
+    console.log('🔐 User metadata:', { email: user.email, aud: user.aud, role: user.role });
 
     // Parse request body
     let body: any = {};
@@ -162,19 +155,43 @@ Deno.serve(async (req) => {
 
     // Handle list action using SECURITY DEFINER function
     if (action === 'list') {
-      console.log('📋 Fetching API keys via SECURITY DEFINER function...');
+      console.log('📋 Fetching API keys via SECURITY DEFINER function for user:', user.id);
+      console.log('📋 Calling list_api_keys_secure with explicit user_id...');
 
-      const { data, error } = await supabase.rpc('list_api_keys_secure');
+      // Pass user_id explicitly to avoid auth.uid() context issues
+      const { data, error } = await supabase.rpc('list_api_keys_secure', {
+        p_user_id: user.id
+      });
 
       if (error) {
         console.error('❌ Database error (list):', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return json(500, {
           error: 'Database error',
           details: error.message
         });
       }
 
-      console.log('✅ Found API keys:', data?.length || 0);
+      console.log('✅ RPC call successful, data received:', JSON.stringify(data));
+      console.log('✅ Found API keys count:', data?.length || 0);
+
+      if (data && data.length > 0) {
+        console.log('🔍 First key details:', {
+          id: data[0].id,
+          name: data[0].name,
+          prefix: data[0].key_prefix,
+          suffix: data[0].key_suffix,
+          tier: data[0].tier
+        });
+      } else {
+        console.log('⚠️ No keys returned from RPC for user:', user.id);
+        console.log('⚠️ Verified user_id was passed explicitly to RPC function');
+      }
 
       return json(200, {
         success: true,
@@ -236,6 +253,16 @@ Deno.serve(async (req) => {
           hint: error.hint,
           code: error.code
         });
+
+        // Check if error is due to existing key
+        if (error.message && error.message.includes('ALREADY_EXISTS')) {
+          return json(409, {
+            error: 'AlreadyExists',
+            message: '既にAPIキーが存在します',
+            details: '新しいキーを作成する前に、既存のキーを削除してください。'
+          });
+        }
+
         return json(500, {
           error: 'Database error',
           message: error.message,
