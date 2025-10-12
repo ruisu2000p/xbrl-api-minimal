@@ -1317,6 +1317,21 @@ export default function AccountSettings() {
 
       if (invokeError) {
         console.error('❌ APIキー作成失敗:', invokeError);
+
+        // Check for specific error types (409 Conflict - AlreadyExists)
+        if (response.status === 409 || result.error === 'AlreadyExists') {
+          const errorMessage = result.message || '既にAPIキーが存在します';
+          const errorDetails = result.details || '新しいキーを作成する前に、既存のキーを削除してください。';
+
+          // Show detailed error message with line breaks
+          setApiMessage({
+            type: 'error',
+            text: `${errorMessage}\n\n${errorDetails}`
+          });
+          setIsCreatingKey(false);
+          return;
+        }
+
         throw new Error(invokeError.message || 'APIキーの作成に失敗しました');
       }
 
