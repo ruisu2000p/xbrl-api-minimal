@@ -57,17 +57,23 @@ Deno.serve(async (req) => {
     }
 
     // リクエストボディを取得
-    const { plan, billingPeriod, source } = await req.json()
+    const body = await req.json()
+    const { plan, billingPeriod, billingCycle, source } = body
+
+    // billingPeriod または billingCycle を受け入れる (互換性のため)
+    const billing = billingPeriod || billingCycle
 
     console.log('📋 Received checkout request:', {
       userId: user.id,
       email: user.email,
       plan,
       billingPeriod,
+      billingCycle,
+      billing, // 実際に使用する値
       source, // 'signup' or 'dashboard'
     })
 
-    if (!plan || !billingPeriod) {
+    if (!plan || !billing) {
       return new Response(
         JSON.stringify({ error: 'プランと請求期間を指定してください' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -89,15 +95,15 @@ Deno.serve(async (req) => {
     console.log('🔍 Environment variables check:', {
       monthlyPriceId: monthlyPriceId ? `${monthlyPriceId.substring(0, 10)}...` : 'NOT SET',
       yearlyPriceId: yearlyPriceId ? `${yearlyPriceId.substring(0, 10)}...` : 'NOT SET',
-      billingPeriod,
+      billing,
     })
 
-    const priceId = billingPeriod === 'monthly' ? monthlyPriceId : yearlyPriceId
+    const priceId = billing === 'monthly' ? monthlyPriceId : yearlyPriceId
 
     if (!priceId) {
       console.error('❌ Stripe price ID not configured:', {
         plan,
-        billingPeriod,
+        billing,
         monthlyPriceId: !!monthlyPriceId,
         yearlyPriceId: !!yearlyPriceId,
       })
@@ -144,13 +150,14 @@ Deno.serve(async (req) => {
       metadata: {
         user_id: user.id,
         plan: plan,
-        billing_period: billingPeriod,
+        billing_period: billing, // 'monthly' or 'yearly' - CRITICAL for webhook
         source: source, // 'signup' or 'dashboard'
       },
       subscription_data: {
         metadata: {
           user_id: user.id,
           plan: plan,
+          billing_period: billing, // Also store in subscription metadata
         },
       },
     })
