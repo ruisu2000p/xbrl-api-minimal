@@ -30,33 +30,39 @@ export async function GET(request: NextRequest) {
 
     console.log('📊 Fetching subscription status for user:', user.id);
 
-    // user_subscriptions と subscription_plans を結合して取得
-    const { data: subscription, error: subError } = await supabase
+    // user_subscriptions を取得
+    const { data: userSub, error: subError } = await supabase
       .from('user_subscriptions')
-      .select(`
-        user_id,
-        plan_id,
-        status,
-        billing_cycle,
-        stripe_customer_id,
-        stripe_subscription_id,
-        current_period_start,
-        current_period_end,
-        cancel_at_period_end,
-        cancelled_at,
-        created_at,
-        updated_at,
-        subscription_plans (
-          id,
-          name,
-          description,
-          price_monthly,
-          price_yearly,
-          features
-        )
-      `)
+      .select('*')
       .eq('user_id', user.id)
-      .single() as any;
+      .single();
+
+    if (subError) {
+      console.error('❌ Error fetching user subscription:', {
+        code: subError.code,
+        message: subError.message,
+        details: subError.details
+      });
+    }
+
+    // サブスクリプションが存在する場合、プラン情報を別途取得
+    let subscription: any = null;
+    if (userSub && !subError) {
+      const { data: planData, error: planError } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('id', userSub.plan_id)
+        .single();
+
+      if (planError) {
+        console.error('❌ Error fetching plan:', planError);
+      }
+
+      subscription = {
+        ...userSub,
+        subscription_plans: planData
+      };
+    }
 
     if (subError) {
       // サブスクリプションが存在しない場合は、デフォルトでFreemiumを返す
