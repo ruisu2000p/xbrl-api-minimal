@@ -1,6 +1,9 @@
 -- Create private schema if not exists
 CREATE SCHEMA IF NOT EXISTS private;
 
+-- Drop existing function if it exists
+DROP FUNCTION IF EXISTS private.create_api_key_secure(text, text, text, text, text);
+
 -- Create the private.create_api_key_secure function
 CREATE OR REPLACE FUNCTION private.create_api_key_secure(
   key_name text,
@@ -33,7 +36,8 @@ BEGIN
     key_prefix,
     key_suffix,
     tier,
-    is_active
+    is_active,
+    status
   )
   VALUES (
     v_user_id,
@@ -42,7 +46,8 @@ BEGIN
     key_prefix_input,
     key_suffix_input,
     tier_input,
-    true
+    true,
+    'active'
   )
   RETURNING api_keys.id INTO v_key_id;
 
