@@ -375,11 +375,11 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
             <button
               key={plan.id}
               onClick={() => onSelectPlan(plan.id)}
-              className={`flex h-full flex-col rounded-2xl border text-left transition-colors ${
+              className={`flex h-full flex-col rounded-2xl border text-left transition-colors relative ${
                 isSelected
                   ? 'border-blue-400 bg-blue-50'
                   : 'border-gray-200 hover:border-blue-200'
-              } ${plan.recommended || ('discountBadge' in plan && plan.discountBadge) ? 'relative overflow-hidden pt-16 px-6 pb-6' : 'p-6'}`}
+              } ${plan.recommended || ('discountBadge' in plan && plan.discountBadge) ? 'overflow-hidden pt-16 px-6 pb-6' : 'p-6'}`}
             >
               {isCurrent && (
                 <span className="absolute right-4 top-4 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
