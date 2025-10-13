@@ -22,7 +22,8 @@ export default function SignupPage() {
     confirmPassword: '',
     company: '',
     agreeToTerms: false,
-    understandInvestmentAdvice: false
+    understandInvestmentAdvice: false,
+    understandMcpRequirement: false
   });
 
   const plans = [
@@ -76,6 +77,10 @@ export default function SignupPage() {
     }
     if (!formData.understandInvestmentAdvice) {
       setError(t('signup.error.investment'));
+      return;
+    }
+    if (!formData.understandMcpRequirement) {
+      setError(t('signup.error.mcpRequirement'));
       return;
     }
     // Enhanced password validation
@@ -521,10 +526,32 @@ export default function SignupPage() {
                 </label>
               </div>
 
+              <div className="flex items-start space-x-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-200">
+                <input
+                  id="understandMcpRequirement"
+                  name="understandMcpRequirement"
+                  type="checkbox"
+                  checked={formData.understandMcpRequirement}
+                  onChange={handleInputChange}
+                  className="mt-1 w-5 h-5 text-blue-600 border-blue-300 rounded-lg focus:ring-blue-500 cursor-pointer"
+                />
+                <label htmlFor="understandMcpRequirement" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
+                  <div className="flex items-start space-x-2">
+                    <i className="ri-robot-line text-blue-600 mt-0.5 flex-shrink-0"></i>
+                    <div>
+                      <span className="font-semibold text-blue-800">{t('signup.mcpRequirement.title')}</span>
+                      <div className="mt-1 text-gray-600">
+                        {t('signup.mcpRequirement.text')}
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={!formData.agreeToTerms || !formData.understandInvestmentAdvice || isLoading}
+                  disabled={!formData.agreeToTerms || !formData.understandInvestmentAdvice || !formData.understandMcpRequirement || isLoading}
                   className="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap flex items-center justify-center"
                 >
                   {isLoading ? (
