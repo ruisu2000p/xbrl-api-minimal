@@ -16,7 +16,7 @@
 - ✅ メタデータ設定 (app/layout.tsx)
 - ✅ OG画像参照: `/og-image.png` (1200×630px)
 - ✅ ロゴ参照: `/logo.png` (512×512px)
-- ⚠️ 画像ファイルを `public/` に配置する必要あり
+- ✅ 画像ファイルを `public/` に配置済み
 
 ### 4. サイトマップ & Robots
 - ✅ sitemap.ts (自動生成、lastModified対応)
@@ -39,9 +39,9 @@ URL: https://search.google.com/test/rich-results
 - `https://fininfonext.com/#faq` - FAQPage Schema
 
 確認項目:
-- [ ] Organization Schema が「有効」
-- [ ] FAQPage Schema が「有効」
-- [ ] エラー・警告が0件
+- ✅ Organization Schema が「有効」(2025-10-13 検証済み)
+- ✅ FAQPage Schema が「有効」(2025-10-13 検証済み)
+- ✅ エラー・警告が0件 (2025-10-13 検証済み)
 
 #### 2. HTMLソース確認
 ブラウザの開発者ツールで `<head>` セクションを確認:
@@ -97,7 +97,7 @@ URL: https://search.google.com/test/rich-results
 
 #### 4. Google Search Console - URL検査
 重要ページでインデックス登録をリクエスト:
-- [ ] https://fininfonext.com/
+- ✅ https://fininfonext.com/ (2025-10-13 インデックス登録リクエスト済み)
 - [ ] https://fininfonext.com/pricing
 - [ ] https://fininfonext.com/signup
 - [ ] https://fininfonext.com/docs

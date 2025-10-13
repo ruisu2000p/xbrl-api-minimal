@@ -116,6 +116,13 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
+      console.log('🚀 Starting signup process...', {
+        email: formData.email,
+        name: formData.name,
+        plan: selectedPlan,
+        billingPeriod: billingPeriod
+      });
+
       const result = await signUp({
         email: formData.email,
         password: formData.password,
@@ -125,11 +132,19 @@ export default function SignupPage() {
         billingPeriod: billingPeriod
       });
 
+      console.log('📬 Signup result:', {
+        success: result.success,
+        hasUser: !!result.user,
+        hasApiKey: !!result.apiKey,
+        error: result.error
+      });
+
       if (result.success) {
         // APIキーが作成された場合はセッションストレージに保存
         if (result.apiKey) {
           // APIキーをセッションストレージに保存（ダッシュボードで表示）
           sessionStorage.setItem('newApiKey', result.apiKey);
+          console.log('✅ API key saved to sessionStorage');
         }
 
         // Cookieが反映されるまで少し待機
@@ -138,15 +153,20 @@ export default function SignupPage() {
         // 有料プランの場合は、Stripe Checkoutにリダイレクト
         if (selectedPlan === 'standard') {
           try {
+            console.log('💳 Creating checkout session for Standard plan...');
+
             // Supabaseクライアントを取得
             const supabase = createBrowserSupabaseClient();
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session) {
+              console.error('❌ No session found after signup');
               setError('認証エラーが発生しました');
               setIsLoading(false);
               return;
             }
+
+            console.log('✅ Session obtained, calling checkout endpoint...');
 
             // Supabase Edge Functionを呼び出し
             const checkoutResponse = await fetch(
@@ -167,31 +187,45 @@ export default function SignupPage() {
 
             const checkoutData = await checkoutResponse.json();
 
+            console.log('📦 Checkout response:', {
+              status: checkoutResponse.status,
+              ok: checkoutResponse.ok,
+              hasUrl: !!checkoutData.url,
+              error: checkoutData.error
+            });
+
             if (checkoutResponse.ok && checkoutData.url) {
               // Stripe Checkoutページにリダイレクト
+              console.log('🔗 Redirecting to Stripe checkout...');
               window.location.href = checkoutData.url;
               return;
             } else {
-              setError('決済ページの作成に失敗しました: ' + (checkoutData.error || ''));
+              const errorMsg = '決済ページの作成に失敗しました: ' + (checkoutData.error || '');
+              console.error('❌ Checkout creation failed:', errorMsg);
+              setError(errorMsg);
               setIsLoading(false);
               return;
             }
           } catch (checkoutError) {
-            console.error('Checkout error:', checkoutError);
-            setError('決済ページの作成に失敗しました');
+            console.error('❌ Checkout error:', checkoutError);
+            setError('決済ページの作成に失敗しました: ' + (checkoutError instanceof Error ? checkoutError.message : ''));
             setIsLoading(false);
             return;
           }
         }
 
         // Freemiumプランの場合は直接ダッシュボードへ
+        console.log('✅ Redirecting to dashboard...');
         window.location.href = '/dashboard?newAccount=true';
         return;
       } else {
+        console.error('❌ Signup failed:', result.error);
         setError(result.error || t('signup.error.failed'));
       }
     } catch (err) {
-      setError(t('signup.error.general'));
+      console.error('❌ Signup exception:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(t('signup.error.general') + (errorMessage ? `: ${errorMessage}` : ''));
     } finally {
       setIsLoading(false);
     }
