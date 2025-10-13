@@ -5,6 +5,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { supabaseManager } from "@/lib/infrastructure/supabase-manager";
 import SupabaseProvider from "@/components/SupabaseProvider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import JsonLd from "@/components/JsonLd";
+import Canonical from "@/components/Canonical";
 import "./globals.css";
 
 const pacifico = Pacifico({
@@ -68,6 +70,23 @@ export default async function RootLayout({
     // 初回セッション取得エラーは無視（未認証の場合も正常）
   }
 
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Financial Information next (FIN)",
+    "url": "https://fininfonext.com",
+    "logo": "https://fininfonext.com/logo.png",
+    "description": "XBRL Financial Data Analysis Platform for Japanese Stock Market",
+    "contactPoint": [{
+      "@type": "ContactPoint",
+      "email": "support@fininfonext.com",
+      "contactType": "customer support",
+      "areaServed": "JP",
+      "availableLanguage": ["ja", "en"]
+    }],
+    "sameAs": []
+  };
+
   return (
     <html lang="ja" suppressHydrationWarning={true}>
       <head>
@@ -75,6 +94,8 @@ export default async function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css"
           rel="stylesheet"
         />
+        <Canonical />
+        <JsonLd json={organizationSchema} />
       </head>
       <body
         className={`${inter.variable} ${pacifico.variable} antialiased`}
