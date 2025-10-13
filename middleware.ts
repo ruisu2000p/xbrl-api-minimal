@@ -8,6 +8,7 @@ const protectedPaths = [
   '/settings',
   '/api/dashboard',
   '/api/api-keys',
+  '/api/subscription',
 ]
 
 export async function middleware(request: NextRequest) {
