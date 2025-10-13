@@ -287,6 +287,28 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
         </div>
       )}
 
+      {/* Current Plan Section */}
+      <section className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+              <i className="ri-vip-crown-line text-xl"></i>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">{currentPlan.name}</h3>
+              <p className="text-blue-600">{currentPlan.price}</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-start gap-2 md:items-end">
+            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+              <i className="ri-check-line mr-1"></i>
+              {currentPlan.status}
+            </span>
+            <span className="text-xs text-gray-600">{t('dashboard.settings.plan.nextBillingLabel')} {currentPlan.nextBilling}</span>
+          </div>
+        </div>
+      </section>
+
       {/* Trial Period Banner - Only show for freemium users with trial info */}
       {currentPlan.id === 'freemium' && trialInfo && (
         <div className={`rounded-2xl border p-4 ${
@@ -343,27 +365,6 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
           </div>
         </div>
       )}
-
-      <section className="rounded-2xl border border-blue-200 bg-blue-50 p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
-              <i className="ri-vip-crown-line text-xl"></i>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">{currentPlan.name}</h3>
-              <p className="text-blue-600">{currentPlan.price}</p>
-            </div>
-          </div>
-          <div className="flex flex-col items-start gap-2 md:items-end">
-            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-              <i className="ri-check-line mr-1"></i>
-              {currentPlan.status}
-            </span>
-            <span className="text-xs text-gray-600">{t('dashboard.settings.plan.nextBillingLabel')} {currentPlan.nextBilling}</span>
-          </div>
-        </div>
-      </section>
 
       <section className="grid gap-6 md:grid-cols-3">
         {planOptions.map((plan) => {
