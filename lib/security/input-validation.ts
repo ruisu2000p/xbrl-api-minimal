@@ -166,6 +166,24 @@ export function sanitizeError(error: unknown): string {
     return 'Validation failed: ' + zodError.issues.map(issue => issue.message).join(', ')
   }
 
-  // Never expose internal error details
+  // For Supabase auth errors, return the actual message (they're safe to display)
+  if (error && typeof error === 'object' && 'message' in error) {
+    const errorMessage = (error as { message: string }).message
+    // These Supabase error messages are safe to show to users
+    if (errorMessage && typeof errorMessage === 'string') {
+      return errorMessage
+    }
+  }
+
+  // In development, show more details
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Detailed error:', error)
+    if (error instanceof Error) {
+      return `Error: ${error.message}`
+    }
+    return `Error: ${String(error)}`
+  }
+
+  // Never expose internal error details in production
   return 'An error occurred. Please try again.'
 }

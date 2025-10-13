@@ -112,14 +112,28 @@ export async function signUp(userData: {
   plan: string;
   billingPeriod: string;
 }) {
+  console.log('🔵 [SERVER] signUp called with:', {
+    email: userData.email,
+    name: userData.name,
+    plan: userData.plan,
+    billingPeriod: userData.billingPeriod,
+    hasCompany: !!userData.company
+  });
+
   try {
     // Input validation
+    console.log('🔵 [SERVER] Starting input validation...');
     const validatedEmail = emailSchema.parse(userData.email)
     const validatedPassword = passwordSchema.parse(userData.password)
     const validatedName = sanitizeInput(userData.name)
     const validatedCompany = userData.company ? sanitizeInput(userData.company) : null
 
+    console.log('🔵 [SERVER] Input validation passed');
+    console.log('🔵 [SERVER] Creating SSR client...');
+
     const supabase = await supabaseManager.createSSRClient()
+
+    console.log('🔵 [SERVER] Calling supabase.auth.signUp...');
 
     // Create user account
     const { data, error } = await supabase.auth.signUp({
@@ -134,6 +148,14 @@ export async function signUp(userData: {
         }
       }
     })
+
+    console.log('🔵 [SERVER] supabase.auth.signUp response:', {
+      hasData: !!data,
+      hasUser: !!data?.user,
+      hasError: !!error,
+      errorCode: error?.code,
+      errorMessage: error?.message
+    });
 
     if (error) {
       console.error('User signup error:', {
@@ -262,10 +284,15 @@ export async function signUp(userData: {
       error: 'Account creation failed'
     }
   } catch (validationError) {
-    console.error('Validation error during signup:', validationError)
+    console.error('🔴 [SERVER] Validation/Exception error during signup:', {
+      error: validationError,
+      message: validationError instanceof Error ? validationError.message : String(validationError),
+      stack: validationError instanceof Error ? validationError.stack : undefined
+    });
+
     return {
       success: false,
-      error: 'Invalid input data'
+      error: `Invalid input data: ${validationError instanceof Error ? validationError.message : String(validationError)}`
     }
   }
 }
