@@ -35,11 +35,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://fininfonext.com",
+    siteName: "Financial Information next",
+    images: [
+      {
+        url: "https://fininfonext.com/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "FIN - XBRL Financial Data Analysis Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "FIN - XBRL Financial Data Analysis Platform",
     description: "Access Japanese financial data via XBRL API. Claude AI-powered analysis.",
+    images: ["https://fininfonext.com/og-image.png"],
   },
   robots: {
     index: true,
