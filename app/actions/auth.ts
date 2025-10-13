@@ -111,14 +111,19 @@ export async function signUp(userData: {
   company?: string;
   plan: string;
   billingPeriod: string;
-}) {
-  console.log('🔵 [SERVER] signUp called with:', {
-    email: userData.email,
-    name: userData.name,
-    plan: userData.plan,
-    billingPeriod: userData.billingPeriod,
-    hasCompany: !!userData.company
-  });
+}): Promise<{ success: boolean; user?: any; apiKey?: string | null; error?: string }> {
+  try {
+    console.log('🔵 [SERVER] signUp called with:', {
+      email: userData.email,
+      name: userData.name,
+      plan: userData.plan,
+      billingPeriod: userData.billingPeriod,
+      hasCompany: !!userData.company
+    });
+  } catch (logError) {
+    // Even logging can fail, so wrap it
+    console.error('Failed to log signup start:', logError);
+  }
 
   try {
     // Input validation
@@ -283,16 +288,20 @@ export async function signUp(userData: {
       success: false,
       error: 'Account creation failed'
     }
-  } catch (validationError) {
-    console.error('🔴 [SERVER] Validation/Exception error during signup:', {
-      error: validationError,
-      message: validationError instanceof Error ? validationError.message : String(validationError),
-      stack: validationError instanceof Error ? validationError.stack : undefined
+  } catch (error) {
+    console.error('🔴 [SERVER] Error during signup:', {
+      error,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
     });
 
+    // Return detailed error message
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       success: false,
-      error: `Invalid input data: ${validationError instanceof Error ? validationError.message : String(validationError)}`
+      error: errorMessage.includes('Invalid') || errorMessage.includes('Validation')
+        ? errorMessage
+        : `アカウント作成中にエラーが発生しました: ${errorMessage}`
     }
   }
 }
