@@ -89,6 +89,7 @@ async function handleCheckoutCompleted(
 ) {
   const userId = session.metadata?.user_id
   const plan = session.metadata?.plan
+  const billingPeriod = session.metadata?.billing_period
 
   console.log('📋 Checkout session metadata:', {
     userId,
@@ -97,27 +98,9 @@ async function handleCheckoutCompleted(
   })
 
   if (!userId || !plan) {
-    console.error('Missing metadata in checkout session', {
-      userId,
-      plan,
-      metadata: session.metadata,
-    })
+    console.error('Missing metadata in checkout session')
     return
   }
-
-  // プランIDを取得
-  const { data: planData, error: planError } = await supabase
-    .from('subscription_plans')
-    .select('id')
-    .eq('name', plan)
-    .single()
-
-  if (planError || !planData) {
-    console.error('Plan not found:', plan, planError)
-    return
-  }
-
-  const planId = planData.id
 
   // Stripeのサブスクリプション情報を取得
   const subscriptionId = session.subscription as string
@@ -131,15 +114,28 @@ async function handleCheckoutCompleted(
     ? new Date(subscription.current_period_end * 1000).toISOString()
     : new Date().toISOString()
 
+  // Get plan ID from plan name
+  const { data: planData } = await supabase
+    .from('subscription_plans')
+    .select('id')
+    .eq('name', plan)
+    .single()
+
+  if (!planData) {
+    console.error(`Plan '${plan}' not found`)
+    return
+  }
+
   // user_subscriptionsを更新（RPC経由でprivateスキーマにアクセス）
   const { error: updateError } = await supabase.rpc('update_user_subscription_from_webhook', {
     p_user_id: userId,
-    p_plan_id: planId,
+    p_plan_id: planData.id,
     p_status: 'active',
     p_stripe_subscription_id: subscriptionId,
     p_stripe_customer_id: session.customer as string,
     p_current_period_start: currentPeriodStart,
     p_current_period_end: currentPeriodEnd,
+    p_billing_cycle: billingPeriod || 'monthly', // デフォルトはmonthly
   })
 
   if (updateError) {

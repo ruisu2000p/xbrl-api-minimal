@@ -268,10 +268,11 @@ interface PlanTabProps {
   onSelectPlan: (planId: string) => void;
   onUpdatePlan: () => void;
   planOptions: ReturnType<typeof getPlanOptions>;
+  trialInfo: any;
   t: (key: string) => string;
 }
 
-function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePlan, planOptions, t }: PlanTabProps) {
+function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePlan, planOptions, trialInfo, t }: PlanTabProps) {
   return (
     <div className="space-y-8">
       {message && (
@@ -283,6 +284,63 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
           }`}
         >
           {message.text}
+        </div>
+      )}
+
+      {/* Trial Period Banner - Only show for freemium users with trial info */}
+      {currentPlan.id === 'freemium' && trialInfo && (
+        <div className={`rounded-2xl border p-4 ${
+          trialInfo.is_trial_active && trialInfo.days_remaining > 3
+            ? 'border-blue-200 bg-blue-50'
+            : trialInfo.is_trial_active && trialInfo.days_remaining <= 3
+            ? 'border-amber-200 bg-amber-50'
+            : 'border-red-200 bg-red-50'
+        }`}>
+          <div className="flex items-start gap-3">
+            <i className={`text-2xl ${
+              trialInfo.is_trial_active && trialInfo.days_remaining > 3
+                ? 'ri-time-line text-blue-600'
+                : trialInfo.is_trial_active && trialInfo.days_remaining <= 3
+                ? 'ri-error-warning-line text-amber-600'
+                : 'ri-close-circle-line text-red-600'
+            }`}></i>
+            <div className="flex-1">
+              <h4 className={`font-semibold ${
+                trialInfo.is_trial_active && trialInfo.days_remaining > 3
+                  ? 'text-blue-900'
+                  : trialInfo.is_trial_active && trialInfo.days_remaining <= 3
+                  ? 'text-amber-900'
+                  : 'text-red-900'
+              }`}>
+                {trialInfo.is_trial_active
+                  ? t('dashboard.settings.plan.trial.active').replace('{days}', trialInfo.days_remaining.toString())
+                  : t('dashboard.settings.plan.trial.expired')}
+              </h4>
+              <p className={`text-sm mt-1 ${
+                trialInfo.is_trial_active && trialInfo.days_remaining > 3
+                  ? 'text-blue-700'
+                  : trialInfo.is_trial_active && trialInfo.days_remaining <= 3
+                  ? 'text-amber-700'
+                  : 'text-red-700'
+              }`}>
+                {trialInfo.is_trial_active
+                  ? t('dashboard.settings.plan.trial.expiresOn').replace('{date}', new Date(trialInfo.trial_ends_at).toLocaleDateString())
+                  : t('dashboard.settings.plan.trial.expiredMessage')}
+              </p>
+              {!trialInfo.is_trial_active && (
+                <button
+                  onClick={() => {
+                    onSelectPlan('standard-yearly');
+                    setTimeout(() => onUpdatePlan(), 100);
+                  }}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:from-blue-700 hover:to-indigo-700"
+                >
+                  <i className="ri-vip-crown-line"></i>
+                  <span>{t('dashboard.settings.plan.trial.upgradeCta')}</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -628,6 +686,7 @@ export default function AccountSettings() {
   // Create plan options using translation function
   const planOptions = useMemo(() => getPlanOptions(t), [t]);
   const [userSubscription, setUserSubscription] = useState<any>(null);
+  const [trialInfo, setTrialInfo] = useState<any>(null);
   const defaultCurrentPlan = useMemo(() => getDefaultCurrentPlan(t, userSubscription), [t, userSubscription]);
 
   const [selectedPlan, setSelectedPlan] = useState<string>(defaultCurrentPlan.id);
@@ -758,7 +817,10 @@ export default function AccountSettings() {
         return;
       }
 
-      const { subscription } = data;
+      const { subscription, trial } = data;
+
+      // Store trial info
+      setTrialInfo(trial);
 
       if (!subscription || !subscription.subscription_plans) {
         console.log('📋 No subscription found, using freemium');
@@ -1726,6 +1788,7 @@ export default function AccountSettings() {
               onSelectPlan={handlePlanSelect}
               onUpdatePlan={handlePlanUpdate}
               planOptions={planOptions}
+              trialInfo={trialInfo}
               t={t}
             />
           )}

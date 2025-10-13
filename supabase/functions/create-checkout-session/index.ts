@@ -93,12 +93,19 @@ Deno.serve(async (req) => {
     const yearlyPriceId = Deno.env.get('STRIPE_STANDARD_YEARLY_PRICE_ID')
 
     console.log('🔍 Environment variables check:', {
-      monthlyPriceId: monthlyPriceId ? `${monthlyPriceId.substring(0, 10)}...` : 'NOT SET',
-      yearlyPriceId: yearlyPriceId ? `${yearlyPriceId.substring(0, 10)}...` : 'NOT SET',
+      monthlyPriceId: monthlyPriceId || 'NOT SET',
+      yearlyPriceId: yearlyPriceId || 'NOT SET',
       billing,
     })
 
     const priceId = billing === 'monthly' ? monthlyPriceId : yearlyPriceId
+
+    console.log('💰 Price ID selection:', {
+      billing,
+      selectedPriceId: priceId,
+      wasMonthly: billing === 'monthly',
+      wasYearly: billing === 'yearly'
+    })
 
     if (!priceId) {
       console.error('❌ Stripe price ID not configured:', {

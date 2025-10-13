@@ -30,6 +30,33 @@ export async function GET(request: NextRequest) {
 
     console.log('📊 Fetching subscription status for user:', user.id);
 
+    // プロフィールからトライアル情報を取得
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('plan, trial_ends_at')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('❌ Error fetching profile:', profileError);
+    }
+
+    // トライアル情報を計算
+    let trialInfo = null;
+    if (profile && profile.plan === 'free' && profile.trial_ends_at) {
+      const trialEndsAt = new Date(profile.trial_ends_at);
+      const now = new Date();
+      const daysRemaining = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      const isActive = trialEndsAt > now;
+
+      trialInfo = {
+        trial_ends_at: profile.trial_ends_at,
+        days_remaining: daysRemaining,
+        is_trial_active: isActive,
+        trial_status: isActive ? 'active' : 'expired'
+      };
+    }
+
     // user_subscriptions を取得
     const { data: userSub, error: subError } = await supabase
       .from('user_subscriptions')
@@ -95,7 +122,8 @@ export async function GET(request: NextRequest) {
               price_yearly: 0,
               features: {}
             }
-          }
+          },
+          trial: trialInfo
         });
       }
 
@@ -124,7 +152,8 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      subscription: subscription
+      subscription: subscription,
+      trial: trialInfo
     });
 
   } catch (error: any) {
