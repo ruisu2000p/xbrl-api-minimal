@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   description: "Access Japanese financial data via XBRL API. Claude AI-powered analysis for professional investment decisions. 3,800+ listed companies.",
   keywords: "XBRL API, Financial data API, Japanese stocks, Claude MCP, Investment analysis, Securities report, EDINET API, Japanese stock market data",
   authors: [{ name: "Financial Information next" }],
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
+  },
   openGraph: {
     title: "FIN - XBRL Financial Data Analysis Platform",
     description: "Access Japanese financial data via XBRL API. Claude AI-powered analysis for professional investment decisions.",

@@ -115,18 +115,19 @@ export default function LegalPage() {
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.contact}</h2>
                 <p className="text-gray-700">
-                  メールアドレス: <a href="mailto:support@example.com" className="text-blue-600 hover:underline">support@example.com</a>
+                  メールアドレス: <a href="mailto:support@fininfonext.com" className="text-blue-600 hover:underline">support@fininfonext.com</a>
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
-                  {t.contactNote}
+                  ※お問い合わせへの回答はベストエフォートベースで対応いたします。緊急性の高いお問い合わせや技術的なサポートについては、有料プランユーザー様を優先して対応させていただきます。
                 </p>
               </section>
 
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.price}</h2>
                 <div className="text-gray-700 space-y-2">
-                  <p><strong>フリーミアムプラン:</strong> ¥0/月</p>
-                  <p><strong>スタンダードプラン:</strong> ¥2,980/月</p>
+                  <p><strong>フリーミアムプラン:</strong> $0/月（14日間無料トライアル）</p>
+                  <p><strong>スタンダードプラン（月額）:</strong> $25/月</p>
+                  <p><strong>スタンダードプラン（年額）:</strong> $200/年（約$16.67/月、20%割引）</p>
                   <p className="text-sm text-gray-500 mt-2">
                     {t.priceNote}
                   </p>
@@ -211,18 +212,19 @@ export default function LegalPage() {
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.contact}</h2>
                 <p className="text-gray-700">
-                  Email: <a href="mailto:support@example.com" className="text-blue-600 hover:underline">support@example.com</a>
+                  Email: <a href="mailto:support@fininfonext.com" className="text-blue-600 hover:underline">support@fininfonext.com</a>
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
-                  {t.contactNote}
+                  ※We respond to inquiries on a best-effort basis. For urgent inquiries and technical support, we prioritize responses to paid plan users.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.price}</h2>
                 <div className="text-gray-700 space-y-2">
-                  <p><strong>Freemium Plan:</strong> ¥0/month</p>
-                  <p><strong>Standard Plan:</strong> ¥2,980/month</p>
+                  <p><strong>Freemium Plan:</strong> $0/month (14-day free trial)</p>
+                  <p><strong>Standard Plan (Monthly):</strong> $25/month</p>
+                  <p><strong>Standard Plan (Yearly):</strong> $200/year (approx. $16.67/month, 20% off)</p>
                   <p className="text-sm text-gray-500 mt-2">
                     {t.priceNote}
                   </p>

@@ -10,38 +10,46 @@ export default function DocsContent() {
 # APIキーを設定
 api_key = "your_api_key_here"
 headers = {
-    "Authorization": f"Bearer {api_key}",
+    "x-api-key": api_key,
     "Content-Type": "application/json"
 }
 
-# 企業データを取得
+# ドキュメント検索
 response = requests.get(
-    "https://api.example.com/v1/companies/7203",
+    "https://fininfonext.com/api/v1/documents",
+    params={"q": "トヨタ", "fiscal_year": "FY2024"},
     headers=headers
 )
 
 if response.status_code == 200:
-    company_data = response.json()
-    print(f"会社名: {company_data['name']}")
-    print(f"業界: {company_data['industry']}")
+    documents = response.json()
+    for doc in documents:
+        print(f"会社名: {doc['company_name']}")
+        print(f"書類: {doc['file_name']}")
 else:
     print(f"エラー: {response.status_code}")`,
 
     javascript: `const apiKey = 'your_api_key_here';
 
-const fetchCompanyData = async (companyId) => {
+const searchDocuments = async (query, fiscalYear) => {
   try {
-    const response = await fetch(\`https://api.example.com/v1/companies/\${companyId}\`, {
+    const url = new URL('https://fininfonext.com/api/v1/documents');
+    url.searchParams.append('q', query);
+    url.searchParams.append('fiscal_year', fiscalYear);
+
+    const response = await fetch(url, {
       headers: {
-        'Authorization': \`Bearer \${apiKey}\`,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json'
       }
     });
 
     if (response.ok) {
       const data = await response.json();
-      console.log('会社名:', data.name);
-      console.log('業界:', data.industry);
+      data.forEach(doc => {
+        console.log('会社名:', doc.company_name);
+        console.log('書類:', doc.file_name);
+      });
       return data;
     } else {
       throw new Error(\`HTTP error! status: \${response.status}\`);
@@ -52,16 +60,16 @@ const fetchCompanyData = async (companyId) => {
 };
 
 // 使用例
-fetchCompanyData('7203');`,
+searchDocuments('トヨタ', 'FY2024');`,
 
-    curl: `# 企業データを取得
-curl -X GET "https://api.example.com/v1/companies/7203" \\
-  -H "Authorization: Bearer your_api_key_here" \\
+    curl: `# ドキュメント検索
+curl -X GET "https://fininfonext.com/api/v1/documents?q=トヨタ&fiscal_year=FY2024" \\
+  -H "x-api-key: your_api_key_here" \\
   -H "Content-Type: application/json"
 
-# 財務データを取得
-curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
-  -H "Authorization: Bearer your_api_key_here" \\
+# 企業ID指定で検索
+curl -X GET "https://fininfonext.com/api/v1/documents?company_id=E00012&fiscal_year=FY2024" \\
+  -H "x-api-key: your_api_key_here" \\
   -H "Content-Type: application/json"`
   };
 
@@ -204,7 +212,7 @@ curl -X GET "https://api.example.com/v1/companies/7203/financials?year=2023" \\
 
           <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
             <pre className="text-green-400 text-sm">
-              <code>Authorization: Bearer your_api_key_here</code>
+              <code>x-api-key: your_api_key_here</code>
             </pre>
           </div>
         </div>

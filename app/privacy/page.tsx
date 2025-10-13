@@ -240,8 +240,8 @@ export default function PrivacyPage() {
                   <div className="bg-gray-50 p-4 rounded-lg mt-4">
                     <p className="text-gray-700">
                       <strong>お問い合わせ先：</strong><br />
-                      メールアドレス: privacy@xbrl-api.example.com<br />
-                      受付時間: 平日 9:00-18:00（土日祝日、年末年始を除く）
+                      メールアドレス: privacy@fininfonext.com<br />
+                      <span className="text-sm text-gray-600">※お問い合わせへの回答はベストエフォートベースで対応いたします。全てのお問い合わせに回答をお約束するものではありません。</span>
                     </p>
                   </div>
                 </section>
@@ -402,8 +402,8 @@ export default function PrivacyPage() {
                   <div className="bg-gray-50 p-4 rounded-lg mt-4">
                     <p className="text-gray-700">
                       <strong>Contact:</strong><br />
-                      Email: privacy@xbrl-api.example.com<br />
-                      Business Hours: Weekdays 9:00-18:00 (excluding weekends, holidays, and year-end/New Year holidays)
+                      Email: privacy@fininfonext.com<br />
+                      <span className="text-sm text-gray-600">※We will respond to inquiries on a best-effort basis. We do not guarantee a response to all inquiries.</span>
                     </p>
                   </div>
                 </section>
