@@ -386,7 +386,7 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
                 </span>
               )}
               {'discountBadge' in plan && plan.discountBadge && (
-                <span className="absolute right-4 top-4 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 px-3 py-1 text-xs font-semibold text-white">
+                <span className="absolute right-4 top-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 px-3 py-1 text-xs font-semibold text-white">
                   {plan.discountBadge}
                 </span>
               )}
