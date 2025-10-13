@@ -391,22 +391,21 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
                 </span>
               )}
 
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-gray-900">{plan.name}</h4>
-                  {'billingPeriodLabel' in plan && plan.billingPeriodLabel && (
-                    <span className="mt-1 inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                      {plan.billingPeriodLabel}
-                    </span>
-                  )}
-                  {plan.description && !plan.description.startsWith('dashboard.') && (
-                    <p className="mt-1 text-sm text-gray-600">{plan.description}</p>
-                  )}
-                </div>
-                {isCurrent && (
-                  <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-                    {t('dashboard.settings.plan.currentPlanBadge')}
+              {isCurrent && (
+                <span className="absolute right-4 top-4 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                  {t('dashboard.settings.plan.currentPlanBadge')}
+                </span>
+              )}
+
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900">{plan.name}</h4>
+                {'billingPeriodLabel' in plan && plan.billingPeriodLabel && (
+                  <span className="mt-1 inline-block rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                    {plan.billingPeriodLabel}
                   </span>
+                )}
+                {plan.description && !plan.description.startsWith('dashboard.') && (
+                  <p className="mt-1 text-sm text-gray-600">{plan.description}</p>
                 )}
               </div>
 
