@@ -130,12 +130,24 @@ ENV/
 *.zip
 
 # Documentation and reports (local)
-# *_REPORT.md - コメントアウト: 改善レポートを含める
+*_REPORT.md
 *_SUMMARY.md
 *_GUIDE.md
 *_SETUP*.md
+*_CHECKLIST.md
+*_DEBUG_LOG.md
 IMPLEMENTATION-FILE-LIST.md
 SYSTEM-ARCHITECTURE-DIAGRAM.md
+DEPLOYMENT_GUIDE.md
+EXECUTE_MIGRATION.md
+FINAL_STATUS_REPORT.md
+IMPLEMENTATION_GUIDE.md
+IMPROVEMENT_REPORT.md
+mfa_setup_instructions.md
+RUN_MIGRATION_NOW.md
+TROUBLESHOOTING.md
+SEO_CHECKLIST.md
+SIGNUP_DEBUG_LOG.md
 
 # Config files (local)
 .mcp.json
@@ -155,8 +167,14 @@ mcp-server.example.toml
 *.mjs
 _diag/
 _buildManifest.js
-# *.sql - コメントアウト: Supabaseマイグレーションファイルが必要
 query.sql
+
+# Old SQL fix files (migrations are in supabase/migrations/)
+CHECK_AND_FIX.sql
+check_view_definition.sql
+drop_view.sql
+fix_*.sql
+force_remove_views.sql
 
 # Project specific
 xbrl-api-minimal/
