@@ -20,24 +20,31 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FIN - Financial Information next | XBRL財務データ分析プラットフォーム",
-  description: "有価証券報告書の財務データをAIで分析。Claudeによる高度な分析機能でプロフェッショナルな投資判断をサポート。",
-  keywords: "XBRL, 財務分析, 有価証券報告書, Claude AI, 投資分析, Financial Information next, FIN",
+  title: "FIN - XBRL Financial Data Analysis Platform | Japanese Stock Market API",
+  description: "Access Japanese financial data via XBRL API. Claude AI-powered analysis for professional investment decisions. 3,800+ listed companies.",
+  keywords: "XBRL API, Financial data API, Japanese stocks, Claude MCP, Investment analysis, Securities report, EDINET API, Japanese stock market data",
   authors: [{ name: "Financial Information next" }],
   openGraph: {
-    title: "FIN - Financial Information next",
-    description: "XBRL財務データ分析プラットフォーム",
+    title: "FIN - XBRL Financial Data Analysis Platform",
+    description: "Access Japanese financial data via XBRL API. Claude AI-powered analysis for professional investment decisions.",
     type: "website",
-    locale: "ja_JP",
+    locale: "en_US",
+    url: "https://fininfonext.com",
   },
   twitter: {
     card: "summary_large_image",
-    title: "FIN - Financial Information next",
-    description: "XBRL財務データ分析プラットフォーム",
+    title: "FIN - XBRL Financial Data Analysis Platform",
+    description: "Access Japanese financial data via XBRL API. Claude AI-powered analysis.",
   },
   robots: {
     index: true,
     follow: true,
+  },
+  alternates: {
+    languages: {
+      'en': 'https://fininfonext.com',
+      'ja': 'https://fininfonext.com',
+    },
   },
 };
 
