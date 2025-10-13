@@ -381,17 +381,17 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
               } ${plan.recommended || ('discountBadge' in plan && plan.discountBadge) ? 'relative overflow-hidden pt-16 px-6 pb-6' : 'p-6'}`}
             >
               {isCurrent && (
-                <span className="absolute left-4 top-4 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                <span className="absolute right-4 top-4 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
                   {t('dashboard.settings.plan.currentPlanBadge')}
                 </span>
               )}
               {plan.recommended && (
-                <span className="absolute left-4 top-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 px-3 py-1 text-xs font-semibold text-white">
+                <span className="absolute right-4 top-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 px-3 py-1 text-xs font-semibold text-white">
                   {t('dashboard.settings.plan.recommendedBadge')}
                 </span>
               )}
               {'discountBadge' in plan && plan.discountBadge && (
-                <span className="absolute left-4 top-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 px-3 py-1 text-xs font-semibold text-white">
+                <span className="absolute right-4 top-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 px-3 py-1 text-xs font-semibold text-white">
                   {plan.discountBadge}
                 </span>
               )}
