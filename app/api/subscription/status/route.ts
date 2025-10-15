@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     // トライアル情報を計算
     let trialInfo = null;
-    if (profile && profile.plan === 'free' && profile.trial_ends_at) {
+    if (profile && profile.plan === 'freemium' && profile.trial_ends_at) {
       const trialEndsAt = new Date(profile.trial_ends_at);
       const now = new Date();
       const daysRemaining = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
