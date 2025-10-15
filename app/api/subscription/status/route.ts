@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
     // プロフィールからトライアル情報を取得（RPC関数を使用）
     const { data: trialData, error: trialError } = await supabase
       .rpc('get_trial_info')
-      .single();
+      .single() as {
+        data: { plan: string; trial_ends_at: string } | null;
+        error: any
+      };
 
     if (trialError) {
       console.error('❌ Error fetching trial info:', trialError);
