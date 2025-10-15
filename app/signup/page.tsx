@@ -320,6 +320,14 @@ export default function SignupPage() {
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
                   }`}
                 >
+                  {plan.id === 'freemium' && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                        <i className="ri-time-line mr-1"></i>
+                        {t('signup.plan.freemium.feature2')}
+                      </div>
+                    </div>
+                  )}
                   {plan.recommended && (
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
