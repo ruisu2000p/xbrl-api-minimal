@@ -65,6 +65,7 @@ build.log
 # Local development
 .serena/
 mcp-server/node_modules/
+system-reports/
 
 # Infrastructure (local only)
 /infrastructure/config/
