@@ -30,27 +30,25 @@ export async function GET(request: NextRequest) {
 
     console.log('📊 Fetching subscription status for user:', user.id);
 
-    // プロフィールからトライアル情報を取得
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('plan, trial_ends_at')
-      .eq('id', user.id)
+    // プロフィールからトライアル情報を取得（RPC関数を使用）
+    const { data: trialData, error: trialError } = await supabase
+      .rpc('get_trial_info')
       .single();
 
-    if (profileError) {
-      console.error('❌ Error fetching profile:', profileError);
+    if (trialError) {
+      console.error('❌ Error fetching trial info:', trialError);
     }
 
     // トライアル情報を計算
     let trialInfo = null;
-    if (profile && profile.plan === 'freemium' && profile.trial_ends_at) {
-      const trialEndsAt = new Date(profile.trial_ends_at);
+    if (trialData && trialData.plan === 'freemium' && trialData.trial_ends_at) {
+      const trialEndsAt = new Date(trialData.trial_ends_at);
       const now = new Date();
       const daysRemaining = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
       const isActive = trialEndsAt > now;
 
       trialInfo = {
-        trial_ends_at: profile.trial_ends_at,
+        trial_ends_at: trialData.trial_ends_at,
         days_remaining: daysRemaining,
         is_trial_active: isActive,
         trial_status: isActive ? 'active' : 'expired'
