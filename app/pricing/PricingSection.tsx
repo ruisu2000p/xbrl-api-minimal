@@ -28,7 +28,7 @@ export default function PricingSection() {
     },
     {
       name: t('pricing.plan.standard.name'),
-      price: { monthly: 2980, yearly: 29800 },
+      price: { monthly: 25, yearly: 240 },
       description: t('pricing.plan.standard.description'),
       features: [
         t('pricing.plan.standard.feature1')
@@ -111,7 +111,15 @@ export default function PricingSection() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              {/* Popular badge */}
+              {/* Badges */}
+              {plan.name === t('pricing.plan.freemium.name') && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                    <i className="ri-time-line mr-1"></i>
+                    14日間無料トライアル
+                  </div>
+                </div>
+              )}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
@@ -134,7 +142,7 @@ export default function PricingSection() {
               <div className="text-center mb-8">
                 <div className="flex items-baseline justify-center mb-2">
                   <span className="text-5xl font-bold text-gray-900">
-                    ¥{plan.price[billingPeriod].toLocaleString()}
+                    ${plan.price[billingPeriod].toLocaleString()}
                   </span>
                   <span className="text-gray-500 ml-2">
                     /{billingPeriod === 'monthly' ? t('pricing.perMonth') : t('pricing.perYear')}
@@ -142,7 +150,7 @@ export default function PricingSection() {
                 </div>
                 {billingPeriod === 'yearly' && plan.price.yearly > 0 && (
                   <div className="text-sm text-green-600 font-medium">
-                    {t('pricing.monthlyEquivalent')} ¥{Math.floor(plan.price.yearly / 12).toLocaleString()}
+                    {t('pricing.monthlyEquivalent')} ${Math.floor(plan.price.yearly / 12).toLocaleString()}
                   </div>
                 )}
               </div>
