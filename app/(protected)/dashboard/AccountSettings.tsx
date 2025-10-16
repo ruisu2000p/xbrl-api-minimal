@@ -850,7 +850,7 @@ export default function AccountSettings() {
   // Load subscription on mount
   useEffect(() => {
     void refreshSubscription();
-  }, [refreshSubscription]);
+  }, [user, t]); // Fixed: Use direct dependencies instead of callback reference
 
   // Poll subscription after Stripe Checkout success
   useEffect(() => {
@@ -933,7 +933,7 @@ export default function AccountSettings() {
         clearInterval(pollTimer);
       };
     }
-  }, [searchParams, router, t, refreshSubscription]);
+  }, [searchParams, router, t]); // Fixed: Removed refreshSubscription dependency
 
   const loadApiKeys = useCallback(async () => {
     setApiStatus('loading');
@@ -1289,7 +1289,7 @@ export default function AccountSettings() {
       console.error('Error in handlePlanUpdate:', error);
       setPlanMessage({ type: 'error', text: 'プランの更新に失敗しました' });
     }
-  }, [selectedPlan, currentPlan, planOptions, t, supabaseClient, refreshSubscription]);
+  }, [selectedPlan, currentPlan, planOptions, t, supabaseClient]); // Fixed: Removed refreshSubscription dependency
 
   const handleCreateKey = useCallback(async () => {
     // eslint-disable-next-line no-console
