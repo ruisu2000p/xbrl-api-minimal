@@ -14,39 +14,85 @@ const protectedPaths = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // 🔒 セキュリティ: Origin/Refererチェック（CSRF対策の補助）
+  const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const origin = request.headers.get('origin');
+  const referer = request.headers.get('referer');
+
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+    // APIリクエストの場合、originが許可されたものであることを確認
+    if (pathname.startsWith('/api/')) {
+      if (origin && origin !== new URL(allowedOrigin).origin) {
+        console.error('🚨 Security: Invalid origin detected', { origin, expected: allowedOrigin });
+        return NextResponse.json(
+          { error: 'Invalid origin' },
+          { status: 403 }
+        );
+      }
+      // Originヘッダーがない場合はRefererで補完チェック
+      if (!origin && referer && !referer.startsWith(allowedOrigin)) {
+        console.error('🚨 Security: Invalid referer detected', { referer, expected: allowedOrigin });
+        return NextResponse.json(
+          { error: 'Invalid referer' },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   // 🔒 セキュリティ: 重複Cookie検知
-  // 同名のSupabase auth cookieが複数存在する場合、セッション混在の可能性があるため強制クリア
+  // .0 と .1 が各1個ずつであることを確認（code-verifierは一時的なので除外）
   const cookieHeader = request.headers.get('cookie') || '';
   const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)/)?.[1];
 
   if (projectRef) {
-    const authTokenPattern = new RegExp(`sb-${projectRef}-auth-token(?:\\.\\d+)?=`, 'g');
-    const matches = cookieHeader.match(authTokenPattern) || [];
+    // .0 と .1 の個別カウント（生のCookieヘッダから正規表現で）
+    const pattern0 = new RegExp(`(?:^|;\\s*)sb-${projectRef}-auth-token\\.0=`, 'g');
+    const pattern1 = new RegExp(`(?:^|;\\s*)sb-${projectRef}-auth-token\\.1=`, 'g');
+    const count0 = (cookieHeader.match(pattern0) || []).length;
+    const count1 = (cookieHeader.match(pattern1) || []).length;
 
-    // 重複検知: 同じプレフィックスのauth-tokenが複数ある場合
-    if (matches.length > 3) { // .0, .1, verifier の3つが正常
-      console.error('🚨 Security: Duplicate session cookies detected. Forcing logout.');
+    // 重複検知: .0 または .1 が2個以上ある = セッション混在
+    const hasDuplicate = count0 !== 1 || count1 !== 1;
 
-      // すべてのSupabase cookieをクリア
+    if (hasDuplicate) {
+      console.error('🚨 Security: Duplicate session cookies detected.', {
+        'auth-token.0': count0,
+        'auth-token.1': count1
+      });
+
+      // すべてのSupabase cookieを強制クリア
       const response = NextResponse.redirect(new URL('/login?error=session-conflict', request.url));
 
-      // 既存のcookieを網羅的に削除
+      // Domain あり/なし両対応で網羅的に削除
+      const domains = [undefined, `.${new URL(request.url).hostname}`];
       for (let i = 0; i < 10; i++) {
-        response.cookies.set(`sb-${projectRef}-auth-token.${i}`, '', {
+        for (const domain of domains) {
+          response.cookies.set(`sb-${projectRef}-auth-token.${i}`, '', {
+            path: '/',
+            ...(domain ? { domain } : {}),
+            expires: new Date(0),
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax'
+          });
+        }
+      }
+      // code-verifier も削除
+      for (const domain of domains) {
+        response.cookies.set(`sb-${projectRef}-auth-token-code-verifier`, '', {
           path: '/',
+          ...(domain ? { domain } : {}),
           expires: new Date(0),
           httpOnly: true,
           secure: true,
           sameSite: 'lax'
         });
       }
-      response.cookies.set(`sb-${projectRef}-auth-token-code-verifier`, '', {
-        path: '/',
-        expires: new Date(0),
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax'
-      });
+
+      // 念のため Clear-Site-Data も送信（オプション）
+      response.headers.set('Cache-Control', 'no-store');
+      // response.headers.set('Clear-Site-Data', '"cookies"'); // 必要に応じて有効化
 
       return response;
     }
@@ -59,6 +105,7 @@ export async function middleware(request: NextRequest) {
   })
 
   // Supabaseクライアントを作成
+  // 🔒 重要: request と response 両方に Cookie を反映（SSR でのズレ防止）
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -68,18 +115,33 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: any) {
-          response.cookies.set({
-            name,
-            value,
+          // Path=/に統一、必要に応じてDomainも統一
+          const cookieOptions = {
             ...options,
-          })
+            path: '/',
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax' as const
+          };
+
+          // request と response 両方に設定
+          request.cookies.set({ name, value, ...cookieOptions });
+          response.cookies.set({ name, value, ...cookieOptions });
         },
         remove(name: string, options: any) {
-          response.cookies.set({
-            name,
-            value: '',
+          const cookieOptions = {
             ...options,
-          })
+            path: '/',
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax' as const,
+            maxAge: 0,
+            expires: new Date(0)
+          };
+
+          // request と response 両方から削除
+          request.cookies.set({ name, value: '', ...cookieOptions });
+          response.cookies.set({ name, value: '', ...cookieOptions });
         },
       },
     }

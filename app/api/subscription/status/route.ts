@@ -127,10 +127,8 @@ export async function GET(request: NextRequest) {
           trial: trialInfo
         }, {
           headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Vary': 'Cookie'
+            'Cache-Control': 'no-store',
+            'Vary': 'Cookie, Authorization'
           }
         });
       }
@@ -166,10 +164,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(responseData, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Vary': 'Cookie'
+        'Cache-Control': 'no-store',
+        'Vary': 'Cookie, Authorization'
       }
     });
 
