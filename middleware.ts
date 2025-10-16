@@ -14,6 +14,44 @@ const protectedPaths = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // 🔒 セキュリティ: 重複Cookie検知
+  // 同名のSupabase auth cookieが複数存在する場合、セッション混在の可能性があるため強制クリア
+  const cookieHeader = request.headers.get('cookie') || '';
+  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)/)?.[1];
+
+  if (projectRef) {
+    const authTokenPattern = new RegExp(`sb-${projectRef}-auth-token(?:\\.\\d+)?=`, 'g');
+    const matches = cookieHeader.match(authTokenPattern) || [];
+
+    // 重複検知: 同じプレフィックスのauth-tokenが複数ある場合
+    if (matches.length > 3) { // .0, .1, verifier の3つが正常
+      console.error('🚨 Security: Duplicate session cookies detected. Forcing logout.');
+
+      // すべてのSupabase cookieをクリア
+      const response = NextResponse.redirect(new URL('/login?error=session-conflict', request.url));
+
+      // 既存のcookieを網羅的に削除
+      for (let i = 0; i < 10; i++) {
+        response.cookies.set(`sb-${projectRef}-auth-token.${i}`, '', {
+          path: '/',
+          expires: new Date(0),
+          httpOnly: true,
+          secure: true,
+          sameSite: 'lax'
+        });
+      }
+      response.cookies.set(`sb-${projectRef}-auth-token-code-verifier`, '', {
+        path: '/',
+        expires: new Date(0),
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax'
+      });
+
+      return response;
+    }
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,

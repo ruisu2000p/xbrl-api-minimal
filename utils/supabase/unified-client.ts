@@ -125,11 +125,7 @@ export async function createServerSupabaseClient(): Promise<SupabaseClient> {
   return createServerClient(url, anonKey, {
     cookies: {
       get(name: string) {
-        const value = cookieStore.get(name)?.value
-        if (name.includes('auth-token') && value) {
-          console.log('🔐 Server reading auth cookie:', { name, valueLength: value.length })
-        }
-        return value
+        return cookieStore.get(name)?.value
       },
       set(name: string, value: string, options: any) {
         try {

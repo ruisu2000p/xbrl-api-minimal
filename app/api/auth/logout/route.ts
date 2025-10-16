@@ -26,14 +26,41 @@ export async function POST() {
 
     const response = NextResponse.json({ success: true });
 
-    // Also set cookies to expire on the response
+    // 🔒 セキュリティ: 既存のcookieを網羅的に削除
     for (const cookie of allCookies) {
       if (cookie.name.startsWith('sb-')) {
         response.cookies.set(cookie.name, '', {
           maxAge: 0,
+          expires: new Date(0),
           path: '/',
+          httpOnly: true,
+          secure: true,
+          sameSite: 'lax'
         });
       }
+    }
+
+    // さらに、潜在的な重複cookieも削除（異なるpath/domain組み合わせ）
+    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)/)?.[1];
+    if (projectRef) {
+      for (let i = 0; i < 10; i++) {
+        response.cookies.set(`sb-${projectRef}-auth-token.${i}`, '', {
+          maxAge: 0,
+          expires: new Date(0),
+          path: '/',
+          httpOnly: true,
+          secure: true,
+          sameSite: 'lax'
+        });
+      }
+      response.cookies.set(`sb-${projectRef}-auth-token-code-verifier`, '', {
+        maxAge: 0,
+        expires: new Date(0),
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax'
+      });
     }
 
     return response;

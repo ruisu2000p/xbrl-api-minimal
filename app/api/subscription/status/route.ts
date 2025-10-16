@@ -15,10 +15,6 @@ import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
  */
 export async function GET(request: NextRequest) {
   try {
-    // リクエストヘッダーのクッキーをログ出力
-    const cookieHeader = request.headers.get('cookie');
-    console.log('🍪 Request cookies:', cookieHeader?.substring(0, 200) + '...');
-
     const supabase = await createServerSupabaseClient();
 
     // 認証確認
@@ -32,11 +28,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('📊 Fetching subscription status for user:', {
-      id: user.id,
-      email: user.email,
-      timestamp: new Date().toISOString()
-    });
+    console.log('📊 Fetching subscription status for user:', user.id);
 
     // プロフィールからトライアル情報を取得（RPC関数を使用）
     const { data: trialData, error: trialError } = await supabase
@@ -133,6 +125,13 @@ export async function GET(request: NextRequest) {
             }
           },
           trial: trialInfo
+        }, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Vary': 'Cookie'
+          }
         });
       }
 
@@ -160,9 +159,18 @@ export async function GET(request: NextRequest) {
       status: subscription?.status
     });
 
-    return NextResponse.json({
+    const responseData = {
       subscription: subscription,
       trial: trialInfo
+    };
+
+    return NextResponse.json(responseData, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Vary': 'Cookie'
+      }
     });
 
   } catch (error: any) {
