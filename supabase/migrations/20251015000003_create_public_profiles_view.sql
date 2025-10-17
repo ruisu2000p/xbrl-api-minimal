@@ -1,9 +1,12 @@
 -- Create a public view for profiles table to allow Supabase client access
 -- This view exposes only the necessary fields from private.profiles
 
--- Create the view without WHERE clause (filtering done in API layer)
-CREATE OR REPLACE VIEW public.profiles
-WITH (security_invoker = on) AS
+-- Drop the view if it exists to recreate with correct security settings
+DROP VIEW IF EXISTS public.profiles;
+
+-- Create the view with security_definer to bypass RLS
+CREATE VIEW public.profiles
+WITH (security_invoker = off, security_barrier = false) AS
 SELECT
   id,
   email,
@@ -17,6 +20,7 @@ FROM private.profiles;
 
 -- Grant access to authenticated users
 GRANT SELECT ON public.profiles TO authenticated;
+GRANT SELECT ON public.profiles TO anon;
 
 -- Update the get_my_profile function to use the correct view
 CREATE OR REPLACE FUNCTION public.get_my_profile()

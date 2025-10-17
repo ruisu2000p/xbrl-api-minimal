@@ -1,16 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
 import { cookies } from 'next/headers';
+import { logSecurityEvent } from '@/utils/security/audit-log';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
+
+    // 現在のユーザー情報を取得（ログ記録用）
+    const { data: { user } } = await supabase.auth.getUser();
 
     // Sign out the user on the server side
     const { error } = await supabase.auth.signOut();
 
     if (error) {
       console.error('Server-side logout error:', error);
+    }
+
+    // 🔒 セキュリティ: ログアウトを監査ログに記録
+    if (user) {
+      await logSecurityEvent({
+        type: 'logout',
+        outcome: 'success',
+        email: user.email || undefined,
+        ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        userAgent: request.headers.get('user-agent'),
+        details: { userId: user.id }
+      });
     }
 
     // Manually clear all Supabase auth cookies

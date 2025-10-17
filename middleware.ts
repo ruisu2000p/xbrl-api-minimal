@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { issueCsrfCookie } from '@/utils/security/csrf'
 
 // 保護されたルート（認証が必要）
 const protectedPaths = [
@@ -14,7 +15,39 @@ const protectedPaths = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 🔒 セキュリティ: Origin/Refererチェック（CSRF対策の補助）
+  // 🔒 セキュリティ: CSRF トークン検証（POST/PUT/PATCH/DELETE のみ）
+  // 認証不要のパスや特定のパスは除外
+  const csrfExemptPaths = [
+    '/api/auth/callback',
+    '/api/auth/login',
+    '/api/auth/signup',
+    '/api/webhooks'
+  ];
+
+  const requiresCsrfCheck =
+    ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
+    pathname.startsWith('/api/') &&
+    !csrfExemptPaths.some(exemptPath => pathname.startsWith(exemptPath));
+
+  if (requiresCsrfCheck) {
+    const headerToken = request.headers.get('x-csrf-token');
+    const cookieToken = request.cookies.get('csrf-token')?.value;
+
+    if (!headerToken || !cookieToken || headerToken !== cookieToken) {
+      console.error('🚨 Security: CSRF token validation failed', {
+        path: pathname,
+        hasHeader: !!headerToken,
+        hasCookie: !!cookieToken,
+        tokensMatch: headerToken === cookieToken
+      });
+      return NextResponse.json(
+        { error: 'Invalid CSRF token' },
+        { status: 403 }
+      );
+    }
+  }
+
+  // 🔒 セキュリティ: Origin/Refererチェック（CSRF対策の補助層）
   const allowedOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const origin = request.headers.get('origin');
   const referer = request.headers.get('referer');
@@ -182,6 +215,10 @@ export async function middleware(request: NextRequest) {
   if (session && (pathname === '/login' || pathname === '/auth/login')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
+
+  // 🔒 セキュリティ: CSRF トークンを発行（Cookie に保存）
+  // すべてのレスポンスに対して CSRF トークンを発行（まだない場合のみ）
+  issueCsrfCookie(response);
 
   return response
 }

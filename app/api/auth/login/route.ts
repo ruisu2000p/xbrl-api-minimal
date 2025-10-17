@@ -7,6 +7,8 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
 import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
+import { limitOrThrow } from '@/utils/security/rate-limit';
+import { logSecurityEvent } from '@/utils/security/audit-log';
 
 export async function POST(request: NextRequest) {
   // Create SSR Supabase client using unified implementation
@@ -23,6 +25,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 🔒 セキュリティ: レート制限チェック（IP + メールアドレス）
+    try {
+      await limitOrThrow('login', request, email);
+    } catch (rateLimitError: any) {
+      // レート制限超過を監査ログに記録
+      await logSecurityEvent({
+        type: 'rate_limit',
+        outcome: 'fail',
+        email,
+        ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        userAgent: request.headers.get('user-agent'),
+        details: { endpoint: '/api/auth/login', limit: 'login' }
+      });
+
+      // 429 Too Many Requests を返す
+      const response = new NextResponse(
+        JSON.stringify({ error: 'Too many login attempts. Please try again later.' }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': '60' // 60秒後に再試行
+          }
+        }
+      );
+      return response;
+    }
+
     // Supabaseでログイン
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
@@ -30,11 +60,31 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError || !authData.user) {
+      // ログイン失敗を監査ログに記録
+      await logSecurityEvent({
+        type: 'login',
+        outcome: 'fail',
+        email,
+        ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        userAgent: request.headers.get('user-agent'),
+        details: { reason: authError?.message || 'Invalid credentials' }
+      });
+
       return createApiResponse.error(
         ErrorCodes.INVALID_CREDENTIALS,
         'メールアドレスまたはパスワードが正しくありません'
       );
     }
+
+    // 🔒 セキュリティ: ログイン成功を監査ログに記録
+    await logSecurityEvent({
+      type: 'login',
+      outcome: 'success',
+      email: authData.user.email || email,
+      ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      userAgent: request.headers.get('user-agent'),
+      details: { userId: authData.user.id }
+    });
 
     // ユーザーのAPIキー情報を取得（Service Roleが設定されている場合のみ）
     // 注: privateスキーマへのアクセスにはService Roleが必要なため、
