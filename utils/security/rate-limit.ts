@@ -41,6 +41,7 @@ const rateLimitConfigs = {
   password_reset: { max: 3, windowMs: 60 * 60_000 }, // 1時間に3回
   subscription: { max: 60, windowMs: 60_000 },       // 1分間に60回
   api_key_gen: { max: 10, windowMs: 24 * 60 * 60_000 }, // 1日に10回
+  account_deletion: { max: 1, windowMs: 24 * 60 * 60_000 }, // 1日に1回
 } as const;
 
 type RateLimitKind = keyof typeof rateLimitConfigs;

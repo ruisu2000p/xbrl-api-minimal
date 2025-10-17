@@ -7,6 +7,7 @@ import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useSupabase } from '@/components/SupabaseProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
+import AccountDeletionSection from '../settings/AccountDeletionSection';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -1809,6 +1810,11 @@ export default function AccountSettings() {
             />
           )}
         </div>
+      </div>
+
+      {/* アカウント削除セクション */}
+      <div className="mt-8">
+        <AccountDeletionSection />
       </div>
 
       {/* APIキー削除確認ダイアログ */}

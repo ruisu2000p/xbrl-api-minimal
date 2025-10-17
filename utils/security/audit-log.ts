@@ -10,7 +10,9 @@ export type SecurityEventType =
   | 'rate_limit'
   | 'csrf_failure'
   | 'password_reset'
-  | 'session_timeout';
+  | 'session_timeout'
+  | 'account_deletion'      // 退会処理
+  | 'account_restoration';  // 退会取り消し（復元）
 
 /**
  * User-Agent 文字列を短縮（個人情報削減）
