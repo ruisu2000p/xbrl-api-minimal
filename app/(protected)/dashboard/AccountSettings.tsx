@@ -7,7 +7,7 @@ import ApiKeyDisplay from '@/components/ApiKeyDisplay';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useSupabase } from '@/components/SupabaseProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
-import AccountDeletionSection from '../settings/AccountDeletionSection';
+import AccountDeletionSection from '../../(dashboard)/settings/AccountDeletionSection';
 
 type TabId = 'profile' | 'plan' | 'api';
 
