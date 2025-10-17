@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
     const permanentDeletionAt = new Date(deletedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30日後
 
     // 8-1. user_subscriptions 更新
-    await adminSupabase
+    const { error: subscriptionError } = await adminSupabase
       .from('user_subscriptions')
       .update({
         status: 'cancelled',
@@ -187,14 +187,24 @@ export async function POST(request: NextRequest) {
       })
       .eq('user_id', user.id);
 
+    if (subscriptionError) {
+      console.error('Failed to update user_subscriptions:', subscriptionError);
+      // サブスクリプション更新失敗でも処理は続行（手動対応可能）
+    }
+
     // 8-2. api_keys 無効化
-    await adminSupabase
+    const { error: apiKeysError } = await adminSupabase
       .from('api_keys')
       .update({
         revoked: true,
         revoked_at: deletedAt.toISOString()
       })
       .eq('user_id', user.id);
+
+    if (apiKeysError) {
+      console.error('Failed to revoke api_keys:', apiKeysError);
+      // API キー無効化失敗でも処理は続行（手動対応可能）
+    }
 
     // 8-3. account_deletions レコード作成
     const emailHash = crypto.createHash('sha256').update(user.email!.toLowerCase()).digest('hex');
