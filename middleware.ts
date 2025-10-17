@@ -78,19 +78,27 @@ export async function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
   const referer = request.headers.get('referer');
 
+  // 許可されたオリジンのリスト（本番URL + ローカル環境）
+  const allowedOrigins = [
+    allowedOrigin,
+    'https://fininfonext.com',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ];
+
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
     // APIリクエストの場合、originが許可されたものであることを確認
     if (pathname.startsWith('/api/')) {
-      if (origin && origin !== new URL(allowedOrigin).origin) {
-        console.error('🚨 Security: Invalid origin detected', { origin, expected: allowedOrigin });
+      if (origin && !allowedOrigins.some(allowed => origin === new URL(allowed).origin)) {
+        console.error('🚨 Security: Invalid origin detected', { origin, expected: allowedOrigins });
         return NextResponse.json(
           { error: 'Invalid origin' },
           { status: 403 }
         );
       }
       // Originヘッダーがない場合はRefererで補完チェック
-      if (!origin && referer && !referer.startsWith(allowedOrigin)) {
-        console.error('🚨 Security: Invalid referer detected', { referer, expected: allowedOrigin });
+      if (!origin && referer && !allowedOrigins.some(allowed => referer.startsWith(allowed))) {
+        console.error('🚨 Security: Invalid referer detected', { referer, expected: allowedOrigins });
         return NextResponse.json(
           { error: 'Invalid referer' },
           { status: 403 }
