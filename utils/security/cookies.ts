@@ -54,7 +54,7 @@ export function syncAllAuthCookies(
 }
 
 /**
- * すべての Supabase 認証 Cookie を削除（ログアウト時）
+ * すべての Supabase 認証 Cookie を削除（ログアウト時 / Cookie 重複時）
  *
  * Domain あり/なし両対応で、Path=/ のすべての Cookie を削除
  *
@@ -98,3 +98,9 @@ export function clearAllAuthCookies(
     });
   }
 }
+
+/**
+ * clearAllAuthCookies のエイリアス（わかりやすい名前）
+ * Cookie 重複検知時やセッション競合時に使用
+ */
+export const sweepSbAuthCookies = clearAllAuthCookies;

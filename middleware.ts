@@ -1,6 +1,23 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { issueCsrfCookie } from '@/utils/security/csrf'
+import { logSecurityEvent } from '@/utils/security/audit-log'
+import { sweepSbAuthCookies } from '@/utils/security/cookies'
+
+// 公開パス（認証不要、OAuth、静的リソース含む）
+const PUBLIC_PATHS: RegExp[] = [
+  /^\/$/,
+  /^\/login$/,
+  /^\/signup$/,
+  /^\/auth(\/|$)/,            // OAuth callback 含む
+  /^\/api\/auth(\/|$)/,       // 認証 API
+  /^\/favicon\.ico$/,
+  /^\/robots\.txt$/,
+  /^\/_next\//,
+  /\.(?:svg|png|jpg|jpeg|gif|ico|webp|css|js)$/,
+]
+
+const isPublicPath = (pathname: string) => PUBLIC_PATHS.some(rx => rx.test(pathname))
 
 // 保護されたルート（認証が必要）
 const protectedPaths = [
@@ -14,6 +31,15 @@ const protectedPaths = [
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const method = request.method
+
+  // OPTIONS / 公開ルート / 静的リソースは素通り（OAuth フロー保護）
+  if (method === 'OPTIONS' || isPublicPath(pathname)) {
+    const pass = NextResponse.next()
+    pass.headers.set('Cache-Control', 'no-store')
+    pass.headers.set('Vary', 'Cookie, Authorization')
+    return pass
+  }
 
   // 🔒 セキュリティ: CSRF トークン検証（POST/PUT/PATCH/DELETE のみ）
   // 認証不要のパスや特定のパスは除外
@@ -93,42 +119,40 @@ export async function middleware(request: NextRequest) {
     if (hasDuplicate) {
       console.error('🚨 Security: Duplicate session cookies detected.', {
         'auth-token.0': count0,
-        'auth-token.1': count1
+        'auth-token.1': count1,
+        path: pathname
       });
 
-      // すべてのSupabase cookieを強制クリア
-      const response = NextResponse.redirect(new URL('/login?error=session-conflict', request.url));
+      // 🔒 セキュリティ: Cookie 重複を監査ログに記録
+      await logSecurityEvent({
+        type: 'cookie_conflict',
+        outcome: 'fail',
+        ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        userAgent: request.headers.get('user-agent'),
+        details: { path: pathname, count0, count1 }
+      });
 
-      // Domain あり/なし両対応で網羅的に削除
-      const domains = [undefined, `.${new URL(request.url).hostname}`];
-      for (let i = 0; i < 10; i++) {
-        for (const domain of domains) {
-          response.cookies.set(`sb-${projectRef}-auth-token.${i}`, '', {
-            path: '/',
-            ...(domain ? { domain } : {}),
-            expires: new Date(0),
-            httpOnly: true,
-            secure: true,
-            sameSite: 'lax'
-          });
-        }
-      }
-      // code-verifier も削除
-      for (const domain of domains) {
-        response.cookies.set(`sb-${projectRef}-auth-token-code-verifier`, '', {
-          path: '/',
-          ...(domain ? { domain } : {}),
-          expires: new Date(0),
-          httpOnly: true,
-          secure: true,
-          sameSite: 'lax'
-        });
+      const isApi = pathname.startsWith('/api/');
+      const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
+      const domains = [undefined, cookieDomain].filter(Boolean) as (string | undefined)[];
+
+      // API リクエストは 401 JSON レスポンス（リダイレクトループ防止）
+      if (isApi) {
+        const response = NextResponse.json(
+          { error: 'Session conflict. Please sign in again.' },
+          { status: 401 }
+        );
+        sweepSbAuthCookies(response, projectRef, domains);
+        response.headers.set('Cache-Control', 'no-store');
+        response.headers.set('Vary', 'Cookie, Authorization');
+        return response;
       }
 
-      // 念のため Clear-Site-Data も送信（オプション）
+      // ページリクエストは /login へリダイレクト + Cookie 全面掃除
+      const response = NextResponse.redirect(new URL('/login?reason=session_conflict', request.url));
+      sweepSbAuthCookies(response, projectRef, domains);
       response.headers.set('Cache-Control', 'no-store');
-      // response.headers.set('Clear-Site-Data', '"cookies"'); // 必要に応じて有効化
-
+      response.headers.set('Vary', 'Cookie, Authorization');
       return response;
     }
   }
