@@ -7,7 +7,6 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { limitOrThrow } from '@/utils/security/rate-limit';
 import { logSecurityEvent } from '@/utils/security/audit-log';
 import Stripe from 'stripe';
 import crypto from 'crypto';
@@ -29,13 +28,12 @@ function getStripeClient() {
  *
  * フロー:
  * 1. べき等性チェック（Idempotency-Key）
- * 2. レート制限（1回/日/ユーザー）
- * 3. パスワード再検証（重要操作のため）
- * 4. Stripe サブスクリプション即時キャンセル（invoice_now + prorate）
- * 5. データベース論理削除（user_subscriptions, api_keys, account_deletions）
- * 6. Auth ユーザーに BAN フラグ設定（ログイン抑止）
- * 7. 監査ログ記録
- * 8. セッション無効化（ログアウト）
+ * 2. パスワード再検証（重要操作のため）
+ * 3. Stripe サブスクリプション即時キャンセル（invoice_now + prorate）
+ * 4. データベース論理削除（user_subscriptions, api_keys, account_deletions）
+ * 5. Auth ユーザーに BAN フラグ設定（ログイン抑止）
+ * 6. 監査ログ記録
+ * 7. セッション無効化（ログアウト）
  */
 export async function POST(request: NextRequest) {
   try {
@@ -77,31 +75,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. レート制限チェック（1回/日/ユーザー）
-    try {
-      await limitOrThrow('account_deletion', request, user.email!);
-    } catch (rateLimitError: any) {
-      await logSecurityEvent({
-        type: 'rate_limit',
-        outcome: 'fail',
-        email: user.email!,
-        ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-        ua: request.headers.get('user-agent'),
-        details: { endpoint: '/api/account/delete', limit: 'account_deletion' }
-      });
-
-      return NextResponse.json(
-        { error: '退会リクエストの制限を超えました。24時間後に再試行してください。' },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': '86400' // 24時間
-          }
-        }
-      );
-    }
-
-    // 4. リクエストボディ検証
+    // 3. リクエストボディ検証
     const body = await request.json();
     const { password, reason, comment } = body;
 
@@ -112,7 +86,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. パスワード再検証（重要操作のため）
+    // 4. パスワード再検証（重要操作のため）
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: user.email!,
       password
@@ -134,14 +108,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. 現在のサブスクリプション情報を取得
+    // 5. 現在のサブスクリプション情報を取得
     const { data: subscription } = await supabase
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', user.id)
       .single();
 
-    // 7. Stripe サブスクリプション即時キャンセル（該当する場合）
+    // 6. Stripe サブスクリプション即時キャンセル（該当する場合）
     let stripeSubscriptionId = null;
     let stripeCustomerId = null;
 
@@ -174,11 +148,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 8. データベース論理削除
+    // 7. データベース論理削除
     const deletedAt = new Date();
     const permanentDeletionAt = new Date(deletedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30日後
 
-    // 8-1. user_subscriptions 更新
+    // 7-1. user_subscriptions 更新
     const { error: subscriptionError } = await adminSupabase
       .from('user_subscriptions')
       .update({
@@ -192,7 +166,7 @@ export async function POST(request: NextRequest) {
       // サブスクリプション更新失敗でも処理は続行（手動対応可能）
     }
 
-    // 8-2. api_keys 無効化
+    // 7-2. api_keys 無効化
     const { error: apiKeysError } = await adminSupabase
       .from('api_keys')
       .update({
@@ -206,7 +180,7 @@ export async function POST(request: NextRequest) {
       // API キー無効化失敗でも処理は続行（手動対応可能）
     }
 
-    // 8-3. account_deletions レコード作成
+    // 7-3. account_deletions レコード作成
     const emailHash = crypto.createHash('sha256').update(user.email!.toLowerCase()).digest('hex');
 
     const { data: deletionRecord, error: deletionError } = await adminSupabase
@@ -235,7 +209,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 9. Auth ユーザーに BAN 設定（ログイン抑止 - 30日猶予期間）
+    // 8. Auth ユーザーに BAN 設定（ログイン抑止 - 30日猶予期間）
     // Supabase 公式の ban_duration を使用してログイン/リフレッシュを完全に抑止
     try {
       await adminSupabase.auth.admin.updateUserById(user.id, {
@@ -246,7 +220,7 @@ export async function POST(request: NextRequest) {
       // BAN 失敗でもログアウトで対応可能
     }
 
-    // 10. 監査ログ記録
+    // 9. 監査ログ記録
     await logSecurityEvent({
       type: 'account_deletion',
       outcome: 'success',
@@ -261,7 +235,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 11. セッション無効化（ログアウト）
+    // 10. セッション無効化（ログアウト）
     await supabase.auth.signOut();
 
     return createApiResponse.success({
