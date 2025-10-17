@@ -128,7 +128,7 @@ export async function middleware(request: NextRequest) {
         type: 'cookie_conflict',
         outcome: 'fail',
         ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-        userAgent: request.headers.get('user-agent'),
+        ua: request.headers.get('user-agent'),
         details: { path: pathname, count0, count1 }
       });
 

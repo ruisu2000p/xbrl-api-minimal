@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         outcome: 'success',
         email: user.email || undefined,
         ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-        userAgent: request.headers.get('user-agent'),
+        ua: request.headers.get('user-agent'),
         details: { userId: user.id }
       });
     }

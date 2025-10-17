@@ -59,7 +59,7 @@ async function hashIp(ip?: string | null): Promise<string> {
  *   outcome: 'success',
  *   email: 'user@example.com',
  *   ip: request.ip,
- *   userAgent: request.headers.get('user-agent'),
+ *   ua: request.headers.get('user-agent'),
  *   details: { method: 'password' }
  * });
  */
@@ -68,7 +68,7 @@ export async function logSecurityEvent(event: {
   outcome?: 'success' | 'fail';
   email?: string;
   ip?: string | null;
-  userAgent?: string | null;
+  ua?: string | null;
   details?: Record<string, any>;
 }): Promise<void> {
   try {
@@ -79,7 +79,7 @@ export async function logSecurityEvent(event: {
       outcome: event.outcome || null,
       user_email: event.email || null,
       ip_hash: await hashIp(event.ip),
-      user_agent_short: shortenUserAgent(event.userAgent),
+      user_agent_short: shortenUserAgent(event.ua),
       details: event.details || null,
       created_at: new Date().toISOString()
     });

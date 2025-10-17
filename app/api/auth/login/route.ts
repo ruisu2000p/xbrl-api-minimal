@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         outcome: 'fail',
         email,
         ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-        userAgent: request.headers.get('user-agent'),
+        ua: request.headers.get('user-agent'),
         details: { endpoint: '/api/auth/login', limit: 'login' }
       });
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         outcome: 'fail',
         email,
         ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-        userAgent: request.headers.get('user-agent'),
+        ua: request.headers.get('user-agent'),
         details: { reason: authError?.message || 'Invalid credentials' }
       });
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       outcome: 'success',
       email: authData.user.email || email,
       ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-      userAgent: request.headers.get('user-agent'),
+      ua: request.headers.get('user-agent'),
       details: { userId: authData.user.id }
     });
 
