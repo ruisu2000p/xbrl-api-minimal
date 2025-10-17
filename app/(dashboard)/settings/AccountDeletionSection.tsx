@@ -293,7 +293,7 @@ export default function AccountDeletionSection() {
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="改善点やご要望があればご記入ください"
-                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
                         rows={3}
                       />
                     </div>

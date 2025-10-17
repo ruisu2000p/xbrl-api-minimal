@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import AccountDeletionSection from '@/app/(dashboard)/settings/AccountDeletionSection';
 
 interface Settings {
   general: {
@@ -818,6 +819,11 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* アカウント削除セクション */}
+                  <div className="border-t pt-6">
+                    <AccountDeletionSection />
                   </div>
                 </div>
               </div>
