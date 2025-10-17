@@ -13,7 +13,7 @@ import Stripe from 'stripe';
 import crypto from 'crypto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-09-30.clover',
 });
 
 /**
@@ -268,16 +268,17 @@ export async function POST(request: NextRequest) {
 
 /**
  * 退会理由を Stripe の feedback enum にマッピング
+ * Stripe API 2025-09-30.clover では 'low_usage' がサポートされていないため 'other' にマップ
  */
 function mapReasonToStripeFeedback(
   reason?: string
-): 'too_expensive' | 'missing_features' | 'low_usage' | 'other' | undefined {
+): 'too_expensive' | 'missing_features' | 'other' | undefined {
   if (!reason) return undefined;
 
-  const mapping: Record<string, 'too_expensive' | 'missing_features' | 'low_usage' | 'other'> = {
+  const mapping: Record<string, 'too_expensive' | 'missing_features' | 'other'> = {
     'too_expensive': 'too_expensive',
     'missing_features': 'missing_features',
-    'low_usage': 'low_usage',
+    'low_usage': 'other',  // Stripe API では low_usage が廃止されたため other にマップ
     'other': 'other'
   };
 
