@@ -225,14 +225,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 9. Auth ユーザーに BAN フラグ設定（ログイン抑止）
+    // 9. Auth ユーザーに BAN 設定（ログイン抑止 - 30日猶予期間）
+    // Supabase 公式の ban_duration を使用してログイン/リフレッシュを完全に抑止
     try {
       await adminSupabase.auth.admin.updateUserById(user.id, {
-        user_metadata: {
-          ...user.user_metadata,
-          banned_until: permanentDeletionAt.toISOString(),
-          deletion_reason: 'account_deletion_request'
-        }
+        ban_duration: '720h'  // 30日 = 720時間
       });
     } catch (banError) {
       console.error('Failed to ban user:', banError);
