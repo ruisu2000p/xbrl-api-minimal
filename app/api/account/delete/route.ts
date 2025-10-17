@@ -12,9 +12,15 @@ import { logSecurityEvent } from '@/utils/security/audit-log';
 import Stripe from 'stripe';
 import crypto from 'crypto';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
+// Stripeクライアントを遅延初期化（ビルド時のエラーを回避）
+function getStripeClient() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-09-30.clover',
+  });
+}
 
 /**
  * 退会 API
@@ -142,6 +148,7 @@ export async function POST(request: NextRequest) {
     if (subscription?.stripe_subscription_id) {
       try {
         // Stripe 即時キャンセル + 即時清算 + 退会理由同期
+        const stripe = getStripeClient();
         const canceledSubscription = await stripe.subscriptions.cancel(
           subscription.stripe_subscription_id,
           {
