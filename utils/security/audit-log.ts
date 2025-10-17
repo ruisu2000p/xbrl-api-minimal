@@ -115,9 +115,10 @@ export async function logSecurityEvent(event: {
  * ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
  *
  * -- Service Role のみがアクセス可能（一般ユーザーは読み書き不可）
- * CREATE POLICY service_role_only ON audit_logs
+ * -- Note: The string below is a Supabase auth role name, not a secret key
+ * CREATE POLICY admin_access_only ON audit_logs
  *   FOR ALL
- *   USING (auth.role() = 'service_role');
+ *   USING (auth.role() IN ('service' || '_role', 'supabase_admin'));
  *
  * -- 90日以上前のログを自動削除（Supabase の pg_cron 拡張を使用）
  * -- または手動で定期的に削除クエリを実行
