@@ -85,8 +85,10 @@ export async function middleware(request: NextRequest) {
     const count0 = (cookieHeader.match(pattern0) || []).length;
     const count1 = (cookieHeader.match(pattern1) || []).length;
 
-    // 重複検知: .0 または .1 が2個以上ある = セッション混在
-    const hasDuplicate = count0 !== 1 || count1 !== 1;
+    // 重複検知: Cookie が存在する場合のみチェック
+    // .0 または .1 が2個以上ある = セッション混在
+    const hasCookies = count0 > 0 || count1 > 0;
+    const hasDuplicate = hasCookies && (count0 !== 1 || count1 !== 1);
 
     if (hasDuplicate) {
       console.error('🚨 Security: Duplicate session cookies detected.', {
