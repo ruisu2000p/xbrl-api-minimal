@@ -2,20 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, ShieldAlert, Trash2, Loader2, CheckCircle2, LockKeyhole } from 'lucide-react'
-
-// shadcn/ui
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 // ---------- helpers ----------
 function getCookie(name: string): string {
@@ -33,7 +19,6 @@ function getCookie(name: string): string {
 }
 
 function uuid(): string {
-  // crypto.randomUUID is supported broadly; fallback for older envs
   try {
     // @ts-ignore
     if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
@@ -57,7 +42,6 @@ export default function AccountDeletionSection() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // idempotency key per dialog open
   const idemKeyRef = useRef<string>('')
   useEffect(() => {
     if (open) idemKeyRef.current = uuid()
@@ -65,7 +49,6 @@ export default function AccountDeletionSection() {
 
   const csrfToken = useMemo(() => getCookie('csrf-token'), [open])
 
-  // reset state when dialog closes
   const reset = () => {
     setStep(1)
     setAck(false)
@@ -110,7 +93,6 @@ export default function AccountDeletionSection() {
 
       if (res.ok) {
         setStep('done')
-        // 少しだけ完了画面を見せてからログインへ
         setTimeout(() => {
           router.replace('/login?deleted=1')
         }, 1200)
@@ -118,7 +100,6 @@ export default function AccountDeletionSection() {
       }
 
       if (res.status === 401) {
-        // 未ログイン or セッション衝突 or 再認証失敗
         setError(data?.error || '認証エラーが発生しました。再度ログインしてからお試しください。')
         return
       }
@@ -137,230 +118,300 @@ export default function AccountDeletionSection() {
   }
 
   const canNextFromStep1 = ack
-  const canNextFromStep2 = true // 理由は任意
+  const canNextFromStep2 = true
   const canSubmit = password.length > 0
 
+  // ESC key handler
+  useEffect(() => {
+    if (!open) return
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !loading && step !== 'done') {
+        closeDialog()
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [open, loading, step])
+
+  // Body scroll lock
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [open])
+
   return (
-    <div className="rounded-2xl border bg-card p-6 shadow-sm">
+    <div className="rounded-2xl border bg-white p-6 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5" /> アカウントの削除（退会）
+            <i className="ri-shield-cross-line text-red-600"></i> アカウントの削除（退会）
           </h3>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="text-gray-600 mt-1 text-sm">
             退会するとサブスクリプションが即時停止し、APIキーは無効化されます。30日後にデータは物理削除されます。
           </p>
         </div>
-        <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogTrigger asChild>
-            <Button variant="destructive" className="rounded-2xl" size="sm">
-              <Trash2 className="mr-2 h-4 w-4" /> 退会する
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[560px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {step === 'done' ? (
-                  <>
-                    <CheckCircle2 className="h-5 w-5" /> 退会が完了しました
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-5 w-5" /> 退会の確認
-                  </>
-                )}
-              </DialogTitle>
-              <DialogDescription>
-                {step === 'done' ? 'セッションを終了し、ログインページへ移動します。' : '内容を確認のうえ、手順に沿って進めてください。'}
-              </DialogDescription>
-            </DialogHeader>
+        <button
+          onClick={() => setOpen(true)}
+          className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2"
+        >
+          <i className="ri-delete-bin-line"></i> 退会する
+        </button>
+      </div>
 
-            {/* step indicator */}
-            {step !== 'done' && (
-              <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="secondary">Step {step} / 3</Badge>
-                <div className="h-1 flex-1 rounded bg-muted">
-                  <div
-                    className="h-1 rounded bg-destructive"
-                    style={{ width: `${(Number(step) / 3) * 100}%` }}
-                  />
+      <div className="mt-4 border-t pt-4">
+        <ul className="text-xs text-gray-600 space-y-1">
+          <li>・サブスクリプションは即時停止（最終請求/按分は自動処理）</li>
+          <li>・データは30日後に物理削除されます（猶予期間内は復元可）</li>
+          <li>・退会後はログインできません</li>
+        </ul>
+      </div>
+
+      {/* Modal */}
+      {open && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm animate-fadeIn"
+            onClick={() => !loading && step !== 'done' && closeDialog()}
+            aria-hidden="true"
+          />
+
+          {/* Dialog */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed left-1/2 top-1/2 z-50 w-full max-w-xl -translate-x-1/2 -translate-y-1/2 animate-slideIn"
+          >
+            <div className="rounded-2xl bg-white shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    {step === 'done' ? (
+                      <>
+                        <i className="ri-checkbox-circle-line text-green-600"></i> 退会が完了しました
+                      </>
+                    ) : (
+                      <>
+                        <i className="ri-error-warning-line text-red-600"></i> 退会の確認
+                      </>
+                    )}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {step === 'done' ? 'セッションを終了し、ログインページへ移動します。' : '内容を確認のうえ、手順に沿って進めてください。'}
+                  </p>
                 </div>
-              </div>
-            )}
-
-            {/* body */}
-            <div className="min-h-[180px]">
-              <AnimatePresence mode="wait">
-                {step === 1 && (
-                  <motion.div
-                    key="step1"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="space-y-4"
+                {step !== 'done' && (
+                  <button
+                    onClick={closeDialog}
+                    disabled={loading}
+                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+                    aria-label="閉じる"
                   >
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>退会すると以下が失われます</AlertTitle>
-                      <AlertDescription>
-                        <ul className="list-disc pl-5">
-                          <li>サブスクリプションは即時停止（未使用分は按分精算）</li>
-                          <li>すべての API キーが無効化</li>
-                          <li>保存データは 30 日後に完全削除（猶予期間内は復元可）</li>
-                        </ul>
-                      </AlertDescription>
-                    </Alert>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="ack" checked={ack} onCheckedChange={(v) => setAck(Boolean(v))} />
-                      <Label htmlFor="ack">上記を理解しました</Label>
+                    <i className="ri-close-line text-xl"></i>
+                  </button>
+                )}
+              </div>
+
+              {/* Progress indicator */}
+              {step !== 'done' && (
+                <div className="px-6 pt-4 pb-2 flex items-center gap-2 text-xs text-gray-600">
+                  <span className="rounded-full bg-gray-200 px-2 py-1 font-medium">Step {step} / 3</span>
+                  <div className="h-1 flex-1 rounded bg-gray-200">
+                    <div
+                      className="h-1 rounded bg-red-600 transition-all duration-300"
+                      style={{ width: `${(Number(step) / 3) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Body */}
+              <div className="px-6 py-6 min-h-[180px]">
+                {step === 1 && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <i className="ri-error-warning-line text-red-600 text-xl"></i>
+                        <div>
+                          <h4 className="font-semibold text-red-900">退会すると以下が失われます</h4>
+                          <ul className="mt-2 text-sm text-red-800 space-y-1">
+                            <li>• サブスクリプションは即時停止（未使用分は按分精算）</li>
+                            <li>• すべての API キーが無効化</li>
+                            <li>• 保存データは 30 日後に完全削除（猶予期間内は復元可）</li>
+                          </ul>
+                        </div>
+                      </div>
                     </div>
-                  </motion.div>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={ack}
+                        onChange={(e) => setAck(e.target.checked)}
+                        className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                      />
+                      <span className="text-sm text-gray-700">上記を理解しました</span>
+                    </label>
+                  </div>
                 )}
 
                 {step === 2 && (
-                  <motion.div
-                    key="step2"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="space-y-4"
-                  >
-                    <Label className="text-sm">退会理由（任意）</Label>
-                    <RadioGroup value={reason} onValueChange={(v) => setReason(v as Reason)}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem id="r1" value="too_expensive" />
-                        <Label htmlFor="r1">価格が高い</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem id="r2" value="missing_features" />
-                        <Label htmlFor="r2">必要な機能がない</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem id="r3" value="low_usage" />
-                        <Label htmlFor="r3">使用頻度が低い</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem id="r4" value="other" />
-                        <Label htmlFor="r4">その他</Label>
-                      </div>
-                    </RadioGroup>
+                  <div className="space-y-4">
                     <div>
-                      <Label htmlFor="comment" className="text-sm">自由記述（任意）</Label>
-                      <Textarea id="comment" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="改善点やご要望があればご記入ください" className="mt-1" />
+                      <label className="text-sm font-medium text-gray-700 block mb-2">退会理由（任意）</label>
+                      <div className="space-y-2">
+                        {[
+                          { value: 'too_expensive', label: '価格が高い' },
+                          { value: 'missing_features', label: '必要な機能がない' },
+                          { value: 'low_usage', label: '使用頻度が低い' },
+                          { value: 'other', label: 'その他' }
+                        ].map((opt) => (
+                          <label key={opt.value} className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="reason"
+                              value={opt.value}
+                              checked={reason === opt.value}
+                              onChange={(e) => setReason(e.target.value as Reason)}
+                              className="border-gray-300 text-red-600 focus:ring-red-500"
+                            />
+                            <span className="text-sm text-gray-700">{opt.label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </motion.div>
+                    <div>
+                      <label htmlFor="comment" className="text-sm font-medium text-gray-700 block mb-2">自由記述（任意）</label>
+                      <textarea
+                        id="comment"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="改善点やご要望があればご記入ください"
+                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
                 )}
 
                 {step === 3 && (
-                  <motion.div
-                    key="step3"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="space-y-4"
-                  >
-                    <div className="space-y-1.5">
-                      <Label htmlFor="password" className="text-sm">パスワード再入力（セキュリティ確認）</Label>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="password" className="text-sm font-medium text-gray-700 block mb-2">パスワード再入力（セキュリティ確認）</label>
                       <div className="relative">
-                        <Input
+                        <input
                           id="password"
                           type="password"
                           autoComplete="current-password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="pr-10"
+                          className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-10 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
                         />
-                        <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
+                        <i className="ri-lock-line absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                       </div>
                     </div>
-                    <Alert variant="destructive">
-                      <ShieldAlert className="h-4 w-4" />
-                      <AlertTitle>最終確認</AlertTitle>
-                      <AlertDescription>この操作は取り消せません。よろしいですか？</AlertDescription>
-                    </Alert>
-                  </motion.div>
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <i className="ri-shield-cross-line text-red-600 text-xl"></i>
+                        <div>
+                          <h4 className="font-semibold text-red-900">最終確認</h4>
+                          <p className="text-sm text-red-800 mt-1">この操作は取り消せません。よろしいですか？</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {step === 'done' && (
-                  <motion.div
-                    key="done"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="flex min-h-[160px] flex-col items-center justify-center gap-2 text-center"
-                  >
-                    <CheckCircle2 className="h-10 w-10" />
-                    <p className="text-sm text-muted-foreground">退会が完了しました。ログイン画面へ移動します…</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {error && (
-              <div className="-mb-1 mt-2">
-                <Alert variant="destructive">
-                  <AlertTitle>エラー</AlertTitle>
-                  <AlertDescription className="break-words">{error}</AlertDescription>
-                </Alert>
-              </div>
-            )}
-
-            {step !== 'done' && (
-              <DialogFooter className="mt-2">
-                <div className="flex w-full items-center justify-between">
-                  <div className="text-xs text-muted-foreground">
-                    {step < 3 ? '戻る' : 'キャンセル'}で中断できます
+                  <div className="flex flex-col items-center justify-center gap-3 text-center min-h-[160px]">
+                    <i className="ri-checkbox-circle-line text-green-600 text-5xl"></i>
+                    <p className="text-sm text-gray-600">退会が完了しました。ログイン画面へ移動します…</p>
                   </div>
+                )}
+              </div>
+
+              {error && (
+                <div className="mx-6 mb-4">
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <i className="ri-error-warning-line text-red-600 text-xl"></i>
+                      <div>
+                        <h4 className="font-semibold text-red-900">エラー</h4>
+                        <p className="text-sm text-red-800 mt-1 whitespace-pre-wrap">{error}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
+              {step !== 'done' && (
+                <div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+                  <span className="text-xs text-gray-600">
+                    {step < 3 ? '戻る' : 'キャンセル'}で中断できます
+                  </span>
                   <div className="flex gap-2">
                     {step > 1 ? (
-                      <Button variant="ghost" onClick={() => setStep((s) => (s === 2 ? 1 : 2))} disabled={loading}>
+                      <button
+                        onClick={() => setStep((s) => (s === 2 ? 1 : 2))}
+                        disabled={loading}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50"
+                      >
                         戻る
-                      </Button>
+                      </button>
                     ) : (
-                      <Button variant="ghost" onClick={closeDialog} disabled={loading}>
+                      <button
+                        onClick={closeDialog}
+                        disabled={loading}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50"
+                      >
                         キャンセル
-                      </Button>
+                      </button>
                     )}
 
                     {step < 3 && (
-                      <Button onClick={() => setStep((s) => (s === 1 ? 2 : 3))} disabled={!ack && step === 1 ? true : !canNextFromStep2 || loading}>
+                      <button
+                        onClick={() => setStep((s) => (s === 1 ? 2 : 3))}
+                        disabled={(!ack && step === 1) || loading}
+                        className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
                         次へ
-                      </Button>
+                      </button>
                     )}
 
                     {step === 3 && (
-                      <Button variant="destructive" onClick={submitDeletion} disabled={!canSubmit || loading}>
+                      <button
+                        onClick={submitDeletion}
+                        disabled={!canSubmit || loading}
+                        className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
                         {loading ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <i className="ri-loader-4-line animate-spin"></i>
                             処理中…
                           </>
                         ) : (
                           <>
-                            <Trash2 className="mr-2 h-4 w-4" /> 退会する
+                            <i className="ri-delete-bin-line"></i>
+                            退会する
                           </>
                         )}
-                      </Button>
+                      </button>
                     )}
                   </div>
                 </div>
-              </DialogFooter>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Separator className="my-4" />
-      <ul className="text-xs text-muted-foreground space-y-1">
-        <li>・サブスクリプションは即時停止（最終請求/按分は自動処理）</li>
-        <li>・データは30日後に物理削除されます（猶予期間内は復元可）</li>
-        <li>・退会後はログインできません</li>
-      </ul>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
