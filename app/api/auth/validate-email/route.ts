@@ -8,6 +8,19 @@ import { checkRateLimit } from '@/lib/security/csrf';
 
 export async function POST(request: NextRequest) {
   try {
+    const { email } = await request.json();
+
+    // 🔧 キルスイッチ: DNS障害時の緊急バイパス（通常運用時は true）
+    if (process.env.EMAIL_PRECHECK_ENABLED !== 'true') {
+      console.warn('⚠️ Email precheck is disabled (killswitch activated)');
+      return NextResponse.json({
+        valid: true,
+        normalizedEmail: email,
+        bypassed: true,
+        warning: 'Email validation temporarily bypassed due to DNS issues'
+      });
+    }
+
     // レート制限: IPアドレスごとに5回/5分
     const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
                      request.headers.get('x-real-ip') ||
@@ -20,8 +33,6 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
-
-    const { email } = await request.json();
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
