@@ -5,8 +5,26 @@
 -- - 非負チェック制約（返金額は0以上）
 -- - ビューの最終形（スキーマ修飾 + NULL 除外）
 
--- 1) amount_major の numeric 版オーバーロード
--- AVG(int) は numeric を返すため、キャスト不要で呼べるようにする
+-- 1) amount_major のオーバーロード（bigint版 + numeric版）
+-- SUM(int) は bigint、AVG(int) は numeric を返すため、両方に対応
+
+-- bigint 版（SUM 対応）
+CREATE OR REPLACE FUNCTION public.amount_major(amount_minor bigint, currency text)
+RETURNS numeric
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CASE
+    WHEN lower(currency) = 'jpy' THEN amount_minor::numeric
+    WHEN lower(currency) = 'usd' THEN amount_minor::numeric / 100.0
+    ELSE amount_minor::numeric
+  END
+$$;
+
+COMMENT ON FUNCTION public.amount_major(bigint, text)
+  IS '最小通貨単位→表示単位（bigint入力対応: USD=/100, JPY=/1）';
+
+-- numeric 版（AVG 対応）
 CREATE OR REPLACE FUNCTION public.amount_major(amount_minor numeric, currency text)
 RETURNS numeric
 LANGUAGE sql
