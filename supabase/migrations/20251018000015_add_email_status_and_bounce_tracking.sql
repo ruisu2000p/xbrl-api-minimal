@@ -35,6 +35,8 @@ create table if not exists public.mail_event_log (
 alter table public.mail_event_log enable row level security;
 
 -- ユーザーは自分のメールイベントログのみ閲覧可能
+drop policy if exists "Users can view their own mail events" on public.mail_event_log;
+
 create policy "Users can view their own mail events"
   on public.mail_event_log
   for select
