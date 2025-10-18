@@ -178,7 +178,7 @@ export async function POST(req: Request) {
       if (!SKIP_VERIFY) {
         const validator = new SnsValidator()
         await new Promise<void>((resolve, reject) =>
-          validator.validate(msg, (err) => (err ? reject(err) : resolve()))
+          validator.validate(msg, (err: Error | null) => (err ? reject(err) : resolve()))
         )
       }
 
