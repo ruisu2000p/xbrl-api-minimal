@@ -173,7 +173,8 @@ export async function POST(request: NextRequest) {
             refundAmount = Math.abs(finalInvoice.total); // 正の値に変換（Stripeは最小通貨単位の整数）
 
             // 支払いが既に存在するかチェック
-            const hasPayment = !!finalInvoice.payment_intent || finalInvoice.amount_paid > 0;
+            // amount_paid が 0 より大きければ支払いが存在する
+            const hasPayment = finalInvoice.amount_paid > 0;
 
             // クレジットノートで返金（推奨方法）
             const creditNote = await stripe.creditNotes.create(
