@@ -10,6 +10,7 @@ const PUBLIC_PATHS: RegExp[] = [
   /^\/login$/,
   /^\/signup$/,
   /^\/verify-email$/,         // メール確認ページ
+  /^\/email-trouble$/,        // メール配信問題ページ
   /^\/auth(\/|$)/,            // OAuth callback 含む
   /^\/api\/auth(\/|$)/,       // 認証 API
   /^\/favicon\.ico$/,
@@ -276,6 +277,37 @@ export async function middleware(request: NextRequest) {
 
       // ページの場合は /verify-email へリダイレクト
       return NextResponse.redirect(new URL('/verify-email', request.url))
+    }
+
+    // 🔒 セキュリティ: バウンス/苦情メールアドレスの制限
+    // メール確認済みでも、email_status が bounced/complained の場合は制限
+    if (user && user.email_confirmed_at && pathname !== '/email-trouble') {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email_status')
+        .eq('id', user.id)
+        .single()
+
+      if (profile && (profile.email_status === 'bounced' || profile.email_status === 'complained')) {
+        // APIルートの場合は403を返す
+        if (pathname.startsWith('/api/')) {
+          return new NextResponse(
+            JSON.stringify({
+              error: 'Email delivery issue',
+              message: 'Your email address has delivery issues. Please update your email address.'
+            }),
+            {
+              status: 403,
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          )
+        }
+
+        // ページの場合は /email-trouble へリダイレクト
+        return NextResponse.redirect(new URL('/email-trouble', request.url))
+      }
     }
   }
 

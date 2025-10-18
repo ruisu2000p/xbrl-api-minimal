@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
+    "@sendgrid/eventwebhook": "^8.0.0",
     "@stripe/stripe-js": "^8.0.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.7.0",
@@ -58,6 +59,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "shared-supabase-mcp-minimal": "^5.6.0",
+    "sns-validator": "^0.3.5",
     "stripe": "^19.1.0",
     "zod": "^4.1.9"
   },
