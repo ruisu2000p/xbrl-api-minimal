@@ -9,12 +9,14 @@ import SnsValidator from 'sns-validator'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const admin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 const SKIP_VERIFY = process.env.WEBHOOK_SKIP_VERIFY === 'true' // 開発向け。本番は false に！
+
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 async function markStatus(
   email: string,
@@ -23,6 +25,8 @@ async function markStatus(
   eventId?: string
 ) {
   try {
+    const admin = getAdminClient()
+
     // Idempotency check: 重複イベントを防ぐ
     if (eventId) {
       const { error: dup } = await admin
