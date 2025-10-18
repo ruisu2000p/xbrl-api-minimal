@@ -56,8 +56,18 @@ create unique index if not exists ux_private_profiles_email_lower_notnull
   where email is not null;
 
 -- インデックスにコメント追加
-comment on index ux_private_profiles_email_lower_notnull is
-'Ensures email uniqueness (case-insensitive) for non-null values';
+-- スキーマを明示的に指定
+do $$
+begin
+  if exists (
+    select 1 from pg_indexes
+    where schemaname = 'private'
+    and tablename = 'profiles'
+    and indexname = 'ux_private_profiles_email_lower_notnull'
+  ) then
+    execute 'comment on index private.ux_private_profiles_email_lower_notnull is ''Ensures email uniqueness (case-insensitive) for non-null values''';
+  end if;
+end $$;
 
 -- 4. 既存のemailインデックスの確認
 -- すでに単純なemailインデックスがある場合は、そのままでもOK（検索用として）
