@@ -153,7 +153,7 @@ export default function AccountDeletionSection() {
             <i className="ri-shield-cross-line text-red-600"></i> アカウントの削除（退会）
           </h3>
           <p className="text-gray-600 mt-1 text-sm">
-            退会するとサブスクリプションが即時停止し、APIキーは無効化されます。30日後にデータは物理削除されます。
+            退会するとサブスクリプションが即時停止し、APIキーは無効化されます。
           </p>
         </div>
         <button
