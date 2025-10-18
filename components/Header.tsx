@@ -25,10 +25,6 @@ export default function Header() {
               {t('nav.pricing')}
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="/docs" className="relative text-gray-700 hover:text-blue-600 transition-colors cursor-pointer font-medium group">
-              {t('nav.docs')}
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:w-full transition-all duration-300"></span>
-            </Link>
           </nav>
 
           <div className="flex items-center space-x-3">
