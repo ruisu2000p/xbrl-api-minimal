@@ -14,18 +14,18 @@
 
 -- bigint 版（SUM 用）
 SELECT
-  public.amount_major(4900::bigint, 'usd') AS usd_bigint,  -- 期待値: 49.00
-  public.amount_major(5000::bigint, 'jpy') AS jpy_bigint;  -- 期待値: 5000.00
+  public.amount_major(4900::bigint, 'usd'::text) AS usd_bigint,  -- 期待値: 49.00
+  public.amount_major(5000::bigint, 'jpy'::text) AS jpy_bigint;  -- 期待値: 5000.00
 
 -- numeric 版（AVG 用）
 SELECT
-  public.amount_major(4900.50::numeric, 'usd') AS usd_numeric,  -- 期待値: 49.005
-  public.amount_major(5000.75::numeric, 'jpy') AS jpy_numeric;  -- 期待値: 5000.75
+  public.amount_major(4900.50::numeric, 'usd'::text) AS usd_numeric,  -- 期待値: 49.005
+  public.amount_major(5000.75::numeric, 'jpy'::text) AS jpy_numeric;  -- 期待値: 5000.75
 
 -- 両方が正しく動作するか
 SELECT
-  public.amount_major(4900, 'usd') = 49.00 AS usd_ok,
-  public.amount_major(5000, 'jpy') = 5000.00 AS jpy_ok;
+  public.amount_major(4900, 'usd'::text) = 49.00 AS usd_ok,
+  public.amount_major(5000, 'jpy'::text) = 5000.00 AS jpy_ok;
 
 -- ============================================
 -- 2) 制約テスト（トランザクション内で実行推奨）
