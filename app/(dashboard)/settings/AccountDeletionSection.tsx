@@ -164,14 +164,6 @@ export default function AccountDeletionSection() {
         </button>
       </div>
 
-      <div className="mt-4 border-t pt-4">
-        <ul className="text-xs text-gray-600 space-y-1">
-          <li>・サブスクリプションは即時停止（最終請求/按分は自動処理）</li>
-          <li>・データは30日後に物理削除されます（猶予期間内は復元可）</li>
-          <li>・退会後はログインできません</li>
-        </ul>
-      </div>
-
       {/* Modal */}
       {open && (
         <>
