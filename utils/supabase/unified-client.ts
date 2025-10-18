@@ -39,9 +39,9 @@ function validateServiceEnvironment() {
   return { url, serviceKey: serviceKey || null }
 }
 
-// グローバルインスタンスキャッシュ
-let cachedServiceClient: SupabaseClient | null = null
-let cachedAdminClient: SupabaseClient | null = null
+// グローバルインスタンスキャッシュ（環境変数の値も保存して整合性チェック）
+let cachedServiceClient: { client: SupabaseClient; serviceKey: string } | null = null
+let cachedAdminClient: { client: SupabaseClient; serviceKey: string } | null = null
 
 /**
  * ブラウザクライアント作成
@@ -162,17 +162,19 @@ export async function createServiceSupabaseClient(): Promise<SupabaseClient> {
     )
   }
 
-  // シングルトンパターンで再利用
-  if (!cachedServiceClient) {
-    cachedServiceClient = createSupabaseJSClient(url, serviceKey, {
+  // キャッシュが存在し、かつ同じserviceKeyの場合のみ再利用
+  // 環境変数が変更された場合は新しいクライアントを作成
+  if (!cachedServiceClient || cachedServiceClient.serviceKey !== serviceKey) {
+    const client = createSupabaseJSClient(url, serviceKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
       },
     })
+    cachedServiceClient = { client, serviceKey }
   }
 
-  return cachedServiceClient
+  return cachedServiceClient.client
 }
 
 /**
@@ -191,17 +193,19 @@ export function createAdminClient(): SupabaseClient {
     )
   }
 
-  // シングルトンパターンで再利用
-  if (!cachedAdminClient) {
-    cachedAdminClient = createSupabaseJSClient(url, serviceKey, {
+  // キャッシュが存在し、かつ同じserviceKeyの場合のみ再利用
+  // 環境変数が変更された場合は新しいクライアントを作成
+  if (!cachedAdminClient || cachedAdminClient.serviceKey !== serviceKey) {
+    const client = createSupabaseJSClient(url, serviceKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
       },
     })
+    cachedAdminClient = { client, serviceKey }
   }
 
-  return cachedAdminClient
+  return cachedAdminClient.client
 }
 
 /**
