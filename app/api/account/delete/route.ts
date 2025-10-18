@@ -123,6 +123,7 @@ export async function POST(request: NextRequest) {
     let stripeInvoiceId = null;
     let refundAmount = 0;
     let stripeCreditNoteId = null;
+    let stripeCurrency = 'jpy'; // デフォルト通貨（JPY）
 
     if (subscription?.stripe_subscription_id) {
       try {
@@ -158,6 +159,9 @@ export async function POST(request: NextRequest) {
           stripeInvoiceId = invoiceId; // 追跡用に保存
 
           let finalInvoice = await stripe.invoices.retrieve(invoiceId);
+
+          // 通貨を保存（ISO 4217コード、小文字）
+          stripeCurrency = finalInvoice.currency;
 
           // 6-2-1. インボイスがまだドラフトの場合は確定させる
           // (invoice_now=true でも稀に draft のままの場合がある)
@@ -268,6 +272,7 @@ export async function POST(request: NextRequest) {
         stripe_invoice_id: stripeInvoiceId,
         stripe_credit_note_id: stripeCreditNoteId,
         stripe_refund_amount: refundAmount,
+        stripe_currency: stripeCurrency,
         plan_at_deletion: subscription?.plan || 'freemium'
       })
       .select('id')

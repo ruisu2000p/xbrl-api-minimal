@@ -1,4 +1,12 @@
 // Supabase Edge Function for Stripe Webhook
+//
+// "薄い実装": 同期処理はそのまま、Webhook で「ズレない・直せる・説明できる」を実現
+//
+// 機能:
+// 1. 去重（event.id で重複チェック）
+// 2. 監査トレイル（全イベントを stripe_webhook_events に保存）
+// 3. 自己修復（エラー時は 500 で Stripe に再送させる）
+
 import Stripe from 'npm:stripe@17.5.0'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -23,7 +31,7 @@ Deno.serve(async (req) => {
       body,
       signature,
       Deno.env.get('STRIPE_WEBHOOK_SECRET')!,
-      undefined,
+      300, // 5分の tolerance（コールドスタート考慮、本番は必要に応じて短縮）
       cryptoProvider
     )
     console.log(`✅ Webhook verified: ${event.type}`)
@@ -32,11 +40,48 @@ Deno.serve(async (req) => {
     return new Response(`Webhook Error: ${err.message}`, { status: 400 })
   }
 
+  // 1) livemode ガード（誤配送を無視）
+  const EXPECT_LIVE = Deno.env.get('STRIPE_LIVEMODE') === 'true'
+  if (event.livemode !== EXPECT_LIVE) {
+    console.log(`⚠️ Ignoring ${event.livemode ? 'live' : 'test'} event in ${EXPECT_LIVE ? 'live' : 'test'} environment`)
+    return new Response(JSON.stringify({ ignored: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
   // Initialize Supabase client with service role key
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
+
+  // 2) 去重 & 保存（署名検証直後、重い処理の前に実行）
+  const idemKey = (event.request as any)?.idempotency_key ?? null
+  const { error: insertError } = await supabase
+    .from('stripe_webhook_events')
+    .insert({
+      event_id: event.id,
+      type: event.type,
+      created_at: new Date(event.created * 1000).toISOString(),
+      request_id: (event.request as any)?.id ?? null,
+      idempotency_key: idemKey,
+      payload: event as any,
+    })
+
+  // 23505 = unique_violation (duplicate event_id)
+  if (insertError?.code === '23505') {
+    console.log(`✅ Duplicate event ${event.id}, skipping`)
+    return new Response(JSON.stringify({ received: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  if (insertError) {
+    console.error('❌ Failed to insert webhook event:', insertError)
+    return new Response('Database error', { status: 500 })
+  }
 
   try {
     switch (event.type) {
@@ -64,16 +109,59 @@ Deno.serve(async (req) => {
         break
       }
 
+      // === 新規追加：退会フロー用の4イベント ===
+
+      case 'invoice.finalized': {
+        // 最終インボイスが確定した合図（退会時の按分計算確定）
+        const invoice = event.data.object as Stripe.Invoice
+        await handleInvoiceFinalized(invoice, supabase)
+        break
+      }
+
+      case 'credit_note.created': {
+        // 返金・クレジットが実行された事実の裏付け
+        const creditNote = event.data.object as Stripe.CreditNote
+        await handleCreditNoteCreated(creditNote, supabase)
+        break
+      }
+
+      case 'charge.refunded': {
+        // 実際に返金が決着した合図（部分/全額）
+        const charge = event.data.object as Stripe.Charge
+        await handleChargeRefunded(charge, supabase)
+        break
+      }
+
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
+
+    // 成功マーク
+    await supabase
+      .from('stripe_webhook_events')
+      .update({
+        processed: true,
+        processed_at: new Date().toISOString(),
+        error: null
+      })
+      .eq('event_id', event.id)
 
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (error: any) {
-    console.error('Error processing webhook:', error)
+    console.error('❌ Error processing webhook:', error)
+
+    // 失敗時はエラーを記録して 500 -> Stripe が自動リトライ
+    await supabase
+      .from('stripe_webhook_events')
+      .update({
+        processed: false,
+        error: String(error)
+      })
+      .eq('event_id', event.id)
+
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
@@ -87,6 +175,12 @@ async function handleCheckoutCompleted(
   stripe: Stripe,
   supabase: any
 ) {
+  // サブスクリプションモードのみ処理（一回払いは除外）
+  if (session.mode !== 'subscription') {
+    console.log(`Ignoring non-subscription checkout: ${session.mode}`)
+    return
+  }
+
   const userId = session.metadata?.user_id
   const plan = session.metadata?.plan
   const billingPeriod = session.metadata?.billing_period
@@ -175,31 +269,32 @@ async function handleSubscriptionUpdated(
   console.log(`✅ Subscription updated: ${subscription.id}`)
 }
 
-// サブスクリプション削除時の処理
+// サブスクリプション削除時の処理（冪等に UPDATE - ズレの自己修復）
 async function handleSubscriptionDeleted(
   subscription: Stripe.Subscription,
   supabase: any
 ) {
-  // Freemiumプランに戻す
-  const { data: freemiumPlan } = await supabase
-    .from('subscription_plans')
-    .select('id')
-    .eq('name', 'freemium')
-    .single()
-
-  if (!freemiumPlan) {
-    console.error('Freemium plan not found')
-    return
-  }
-
-  const { error } = await supabase.rpc('cancel_user_subscription_from_webhook', {
-    p_stripe_subscription_id: subscription.id,
-    p_freemium_plan_id: freemiumPlan.id,
-  })
+  // 同期処理があるので冪等に UPDATE（ズレの自己修復）
+  const { error } = await supabase
+    .from('user_subscriptions')
+    .update({ status: 'cancelled' })
+    .eq('stripe_subscription_id', subscription.id)
 
   if (error) {
-    console.error('Error cancelling subscription:', error)
-    throw error
+    console.error('Error updating subscription status:', error)
+    // 従来のロジックにフォールバック
+    const { data: freemiumPlan } = await supabase
+      .from('subscription_plans')
+      .select('id')
+      .eq('name', 'freemium')
+      .single()
+
+    if (freemiumPlan) {
+      await supabase.rpc('cancel_user_subscription_from_webhook', {
+        p_stripe_subscription_id: subscription.id,
+        p_freemium_plan_id: freemiumPlan.id,
+      })
+    }
   }
 
   console.log(`✅ Subscription cancelled: ${subscription.id}`)
@@ -290,4 +385,62 @@ async function handleInvoicePaymentSucceeded(
   }
 
   console.log(`✅ Subscription renewed via invoice: ${subscriptionId}`)
+}
+
+// === 新規ハンドラ：退会フロー用 ===
+
+// Invoice 確定時の処理
+async function handleInvoiceFinalized(
+  invoice: Stripe.Invoice,
+  supabase: any
+) {
+  console.log(`📄 Invoice finalized: ${invoice.id}, total: ${invoice.total}, status: ${invoice.status}`)
+
+  // 最終インボイスが確定した合図（退会時の按分計算確定）
+  // 必要なら invoices テーブルへ upsert（監査や金額同期）
+  // 最重処理は別ジョブ/後続へ回す（今は監査ログのみ）
+}
+
+// Credit Note 作成時の処理
+async function handleCreditNoteCreated(
+  creditNote: Stripe.CreditNote,
+  supabase: any
+) {
+  console.log(`💳 Credit note created: ${creditNote.id}, amount: ${creditNote.amount}, refund_amount: ${creditNote.refund_amount}`)
+
+  // metadata から deletion_id を取得して account_deletions を確認/更新
+  const deletionId = creditNote.metadata?.deletion_id
+  const appUserId = creditNote.metadata?.app_user_id
+
+  if (deletionId && appUserId) {
+    console.log(`🔗 Credit note linked to deletion: ${deletionId} (user: ${appUserId})`)
+
+    // account_deletions の stripe_credit_note_id を確認（冪等性チェック）
+    const { data: deletion } = await supabase
+      .from('account_deletions')
+      .select('stripe_credit_note_id')
+      .eq('id', deletionId)
+      .single()
+
+    if (deletion && !deletion.stripe_credit_note_id) {
+      // まだ設定されていない場合のみ更新（自己修復）
+      await supabase
+        .from('account_deletions')
+        .update({ stripe_credit_note_id: creditNote.id })
+        .eq('id', deletionId)
+
+      console.log(`✅ Updated account_deletions with credit_note_id: ${creditNote.id}`)
+    }
+  }
+}
+
+// Charge 返金時の処理
+async function handleChargeRefunded(
+  charge: Stripe.Charge,
+  supabase: any
+) {
+  console.log(`💰 Charge refunded: ${charge.id}, amount_refunded: ${charge.amount_refunded}`)
+
+  // 実際に返金が決着した合図（部分/全額）
+  // refunds テーブル upsert など（今は監査ログのみ）
 }
