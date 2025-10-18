@@ -120,7 +120,9 @@ export async function POST(request: NextRequest) {
     // 6. Stripe サブスクリプション即時キャンセル + 返金処理（該当する場合）
     let stripeSubscriptionId = null;
     let stripeCustomerId = null;
+    let stripeInvoiceId = null;
     let refundAmount = 0;
+    let stripeCreditNoteId = null;
 
     if (subscription?.stripe_subscription_id) {
       try {
@@ -153,15 +155,28 @@ export async function POST(request: NextRequest) {
             ? canceledSubscription.latest_invoice
             : canceledSubscription.latest_invoice.id;
 
-          const finalInvoice = await stripe.invoices.retrieve(invoiceId);
+          stripeInvoiceId = invoiceId; // 追跡用に保存
 
-          // 按分クレジット（負の金額）がある場合、返金を実施
+          let finalInvoice = await stripe.invoices.retrieve(invoiceId);
+
+          // 6-2-1. インボイスがまだドラフトの場合は確定させる
+          // (invoice_now=true でも稀に draft のままの場合がある)
+          if (finalInvoice.status === 'draft') {
+            finalInvoice = await stripe.invoices.finalizeInvoice(invoiceId, {
+              idempotencyKey: `${idempotencyKey}-finalize`
+            });
+          }
+
+          // 6-2-2. 按分クレジット（負の金額）がある場合、返金を実施
           // finalInvoice.total が負の値 = 顧客に返金すべき金額
           if (finalInvoice.total < 0) {
-            refundAmount = Math.abs(finalInvoice.total); // 正の値に変換
+            refundAmount = Math.abs(finalInvoice.total); // 正の値に変換（Stripeは最小通貨単位の整数）
+
+            // 支払いが既に存在するかチェック
+            const hasPayment = !!finalInvoice.payment_intent || finalInvoice.amount_paid > 0;
 
             // クレジットノートで返金（推奨方法）
-            await stripe.creditNotes.create(
+            const creditNote = await stripe.creditNotes.create(
               {
                 invoice: invoiceId,
                 lines: [{
@@ -170,14 +185,29 @@ export async function POST(request: NextRequest) {
                   quantity: 1,
                   unit_amount: refundAmount
                 }],
-                refund_amount: refundAmount, // 支払い方法へ返金
+                // 支払い済みの場合は支払い方法へ返金、未払いの場合は残高へクレジット
+                ...(hasPayment
+                  ? { refund_amount: refundAmount }  // 支払い方法へ返金
+                  : { credit_amount: refundAmount }  // 顧客残高へクレジット
+                ),
+                // 追跡性のため metadata を必ず付与
+                metadata: {
+                  app_user_id: user.id,
+                  deletion_id: '', // 後で deletionRecord.id を設定
+                  idempotency_key: idempotencyKey,
+                  reason: reason
+                }
               },
               {
                 idempotencyKey: `${idempotencyKey}-refund` // 返金用のべき等キー
               }
             );
 
-            console.log(`Refund issued: ${refundAmount / 100} ${finalInvoice.currency} for subscription ${stripeSubscriptionId}`);
+            stripeCreditNoteId = creditNote.id;
+            console.log(`Refund issued: ${refundAmount / 100} ${finalInvoice.currency} for subscription ${stripeSubscriptionId} (hasPayment: ${hasPayment}, creditNoteId: ${stripeCreditNoteId})`);
+          } else if (finalInvoice.total === 0) {
+            // 返金もクレジットも不要（按分が完全に0）
+            console.log(`No refund needed for subscription ${stripeSubscriptionId} (total === 0)`);
           }
         }
       } catch (stripeError: any) {
@@ -234,6 +264,9 @@ export async function POST(request: NextRequest) {
         permanent_deletion_at: permanentDeletionAt.toISOString(),
         subscription_id: stripeSubscriptionId,
         stripe_customer_id: stripeCustomerId,
+        stripe_invoice_id: stripeInvoiceId,
+        stripe_credit_note_id: stripeCreditNoteId,
+        stripe_refund_amount: refundAmount,
         plan_at_deletion: subscription?.plan || 'freemium'
       })
       .select('id')
@@ -245,6 +278,24 @@ export async function POST(request: NextRequest) {
         ErrorCodes.INTERNAL_ERROR,
         '退会処理中にエラーが発生しました'
       );
+    }
+
+    // 7-4. Credit Note の metadata を更新（deletion_id を紐付け）
+    if (stripeCreditNoteId && deletionRecord?.id) {
+      try {
+        const stripe = getStripeClient();
+        await stripe.creditNotes.update(stripeCreditNoteId, {
+          metadata: {
+            app_user_id: user.id,
+            deletion_id: deletionRecord.id,
+            idempotency_key: idempotencyKey,
+            reason: reason
+          }
+        });
+      } catch (metadataError) {
+        console.error('Failed to update Credit Note metadata:', metadataError);
+        // metadata 更新失敗は致命的ではない（手動で紐付け可能）
+      }
     }
 
     // 8. Auth ユーザーに BAN 設定（ログイン抑止 - 30日猶予期間）
@@ -269,6 +320,8 @@ export async function POST(request: NextRequest) {
         deletion_id: deletionRecord.id,
         reason,
         subscription_id: stripeSubscriptionId,
+        stripe_invoice_id: stripeInvoiceId,
+        stripe_credit_note_id: stripeCreditNoteId,
         permanent_deletion_at: permanentDeletionAt.toISOString(),
         refund_amount: refundAmount > 0 ? refundAmount : undefined
       }
