@@ -116,6 +116,36 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
+      // メールアドレスの事前検証
+      console.log('📧 Validating email address...');
+      const emailValidation = await fetch('/api/auth/validate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      });
+
+      const validationResult = await emailValidation.json();
+
+      if (!validationResult.valid) {
+        setError(validationResult.error || 'メールアドレスが無効です');
+        if (validationResult.suggestion) {
+          setError(`${validationResult.error}\n${validationResult.suggestion}`);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // タイポの可能性がある場合は警告（ただし続行は可能）
+      if (validationResult.suggestion) {
+        const confirmed = window.confirm(
+          `${validationResult.suggestion}\n\n入力されたメールアドレスで続行しますか？`
+        );
+        if (!confirmed) {
+          setIsLoading(false);
+          return;
+        }
+      }
+
       console.log('🚀 Starting signup process...', {
         email: formData.email,
         name: formData.name,

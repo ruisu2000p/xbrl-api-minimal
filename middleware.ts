@@ -9,6 +9,7 @@ const PUBLIC_PATHS: RegExp[] = [
   /^\/$/,
   /^\/login$/,
   /^\/signup$/,
+  /^\/verify-email$/,         // メール確認ページ
   /^\/auth(\/|$)/,            // OAuth callback 含む
   /^\/api\/auth(\/|$)/,       // 認証 API
   /^\/favicon\.ico$/,
@@ -248,6 +249,34 @@ export async function middleware(request: NextRequest) {
   // ログインページにアクセスした認証済みユーザーをダッシュボードにリダイレクト
   if (session && (pathname === '/login' || pathname === '/auth/login')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // 🔒 セキュリティ: メール未確認ユーザーの制限
+  // 認証済みだがメールアドレスが未確認のユーザーを /verify-email にリダイレクト
+  if (session && isProtectedPath) {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // メール確認が必要なのに未確認の場合
+    if (user && !user.email_confirmed_at && pathname !== '/verify-email') {
+      // APIルートの場合は403を返す
+      if (pathname.startsWith('/api/')) {
+        return new NextResponse(
+          JSON.stringify({
+            error: 'Email verification required',
+            message: 'Please verify your email address before accessing this resource'
+          }),
+          {
+            status: 403,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+      }
+
+      // ページの場合は /verify-email へリダイレクト
+      return NextResponse.redirect(new URL('/verify-email', request.url))
+    }
   }
 
   // 🔒 セキュリティ: CSRF トークンを発行（Cookie に保存）
