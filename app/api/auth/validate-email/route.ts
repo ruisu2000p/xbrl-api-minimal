@@ -4,9 +4,23 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateEmail, canDomainReceiveMailCached } from '@/utils/email-validation';
+import { checkRateLimit } from '@/lib/security/csrf';
 
 export async function POST(request: NextRequest) {
   try {
+    // レート制限: IPアドレスごとに5回/5分
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                     request.headers.get('x-real-ip') ||
+                     'unknown';
+
+    if (!checkRateLimit(`email-validation:${clientIp}`, 5, 300000)) {
+      console.warn('⚠️ Rate limit exceeded for email validation:', { ip: clientIp });
+      return NextResponse.json(
+        { valid: false, error: 'リクエストが多すぎます。しばらくしてから再度お試しください。' },
+        { status: 429 }
+      );
+    }
+
     const { email } = await request.json();
 
     if (!email || typeof email !== 'string') {
