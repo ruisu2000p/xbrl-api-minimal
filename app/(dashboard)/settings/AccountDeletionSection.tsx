@@ -188,16 +188,16 @@ export default function AccountDeletionSection() {
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     {step === 'done' ? (
                       <>
-                        <i className="ri-checkbox-circle-line text-green-600"></i> 退会が完了しました
+                        <i className="ri-checkbox-circle-line text-green-600"></i> 退会が完了しました / Account Deleted
                       </>
                     ) : (
                       <>
-                        <i className="ri-error-warning-line text-red-600"></i> 退会の確認
+                        <i className="ri-error-warning-line text-red-600"></i> 退会の確認 / Confirm Deletion
                       </>
                     )}
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    {step === 'done' ? 'セッションを終了し、ログインページへ移動します。' : '内容を確認のうえ、手順に沿って進めてください。'}
+                    {step === 'done' ? 'セッションを終了し、ログインページへ移動します。 / Ending session and redirecting to login page.' : '内容を確認のうえ、手順に沿って進めてください。 / Please review and follow the steps.'}
                   </p>
                 </div>
                 {step !== 'done' && (
@@ -233,11 +233,11 @@ export default function AccountDeletionSection() {
                       <div className="flex items-start gap-3">
                         <i className="ri-error-warning-line text-red-600 text-xl"></i>
                         <div>
-                          <h4 className="font-semibold text-red-900">退会すると以下が失われます</h4>
+                          <h4 className="font-semibold text-red-900">退会すると以下が失われます / You will lose the following:</h4>
                           <ul className="mt-2 text-sm text-red-800 space-y-1">
-                            <li>• サブスクリプションは即時停止（未使用分は按分精算）</li>
-                            <li>• すべての API キーが無効化</li>
-                            <li>• 保存データは 30 日後に完全削除（猶予期間内は復元可）</li>
+                            <li>• サブスクリプションは即時停止（未使用分は按分精算） / Subscription will be immediately canceled (prorated refund for unused period)</li>
+                            <li>• すべての API キーが無効化 / All API keys will be deactivated</li>
+                            <li>• 保存データは 30 日後に完全削除（猶予期間内は復元可） / Stored data will be permanently deleted after 30 days (recoverable during grace period)</li>
                           </ul>
                         </div>
                       </div>
@@ -249,7 +249,7 @@ export default function AccountDeletionSection() {
                         onChange={(e) => setAck(e.target.checked)}
                         className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                       />
-                      <span className="text-sm text-gray-700">上記を理解しました</span>
+                      <span className="text-sm text-gray-700">上記を理解しました / I understand the above</span>
                     </label>
                   </div>
                 )}
@@ -257,13 +257,13 @@ export default function AccountDeletionSection() {
                 {step === 2 && (
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">退会理由（任意）</label>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">退会理由（任意） / Reason for leaving (optional)</label>
                       <div className="space-y-2">
                         {[
-                          { value: 'too_expensive', label: '価格が高い' },
-                          { value: 'missing_features', label: '必要な機能がない' },
-                          { value: 'low_usage', label: '使用頻度が低い' },
-                          { value: 'other', label: 'その他' }
+                          { value: 'too_expensive', label: '価格が高い / Too expensive' },
+                          { value: 'missing_features', label: '必要な機能がない / Missing features' },
+                          { value: 'low_usage', label: '使用頻度が低い / Low usage' },
+                          { value: 'other', label: 'その他 / Other' }
                         ].map((opt) => (
                           <label key={opt.value} className="flex items-center space-x-2 cursor-pointer">
                             <input
@@ -280,12 +280,12 @@ export default function AccountDeletionSection() {
                       </div>
                     </div>
                     <div>
-                      <label htmlFor="comment" className="text-sm font-medium text-gray-700 block mb-2">自由記述（任意）</label>
+                      <label htmlFor="comment" className="text-sm font-medium text-gray-700 block mb-2">自由記述（任意） / Additional comments (optional)</label>
                       <textarea
                         id="comment"
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        placeholder="改善点やご要望があればご記入ください"
+                        placeholder="改善点やご要望があればご記入ください / Please share any improvements or requests"
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
                         rows={3}
                       />
@@ -296,7 +296,7 @@ export default function AccountDeletionSection() {
                 {step === 3 && (
                   <div className="space-y-4">
                     <div>
-                      <label htmlFor="password" className="text-sm font-medium text-gray-700 block mb-2">パスワード再入力（セキュリティ確認）</label>
+                      <label htmlFor="password" className="text-sm font-medium text-gray-700 block mb-2">パスワード再入力（セキュリティ確認） / Re-enter password (security confirmation)</label>
                       <div className="relative">
                         <input
                           id="password"
@@ -314,8 +314,8 @@ export default function AccountDeletionSection() {
                       <div className="flex items-start gap-3">
                         <i className="ri-shield-cross-line text-red-600 text-xl"></i>
                         <div>
-                          <h4 className="font-semibold text-red-900">最終確認</h4>
-                          <p className="text-sm text-red-800 mt-1">この操作は取り消せません。よろしいですか？</p>
+                          <h4 className="font-semibold text-red-900">最終確認 / Final Confirmation</h4>
+                          <p className="text-sm text-red-800 mt-1">この操作は取り消せません。よろしいですか？ / This action cannot be undone. Are you sure?</p>
                         </div>
                       </div>
                     </div>
@@ -325,7 +325,7 @@ export default function AccountDeletionSection() {
                 {step === 'done' && (
                   <div className="flex flex-col items-center justify-center gap-3 text-center min-h-[160px]">
                     <i className="ri-checkbox-circle-line text-green-600 text-5xl"></i>
-                    <p className="text-sm text-gray-600">退会が完了しました。ログイン画面へ移動します…</p>
+                    <p className="text-sm text-gray-600">退会が完了しました。ログイン画面へ移動します… / Account deletion completed. Redirecting to login page…</p>
                   </div>
                 )}
               </div>
@@ -336,7 +336,7 @@ export default function AccountDeletionSection() {
                     <div className="flex items-start gap-3">
                       <i className="ri-error-warning-line text-red-600 text-xl"></i>
                       <div>
-                        <h4 className="font-semibold text-red-900">エラー</h4>
+                        <h4 className="font-semibold text-red-900">エラー / Error</h4>
                         <p className="text-sm text-red-800 mt-1 whitespace-pre-wrap">{error}</p>
                       </div>
                     </div>
@@ -348,7 +348,7 @@ export default function AccountDeletionSection() {
               {step !== 'done' && (
                 <div className="flex items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
                   <span className="text-xs text-gray-600">
-                    {step < 3 ? '戻る' : 'キャンセル'}で中断できます
+                    {step < 3 ? '戻る' : 'キャンセル'}で中断できます / You can cancel anytime
                   </span>
                   <div className="flex gap-2">
                     {step > 1 ? (
@@ -357,7 +357,7 @@ export default function AccountDeletionSection() {
                         disabled={loading}
                         className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50"
                       >
-                        戻る
+                        戻る / Back
                       </button>
                     ) : (
                       <button
@@ -365,7 +365,7 @@ export default function AccountDeletionSection() {
                         disabled={loading}
                         className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50"
                       >
-                        キャンセル
+                        キャンセル / Cancel
                       </button>
                     )}
 
@@ -375,7 +375,7 @@ export default function AccountDeletionSection() {
                         disabled={(!ack && step === 1) || loading}
                         className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        次へ
+                        次へ / Next
                       </button>
                     )}
 
@@ -388,12 +388,12 @@ export default function AccountDeletionSection() {
                         {loading ? (
                           <>
                             <i className="ri-loader-4-line animate-spin"></i>
-                            処理中…
+                            処理中… / Processing…
                           </>
                         ) : (
                           <>
                             <i className="ri-delete-bin-line"></i>
-                            退会する
+                            退会する / Delete Account
                           </>
                         )}
                       </button>
