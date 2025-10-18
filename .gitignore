@@ -6,6 +6,10 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+/cypress/videos
+/cypress/screenshots
 
 # next.js
 /.next/
@@ -17,6 +21,10 @@
 # misc
 .DS_Store
 *.pem
+*.key
+*.p12
+*.pfx
+*.crt
 
 # debug
 npm-debug.log*
@@ -40,6 +48,10 @@ next-env.d.ts
 # supabase
 /supabase/.branches
 /supabase/.temp
+/supabase/.cache
+/supabase/.env
+/supabase/generated
+/supabase/functions/**/node_modules
 
 # IDE
 .vscode/
