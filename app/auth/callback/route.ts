@@ -126,7 +126,9 @@ export async function GET(request: NextRequest) {
               process.env.SUPABASE_SERVICE_ROLE_KEY!
             )
 
+            // private.profiles を直接更新
             const { error: updateError } = await admin
+              .schema('private')
               .from('profiles')
               .update({ email_status: 'verified' })
               .eq('id', data.session.user.id)

@@ -1,12 +1,12 @@
 -- アカウント削除時のメール匿名化（再登録対応）
 -- ユニーク制約を維持しながら、削除ユーザーの再登録を可能にする
 
--- profiles の削除時にメールアドレスを匿名化する関数
+-- private.profiles の削除時にメールアドレスを匿名化する関数
 create or replace function public.anonymize_user_email(p_user_id uuid)
 returns void
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = private, public, pg_temp
 as $$
 declare
   v_original_email text;
@@ -14,7 +14,7 @@ declare
 begin
   -- 現在のメールアドレスを取得
   select email into v_original_email
-  from public.profiles
+  from private.profiles
   where id = p_user_id;
 
   if v_original_email is null then
@@ -31,7 +31,7 @@ begin
     split_part(v_original_email, '@', 2);
 
   -- メールアドレスとステータスを更新
-  update public.profiles
+  update private.profiles
   set
     email = v_anonymized_email,
     email_status = 'unknown',

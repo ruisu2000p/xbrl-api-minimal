@@ -10,7 +10,7 @@ begin
   -- 変更が必要なレコード数を取得
   select count(*)
   into affected_count
-  from public.profiles
+  from private.profiles
   where email is not null
     and email <> trim(lower(email));
 
@@ -18,7 +18,7 @@ begin
     raise notice 'Normalizing % email addresses...', affected_count;
 
     -- メールアドレスを正規化
-    update public.profiles
+    update private.profiles
     set email = trim(lower(email))
     where email is not null
       and email <> trim(lower(email));
@@ -38,7 +38,7 @@ begin
   into duplicate_count
   from (
     select lower(email), count(*) as cnt
-    from public.profiles
+    from private.profiles
     where email is not null
     group by lower(email)
     having count(*) > 1
@@ -51,16 +51,16 @@ end $$;
 
 -- 3. ユニーク制約の追加（lower(email)に対して）
 -- NULLは許容、非NULLのみ一意
-create unique index if not exists ux_profiles_email_lower_notnull
-  on public.profiles (lower(email))
+create unique index if not exists ux_private_profiles_email_lower_notnull
+  on private.profiles (lower(email))
   where email is not null;
 
 -- インデックスにコメント追加
-comment on index public.ux_profiles_email_lower_notnull is
+comment on index ux_private_profiles_email_lower_notnull is
 'Ensures email uniqueness (case-insensitive) for non-null values';
 
 -- 4. 既存のemailインデックスの確認
 -- すでに単純なemailインデックスがある場合は、そのままでもOK（検索用として）
--- create index if not exists idx_profiles_email on public.profiles(email);
+-- create index if not exists idx_private_profiles_email on private.profiles(email);
 
 raise notice 'Email uniqueness constraint successfully added';

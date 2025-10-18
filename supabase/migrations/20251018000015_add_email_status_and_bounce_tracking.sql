@@ -7,17 +7,17 @@ begin
   end if;
 end $$;
 
--- profiles に email_status 列（未作成なら追加）
+-- private.profiles に email_status 列（未作成なら追加）
 do $$
 begin
   if not exists (
     select 1 from information_schema.columns
-    where table_schema='public' and table_name='profiles' and column_name='email_status'
+    where table_schema='private' and table_name='profiles' and column_name='email_status'
   ) then
-    alter table public.profiles
+    alter table private.profiles
       add column email_status public.email_status not null default 'unknown';
-    create index if not exists idx_profiles_email_status on public.profiles(email_status);
-    comment on column public.profiles.email_status is 'Webhookにより更新: verified/bounced/complained';
+    create index if not exists idx_private_profiles_email_status on private.profiles(email_status);
+    comment on column private.profiles.email_status is 'Webhookにより更新: verified/bounced/complained';
   end if;
 end $$;
 

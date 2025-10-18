@@ -9,12 +9,12 @@ create view public.sendable_users as
 select
   p.id,
   p.email,
-  p.name,
-  p.company,
+  p.full_name as name,
+  p.company_name as company,
   p.email_status,
   p.created_at,
   p.updated_at
-from public.profiles p
+from private.profiles p
 where p.email_status in ('verified', 'unknown')
   and p.email is not null
   and p.email != '';
@@ -36,7 +36,7 @@ select
   email_status,
   count(*) as user_count,
   round(count(*) * 100.0 / sum(count(*)) over(), 2) as percentage
-from public.profiles
+from private.profiles
 where email is not null
 group by email_status
 order by user_count desc;
