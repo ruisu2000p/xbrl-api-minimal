@@ -78,6 +78,7 @@ build.log
 .serena/
 mcp-server/node_modules/
 system-reports/
+temp-repo/
 
 # Infrastructure (local only)
 /infrastructure/config/
@@ -175,6 +176,7 @@ mcp-server.example.toml
 *.bat
 *.cmd
 *.sh
+scripts/*.js
 
 # Temporary and debug files
 *.mjs
@@ -188,6 +190,10 @@ check_view_definition.sql
 drop_view.sql
 fix_*.sql
 force_remove_views.sql
+sql/multi-tenant-api-setup.sql
+
+# Test configuration (not used in production)
+jest.config.js
 
 # Project specific
 xbrl-api-minimal/
