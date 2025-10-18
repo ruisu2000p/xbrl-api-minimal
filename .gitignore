@@ -79,6 +79,8 @@ build.log
 mcp-server/node_modules/
 system-reports/
 temp-repo/
+.git-rewrite/
+.vercel-trigger
 
 # Infrastructure (local only)
 /infrastructure/config/
