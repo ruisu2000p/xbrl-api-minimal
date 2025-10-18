@@ -234,11 +234,10 @@ export default function AccountDeletionSection() {
                         <i className="ri-error-warning-line text-red-600 text-xl"></i>
                         <div>
                           <h4 className="font-semibold text-red-900">退会すると以下が失われます / You will lose the following:</h4>
-                          <ul className="mt-2 text-sm text-red-800 space-y-1">
-                            <li>• サブスクリプションは即時停止（未使用分は按分精算） / Subscription will be immediately canceled (prorated refund for unused period)</li>
-                            <li>• すべての API キーが無効化 / All API keys will be deactivated</li>
-                            <li>• 保存データは 30 日後に完全削除（猶予期間内は復元可） / Stored data will be permanently deleted after 30 days (recoverable during grace period)</li>
-                          </ul>
+                          <p className="mt-2 text-sm text-red-800">
+                            サブスクリプションは即時停止し、APIキーは無効化されます。データは30日後に完全削除されます。<br />
+                            Your subscription will be immediately canceled and API keys will be deactivated. Data will be permanently deleted after 30 days.
+                          </p>
                         </div>
                       </div>
                     </div>
