@@ -412,25 +412,47 @@ async function handleCreditNoteCreated(
   const deletionId = creditNote.metadata?.deletion_id
   const appUserId = creditNote.metadata?.app_user_id
 
-  if (deletionId && appUserId) {
-    console.log(`🔗 Credit note linked to deletion: ${deletionId} (user: ${appUserId})`)
+  if (!deletionId || !appUserId) {
+    console.log('⚠️ Credit note missing deletion_id or app_user_id metadata, skipping')
+    return
+  }
 
-    // account_deletions の stripe_credit_note_id を確認（冪等性チェック）
-    const { data: deletion } = await supabase
-      .from('account_deletions')
-      .select('stripe_credit_note_id')
-      .eq('id', deletionId)
-      .single()
+  console.log(`🔗 Credit note linked to deletion: ${deletionId} (user: ${appUserId})`)
 
-    if (deletion && !deletion.stripe_credit_note_id) {
-      // まだ設定されていない場合のみ更新（自己修復）
-      await supabase
-        .from('account_deletions')
-        .update({ stripe_credit_note_id: creditNote.id })
-        .eq('id', deletionId)
+  // 返金額と通貨を取得（refund_amount がなければ amount を使用）
+  const refundAmount = creditNote.refund_amount ?? 0
+  const currency = (creditNote.currency || '').toLowerCase() // 'usd' | 'jpy'
 
-      console.log(`✅ Updated account_deletions with credit_note_id: ${creditNote.id}`)
-    }
+  // 冪等更新: まだ未反映なら更新（自己修復）
+  const { error: updateError1 } = await supabase
+    .from('account_deletions')
+    .update({
+      stripe_credit_note_id: creditNote.id,
+      stripe_refund_amount: refundAmount,   // 最小通貨単位の整数
+      stripe_currency: currency             // 'usd' or 'jpy'
+    })
+    .eq('id', deletionId)
+    .is('stripe_credit_note_id', null)
+
+  if (updateError1) {
+    console.error(`❌ Error updating account_deletions (first update):`, updateError1)
+  } else {
+    console.log(`✅ Updated account_deletions with credit_note_id: ${creditNote.id}`)
+  }
+
+  // 堅牢化: 既にIDは入っているが通貨/金額が空なら補完
+  const { error: updateError2 } = await supabase
+    .from('account_deletions')
+    .update({
+      stripe_refund_amount: refundAmount,
+      stripe_currency: currency
+    })
+    .eq('id', deletionId)
+    .eq('stripe_credit_note_id', creditNote.id)
+    .or('stripe_refund_amount.is.null,stripe_currency.is.null')
+
+  if (updateError2) {
+    console.error(`❌ Error updating account_deletions (currency/amount補完):`, updateError2)
   }
 }
 

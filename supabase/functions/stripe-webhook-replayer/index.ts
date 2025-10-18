@@ -263,21 +263,35 @@ async function handleInvoiceFinalized(invoice: Stripe.Invoice, supabase: any) {
 
 async function handleCreditNoteCreated(creditNote: Stripe.CreditNote, supabase: any) {
   const deletionId = creditNote.metadata?.deletion_id
+  const appUserId = creditNote.metadata?.app_user_id
 
-  if (deletionId) {
-    const { data: deletion } = await supabase
-      .from('account_deletions')
-      .select('stripe_credit_note_id')
-      .eq('id', deletionId)
-      .single()
+  if (!deletionId || !appUserId) return
 
-    if (deletion && !deletion.stripe_credit_note_id) {
-      await supabase
-        .from('account_deletions')
-        .update({ stripe_credit_note_id: creditNote.id })
-        .eq('id', deletionId)
-    }
-  }
+  // 返金額と通貨を取得（refund_amount がなければ amount を使用）
+  const refundAmount = creditNote.refund_amount ?? 0
+  const currency = (creditNote.currency || '').toLowerCase() // 'usd' | 'jpy'
+
+  // 冪等更新: まだ未反映なら更新（自己修復）
+  await supabase
+    .from('account_deletions')
+    .update({
+      stripe_credit_note_id: creditNote.id,
+      stripe_refund_amount: refundAmount,   // 最小通貨単位の整数
+      stripe_currency: currency             // 'usd' or 'jpy'
+    })
+    .eq('id', deletionId)
+    .is('stripe_credit_note_id', null)
+
+  // 堅牢化: 既にIDは入っているが通貨/金額が空なら補完
+  await supabase
+    .from('account_deletions')
+    .update({
+      stripe_refund_amount: refundAmount,
+      stripe_currency: currency
+    })
+    .eq('id', deletionId)
+    .eq('stripe_credit_note_id', creditNote.id)
+    .or('stripe_refund_amount.is.null,stripe_currency.is.null')
 }
 
 async function handleChargeRefunded(charge: Stripe.Charge, supabase: any) {
