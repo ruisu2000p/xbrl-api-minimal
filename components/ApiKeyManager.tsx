@@ -63,9 +63,18 @@ export default function ApiKeyManager() {
   const createApiKey = async (name: string, planType: string) => {
     setCreatingKey(true);
     try {
+      // Get CSRF token from cookie
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf-token='))
+        ?.split('=')[1];
+
       const response = await fetch('/api/keys/manage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken || ''
+        },
         body: JSON.stringify({
           action: 'create',
           key_name: name,
@@ -110,9 +119,18 @@ export default function ApiKeyManager() {
     if (!confirm('このAPIキーを削除してもよろしいですか？')) return;
 
     try {
+      // Get CSRF token from cookie
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf-token='))
+        ?.split('=')[1];
+
       const response = await fetch('/api/keys/manage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken || ''
+        },
         body: JSON.stringify({
           action: 'delete',
           key_id: keyId

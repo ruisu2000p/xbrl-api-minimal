@@ -1429,11 +1429,18 @@ export default function AccountSettings() {
       // 現在のセッションのトークンを取得
       const currentToken = session?.access_token || '';
 
+      // Get CSRF token from cookie
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf-token='))
+        ?.split('=')[1];
+
       const response = await fetch('/api/keys/manage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentToken}`
+          'Authorization': `Bearer ${currentToken}`,
+          'x-csrf-token': csrfToken || ''
         },
         body: JSON.stringify({
           action: 'create',
@@ -1604,12 +1611,19 @@ export default function AccountSettings() {
         return;
       }
 
+      // Get CSRF token from cookie
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf-token='))
+        ?.split('=')[1];
+
       // Use local API endpoint to delete API key
       const response = await fetch('/api/keys/manage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentSession.access_token}`
+          'Authorization': `Bearer ${currentSession.access_token}`,
+          'x-csrf-token': csrfToken || ''
         },
         body: JSON.stringify({
           action: 'delete',
