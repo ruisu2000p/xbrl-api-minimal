@@ -235,8 +235,8 @@ export default function AccountDeletionSection() {
                         <div>
                           <h4 className="font-semibold text-red-900">退会すると以下が失われます / You will lose the following:</h4>
                           <p className="mt-2 text-sm text-red-800">
-                            サブスクリプションは即時停止し、APIキーは無効化されます。データは30日後に完全削除されます。<br />
-                            Your subscription will be immediately canceled and API keys will be deactivated. Data will be permanently deleted after 30 days.
+                            サブスクリプションは即時停止し、APIキーは無効化されます。<br />
+                            Your subscription will be immediately canceled and API keys will be deactivated.
                           </p>
                         </div>
                       </div>
