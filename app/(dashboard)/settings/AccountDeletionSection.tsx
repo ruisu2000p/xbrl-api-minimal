@@ -150,17 +150,18 @@ export default function AccountDeletionSection() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-            <i className="ri-shield-cross-line text-red-600"></i> アカウントの削除（退会）
+            <i className="ri-shield-cross-line text-red-600"></i> アカウントの削除（退会）/ Delete Account
           </h3>
           <p className="text-gray-600 mt-1 text-sm">
-            退会するとサブスクリプションが即時停止し、APIキーは無効化されます。
+            退会するとサブスクリプションが即時停止し、APIキーは無効化されます。<br />
+            When you delete your account, your subscription will be immediately canceled and API keys will be deactivated.
           </p>
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2"
+          className="rounded-lg bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap"
         >
-          <i className="ri-delete-bin-line"></i> 退会する
+          <i className="ri-delete-bin-line"></i> 退会する / Delete
         </button>
       </div>
 
