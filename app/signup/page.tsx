@@ -146,15 +146,19 @@ export default function SignupPage() {
         }
       }
 
+      // 正規化されたメールアドレスを使用
+      const emailToUse = validationResult.normalizedEmail || formData.email;
+
       console.log('🚀 Starting signup process...', {
-        email: formData.email,
+        email: emailToUse,
+        originalEmail: formData.email,
         name: formData.name,
         plan: selectedPlan,
         billingPeriod: billingPeriod
       });
 
       const result = await signUp({
-        email: formData.email,
+        email: emailToUse,
         password: formData.password,
         name: formData.name,
         company: formData.company,

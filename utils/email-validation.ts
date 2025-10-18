@@ -1,4 +1,5 @@
 import dns from 'dns/promises';
+import { normalizeEmail } from './normalize-email';
 
 // 使い捨てメールドメインのブラックリスト
 const DISPOSABLE_DOMAINS = new Set([
@@ -100,27 +101,32 @@ export async function validateEmail(email: string): Promise<{
   valid: boolean;
   error?: string;
   suggestion?: string;
+  normalizedEmail?: string;
 }> {
+  // 0. メールアドレスの正規化
+  const normalizedEmail = normalizeEmail(email);
+
   // 1. 形式チェック
-  if (!isValidEmailFormat(email)) {
+  if (!isValidEmailFormat(normalizedEmail)) {
     return {
       valid: false,
       error: 'メールアドレスの形式が正しくありません',
     };
   }
 
-  const domain = email.split('@')[1];
+  const domain = normalizedEmail.split('@')[1];
 
   // 2. 使い捨てメールチェック
-  if (isDisposableEmail(email)) {
+  if (isDisposableEmail(normalizedEmail)) {
     return {
       valid: false,
       error: '使い捨てメールアドレスは利用できません',
+      normalizedEmail,
     };
   }
 
   // 3. タイポチェック
-  const suggestion = getTypoSuggestion(email);
+  const suggestion = getTypoSuggestion(normalizedEmail);
 
   // 4. ドメインの受信可能性チェック
   const canReceive = await canDomainReceiveMail(domain);
@@ -129,12 +135,14 @@ export async function validateEmail(email: string): Promise<{
       valid: false,
       error: 'このドメインはメールを受信できない可能性があります',
       suggestion,
+      normalizedEmail,
     };
   }
 
   return {
     valid: true,
     suggestion, // タイポの可能性があれば警告として返す
+    normalizedEmail, // 正規化されたメールアドレスを返す
   };
 }
 

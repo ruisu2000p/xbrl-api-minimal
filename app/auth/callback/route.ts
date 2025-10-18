@@ -117,6 +117,32 @@ export async function GET(request: NextRequest) {
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
       if (!error && data?.session) {
+        // 📧 メール確認完了時にemail_statusをverifiedに更新
+        if (data.session.user.email_confirmed_at) {
+          try {
+            const { createClient } = await import('@supabase/supabase-js')
+            const admin = createClient(
+              supabaseUrl,
+              process.env.SUPABASE_SERVICE_ROLE_KEY!
+            )
+
+            const { error: updateError } = await admin
+              .from('profiles')
+              .update({ email_status: 'verified' })
+              .eq('id', data.session.user.id)
+              .eq('email_status', 'unknown') // unknownからverifiedへのみ更新
+
+            if (updateError) {
+              console.warn('⚠️ Failed to update email_status to verified:', updateError)
+            } else {
+              console.log('✅ Email status updated to verified for user:', data.session.user.id)
+            }
+          } catch (statusUpdateError) {
+            console.warn('⚠️ Email status update error:', statusUpdateError)
+            // エラーが発生してもログインフローは継続
+          }
+        }
+
         // 🛡️ セキュリティログ: 成功認証
         console.log('✅ Secure authentication redirect:', {
           requestId,
