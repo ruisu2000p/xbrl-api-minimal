@@ -24,12 +24,14 @@ function getStripeClient() {
 /**
  * 退会 API
  *
- * べき等性保証、Stripe 即時清算、Auth BAN、30日猶予期間を実装
+ * べき等性保証、Stripe 即時清算 + 返金、Auth BAN、30日猶予期間を実装
  *
  * フロー:
  * 1. べき等性チェック（Idempotency-Key）
  * 2. パスワード再検証（重要操作のため）
- * 3. Stripe サブスクリプション即時キャンセル（invoice_now + prorate）
+ * 3. Stripe サブスクリプション即時キャンセル + 返金
+ *    - invoice_now + prorate で按分計算（Stripe に任せる）
+ *    - 返金が必要な場合、Credit Note で自動返金
  * 4. データベース論理削除（user_subscriptions, api_keys, account_deletions）
  * 5. Auth ユーザーに BAN フラグ設定（ログイン抑止）
  * 6. 監査ログ記録
@@ -115,14 +117,16 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    // 6. Stripe サブスクリプション即時キャンセル（該当する場合）
+    // 6. Stripe サブスクリプション即時キャンセル + 返金処理（該当する場合）
     let stripeSubscriptionId = null;
     let stripeCustomerId = null;
+    let refundAmount = 0;
 
     if (subscription?.stripe_subscription_id) {
       try {
-        // Stripe 即時キャンセル + 即時清算 + 退会理由同期
         const stripe = getStripeClient();
+
+        // 6-1. Stripe 即時キャンセル + 即時清算（按分計算）
         const canceledSubscription = await stripe.subscriptions.cancel(
           subscription.stripe_subscription_id,
           {
@@ -142,8 +146,42 @@ export async function POST(request: NextRequest) {
         stripeCustomerId = typeof canceledSubscription.customer === 'string'
           ? canceledSubscription.customer
           : canceledSubscription.customer?.id;
+
+        // 6-2. 最終インボイスを取得して返金処理
+        if (canceledSubscription.latest_invoice) {
+          const invoiceId = typeof canceledSubscription.latest_invoice === 'string'
+            ? canceledSubscription.latest_invoice
+            : canceledSubscription.latest_invoice.id;
+
+          const finalInvoice = await stripe.invoices.retrieve(invoiceId);
+
+          // 按分クレジット（負の金額）がある場合、返金を実施
+          // finalInvoice.total が負の値 = 顧客に返金すべき金額
+          if (finalInvoice.total < 0) {
+            refundAmount = Math.abs(finalInvoice.total); // 正の値に変換
+
+            // クレジットノートで返金（推奨方法）
+            await stripe.creditNotes.create(
+              {
+                invoice: invoiceId,
+                lines: [{
+                  type: 'custom_line_item',
+                  description: 'Prorated refund for account cancellation',
+                  quantity: 1,
+                  unit_amount: refundAmount
+                }],
+                refund_amount: refundAmount, // 支払い方法へ返金
+              },
+              {
+                idempotencyKey: `${idempotencyKey}-refund` // 返金用のべき等キー
+              }
+            );
+
+            console.log(`Refund issued: ${refundAmount / 100} ${finalInvoice.currency} for subscription ${stripeSubscriptionId}`);
+          }
+        }
       } catch (stripeError: any) {
-        console.error('Stripe subscription cancellation failed:', stripeError);
+        console.error('Stripe subscription cancellation/refund failed:', stripeError);
         // Stripe エラーでも処理を続行（手動対応可能）
       }
     }
@@ -231,7 +269,8 @@ export async function POST(request: NextRequest) {
         deletion_id: deletionRecord.id,
         reason,
         subscription_id: stripeSubscriptionId,
-        permanent_deletion_at: permanentDeletionAt.toISOString()
+        permanent_deletion_at: permanentDeletionAt.toISOString(),
+        refund_amount: refundAmount > 0 ? refundAmount : undefined
       }
     });
 
