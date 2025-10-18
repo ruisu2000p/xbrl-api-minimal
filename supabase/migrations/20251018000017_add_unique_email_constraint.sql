@@ -63,4 +63,8 @@ comment on index ux_private_profiles_email_lower_notnull is
 -- すでに単純なemailインデックスがある場合は、そのままでもOK（検索用として）
 -- create index if not exists idx_private_profiles_email on private.profiles(email);
 
-raise notice 'Email uniqueness constraint successfully added';
+-- 完了メッセージ
+do $$
+begin
+  raise notice 'Email uniqueness constraint successfully added';
+end $$;
