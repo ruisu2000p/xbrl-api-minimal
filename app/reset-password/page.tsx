@@ -17,36 +17,25 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Exchange code for session and check if user has valid session
+  // Check if user has valid session (middleware handles PKCE code exchange)
   useEffect(() => {
-    const exchangeCodeForSession = async () => {
+    const checkSession = async () => {
       const supabase = createClient();
 
-      // Get the code from URL parameters
-      const code = searchParams.get('code');
-
-      if (code) {
-        // Exchange the code for a session
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-        if (error) {
-          console.error('Error exchanging code for session:', error);
-          setSubmitStatus('error');
-          setSubmitMessage('パスワードリセットリンクが無効または期限切れです。再度リセットリクエストをお願いします。 / Reset link is invalid or expired. Please request a new reset link.');
-          return;
-        }
-      }
-
-      // Check if we have a valid session
+      // Middleware has already exchanged the code for a session
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
-        setSubmitStatus('error');
-        setSubmitMessage('パスワードリセットリンクが無効または期限切れです。再度リセットリクエストをお願いします。 / Reset link is invalid or expired. Please request a new reset link.');
+        // Only show error if we're not in the middle of code exchange
+        const code = searchParams.get('code');
+        if (!code) {
+          setSubmitStatus('error');
+          setSubmitMessage('パスワードリセットリンクが無効または期限切れです。再度リセットリクエストをお願いします。 / Reset link is invalid or expired. Please request a new reset link.');
+        }
       }
     };
 
-    exchangeCodeForSession();
+    checkSession();
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {

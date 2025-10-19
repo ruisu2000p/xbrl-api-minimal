@@ -11,6 +11,8 @@ const PUBLIC_PATHS: RegExp[] = [
   /^\/signup$/,
   /^\/verify-email$/,         // メール確認ページ
   /^\/email-trouble$/,        // メール配信問題ページ
+  /^\/forgot-password$/,      // パスワードリセットリクエストページ
+  /^\/reset-password$/,       // パスワードリセットページ（PKCEコード交換のため）
   /^\/auth(\/|$)/,            // OAuth callback 含む
   /^\/api\/auth(\/|$)/,       // 認証 API
   /^\/favicon\.ico$/,
