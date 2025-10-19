@@ -12,9 +12,9 @@ const PUBLIC_PATHS: RegExp[] = [
   /^\/verify-email$/,         // メール確認ページ
   /^\/email-trouble$/,        // メール配信問題ページ
   /^\/forgot-password$/,      // パスワードリセットリクエストページ
-  /^\/reset-password$/,       // パスワードリセットページ（PKCEコード交換のため）
   /^\/auth(\/|$)/,            // OAuth callback 含む
-  /^\/api\/auth(\/|$)/,       // 認証 API
+  /^\/api\/auth\/verify$/,    // OTP検証API（パスワードリセット用）
+  /^\/api\/auth(\/|$)/,       // その他の認証 API
   /^\/favicon\.ico$/,
   /^\/robots\.txt$/,
   /^\/_next\//,

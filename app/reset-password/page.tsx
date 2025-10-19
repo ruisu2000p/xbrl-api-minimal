@@ -17,35 +17,23 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Handle password recovery using OTP verification
+  // Check for verification errors from the API route
   useEffect(() => {
-    const handleRecovery = async () => {
-      const token = searchParams.get('code');
+    const error = searchParams.get('error');
+    const message = searchParams.get('message');
 
-      if (!token) {
-        setSubmitStatus('error');
-        setSubmitMessage('パスワードリセットリンクが無効または期限切れです。再度リセットリクエストをお願いします。 / Reset link is invalid or expired. Please request a new reset link.');
-        return;
-      }
-
-      const supabase = createClient();
-
-      // Verify the OTP token for password recovery
-      const { data, error } = await supabase.auth.verifyOtp({
-        token_hash: token,
-        type: 'recovery',
-      });
-
-      if (error) {
-        console.error('OTP verification error:', error);
-        setSubmitStatus('error');
-        setSubmitMessage('パスワードリセットリンクが無効または期限切れです。再度リセットリクエストをお願いします。 / Reset link is invalid or expired. Please request a new reset link.');
+    if (error) {
+      setSubmitStatus('error');
+      if (error === 'missing_token') {
+        setSubmitMessage('パスワードリセットリンクが不正です。 / Invalid reset link.');
+      } else if (error === 'verification_failed') {
+        setSubmitMessage(`認証に失敗しました。 / Verification failed: ${message || 'Unknown error'}`);
+      } else if (error === 'no_session') {
+        setSubmitMessage('セッションの確立に失敗しました。 / Failed to establish session.');
       } else {
-        console.log('OTP verified successfully, session established:', data.session);
+        setSubmitMessage('パスワードリセットリンクが無効または期限切れです。再度リセットリクエストをお願いします。 / Reset link is invalid or expired. Please request a new reset link.');
       }
-    };
-
-    handleRecovery();
+    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
