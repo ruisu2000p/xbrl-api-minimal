@@ -115,7 +115,7 @@ export default function LegalPage() {
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.contact}</h2>
                 <p className="text-gray-700">
-                  メールアドレス: <a href="mailto:support@fininfonext.com" className="text-blue-600 hover:underline">support@fininfonext.com</a>
+                  メールアドレス: <a href="mailto:info@financial-info-next.com" className="text-blue-600 hover:underline">info@financial-info-next.com</a>
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
                   ※お問い合わせへの回答はベストエフォートベースで対応いたします。緊急性の高いお問い合わせや技術的なサポートについては、有料プランユーザー様を優先して対応させていただきます。
@@ -212,7 +212,7 @@ export default function LegalPage() {
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.contact}</h2>
                 <p className="text-gray-700">
-                  Email: <a href="mailto:support@fininfonext.com" className="text-blue-600 hover:underline">support@fininfonext.com</a>
+                  Email: <a href="mailto:info@financial-info-next.com" className="text-blue-600 hover:underline">info@financial-info-next.com</a>
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
                   ※We respond to inquiries on a best-effort basis. For urgent inquiries and technical support, we prioritize responses to paid plan users.
