@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Header from '../../components/Header';
+import { createClient } from '@/utils/supabase/client';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -15,31 +16,25 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     setSubmitStatus('idle');
     setSubmitMessage('');
-    
-    try {
-      // フォームデータの準備
-      const submitData = new URLSearchParams();
-      submitData.append('email', email);
 
-      const response = await fetch('https://readdy.ai/api/form/d33so10ahuop1eu2ivig', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: submitData.toString()
+    try {
+      const supabase = createClient();
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
-      if (response.ok) {
-        setSubmitStatus('success');
-        setSubmitMessage('パスワードリセットの案内メールを送信しました。メールをご確認ください。');
-        setEmail('');
-      } else {
+      if (error) {
         setSubmitStatus('error');
-        setSubmitMessage('送信に失敗しました。しばらく時間をおいて再度お試しください。');
+        setSubmitMessage('送信に失敗しました。メールアドレスをご確認のうえ、再度お試しください。 / Failed to send reset email. Please check your email address and try again.');
+      } else {
+        setSubmitStatus('success');
+        setSubmitMessage('パスワードリセットの案内メールを送信しました。メールをご確認ください。 / Password reset email sent. Please check your inbox.');
+        setEmail('');
       }
     } catch (error) {
       setSubmitStatus('error');
-      setSubmitMessage('送信エラーが発生しました。インターネット接続を確認してください。');
+      setSubmitMessage('送信エラーが発生しました。インターネット接続を確認してください。 / Network error occurred. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +80,7 @@ export default function ForgotPasswordPage() {
           )}
           
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            <form className="space-y-6" onSubmit={handleSubmit} data-readdy-form id="forgot-password-form">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   メールアドレス
