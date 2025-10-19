@@ -51,5 +51,7 @@ export async function GET(req: NextRequest) {
   console.log('OTP verified successfully, session established:', data.session.user.email)
 
   // Cookieにセッションが入った状態でパスワード変更画面へ
-  return NextResponse.redirect(new URL(redirect_to, req.url))
+  const res = NextResponse.redirect(new URL(redirect_to, req.url))
+  res.headers.set('Cache-Control', 'no-store')
+  return res
 }
