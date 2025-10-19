@@ -17,28 +17,42 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Exchange PKCE code for session if present
+  // Handle password recovery session
   useEffect(() => {
-    const handleCodeExchange = async () => {
-      const code = searchParams.get('code');
+    const handleRecoverySession = async () => {
+      const supabase = createClient();
 
-      if (code) {
-        const supabase = createClient();
+      // Supabase automatically handles the token from URL hash (#access_token=...)
+      // We just need to check if there's a valid session
+      const { data: { session } } = await supabase.auth.getSession();
 
-        // Exchange the code for a session
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+      console.log('Recovery session:', session);
 
-        if (error) {
-          console.error('Code exchange error:', error);
+      if (!session) {
+        // If no session, check if we're coming from an email link
+        // Supabase will automatically exchange the token in the URL hash
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+
+        if (accessToken && type === 'recovery') {
+          // Session should be automatically set, wait a bit and check again
+          setTimeout(async () => {
+            const { data: { session: retrySession } } = await supabase.auth.getSession();
+            if (!retrySession) {
+              setSubmitStatus('error');
+              setSubmitMessage('パスワードリセットリンクが無効または期限切れです。再度リセットリクエストをお願いします。 / Reset link is invalid or expired. Please request a new reset link.');
+            }
+          }, 500);
+        } else {
           setSubmitStatus('error');
           setSubmitMessage('パスワードリセットリンクが無効または期限切れです。再度リセットリクエストをお願いします。 / Reset link is invalid or expired. Please request a new reset link.');
         }
-        // If successful, session is now established and user can set new password
       }
     };
 
-    handleCodeExchange();
-  }, [searchParams]);
+    handleRecoverySession();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
