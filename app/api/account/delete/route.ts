@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     let stripeCustomerId = subRow?.stripe_customer_id ?? null;
     let stripeSubscriptionId = subRow?.stripe_subscription_id ?? null;
 
-    // RPC が失敗した場合、user_subscriptions テーブルを直接 service_role で取得
+    // RPC が失敗した場合、user_subscriptions テーブルを直接取得（admin権限）
     // （RPC関数が未作成の場合のfallback）
     if (!stripeCustomerId && !stripeSubscriptionId) {
       console.log('⚠️ RPC failed, attempting direct query fallback...');
