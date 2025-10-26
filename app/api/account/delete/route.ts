@@ -131,6 +131,41 @@ export async function POST(request: NextRequest) {
       error: subError
     });
 
+    // 5-1. Webhook 同期待機チェック（Race Condition 対策）
+    // Stripe Checkout 完了直後は Webhook による stripe_subscription_id の同期を待つ必要がある
+    if (subscription && !subscription.stripe_subscription_id) {
+      // サブスクリプションデータは存在するが stripe_subscription_id が未設定
+      const createdAt = new Date(subscription.created_at);
+      const now = new Date();
+      const secondsSinceCreation = (now.getTime() - createdAt.getTime()) / 1000;
+
+      // 作成から60秒以内の場合は Webhook 同期中と判断
+      if (secondsSinceCreation < 60) {
+        console.log('⏳ Waiting for Webhook synchronization:', {
+          seconds_since_creation: secondsSinceCreation,
+          created_at: subscription.created_at,
+          message: 'Subscription data exists but stripe_subscription_id is not yet synced'
+        });
+
+        await logSecurityEvent({
+          type: 'account_deletion',
+          outcome: 'fail',
+          email: user.email!,
+          ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+          ua: request.headers.get('user-agent'),
+          details: {
+            reason: 'webhook_sync_pending',
+            seconds_since_creation: secondsSinceCreation
+          }
+        });
+
+        return createApiResponse.error(
+          ErrorCodes.INTERNAL_ERROR,
+          'サブスクリプション情報の同期処理中です。1分ほど待ってから再度お試しください。'
+        );
+      }
+    }
+
     // 6. Stripe サブスクリプション即時キャンセル + 返金処理（該当する場合）
     let stripeSubscriptionId = null;
     let stripeCustomerId = null;
