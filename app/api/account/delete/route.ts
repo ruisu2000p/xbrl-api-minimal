@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       .select('id, deleted_at')
       .eq('idempotency_key', idempotencyKey)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (existingDeletion) {
       // すでに処理済み - 前回の結果を返す（べき等）
@@ -410,7 +410,7 @@ export async function POST(request: NextRequest) {
 
     // 7-1. user_subscriptions 更新
     const { error: subscriptionError } = await adminSupabase
-      .from('private.user_subscriptions')
+      .from('user_subscriptions')
       .update({
         status: 'cancelled',
         cancelled_at: deletedAt.toISOString()
