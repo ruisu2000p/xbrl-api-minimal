@@ -400,10 +400,7 @@ export async function POST(request: NextRequest) {
         db_error: subError?.message,
         stripe_customer_id: stripeCustomerId,
         stripe_subscription_id: stripeSubscriptionId,
-        profiles_checked: !subRow?.stripe_customer_id,
-        message: '
-
-DB取得失敗 → Stripe API補完も失敗した可能性があります'
+        message: 'DB取得失敗 → Stripe API補完も失敗した可能性があります'
       });
     }
 
