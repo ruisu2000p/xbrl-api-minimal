@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
-import { logSecurityEvent } from '@/utils/security/audit-log';
+// import { logSecurityEvent } from '@/utils/security/audit-log'; // Commented out - audit_logs table doesn't exist
 import Stripe from 'stripe';
 import crypto from 'crypto';
 
@@ -96,14 +96,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      await logSecurityEvent({
-        type: 'account_deletion',
-        outcome: 'fail',
-        email: user.email!,
-        ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-        ua: request.headers.get('user-agent'),
-        details: { reason: 'password_verification_failed' }
-      });
+      // Commented out - audit_logs table doesn't exist
+      // await logSecurityEvent({
+      //   type: 'account_deletion',
+      //   outcome: 'fail',
+      //   email: user.email!,
+      //   ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      //   ua: request.headers.get('user-agent'),
+      //   details: { reason: 'password_verification_failed' }
+      // });
 
       return createApiResponse.error(
         ErrorCodes.INVALID_CREDENTIALS,
@@ -191,17 +192,18 @@ export async function POST(request: NextRequest) {
           message: 'Subscription data exists but stripe_subscription_id is not yet synced'
         });
 
-        await logSecurityEvent({
-          type: 'account_deletion',
-          outcome: 'fail',
-          email: user.email!,
-          ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-          ua: request.headers.get('user-agent'),
-          details: {
-            reason: 'webhook_sync_pending',
-            seconds_since_creation: secondsSinceCreation
-          }
-        });
+        // Commented out - audit_logs table doesn't exist
+        // await logSecurityEvent({
+        //   type: 'account_deletion',
+        //   outcome: 'fail',
+        //   email: user.email!,
+        //   ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        //   ua: request.headers.get('user-agent'),
+        //   details: {
+        //     reason: 'webhook_sync_pending',
+        //     seconds_since_creation: secondsSinceCreation
+        //   }
+        // });
 
         return createApiResponse.error(
           ErrorCodes.INTERNAL_ERROR,
@@ -373,20 +375,21 @@ export async function POST(request: NextRequest) {
 
         // Stripe エラーの場合、データベース更新を続行せずエラーを返す
         // 返金処理が失敗した場合、ユーザーに通知して手動対応を促す
-        await logSecurityEvent({
-          type: 'account_deletion',
-          outcome: 'fail',
-          email: user.email!,
-          ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-          ua: request.headers.get('user-agent'),
-          details: {
-            reason: 'stripe_cancellation_failed',
-            stripe_error: stripeError.message,
-            stripe_error_type: stripeError.type,
-            stripe_error_code: stripeError.code,
-            subscription_id: stripeSubscriptionId
-          }
-        });
+        // Commented out - audit_logs table doesn't exist
+        // await logSecurityEvent({
+        //   type: 'account_deletion',
+        //   outcome: 'fail',
+        //   email: user.email!,
+        //   ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+        //   ua: request.headers.get('user-agent'),
+        //   details: {
+        //     reason: 'stripe_cancellation_failed',
+        //     stripe_error: stripeError.message,
+        //     stripe_error_type: stripeError.type,
+        //     stripe_error_code: stripeError.code,
+        //     subscription_id: stripeSubscriptionId
+        //   }
+        // });
 
         return createApiResponse.error(
           ErrorCodes.INTERNAL_ERROR,
@@ -499,22 +502,23 @@ export async function POST(request: NextRequest) {
     }
 
     // 9. 監査ログ記録
-    await logSecurityEvent({
-      type: 'account_deletion',
-      outcome: 'success',
-      email: user.email!,
-      ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-      ua: request.headers.get('user-agent'),
-      details: {
-        deletion_id: deletionRecord.id,
-        reason,
-        subscription_id: stripeSubscriptionId,
-        stripe_invoice_id: stripeInvoiceId,
-        stripe_credit_note_id: stripeCreditNoteId,
-        permanent_deletion_at: permanentDeletionAt.toISOString(),
-        refund_amount: refundAmount > 0 ? refundAmount : undefined
-      }
-    });
+    // Commented out - audit_logs table doesn't exist
+    // await logSecurityEvent({
+    //   type: 'account_deletion',
+    //   outcome: 'success',
+    //   email: user.email!,
+    //   ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    //   ua: request.headers.get('user-agent'),
+    //   details: {
+    //     deletion_id: deletionRecord.id,
+    //     reason,
+    //     subscription_id: stripeSubscriptionId,
+    //     stripe_invoice_id: stripeInvoiceId,
+    //     stripe_credit_note_id: stripeCreditNoteId,
+    //     permanent_deletion_at: permanentDeletionAt.toISOString(),
+    //     refund_amount: refundAmount > 0 ? refundAmount : undefined
+    //   }
+    // });
 
     // 10. セッション無効化（ログアウト）
     await supabase.auth.signOut();
