@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
     // 5. 現在のサブスクリプション情報を取得
     // 注: user_subscriptions は private スキーマなので adminSupabase を使用
     const { data: subscription, error: subError } = await adminSupabase
+      .schema('private')
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', user.id)
@@ -362,6 +363,7 @@ export async function POST(request: NextRequest) {
 
     // 7-1. user_subscriptions 更新
     const { error: subscriptionError } = await adminSupabase
+      .schema('private')
       .from('user_subscriptions')
       .update({
         status: 'cancelled',
