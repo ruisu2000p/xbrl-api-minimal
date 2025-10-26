@@ -51,7 +51,8 @@ export async function middleware(request: NextRequest) {
     '/api/auth/callback',
     '/api/auth/login',
     '/api/auth/signup',
-    '/api/webhooks'
+    '/api/webhooks',
+    '/api/stripe/webhook' // Stripe Webhook (署名検証を独自に実装)
   ];
 
   const requiresCsrfCheck =
@@ -90,24 +91,28 @@ export async function middleware(request: NextRequest) {
     'http://localhost:3001'
   ];
 
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+  // Origin/Refererチェックを実施するかどうか（Webhook等の外部からのPOSTは除外）
+  const requiresOriginCheck =
+    ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
+    pathname.startsWith('/api/') &&
+    !csrfExemptPaths.some(exemptPath => pathname.startsWith(exemptPath));
+
+  if (requiresOriginCheck) {
     // APIリクエストの場合、originが許可されたものであることを確認
-    if (pathname.startsWith('/api/')) {
-      if (origin && !allowedOrigins.some(allowed => origin === new URL(allowed).origin)) {
-        console.error('🚨 Security: Invalid origin detected', { origin, expected: allowedOrigins });
-        return NextResponse.json(
-          { error: 'Invalid origin' },
-          { status: 403 }
-        );
-      }
-      // Originヘッダーがない場合はRefererで補完チェック
-      if (!origin && referer && !allowedOrigins.some(allowed => referer.startsWith(allowed))) {
-        console.error('🚨 Security: Invalid referer detected', { referer, expected: allowedOrigins });
-        return NextResponse.json(
-          { error: 'Invalid referer' },
-          { status: 403 }
-        );
-      }
+    if (origin && !allowedOrigins.some(allowed => origin === new URL(allowed).origin)) {
+      console.error('🚨 Security: Invalid origin detected', { origin, expected: allowedOrigins });
+      return NextResponse.json(
+        { error: 'Invalid origin' },
+        { status: 403 }
+      );
+    }
+    // Originヘッダーがない場合はRefererで補完チェック
+    if (!origin && referer && !allowedOrigins.some(allowed => referer.startsWith(allowed))) {
+      console.error('🚨 Security: Invalid referer detected', { referer, expected: allowedOrigins });
+      return NextResponse.json(
+        { error: 'Invalid referer' },
+        { status: 403 }
+      );
     }
   }
 
