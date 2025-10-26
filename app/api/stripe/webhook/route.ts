@@ -7,7 +7,6 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
-import { logSecurityEvent } from '@/utils/security/audit-log';
 
 // Stripe client (lazy initialization to avoid build errors)
 function getStripeClient() {
@@ -99,17 +98,6 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Webhook processing error:', error);
 
-    // Log webhook processing failure
-    await logSecurityEvent({
-      type: 'webhook_processing',
-      outcome: 'fail',
-      details: {
-        event_type: event.type,
-        event_id: event.id,
-        error: error.message
-      }
-    });
-
     return NextResponse.json(
       { error: error.message || 'Webhook processing failed' },
       { status: 500 }
@@ -170,19 +158,6 @@ async function handleSubscriptionEvent(
     throw new Error(`Failed to update subscription: ${updateError.message}`);
   }
 
-  // Log the sync
-  await logSecurityEvent({
-    type: 'subscription_sync',
-    outcome: 'success',
-    details: {
-      event_type: eventType,
-      subscription_id: subscription.id,
-      customer_id: customerId,
-      user_id: userSub.user_id,
-      status: subscription.status
-    }
-  });
-
   console.log(`✅ Synced subscription ${subscription.id} for user ${userSub.user_id} (${eventType})`);
 }
 
@@ -241,16 +216,4 @@ async function handleInvoicePaymentFailed(
   } else {
     console.log(`⚠️ Updated subscription status to past_due for customer ${customerId}`);
   }
-
-  // Log payment failure for monitoring
-  await logSecurityEvent({
-    type: 'payment_failed',
-    outcome: 'fail',
-    details: {
-      invoice_id: invoice.id,
-      customer_id: customerId,
-      amount: invoice.amount_due,
-      currency: invoice.currency
-    }
-  });
 }
