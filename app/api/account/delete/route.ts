@@ -231,28 +231,15 @@ export async function POST(request: NextRequest) {
         const stripe = getStripeClient();
         const subId = stripeSubscriptionId;
 
-        // 6-1. 事前にスケジュールされたキャンセルをクリア
-        // cancel_at_period_end または cancel_at が設定されている場合、
-        // サブスクリプションは「有効」のまま期末まで継続してしまう。
-        // これを防ぐため、まず既存のスケジュールをクリアする。
-        console.log('🔄 Clearing any scheduled cancellation...');
-        await stripe.subscriptions.update(
-          subId,
-          {
-            cancel_at_period_end: false,
-            cancel_at: null as any, // TypeScript: null で設定解除
-          },
-          {
-            idempotencyKey: `${idempotencyKey}-clear-schedule`
-          }
-        );
-
-        // 6-2. Stripe 即時キャンセル（Stripeが自動的に按分計算を実施）
+        // 6-1. Stripe 即時キャンセル（Stripeが自動的に按分計算を実施）
         // subscriptions.cancel() はデフォルトで即時キャンセルを実行する
+        // prorate: true により、Stripeが自動的に按分計算を実施し、返金が必要な場合は
+        // Credit Noteを自動発行する
         console.log('📞 Calling stripe.subscriptions.cancel (immediate)...');
         const canceledSubscription = await stripe.subscriptions.cancel(
           subId,
           {
+            prorate: true,  // 按分計算を有効化
             cancellation_details: {
               feedback: mapReasonToStripeFeedback(reason),
               comment: comment || undefined
