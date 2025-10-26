@@ -183,11 +183,29 @@ export async function POST(request: NextRequest) {
 
       try {
         const stripe = getStripeClient();
+        const subId = subscription.stripe_subscription_id;
 
-        // 6-1. Stripe 即時キャンセル（Stripeが自動的に按分計算を実施）
-        console.log('📞 Calling stripe.subscriptions.cancel...');
+        // 6-1. 事前にスケジュールされたキャンセルをクリア
+        // cancel_at_period_end または cancel_at が設定されている場合、
+        // サブスクリプションは「有効」のまま期末まで継続してしまう。
+        // これを防ぐため、まず既存のスケジュールをクリアする。
+        console.log('🔄 Clearing any scheduled cancellation...');
+        await stripe.subscriptions.update(
+          subId,
+          {
+            cancel_at_period_end: false,
+            cancel_at: null as any, // TypeScript: null で設定解除
+          },
+          {
+            idempotencyKey: `${idempotencyKey}-clear-schedule`
+          }
+        );
+
+        // 6-2. Stripe 即時キャンセル（Stripeが自動的に按分計算を実施）
+        // subscriptions.cancel() はデフォルトで即時キャンセルを実行する
+        console.log('📞 Calling stripe.subscriptions.cancel (immediate)...');
         const canceledSubscription = await stripe.subscriptions.cancel(
-          subscription.stripe_subscription_id,
+          subId,
           {
             cancellation_details: {
               feedback: mapReasonToStripeFeedback(reason),
@@ -208,8 +226,29 @@ export async function POST(request: NextRequest) {
           subscription_id: canceledSubscription.id,
           customer_id: stripeCustomerId,
           status: canceledSubscription.status,
-          canceled_at: canceledSubscription.canceled_at
+          canceled_at: canceledSubscription.canceled_at,
+          cancel_at: canceledSubscription.cancel_at,
+          cancel_at_period_end: canceledSubscription.cancel_at_period_end
         });
+
+        // 6-3. Subscription Schedule がアタッチされている場合は、それもキャンセル
+        // (Subscription Schedules はフェーズ管理を行うため、別途キャンセルが必要)
+        if (canceledSubscription.schedule && typeof canceledSubscription.schedule === 'string') {
+          try {
+            console.log('📅 Canceling attached Subscription Schedule:', canceledSubscription.schedule);
+            await stripe.subscriptionSchedules.cancel(
+              canceledSubscription.schedule,
+              undefined,
+              {
+                idempotencyKey: `${idempotencyKey}-schedule`
+              }
+            );
+            console.log('✅ Subscription Schedule cancelled successfully');
+          } catch (scheduleError: any) {
+            // Schedule が既にキャンセル済み、または存在しない場合はログのみ
+            console.warn('⚠️ Failed to cancel Subscription Schedule (may already be canceled):', scheduleError.message);
+          }
+        }
 
         // 6-2. 最終インボイスを取得して返金処理
         // 即座キャンセルの場合、Stripeが自動的に按分計算を実施するが、

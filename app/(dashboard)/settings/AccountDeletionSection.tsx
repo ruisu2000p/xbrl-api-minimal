@@ -77,6 +77,13 @@ export default function AccountDeletionSection() {
     setLoading(true)
     setError(null)
 
+    // デバッグ: CSRFトークンの状態を確認
+    console.log('🔐 CSRF Token Debug:', {
+      csrfToken,
+      hasCsrfToken: !!csrfToken,
+      idempotencyKey: idemKeyRef.current
+    })
+
     try {
       const res = await fetch('/api/account/delete', {
         method: 'POST',
