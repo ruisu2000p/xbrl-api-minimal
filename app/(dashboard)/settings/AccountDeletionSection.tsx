@@ -304,7 +304,7 @@ export default function AccountDeletionSection() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-10 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-10 text-sm text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
                         />
                         <i className="ri-lock-line absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                       </div>
