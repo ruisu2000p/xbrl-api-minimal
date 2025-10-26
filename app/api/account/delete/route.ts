@@ -112,7 +112,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. 現在のサブスクリプション情報を取得
-    const { data: subscription } = await supabase
+    // 注: user_subscriptions は private スキーマなので adminSupabase を使用
+    const { data: subscription } = await adminSupabase
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', user.id)
@@ -218,7 +219,26 @@ export async function POST(request: NextRequest) {
         }
       } catch (stripeError: any) {
         console.error('Stripe subscription cancellation/refund failed:', stripeError);
-        // Stripe エラーでも処理を続行（手動対応可能）
+
+        // Stripe エラーの場合、データベース更新を続行せずエラーを返す
+        // 返金処理が失敗した場合、ユーザーに通知して手動対応を促す
+        await logSecurityEvent({
+          type: 'account_deletion',
+          outcome: 'fail',
+          email: user.email!,
+          ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+          ua: request.headers.get('user-agent'),
+          details: {
+            reason: 'stripe_cancellation_failed',
+            stripe_error: stripeError.message,
+            subscription_id: subscription.stripe_subscription_id
+          }
+        });
+
+        return createApiResponse.error(
+          ErrorCodes.INTERNAL_ERROR,
+          'Stripeサブスクリプションのキャンセルに失敗しました。お手数ですがサポートまでお問い合わせください。'
+        );
       }
     }
 
