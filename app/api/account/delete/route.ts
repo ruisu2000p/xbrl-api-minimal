@@ -408,9 +408,7 @@ export async function POST(request: NextRequest) {
     console.error('❌ Account deletion error:', {
       error_message: error.message,
       error_name: error.name,
-      error_stack: error.stack,
-      user_id: user?.id,
-      email: user?.email
+      error_stack: error.stack
     });
     return createApiResponse.internalError(
       error,
