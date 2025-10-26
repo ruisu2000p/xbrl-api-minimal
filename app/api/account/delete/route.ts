@@ -113,23 +113,58 @@ export async function POST(request: NextRequest) {
 
     // 5. 現在のサブスクリプション情報を取得
     // 注: user_subscriptions は private スキーマなので adminSupabase を使用
-    const { data: subscription, error: subError} = await adminSupabase
+    // maybeSingle() で行なし時もエラーにせず、Stripe から補完する
+    const { data: subRow, error: subError } = await adminSupabase
       .from('private.user_subscriptions')
-      .select('*')
+      .select('user_id, stripe_customer_id, stripe_subscription_id, status, plan_id, cancelled_at')
       .eq('user_id', user.id)
-      .single();
-
-    if (subError) {
-      console.error('❌ Failed to fetch subscription:', subError);
-    }
+      .maybeSingle();
 
     console.log('📊 Subscription query result:', {
-      hasSubscription: !!subscription,
-      stripe_subscription_id: subscription?.stripe_subscription_id,
-      stripe_customer_id: subscription?.stripe_customer_id,
-      status: subscription?.status,
-      error: subError
+      hasSubscription: !!subRow,
+      stripe_subscription_id: subRow?.stripe_subscription_id,
+      stripe_customer_id: subRow?.stripe_customer_id,
+      status: subRow?.status,
+      error: subError?.message
     });
+
+    // 5-1. Stripe から補完（DB取得に失敗しても解約を確実に実行）
+    let stripeCustomerId = subRow?.stripe_customer_id ?? null;
+    let stripeSubscriptionId = subRow?.stripe_subscription_id ?? null;
+
+    // profiles テーブルからも補完を試みる
+    if (!stripeCustomerId) {
+      const { data: profile } = await adminSupabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('id', user.id)
+        .maybeSingle();
+      stripeCustomerId = profile?.stripe_customer_id ?? null;
+      console.log('🔄 Fallback: Retrieved customer_id from profiles:', stripeCustomerId);
+    }
+
+    // Stripe API から subscription を逆引き
+    if (!stripeSubscriptionId && stripeCustomerId) {
+      try {
+        const stripe = getStripeClient();
+        const list = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          status: 'active',
+          limit: 1
+        });
+        stripeSubscriptionId = list.data[0]?.id ?? null;
+        console.log('🔄 Fallback: Retrieved subscription_id from Stripe:', stripeSubscriptionId);
+      } catch (err: any) {
+        console.error('⚠️ Failed to retrieve subscription from Stripe:', err.message);
+      }
+    }
+
+    // 後方互換性のため subscription オブジェクトを構築
+    const subscription = subRow ? {
+      ...subRow,
+      stripe_customer_id: stripeCustomerId,
+      stripe_subscription_id: stripeSubscriptionId
+    } : null;
 
     // 5-1. Webhook 同期待機チェック（Race Condition 対策）
     // Stripe Checkout 完了直後は Webhook による stripe_subscription_id の同期を待つ必要がある
@@ -167,23 +202,23 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Stripe サブスクリプション即時キャンセル + 返金処理（該当する場合）
-    let stripeSubscriptionId = null;
-    let stripeCustomerId = null;
     let stripeInvoiceId = null;
     let refundAmount = 0;
     let stripeCreditNoteId = null;
     let stripeCurrency = 'jpy'; // デフォルト通貨（JPY）
 
-    if (subscription?.stripe_subscription_id) {
+    // Stripe補完後のIDを使用（DBから取得できなくてもStripe APIから補完済み）
+    if (stripeSubscriptionId) {
       console.log('🔄 Starting Stripe subscription cancellation:', {
-        subscription_id: subscription.stripe_subscription_id,
-        customer_id: subscription.stripe_customer_id,
-        idempotency_key: idempotencyKey
+        subscription_id: stripeSubscriptionId,
+        customer_id: stripeCustomerId,
+        idempotency_key: idempotencyKey,
+        source: subRow ? 'database' : 'stripe_api_fallback'
       });
 
       try {
         const stripe = getStripeClient();
-        const subId = subscription.stripe_subscription_id;
+        const subId = stripeSubscriptionId;
 
         // 6-1. 事前にスケジュールされたキャンセルをクリア
         // cancel_at_period_end または cancel_at が設定されている場合、
@@ -322,8 +357,8 @@ export async function POST(request: NextRequest) {
           error_message: stripeError.message,
           error_type: stripeError.type,
           error_code: stripeError.code,
-          subscription_id: subscription.stripe_subscription_id,
-          customer_id: subscription.stripe_customer_id,
+          subscription_id: stripeSubscriptionId,
+          customer_id: stripeCustomerId,
           stack: stripeError.stack
         });
 
@@ -340,7 +375,7 @@ export async function POST(request: NextRequest) {
             stripe_error: stripeError.message,
             stripe_error_type: stripeError.type,
             stripe_error_code: stripeError.code,
-            subscription_id: subscription.stripe_subscription_id
+            subscription_id: stripeSubscriptionId
           }
         });
 
@@ -350,9 +385,16 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      console.log('⚠️ No Stripe subscription to cancel:', {
-        has_subscription_data: !!subscription,
-        stripe_subscription_id: subscription?.stripe_subscription_id
+      console.error('⚠️ No Stripe subscription to cancel:', {
+        user_id: user.id,
+        db_row_found: !!subRow,
+        db_error: subError?.message,
+        stripe_customer_id: stripeCustomerId,
+        stripe_subscription_id: stripeSubscriptionId,
+        profiles_checked: !subRow?.stripe_customer_id,
+        message: '
+
+DB取得失敗 → Stripe API補完も失敗した可能性があります'
       });
     }
 
@@ -408,7 +450,7 @@ export async function POST(request: NextRequest) {
         stripe_credit_note_id: stripeCreditNoteId,
         stripe_refund_amount: refundAmount,
         stripe_currency: stripeCurrency,
-        plan_at_deletion: subscription?.plan || 'freemium'
+        plan_at_deletion: stripeSubscriptionId ? 'standard' : 'freemium'
       })
       .select('id')
       .single();
