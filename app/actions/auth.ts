@@ -171,7 +171,7 @@ export async function signUp(userData: {
       })
 
       // Provide more specific error messages
-      if (error.code === 'user_already_exists') {
+      if (error.code === 'user_already_exists' || error.message?.includes('Database error saving new user')) {
         return {
           success: false,
           error: 'このメールアドレスは既に登録されています'
