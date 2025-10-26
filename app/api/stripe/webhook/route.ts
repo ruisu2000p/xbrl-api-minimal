@@ -138,14 +138,14 @@ async function handleSubscriptionEvent(
     stripe_subscription_id: subscription.id,
     stripe_customer_id: customerId,
     status: subscription.status,
-    current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-    cancel_at_period_end: subscription.cancel_at_period_end,
+    current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+    current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+    cancel_at_period_end: (subscription as any).cancel_at_period_end,
   };
 
   // If subscription is cancelled, set cancelled_at
-  if (subscription.status === 'canceled' && subscription.canceled_at) {
-    updateData.cancelled_at = new Date(subscription.canceled_at * 1000).toISOString();
+  if (subscription.status === 'canceled' && (subscription as any).canceled_at) {
+    updateData.cancelled_at = new Date((subscription as any).canceled_at * 1000).toISOString();
   }
 
   // Update user_subscriptions table
