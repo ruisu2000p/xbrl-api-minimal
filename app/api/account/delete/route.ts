@@ -24,13 +24,14 @@ function getStripeClient() {
 /**
  * 退会 API
  *
- * べき等性保証、Stripe 即時清算 + 返金、Auth BAN、30日猶予期間を実装
+ * べき等性保証、Stripe 即時キャンセル + 返金、Auth BAN、30日猶予期間を実装
  *
  * フロー:
  * 1. べき等性チェック（Idempotency-Key）
  * 2. パスワード再検証（重要操作のため）
  * 3. Stripe サブスクリプション即時キャンセル + 返金
- *    - invoice_now + prorate で按分計算（Stripe に任せる）
+ *    - サブスクリプションを即座に終了（期末ではなく現在時点で）
+ *    - Stripeが自動的に按分計算を実施
  *    - 返金が必要な場合、Credit Note で自動返金
  * 4. データベース論理削除（user_subscriptions, api_keys, account_deletions）
  * 5. Auth ユーザーに BAN フラグ設定（ログイン抑止）
@@ -129,12 +130,10 @@ export async function POST(request: NextRequest) {
       try {
         const stripe = getStripeClient();
 
-        // 6-1. Stripe 即時キャンセル + 即時清算（按分計算）
+        // 6-1. Stripe 即時キャンセル（Stripeが自動的に按分計算を実施）
         const canceledSubscription = await stripe.subscriptions.cancel(
           subscription.stripe_subscription_id,
           {
-            invoice_now: true,  // その場で最終請求（使用量/按分を確定）
-            prorate: true,      // 残期間のクレジット（按分）を計上
             cancellation_details: {
               feedback: mapReasonToStripeFeedback(reason),
               comment: comment || undefined
@@ -151,6 +150,8 @@ export async function POST(request: NextRequest) {
           : canceledSubscription.customer?.id;
 
         // 6-2. 最終インボイスを取得して返金処理
+        // 即座キャンセルの場合、Stripeが自動的に按分計算を実施するが、
+        // 念のため最終インボイスをチェックして返金が必要か確認
         if (canceledSubscription.latest_invoice) {
           const invoiceId = typeof canceledSubscription.latest_invoice === 'string'
             ? canceledSubscription.latest_invoice
