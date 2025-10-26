@@ -112,15 +112,14 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. 現在のサブスクリプション情報を取得
-    // 注: user_subscriptions は private スキーマなので adminSupabase を使用
-    // maybeSingle() で行なし時もエラーにせず、Stripe から補完する
-    const { data: subRow, error: subError } = await adminSupabase
-      .from('private.user_subscriptions')
-      .select('user_id, stripe_customer_id, stripe_subscription_id, status, plan_id, cancelled_at')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    // 注: user_subscriptions は private スキーマなので RPC 関数を使用
+    // RPC関数(SECURITY DEFINER)により、確実にprivateスキーマにアクセス可能
+    const { data: subData, error: subError } = await adminSupabase
+      .rpc('get_user_subscription_snapshot', { user_uuid: user.id });
 
-    console.log('📊 Subscription query result:', {
+    const subRow = subData && subData.length > 0 ? subData[0] : null;
+
+    console.log('📊 Subscription query result (via RPC):', {
       hasSubscription: !!subRow,
       stripe_subscription_id: subRow?.stripe_subscription_id,
       stripe_customer_id: subRow?.stripe_customer_id,
@@ -128,24 +127,34 @@ export async function POST(request: NextRequest) {
       error: subError?.message
     });
 
-    // 5-1. Stripe から補完（DB取得に失敗しても解約を確実に実行）
+    // 5-1. Stripe から補完（RPC失敗時の安全策）
     let stripeCustomerId = subRow?.stripe_customer_id ?? null;
     let stripeSubscriptionId = subRow?.stripe_subscription_id ?? null;
 
-    // profiles テーブルからも補完を試みる
-    if (!stripeCustomerId) {
-      const { data: profile } = await adminSupabase
-        .from('profiles')
-        .select('stripe_customer_id')
-        .eq('id', user.id)
+    // RPC が失敗した場合、user_subscriptions テーブルを直接 service_role で取得
+    // （RPC関数が未作成の場合のfallback）
+    if (!stripeCustomerId && !stripeSubscriptionId) {
+      console.log('⚠️ RPC failed, attempting direct query fallback...');
+      const { data: directData } = await adminSupabase
+        .from('user_subscriptions')
+        .select('stripe_customer_id, stripe_subscription_id')
+        .eq('user_id', user.id)
         .maybeSingle();
-      stripeCustomerId = profile?.stripe_customer_id ?? null;
-      console.log('🔄 Fallback: Retrieved customer_id from profiles:', stripeCustomerId);
+
+      if (directData) {
+        stripeCustomerId = directData.stripe_customer_id;
+        stripeSubscriptionId = directData.stripe_subscription_id;
+        console.log('✅ Fallback: Retrieved IDs from direct query:', {
+          stripeCustomerId,
+          stripeSubscriptionId
+        });
+      }
     }
 
-    // Stripe API から subscription を逆引き
+    // 最終手段: Stripe API から customer の全 subscription を取得
     if (!stripeSubscriptionId && stripeCustomerId) {
       try {
+        console.log('🔄 Final fallback: Querying Stripe API...');
         const stripe = getStripeClient();
         const list = await stripe.subscriptions.list({
           customer: stripeCustomerId,
@@ -153,7 +162,7 @@ export async function POST(request: NextRequest) {
           limit: 1
         });
         stripeSubscriptionId = list.data[0]?.id ?? null;
-        console.log('🔄 Fallback: Retrieved subscription_id from Stripe:', stripeSubscriptionId);
+        console.log('✅ Fallback: Retrieved subscription_id from Stripe:', stripeSubscriptionId);
       } catch (err: any) {
         console.error('⚠️ Failed to retrieve subscription from Stripe:', err.message);
       }
