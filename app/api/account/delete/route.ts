@@ -113,11 +113,23 @@ export async function POST(request: NextRequest) {
 
     // 5. 現在のサブスクリプション情報を取得
     // 注: user_subscriptions は private スキーマなので adminSupabase を使用
-    const { data: subscription } = await adminSupabase
+    const { data: subscription, error: subError } = await adminSupabase
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', user.id)
       .single();
+
+    if (subError) {
+      console.error('❌ Failed to fetch subscription:', subError);
+    }
+
+    console.log('📊 Subscription query result:', {
+      hasSubscription: !!subscription,
+      stripe_subscription_id: subscription?.stripe_subscription_id,
+      stripe_customer_id: subscription?.stripe_customer_id,
+      status: subscription?.status,
+      error: subError
+    });
 
     // 6. Stripe サブスクリプション即時キャンセル + 返金処理（該当する場合）
     let stripeSubscriptionId = null;
@@ -128,10 +140,17 @@ export async function POST(request: NextRequest) {
     let stripeCurrency = 'jpy'; // デフォルト通貨（JPY）
 
     if (subscription?.stripe_subscription_id) {
+      console.log('🔄 Starting Stripe subscription cancellation:', {
+        subscription_id: subscription.stripe_subscription_id,
+        customer_id: subscription.stripe_customer_id,
+        idempotency_key: idempotencyKey
+      });
+
       try {
         const stripe = getStripeClient();
 
         // 6-1. Stripe 即時キャンセル（Stripeが自動的に按分計算を実施）
+        console.log('📞 Calling stripe.subscriptions.cancel...');
         const canceledSubscription = await stripe.subscriptions.cancel(
           subscription.stripe_subscription_id,
           {
@@ -149,6 +168,13 @@ export async function POST(request: NextRequest) {
         stripeCustomerId = typeof canceledSubscription.customer === 'string'
           ? canceledSubscription.customer
           : canceledSubscription.customer?.id;
+
+        console.log('✅ Stripe subscription cancelled successfully:', {
+          subscription_id: canceledSubscription.id,
+          customer_id: stripeCustomerId,
+          status: canceledSubscription.status,
+          canceled_at: canceledSubscription.canceled_at
+        });
 
         // 6-2. 最終インボイスを取得して返金処理
         // 即座キャンセルの場合、Stripeが自動的に按分計算を実施するが、
@@ -218,7 +244,14 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (stripeError: any) {
-        console.error('Stripe subscription cancellation/refund failed:', stripeError);
+        console.error('❌ Stripe subscription cancellation/refund failed:', {
+          error_message: stripeError.message,
+          error_type: stripeError.type,
+          error_code: stripeError.code,
+          subscription_id: subscription.stripe_subscription_id,
+          customer_id: subscription.stripe_customer_id,
+          stack: stripeError.stack
+        });
 
         // Stripe エラーの場合、データベース更新を続行せずエラーを返す
         // 返金処理が失敗した場合、ユーザーに通知して手動対応を促す
@@ -231,6 +264,8 @@ export async function POST(request: NextRequest) {
           details: {
             reason: 'stripe_cancellation_failed',
             stripe_error: stripeError.message,
+            stripe_error_type: stripeError.type,
+            stripe_error_code: stripeError.code,
             subscription_id: subscription.stripe_subscription_id
           }
         });
@@ -240,6 +275,11 @@ export async function POST(request: NextRequest) {
           'Stripeサブスクリプションのキャンセルに失敗しました。お手数ですがサポートまでお問い合わせください。'
         );
       }
+    } else {
+      console.log('⚠️ No Stripe subscription to cancel:', {
+        has_subscription_data: !!subscription,
+        stripe_subscription_id: subscription?.stripe_subscription_id
+      });
     }
 
     // 7. データベース論理削除
@@ -364,8 +404,14 @@ export async function POST(request: NextRequest) {
       permanentDeletionAt: permanentDeletionAt.toISOString()
     });
 
-  } catch (error) {
-    console.error('Account deletion error:', error);
+  } catch (error: any) {
+    console.error('❌ Account deletion error:', {
+      error_message: error.message,
+      error_name: error.name,
+      error_stack: error.stack,
+      user_id: user?.id,
+      email: user?.email
+    });
     return createApiResponse.internalError(
       error,
       '退会処理中にエラーが発生しました'
