@@ -67,18 +67,23 @@ export async function POST(request: NextRequest) {
 
   try {
     // Log the webhook event for idempotency and audit trail
+    // Use ignoreDuplicates to handle Stripe's automatic retries gracefully
     const { error: logError } = await supabase
       .from('stripe_webhook_events')
-      .insert({
-        event_id: event.id,
-        type: event.type,
-        created_at: new Date(event.created * 1000).toISOString(),
-        payload: event,
-        processed: false,
-      });
+      .insert(
+        {
+          event_id: event.id,
+          type: event.type,
+          created_at: new Date(event.created * 1000).toISOString(),
+          payload: event,
+          processed: false,
+        },
+        { ignoreDuplicates: true } // ★ 重複を無視（409エラーを防ぐ）
+      );
 
     // If event already exists, skip processing (idempotency)
-    if (logError?.code === '23505') {
+    // ignoreDuplicates を使用している場合、エラーは返らないが念のため残す
+    if (logError?.code === '23505' || logError?.code === '409') {
       console.log(`Event ${event.id} already processed, skipping`);
       return NextResponse.json({ received: true, skipped: true });
     }

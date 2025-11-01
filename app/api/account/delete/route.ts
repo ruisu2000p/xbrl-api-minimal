@@ -80,13 +80,18 @@ export async function POST(request: NextRequest) {
 
     // 3. リクエストボディ検証
     const body = await request.json();
-    const { password, reason, comment } = body;
+    const { password, reason, comment, skipStripe } = body;
 
     if (!password) {
       return createApiResponse.error(
         ErrorCodes.MISSING_REQUIRED_FIELD,
         'パスワードが必要です'
       );
+    }
+
+    // デバッグ用: skipStripe フラグが true の場合はStripe処理をスキップ
+    if (skipStripe) {
+      console.log('⚠️ DEBUG MODE: Skipping Stripe processing (skipStripe=true)');
     }
 
     // 4. パスワード再検証（重要操作のため）
@@ -219,7 +224,7 @@ export async function POST(request: NextRequest) {
     let stripeCurrency = 'jpy'; // デフォルト通貨（JPY）
 
     // Stripe補完後のIDを使用（DBから取得できなくてもStripe APIから補完済み）
-    if (stripeSubscriptionId) {
+    if (stripeSubscriptionId && !skipStripe) {
       console.log('🔄 Starting Stripe subscription cancellation:', {
         subscription_id: stripeSubscriptionId,
         customer_id: stripeCustomerId,
@@ -477,13 +482,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('❌ Account deletion error:', {
-      error_message: error.message,
-      error_name: error.name,
-      error_stack: error.stack
+      error_message: error?.message || String(error),
+      error_name: error?.name,
+      error_code: error?.code,
+      error_type: error?.type,
+      error_stack: error?.stack,
+      is_stripe_error: error?.type?.startsWith('Stripe'),
+      raw_error: error
     });
+
+    // エラーメッセージを文字列として抽出
+    const errorMessage = typeof error === 'string' ? error :
+                        typeof error?.message === 'string' ? error.message :
+                        '退会処理中にエラーが発生しました';
+
     return createApiResponse.internalError(
       error,
-      '退会処理中にエラーが発生しました'
+      errorMessage
     );
   }
 }

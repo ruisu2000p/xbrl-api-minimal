@@ -118,8 +118,17 @@ export default function AccountDeletionSection() {
         return
       }
 
+      // エラーメッセージを必ず文字列として抽出（React #31エラー対策）
+      const extractErrorMessage = (errorData: any): string => {
+        if (typeof errorData === 'string') return errorData
+        if (typeof errorData?.error === 'string') return errorData.error
+        if (typeof errorData?.message === 'string') return errorData.message
+        if (typeof errorData?.error?.message === 'string') return errorData.error.message
+        return '退会処理に失敗しました。しばらくしてから再試行してください。'
+      }
+
       if (res.status === 401) {
-        setError(data?.error || '認証エラーが発生しました。再度ログインしてからお試しください。')
+        setError(extractErrorMessage(data) || '認証エラーが発生しました。再度ログインしてからお試しください。')
         return
       }
 
@@ -128,9 +137,20 @@ export default function AccountDeletionSection() {
         return
       }
 
-      setError(data?.error || '退会処理に失敗しました。しばらくしてから再試行してください。')
-    } catch (e) {
-      setError('ネットワークエラーが発生しました。接続をご確認のうえ再試行してください。')
+      // デバッグ用：サーバーからのエラーレスポンスをログ出力
+      console.error('❌ Account deletion failed:', {
+        status: res.status,
+        data: data,
+        message: extractErrorMessage(data)
+      })
+
+      setError(extractErrorMessage(data))
+    } catch (e: any) {
+      console.error('❌ Network error during account deletion:', e)
+      const errorMsg = typeof e === 'string' ? e :
+                      typeof e?.message === 'string' ? e.message :
+                      'ネットワークエラーが発生しました。接続をご確認のうえ再試行してください。'
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
