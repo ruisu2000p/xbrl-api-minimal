@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSupabase } from '@/components/SupabaseProvider'
 
 // ---------- helpers ----------
 function getCookie(name: string): string {
@@ -33,6 +34,7 @@ type Reason = 'too_expensive' | 'missing_features' | 'low_usage' | 'other' | ''
 // ---------- component ----------
 export default function AccountDeletionSection() {
   const router = useRouter()
+  const { supabase: supabaseClient } = useSupabase()
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<Step>(1)
   const [ack, setAck] = useState(false)
@@ -100,6 +102,16 @@ export default function AccountDeletionSection() {
 
       if (res.ok) {
         setStep('done')
+
+        // Sign out on client side to clear session
+        try {
+          await supabaseClient.auth.signOut()
+          console.log('✅ クライアント側ログアウト成功')
+        } catch (signOutError) {
+          console.error('⚠️ クライアント側ログアウトエラー:', signOutError)
+          // Continue with redirect even if signOut fails
+        }
+
         setTimeout(() => {
           router.replace('/login?deleted=1')
         }, 1200)
