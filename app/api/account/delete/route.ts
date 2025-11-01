@@ -553,7 +553,7 @@ async function refundUnusedAmount(
     proration_date: new Date(prorationDate * 1000).toISOString()
   });
 
-  const upcoming = await stripe.invoices.retrieveUpcoming({
+  const upcoming = await stripe.invoices.upcoming({
     customer: sub.customer,
     subscription: sub.id,
     subscription_proration_date: prorationDate,
@@ -562,10 +562,10 @@ async function refundUnusedAmount(
 
   // 負の按分行（未使用分）を合計
   const negativeLines = upcoming.lines.data.filter(
-    l => typeof l.amount === 'number' && l.amount < 0
+    (l: Stripe.InvoiceLineItem) => typeof l.amount === 'number' && l.amount < 0
   );
 
-  const creditCents = negativeLines.reduce((sum, l) => sum + (l.amount ?? 0), 0);
+  const creditCents = negativeLines.reduce((sum: number, l: Stripe.InvoiceLineItem) => sum + (l.amount ?? 0), 0);
   const refundCandidateCents = Math.abs(creditCents);
 
   console.log('💰 Prorated refund calculation:', {
@@ -588,7 +588,7 @@ async function refundUnusedAmount(
 
   // 最新インボイスからPaymentIntentを取得
   const latestInvoice = typeof sub.latest_invoice === 'string'
-    ? await stripe.invoices.retrieve(sub.latest_invoice)
+    ? await stripe.invoices.retrieve(sub.latest_invoice, { expand: ['payment_intent'] })
     : sub.latest_invoice;
 
   if (!latestInvoice) {
@@ -597,7 +597,7 @@ async function refundUnusedAmount(
 
   const piId = typeof latestInvoice.payment_intent === 'string'
     ? latestInvoice.payment_intent
-    : latestInvoice.payment_intent?.id;
+    : (latestInvoice.payment_intent as Stripe.PaymentIntent | null)?.id;
 
   if (!piId) {
     console.warn('⚠️ No PaymentIntent found - subscription may have been unpaid');
