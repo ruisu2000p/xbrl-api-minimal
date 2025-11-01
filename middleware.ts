@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { issueCsrfCookie } from '@/utils/security/csrf'
-import { logSecurityEvent } from '@/utils/security/audit-log'
+// import { logSecurityEvent } from '@/utils/security/audit-log' // Commented out: Not compatible with Edge Runtime
 import { sweepSbAuthCookies } from '@/utils/security/cookies'
 
 // 公開パス（認証不要、OAuth、静的リソース含む）
@@ -141,13 +141,14 @@ export async function middleware(request: NextRequest) {
       });
 
       // 🔒 セキュリティ: Cookie 重複を監査ログに記録
-      await logSecurityEvent({
-        type: 'cookie_conflict',
-        outcome: 'fail',
-        ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
-        ua: request.headers.get('user-agent'),
-        details: { path: pathname, count0, count1 }
-      });
+      // Note: logSecurityEvent is commented out due to Edge Runtime compatibility
+      // await logSecurityEvent({
+      //   type: 'cookie_conflict',
+      //   outcome: 'fail',
+      //   ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      //   ua: request.headers.get('user-agent'),
+      //   details: { path: pathname, count0, count1 }
+      // });
 
       const isApi = pathname.startsWith('/api/');
       const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN;
