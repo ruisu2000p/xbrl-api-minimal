@@ -1,3 +1,6 @@
+-- Enable pgcrypto extension for gen_random_uuid() (insurance, usually pre-enabled)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Ensure stripe_webhook_events table has proper unique constraint on event_id
 -- This prevents duplicate webhook event processing
 

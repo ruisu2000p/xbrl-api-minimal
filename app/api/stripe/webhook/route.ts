@@ -67,31 +67,32 @@ export async function POST(request: NextRequest) {
 
   try {
     // Log the webhook event for idempotency and audit trail
-    // The unique constraint on event_id ensures idempotency
+    // Use upsert with onConflict to handle duplicate events gracefully
+    const eventPayload = {
+      event_id: event.id,
+      type: event.type,
+      created_at: new Date(event.created * 1000).toISOString(),
+      payload: event,
+      processed: false,
+    };
+
     const { error: logError } = await supabase
       .from('stripe_webhook_events')
-      .insert({
-        event_id: event.id,
-        type: event.type,
-        created_at: new Date(event.created * 1000).toISOString(),
-        payload: event,
-        processed: false,
+      .upsert(eventPayload, {
+        onConflict: 'event_id', // If event_id already exists, update (but no fields change, so effectively no-op)
       });
 
-    // If event already exists, skip processing (idempotency)
-    // PostgreSQL error code 23505 = unique_violation
-    // Supabase REST error code may also be '409'
     if (logError) {
-      if (logError.code === '23505' || logError.code === '409' ||
-          (logError.message && logError.message.includes('duplicate key'))) {
-        console.log(`✅ Event ${event.id} already processed, skipping (idempotent)`);
-        return NextResponse.json({ received: true, skipped: true });
-      }
-
-      // Other errors should be logged
+      // Even if logging fails, we should return 200 to Stripe to prevent retries
       console.error('❌ Failed to log webhook event:', logError);
-      throw new Error(`Failed to log webhook event: ${logError.message}`);
+      return NextResponse.json(
+        { received: true, logged: false, error: logError.message },
+        { status: 200 } // Return 200 to prevent Stripe retry loop
+      );
     }
+
+    console.log(`✅ Event ${event.id} logged successfully`);
+
 
     // Process the event
     switch (event.type) {

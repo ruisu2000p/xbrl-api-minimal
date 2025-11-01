@@ -1,3 +1,8 @@
+// Force Node.js runtime (crypto requires Node.js, not Edge Runtime)
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
@@ -12,7 +17,14 @@ export async function GET() {
   // 新しいCSRFトークンを生成
   const token = crypto.randomUUID().replace(/-/g, '');
 
-  const response = NextResponse.json({ csrfToken: token });
+  const response = NextResponse.json(
+    { csrfToken: token },
+    {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      },
+    }
+  );
 
   // Double Submit Cookie パターン
   // クライアントはこのトークンをヘッダー X-CSRF-Token に含めて送信する
