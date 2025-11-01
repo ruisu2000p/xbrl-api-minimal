@@ -66,26 +66,51 @@ export async function POST(request: NextRequest) {
   const supabase = await createServiceSupabaseClient();
 
   try {
+    // Log the webhook event for idempotency and audit trail
+    const { error: logError } = await supabase
+      .from('stripe_webhook_events')
+      .insert({
+        event_id: event.id,
+        type: event.type,
+        created_at: new Date(event.created * 1000).toISOString(),
+        payload: event,
+        processed: false,
+      });
+
+    // If event already exists, skip processing (idempotency)
+    if (logError?.code === '23505') {
+      console.log(`Event ${event.id} already processed, skipping`);
+      return NextResponse.json({ received: true, skipped: true });
+    }
+
+    if (logError) {
+      console.error('Failed to log webhook event:', logError);
+    }
+
+    // Process the event
     switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleCheckoutSessionCompleted(supabase, session);
+        break;
+      }
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-
         await handleSubscriptionEvent(supabase, subscription, event.type);
         break;
       }
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-
         await handleInvoicePaymentSucceeded(supabase, invoice);
         break;
       }
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-
         await handleInvoicePaymentFailed(supabase, invoice);
         break;
       }
@@ -94,15 +119,80 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled event type: ${event.type}`);
     }
 
+    // Mark event as processed
+    await supabase
+      .from('stripe_webhook_events')
+      .update({
+        processed: true,
+        processed_at: new Date().toISOString()
+      })
+      .eq('event_id', event.id);
+
     return NextResponse.json({ received: true });
   } catch (error: any) {
     console.error('Webhook processing error:', error);
+
+    // Log the error in the webhook events table
+    await supabase
+      .from('stripe_webhook_events')
+      .update({
+        error: error.message,
+        processed_at: new Date().toISOString()
+      })
+      .eq('event_id', event.id);
 
     return NextResponse.json(
       { error: error.message || 'Webhook processing failed' },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Handle checkout session completed events
+ */
+async function handleCheckoutSessionCompleted(
+  supabase: any,
+  session: Stripe.Checkout.Session
+) {
+  // Extract customer and subscription IDs
+  const customerId = typeof session.customer === 'string'
+    ? session.customer
+    : session.customer?.id;
+
+  const subscriptionId = typeof session.subscription === 'string'
+    ? session.subscription
+    : session.subscription?.id;
+
+  if (!customerId || !subscriptionId) {
+    console.warn('Missing customer or subscription ID in checkout session');
+    return;
+  }
+
+  // Get user_id from session metadata
+  const userId = session.metadata?.user_id || session.client_reference_id;
+
+  if (!userId) {
+    console.warn(`No user_id found in session ${session.id} metadata or client_reference_id`);
+    return;
+  }
+
+  // Update user_subscriptions table with Stripe IDs
+  const { error: updateError } = await supabase
+    .from('user_subscriptions')
+    .update({
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      status: 'active',
+      updated_at: new Date().toISOString()
+    })
+    .eq('user_id', userId);
+
+  if (updateError) {
+    throw new Error(`Failed to update subscription for user ${userId}: ${updateError.message}`);
+  }
+
+  console.log(`✅ Synced checkout session ${session.id} for user ${userId} (customer: ${customerId}, subscription: ${subscriptionId})`);
 }
 
 /**
