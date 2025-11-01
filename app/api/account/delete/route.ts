@@ -437,15 +437,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 8. Auth ユーザーに BAN 設定（ログイン抑止 - 30日猶予期間）
-    // Supabase 公式の ban_duration を使用してログイン/リフレッシュを完全に抑止
+    // 8. Auth ユーザーを削除（Authテーブルからも完全に削除）
     try {
-      await adminSupabase.auth.admin.updateUserById(user.id, {
-        ban_duration: '720h'  // 30日 = 720時間
-      });
-    } catch (banError) {
-      console.error('Failed to ban user:', banError);
-      // BAN 失敗でもログアウトで対応可能
+      await adminSupabase.auth.admin.deleteUser(user.id);
+      console.log('✅ Auth user deleted from Supabase Auth');
+    } catch (deleteUserError) {
+      console.error('❌ Failed to delete Auth user:', deleteUserError);
+      // Auth削除失敗でも、ログアウトとDB削除は完了しているため続行
     }
 
     // 9. 監査ログ記録
