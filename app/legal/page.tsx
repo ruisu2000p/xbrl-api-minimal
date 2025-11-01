@@ -106,9 +106,9 @@ export default function LegalPage() {
 
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.address}</h2>
-                <p className="text-gray-700">[事業所の住所を記載]</p>
+                <p className="text-gray-700">東京都渋谷区道玄坂1丁目10番8号渋谷道玄坂東急ビル2F−C</p>
                 <p className="text-sm text-gray-500 mt-2">
-                  {t.addressNote}
+                  ※バーチャルオフィスを利用しています
                 </p>
               </section>
 
@@ -127,7 +127,7 @@ export default function LegalPage() {
                 <div className="text-gray-700 space-y-2">
                   <p><strong>フリーミアムプラン:</strong> $0/月（14日間無料トライアル）</p>
                   <p><strong>スタンダードプラン（月額）:</strong> $25/月</p>
-                  <p><strong>スタンダードプラン（年額）:</strong> $200/年（約$16.67/月、20%割引）</p>
+                  <p><strong>スタンダードプラン（年額）:</strong> $240/年（約$20/月、20%割引）</p>
                   <p className="text-sm text-gray-500 mt-2">
                     {t.priceNote}
                   </p>
@@ -203,9 +203,9 @@ export default function LegalPage() {
 
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.address}</h2>
-                <p className="text-gray-700">[Business address to be specified]</p>
+                <p className="text-gray-700">2F-C, Shibuya Dogenzaka Tokyu Building, 1-10-8 Dogenzaka, Shibuya-ku, Tokyo, Japan</p>
                 <p className="text-sm text-gray-500 mt-2">
-                  {t.addressNote}
+                  ※We use a virtual office
                 </p>
               </section>
 
@@ -224,7 +224,7 @@ export default function LegalPage() {
                 <div className="text-gray-700 space-y-2">
                   <p><strong>Freemium Plan:</strong> $0/month (14-day free trial)</p>
                   <p><strong>Standard Plan (Monthly):</strong> $25/month</p>
-                  <p><strong>Standard Plan (Yearly):</strong> $200/year (approx. $16.67/month, 20% off)</p>
+                  <p><strong>Standard Plan (Yearly):</strong> $240/year (approx. $20/month, 20% off)</p>
                   <p className="text-sm text-gray-500 mt-2">
                     {t.priceNote}
                   </p>
