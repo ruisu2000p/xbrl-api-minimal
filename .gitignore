@@ -244,3 +244,31 @@ supabase_*.log
 .env.development
 docs/
 CHANGELOG.md
+
+# ===================================================================
+# セキュリティ強化パターン（2025-11-01追加）
+# ===================================================================
+
+# Supabase機密情報（強化版）
+/supabase/**/.temp/
+/supabase/**/.cache/
+*.edge-config.toml
+**/project-ref
+**/pooler-url
+**/cli-latest
+**/gotrue-version
+**/postgres-version
+**/rest-version
+**/storage-version
+
+# デバッグエンドポイント（本番環境に不要）
+**/api/debug/**
+*.debug.ts
+*.debug.js
+
+# バックアップ・リファクタリング中ファイル（拡張）
+*.bak*
+*-old.*
+*-refactored.*
+*-deprecated.*
+*-legacy.*
