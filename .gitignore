@@ -272,3 +272,6 @@ CHANGELOG.md
 *-refactored.*
 *-deprecated.*
 *-legacy.*
+
+# Supabase directory (全体を除外)
+/supabase/
