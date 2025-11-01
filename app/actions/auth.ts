@@ -113,32 +113,13 @@ export async function signUp(userData: {
   billingPeriod: string;
 }): Promise<{ success: boolean; user?: any; apiKey?: string | null; error?: string }> {
   try {
-    console.log('🔵 [SERVER] signUp called with:', {
-      email: userData.email,
-      name: userData.name,
-      plan: userData.plan,
-      billingPeriod: userData.billingPeriod,
-      hasCompany: !!userData.company
-    });
-  } catch (logError) {
-    // Even logging can fail, so wrap it
-    console.error('Failed to log signup start:', logError);
-  }
-
-  try {
     // Input validation
-    console.log('🔵 [SERVER] Starting input validation...');
     const validatedEmail = emailSchema.parse(userData.email)
     const validatedPassword = passwordSchema.parse(userData.password)
     const validatedName = sanitizeInput(userData.name)
     const validatedCompany = userData.company ? sanitizeInput(userData.company) : null
 
-    console.log('🔵 [SERVER] Input validation passed');
-    console.log('🔵 [SERVER] Creating SSR client...');
-
     const supabase = await supabaseManager.createSSRClient()
-
-    console.log('🔵 [SERVER] Calling supabase.auth.signUp...');
 
     // Create user account
     const { data, error } = await supabase.auth.signUp({
@@ -154,14 +135,6 @@ export async function signUp(userData: {
       }
     })
 
-    console.log('🔵 [SERVER] supabase.auth.signUp response:', {
-      hasData: !!data,
-      hasUser: !!data?.user,
-      hasError: !!error,
-      errorCode: error?.code,
-      errorMessage: error?.message
-    });
-
     if (error) {
       console.error('User signup error:', {
         message: error.message,
@@ -170,15 +143,11 @@ export async function signUp(userData: {
         details: error
       })
 
-      // TEMPORARY DEBUG: エラーの詳細をそのまま表示
-      const debugError = `[DEBUG] Code: ${error.code || 'none'} | Message: ${error.message || 'none'}`;
-      console.error('🔴 FULL ERROR FOR DEBUG:', debugError);
-
       // Provide more specific error messages
       if (error.code === 'user_already_exists' || error.message?.includes('Database error saving new user')) {
         return {
           success: false,
-          error: `このメールアドレスは既に登録されています (${debugError})`
+          error: 'このメールアドレスは既に登録されています'
         }
       }
 
@@ -293,19 +262,11 @@ export async function signUp(userData: {
       error: 'Account creation failed'
     }
   } catch (error) {
-    console.error('🔴 [SERVER] Error during signup:', {
-      error,
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    });
+    console.error('Error during signup:', error);
 
-    // Return detailed error message
-    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       success: false,
-      error: errorMessage.includes('Invalid') || errorMessage.includes('Validation')
-        ? errorMessage
-        : `アカウント作成中にエラーが発生しました: ${errorMessage}`
+      error: sanitizeError(error)
     }
   }
 }

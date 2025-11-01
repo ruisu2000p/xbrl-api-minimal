@@ -92,7 +92,6 @@ temp-repo/
 
 # Backup files
 *.backup
-*.bak
 backup_*.zip
 
 # User directories and system files
@@ -186,6 +185,11 @@ _diag/
 _buildManifest.js
 query.sql
 
+# Screenshots and verification files
+*.png
+check-vercel-env.js
+.env.vercel.*
+
 # Old SQL fix files (migrations are in supabase/migrations/)
 CHECK_AND_FIX.sql
 check_view_definition.sql
@@ -272,6 +276,3 @@ CHANGELOG.md
 *-refactored.*
 *-deprecated.*
 *-legacy.*
-
-# Supabase directory (全体を除外)
-/supabase/
