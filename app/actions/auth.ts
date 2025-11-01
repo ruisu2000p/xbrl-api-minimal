@@ -170,11 +170,15 @@ export async function signUp(userData: {
         details: error
       })
 
+      // TEMPORARY DEBUG: エラーの詳細をそのまま表示
+      const debugError = `[DEBUG] Code: ${error.code || 'none'} | Message: ${error.message || 'none'}`;
+      console.error('🔴 FULL ERROR FOR DEBUG:', debugError);
+
       // Provide more specific error messages
       if (error.code === 'user_already_exists' || error.message?.includes('Database error saving new user')) {
         return {
           success: false,
-          error: 'このメールアドレスは既に登録されています'
+          error: `このメールアドレスは既に登録されています (${debugError})`
         }
       }
 
