@@ -55,7 +55,7 @@ export function issueCsrfCookie(response: NextResponse): void {
   response.cookies.set('csrf-token', token, {
     httpOnly: false, // JavaScript から読み取れるようにする
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax', // strict だと厳しすぎるので lax に変更
     path: '/',
     maxAge: 60 * 60 * 24 // 24時間
   });

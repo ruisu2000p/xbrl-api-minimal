@@ -49,8 +49,6 @@ export default function AccountDeletionSection() {
     if (open) idemKeyRef.current = uuid()
   }, [open])
 
-  const csrfToken = useMemo(() => getCookie('csrf-token'), [open])
-
   const reset = () => {
     setStep(1)
     setAck(false)
@@ -79,22 +77,26 @@ export default function AccountDeletionSection() {
     setLoading(true)
     setError(null)
 
-    // デバッグ: CSRFトークンの状態を確認
-    console.log('🔐 CSRF Token Debug:', {
-      csrfToken,
-      hasCsrfToken: !!csrfToken,
-      idempotencyKey: idemKeyRef.current
-    })
-
     try {
+      // API叩く直前に最新のCSRFトークンを取得（Auth状態の揺れ対策）
+      const csrfRes = await fetch('/api/csrf', { credentials: 'include' })
+      const { csrfToken: freshCsrfToken } = await csrfRes.json()
+
+      // デバッグ: CSRFトークンの状態を確認
+      console.log('🔐 CSRF Token Debug:', {
+        csrfToken: freshCsrfToken,
+        hasCsrfToken: !!freshCsrfToken,
+        idempotencyKey: idemKeyRef.current
+      })
+
       const res = await fetch('/api/account/delete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || '',
+          'X-CSRF-Token': freshCsrfToken || '',
           'Idempotency-Key': idemKeyRef.current || uuid(),
         },
-        credentials: 'same-origin',
+        credentials: 'include', // 'same-origin' から 'include' に変更（より確実）
         body: JSON.stringify({ password, reason, comment }),
       })
 
