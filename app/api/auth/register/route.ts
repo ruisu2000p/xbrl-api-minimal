@@ -52,15 +52,15 @@ export async function POST(request: NextRequest) {
     const supabase: SupabaseClient = await createClient();
 
     // 既存ユーザーをチェック（サインイン試行による確認）
-    // Service Role Keyを使用せず、より安全な方法で確認
-    const userExists = await checkUserExistsViaSignIn(supabase, email);
-
-    if (userExists) {
-      return createApiResponse.error(
-        ErrorCodes.ALREADY_EXISTS,
-        'このメールアドレスは既に登録されています'
-      );
-    }
+    // TEMPORARY FIX: この関数は誤検知が多いため無効化
+    // Supabase Authの signUp() が返すエラーで重複チェックを行う
+    // const userExists = await checkUserExistsViaSignIn(supabase, email);
+    // if (userExists) {
+    //   return createApiResponse.error(
+    //     ErrorCodes.ALREADY_EXISTS,
+    //     'このメールアドレスは既に登録されています'
+    //   );
+    // }
 
     // Supabase Authでユーザーを作成
     const { data: authData, error: authError } = await supabase.auth.signUp({
