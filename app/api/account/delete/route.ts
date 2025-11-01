@@ -351,7 +351,7 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (stripeError: any) {
-        console.error('❌ Stripe subscription cancellation/refund failed:', {
+        console.error('❌ Stripe subscription cancellation/refund failed (continuing with account deletion):', {
           error_message: stripeError.message,
           error_type: stripeError.type,
           error_code: stripeError.code,
@@ -360,28 +360,25 @@ export async function POST(request: NextRequest) {
           stack: stripeError.stack
         });
 
-        // Stripe エラーの場合、データベース更新を続行せずエラーを返す
-        // 返金処理が失敗した場合、ユーザーに通知して手動対応を促す
+        // Stripe エラーでも処理を続行（接続エラー等の一時的な問題の可能性）
+        // データベース側はキャンセル済みとしてマークし、Stripeは手動で確認が必要
+        console.warn('⚠️ Stripe cancellation failed - account will be deleted but Stripe subscription may need manual cleanup');
+
         // Commented out - audit_logs table doesn't exist
         // await logSecurityEvent({
         //   type: 'account_deletion',
-        //   outcome: 'fail',
+        //   outcome: 'partial',
         //   email: user.email!,
         //   ip: request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
         //   ua: request.headers.get('user-agent'),
         //   details: {
-        //     reason: 'stripe_cancellation_failed',
+        //     reason: 'stripe_cancellation_failed_but_continued',
         //     stripe_error: stripeError.message,
         //     stripe_error_type: stripeError.type,
         //     stripe_error_code: stripeError.code,
         //     subscription_id: stripeSubscriptionId
         //   }
         // });
-
-        return createApiResponse.error(
-          ErrorCodes.INTERNAL_ERROR,
-          'Stripeサブスクリプションのキャンセルに失敗しました。お手数ですがサポートまでお問い合わせください。'
-        );
       }
     } else {
       console.error('⚠️ No Stripe subscription to cancel:', {
