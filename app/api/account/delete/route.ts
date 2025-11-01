@@ -553,12 +553,13 @@ async function refundUnusedAmount(
     proration_date: new Date(prorationDate * 1000).toISOString()
   });
 
-  const upcoming = await stripe.invoices.upcoming({
+  // TypeScript型定義が retrieveUpcoming を認識しないため、型アサーションを使用
+  const upcoming = await (stripe.invoices as any).retrieveUpcoming({
     customer: sub.customer,
     subscription: sub.id,
     subscription_proration_date: prorationDate,
     subscription_items: deletedItems,
-  });
+  }) as Stripe.Invoice;
 
   // 負の按分行（未使用分）を合計
   const negativeLines = upcoming.lines.data.filter(
@@ -587,7 +588,8 @@ async function refundUnusedAmount(
   }
 
   // 最新インボイスからPaymentIntentを取得
-  const latestInvoice = typeof sub.latest_invoice === 'string'
+  // TypeScript型定義が展開されたpayment_intentを認識しないため、anyを経由
+  const latestInvoice: any = typeof sub.latest_invoice === 'string'
     ? await stripe.invoices.retrieve(sub.latest_invoice, { expand: ['payment_intent'] })
     : sub.latest_invoice;
 
@@ -597,7 +599,7 @@ async function refundUnusedAmount(
 
   const piId = typeof latestInvoice.payment_intent === 'string'
     ? latestInvoice.payment_intent
-    : (latestInvoice.payment_intent as Stripe.PaymentIntent | null)?.id;
+    : latestInvoice.payment_intent?.id;
 
   if (!piId) {
     console.warn('⚠️ No PaymentIntent found - subscription may have been unpaid');
