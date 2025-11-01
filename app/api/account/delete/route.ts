@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     // 6. Stripe サブスクリプション即時キャンセル + 返金処理（該当する場合）
     let stripeInvoiceId = null;
     let refundAmount = 0;
-    let stripeCreditNoteId = null;
+    let stripeRefundId = null;
     let stripeCurrency = 'jpy'; // デフォルト通貨（JPY）
 
     // Stripe補完後のIDを使用（DBから取得できなくてもStripe APIから補完済み）
@@ -231,15 +231,14 @@ export async function POST(request: NextRequest) {
         const stripe = getStripeClient();
         const subId = stripeSubscriptionId;
 
-        // 6-1. Stripe 即時キャンセル（Stripeが自動的に按分計算を実施）
+        // 6-1. Stripe 即時キャンセル（返金は後で別途実行）
         // subscriptions.cancel() はデフォルトで即時キャンセルを実行する
-        // prorate: true により、Stripeが自動的に按分計算を実施し、返金が必要な場合は
-        // Credit Noteを自動発行する
+        // prorate: false - 返金は後で refundUnusedAmount() で実行するため
         console.log('📞 Calling stripe.subscriptions.cancel (immediate)...');
         const canceledSubscription = await stripe.subscriptions.cancel(
           subId,
           {
-            prorate: true,  // 按分計算を有効化
+            prorate: false,  // 返金は別途実行するため無効化
             cancellation_details: {
               feedback: mapReasonToStripeFeedback(reason),
               comment: comment || undefined
@@ -283,73 +282,34 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 6-2. 最終インボイスを取得して返金処理
-        // 即座キャンセルの場合、Stripeが自動的に按分計算を実施するが、
-        // 念のため最終インボイスをチェックして返金が必要か確認
+        // 6-2. 未使用分を計算して返金を実行
+        // Stripe の proration preview を使用して正確な按分計算を行う
+        console.log('💰 Starting refund calculation and processing...');
+
+        const refundResult = await refundUnusedAmount(
+          stripe,
+          stripeSubscriptionId,
+          idempotencyKey
+        );
+
+        refundAmount = refundResult.refundAmount;
+        stripeCurrency = refundResult.currency;
+        stripeRefundId = refundResult.refundId;
+
+        // 最新インボイスIDを取得（追跡用）
         if (canceledSubscription.latest_invoice) {
-          const invoiceId = typeof canceledSubscription.latest_invoice === 'string'
+          stripeInvoiceId = typeof canceledSubscription.latest_invoice === 'string'
             ? canceledSubscription.latest_invoice
             : canceledSubscription.latest_invoice.id;
-
-          stripeInvoiceId = invoiceId; // 追跡用に保存
-
-          let finalInvoice = await stripe.invoices.retrieve(invoiceId);
-
-          // 通貨を保存（ISO 4217コード、小文字）
-          stripeCurrency = finalInvoice.currency;
-
-          // 6-2-1. インボイスがまだドラフトの場合は確定させる
-          // (invoice_now=true でも稀に draft のままの場合がある)
-          if (finalInvoice.status === 'draft') {
-            finalInvoice = await stripe.invoices.finalizeInvoice(invoiceId, {
-              idempotencyKey: `${idempotencyKey}-finalize`
-            });
-          }
-
-          // 6-2-2. 按分クレジット（負の金額）がある場合、返金を実施
-          // finalInvoice.total が負の値 = 顧客に返金すべき金額
-          if (finalInvoice.total < 0) {
-            refundAmount = Math.abs(finalInvoice.total); // 正の値に変換（Stripeは最小通貨単位の整数）
-
-            // 支払いが既に存在するかチェック
-            // amount_paid が 0 より大きければ支払いが存在する
-            const hasPayment = finalInvoice.amount_paid > 0;
-
-            // クレジットノートで返金（推奨方法）
-            const creditNote = await stripe.creditNotes.create(
-              {
-                invoice: invoiceId,
-                lines: [{
-                  type: 'custom_line_item',
-                  description: 'Prorated refund for account cancellation',
-                  quantity: 1,
-                  unit_amount: refundAmount
-                }],
-                // 支払い済みの場合は支払い方法へ返金、未払いの場合は残高へクレジット
-                ...(hasPayment
-                  ? { refund_amount: refundAmount }  // 支払い方法へ返金
-                  : { credit_amount: refundAmount }  // 顧客残高へクレジット
-                ),
-                // 追跡性のため metadata を必ず付与
-                metadata: {
-                  app_user_id: user.id,
-                  deletion_id: '', // 後で deletionRecord.id を設定
-                  idempotency_key: idempotencyKey,
-                  reason: reason
-                }
-              },
-              {
-                idempotencyKey: `${idempotencyKey}-refund` // 返金用のべき等キー
-              }
-            );
-
-            stripeCreditNoteId = creditNote.id;
-            console.log(`Refund issued: ${refundAmount / 100} ${finalInvoice.currency} for subscription ${stripeSubscriptionId} (hasPayment: ${hasPayment}, creditNoteId: ${stripeCreditNoteId})`);
-          } else if (finalInvoice.total === 0) {
-            // 返金もクレジットも不要（按分が完全に0）
-            console.log(`No refund needed for subscription ${stripeSubscriptionId} (total === 0)`);
-          }
         }
+
+        console.log('✅ Refund processing completed:', {
+          refund_amount: refundAmount,
+          refund_amount_dollars: (refundAmount / 100).toFixed(2),
+          currency: stripeCurrency,
+          refund_id: stripeRefundId,
+          invoice_id: stripeInvoiceId
+        });
       } catch (stripeError: any) {
         console.error('❌ Stripe subscription cancellation/refund failed:', {
           error_message: stripeError.message,
@@ -443,7 +403,7 @@ export async function POST(request: NextRequest) {
         subscription_id: stripeSubscriptionId,
         stripe_customer_id: stripeCustomerId,
         stripe_invoice_id: stripeInvoiceId,
-        stripe_credit_note_id: stripeCreditNoteId,
+        stripe_refund_id: stripeRefundId,
         stripe_refund_amount: refundAmount,
         stripe_currency: stripeCurrency,
         plan_at_deletion: stripeSubscriptionId ? 'standard' : 'freemium'
@@ -501,7 +461,7 @@ export async function POST(request: NextRequest) {
     //     reason,
     //     subscription_id: stripeSubscriptionId,
     //     stripe_invoice_id: stripeInvoiceId,
-    //     stripe_credit_note_id: stripeCreditNoteId,
+    //     stripe_refund_id: stripeRefundId,
     //     permanent_deletion_at: permanentDeletionAt.toISOString(),
     //     refund_amount: refundAmount > 0 ? refundAmount : undefined
     //   }
@@ -547,4 +507,143 @@ function mapReasonToStripeFeedback(
   };
 
   return mapping[reason] || 'other';
+}
+
+/**
+ * サブスクリプションキャンセル時の未使用分を計算して返金
+ *
+ * Stripe の proration preview を使用して正確な未使用分を算出します。
+ * これにより、税込み/割引/複数アイテムでも正確に計算されます。
+ *
+ * @param stripe - Stripe クライアント
+ * @param subscriptionId - サブスクリプション ID
+ * @param idempotencyKey - べき等キー
+ * @returns 返金情報
+ */
+async function refundUnusedAmount(
+  stripe: Stripe,
+  subscriptionId: string,
+  idempotencyKey: string
+): Promise<{
+  refundAmount: number;
+  currency: string;
+  paymentIntentId: string | null;
+  refundId: string | null;
+}> {
+  // サブスクリプションと最新インボイスを取得
+  const sub = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ['latest_invoice.payment_intent']
+  });
+
+  if (!sub.customer || typeof sub.customer !== 'string') {
+    throw new Error('Subscription has no valid customer ID');
+  }
+
+  // 全アイテムを削除してプレビューを作成（未使用分を計算）
+  const deletedItems = sub.items.data.map(item => ({
+    id: item.id,
+    deleted: true as const,
+  }));
+
+  const prorationDate = Math.floor(Date.now() / 1000);
+
+  console.log('📊 Previewing unused credit with upcoming invoice...', {
+    subscription_id: subscriptionId,
+    customer_id: sub.customer,
+    proration_date: new Date(prorationDate * 1000).toISOString()
+  });
+
+  const upcoming = await stripe.invoices.retrieveUpcoming({
+    customer: sub.customer,
+    subscription: sub.id,
+    subscription_proration_date: prorationDate,
+    subscription_items: deletedItems,
+  });
+
+  // 負の按分行（未使用分）を合計
+  const negativeLines = upcoming.lines.data.filter(
+    l => typeof l.amount === 'number' && l.amount < 0
+  );
+
+  const creditCents = negativeLines.reduce((sum, l) => sum + (l.amount ?? 0), 0);
+  const refundCandidateCents = Math.abs(creditCents);
+
+  console.log('💰 Prorated refund calculation:', {
+    negative_lines_count: negativeLines.length,
+    total_credit_cents: creditCents,
+    refund_candidate_cents: refundCandidateCents,
+    refund_candidate_dollars: (refundCandidateCents / 100).toFixed(2),
+    currency: upcoming.currency
+  });
+
+  if (refundCandidateCents <= 0) {
+    console.log('ℹ️ No refund needed (unused amount is 0)');
+    return {
+      refundAmount: 0,
+      currency: upcoming.currency,
+      paymentIntentId: null,
+      refundId: null
+    };
+  }
+
+  // 最新インボイスからPaymentIntentを取得
+  const latestInvoice = typeof sub.latest_invoice === 'string'
+    ? await stripe.invoices.retrieve(sub.latest_invoice)
+    : sub.latest_invoice;
+
+  if (!latestInvoice) {
+    throw new Error('Cannot find latest invoice for refund');
+  }
+
+  const piId = typeof latestInvoice.payment_intent === 'string'
+    ? latestInvoice.payment_intent
+    : latestInvoice.payment_intent?.id;
+
+  if (!piId) {
+    console.warn('⚠️ No PaymentIntent found - subscription may have been unpaid');
+    return {
+      refundAmount: refundCandidateCents,
+      currency: upcoming.currency,
+      paymentIntentId: null,
+      refundId: null
+    };
+  }
+
+  // PaymentIntentに対して部分返金を実行
+  console.log('💳 Creating partial refund on PaymentIntent...', {
+    payment_intent: piId,
+    amount: refundCandidateCents,
+    amount_dollars: (refundCandidateCents / 100).toFixed(2),
+    currency: upcoming.currency
+  });
+
+  const refund = await stripe.refunds.create(
+    {
+      payment_intent: piId,
+      amount: refundCandidateCents,
+      reason: 'requested_by_customer',
+      metadata: {
+        subscription_id: subscriptionId,
+        refund_type: 'prorated_cancellation',
+        idempotency_key: idempotencyKey
+      }
+    },
+    {
+      idempotencyKey: `${idempotencyKey}-refund`
+    }
+  );
+
+  console.log('✅ Refund created successfully:', {
+    refund_id: refund.id,
+    amount: refund.amount,
+    currency: refund.currency,
+    status: refund.status
+  });
+
+  return {
+    refundAmount: refundCandidateCents,
+    currency: upcoming.currency,
+    paymentIntentId: piId,
+    refundId: refund.id
+  };
 }
