@@ -419,11 +419,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7-4. Credit Note の metadata を更新（deletion_id を紐付け）
-    if (stripeCreditNoteId && deletionRecord?.id) {
+    // 7-4. Refund の metadata を更新（deletion_id を紐付け）
+    if (stripeRefundId && deletionRecord?.id) {
       try {
         const stripe = getStripeClient();
-        await stripe.creditNotes.update(stripeCreditNoteId, {
+        await stripe.refunds.update(stripeRefundId, {
           metadata: {
             app_user_id: user.id,
             deletion_id: deletionRecord.id,
@@ -432,7 +432,7 @@ export async function POST(request: NextRequest) {
           }
         });
       } catch (metadataError) {
-        console.error('Failed to update Credit Note metadata:', metadataError);
+        console.error('Failed to update Refund metadata:', metadataError);
         // metadata 更新失敗は致命的ではない（手動で紐付け可能）
       }
     }
