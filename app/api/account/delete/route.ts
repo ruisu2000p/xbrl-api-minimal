@@ -584,16 +584,63 @@ async function refundUnusedAmount(
   console.log('📊 Previewing unused credit with upcoming invoice...', {
     subscription_id: subscriptionId,
     customer_id: sub.customer,
-    proration_date: new Date(prorationDate * 1000).toISOString()
+    proration_date: new Date(prorationDate * 1000).toISOString(),
+    items_to_delete: deletedItems.length
   });
 
   // Upcoming invoice preview to calculate unused credit
-  const upcoming = await stripe.invoices.retrieveUpcoming({
-    customer: sub.customer,
-    subscription: sub.id,
-    subscription_proration_date: prorationDate,
-    subscription_items: deletedItems,
-  });
+  let upcoming: Stripe.Invoice;
+  try {
+    upcoming = await stripe.invoices.retrieveUpcoming({
+      customer: sub.customer,
+      subscription: sub.id,
+      subscription_proration_date: prorationDate,
+      subscription_items: deletedItems,
+    });
+
+    console.log('🧾 Upcoming invoice preview retrieved:', {
+      subscription: sub.id,
+      lineCount: upcoming.lines.data.length,
+      currency: upcoming.currency,
+      sample: upcoming.lines.data.slice(0, 5).map(l => ({
+        desc: l.description,
+        amount: l.amount,
+        proration: l.proration,
+        type: l.type,
+      })),
+    });
+  } catch (e: any) {
+    const toMsg = (err: any) =>
+      typeof err === 'string' ? err :
+      err?.message || err?.raw?.message || 'retrieveUpcoming failed';
+
+    const isNotFound =
+      e?.statusCode === 404 || e?.statusCode === 410 ||
+      e?.code === 'resource_missing' ||
+      (e?.type === 'invalid_request_error' && /No such|does not exist/i.test(e?.raw?.message ?? ''));
+
+    console.error('❌ retrieveUpcoming error', {
+      msg: toMsg(e),
+      type: e?.type,
+      code: e?.code,
+      status: e?.statusCode ?? e?.raw?.statusCode,
+      raw: e?.raw?.message,
+      isNotFound,
+    });
+
+    if (isNotFound) {
+      // Stripe側に既に存在しない場合は返金不要
+      console.warn('⚠️ Subscription or invoice not found in Stripe, skipping refund calculation');
+      return {
+        refundAmount: 0,
+        currency: 'usd',
+        paymentIntentId: null,
+        refundId: null
+      };
+    }
+
+    throw e; // 本当の異常は上に投げる
+  }
 
   // 負の按分行（未使用分）を合計
   const negativeLines = upcoming.lines.data.filter(
