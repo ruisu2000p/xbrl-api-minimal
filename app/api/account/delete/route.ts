@@ -587,13 +587,13 @@ async function refundUnusedAmount(
     proration_date: new Date(prorationDate * 1000).toISOString()
   });
 
-  // TypeScript型定義が retrieveUpcoming を認識しないため、型アサーションを使用
-  const upcoming = await (stripe.invoices as any).retrieveUpcoming({
+  // Upcoming invoice preview to calculate unused credit
+  const upcoming = await stripe.invoices.retrieveUpcoming({
     customer: sub.customer,
     subscription: sub.id,
     subscription_proration_date: prorationDate,
     subscription_items: deletedItems,
-  }) as Stripe.Invoice;
+  });
 
   // 負の按分行（未使用分）を合計
   const negativeLines = upcoming.lines.data.filter(
