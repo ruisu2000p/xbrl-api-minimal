@@ -7,7 +7,10 @@ import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 import { logger, extractRequestId } from '@/utils/logger';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+// Initialize Resend only if API key is available (optional for build time)
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 /**
  * Welcome Email Endpoint
@@ -130,6 +133,17 @@ export async function POST(req: NextRequest) {
     `;
 
     // Send welcome email via Resend
+    if (!resend) {
+      logger.error('Resend API key not configured', {
+        path: '/api/notifications/welcome',
+        userId: user.id
+      });
+      return NextResponse.json(
+        { error: 'Email service not configured' },
+        { status: 500 }
+      );
+    }
+
     logger.info('Sending welcome email', {
       path: '/api/notifications/welcome',
       userId: user.id,
