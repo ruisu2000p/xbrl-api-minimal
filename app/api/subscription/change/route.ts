@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 import { createStripeClient } from '@/utils/stripe/client';
+import type Stripe from 'stripe';
 
 /**
  * Stripe の 404/410 エラーを判定（存在しないリソース）
@@ -19,7 +20,7 @@ function isStripeNotFoundLike(err: any): boolean {
 }
 
 /**
- * ユーザーをFreemiumプランに同期
+ * ユーザーをFreemiumプランに同期（自己修復）
  */
 async function syncToFreemium(supabase: any, userId: string, freemiumPlanId: string) {
   const { error } = await supabase
@@ -30,8 +31,10 @@ async function syncToFreemium(supabase: any, userId: string, freemiumPlanId: str
       status: 'canceled',
       cancel_at_period_end: false,
       stripe_subscription_id: null,
+      stripe_customer_id: null,
       cancelled_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      pending_action: null,
     })
     .eq('user_id', userId);
 
@@ -40,21 +43,122 @@ async function syncToFreemium(supabase: any, userId: string, freemiumPlanId: str
     throw error;
   }
 
-  console.log(`✅ User ${userId} synced to freemium plan`);
+  console.log(`✅ User ${userId} synced to freemium plan (self-healing)`);
+}
+
+/**
+ * Stripe上のアクティブなサブスクリプションを解決（Source of Truth）
+ *
+ * DBが不整合でも、Stripeから実体を直接取得して特定する
+ *
+ * @param opts.stripe - Stripe client
+ * @param opts.userId - App user ID
+ * @param opts.email - User email (for customer search)
+ * @param opts.stripeCustomerId - DB cached customer ID (nullable)
+ * @param opts.stripeSubscriptionId - DB cached subscription ID (nullable)
+ * @returns { customerId, subscription } - Resolved Stripe entities
+ */
+async function resolveActiveStripeSubscription(opts: {
+  stripe: Stripe;
+  userId: string;
+  email?: string | null;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+}): Promise<{ customerId: string | null; subscription: Stripe.Subscription | null }> {
+  const { stripe, userId, email, stripeCustomerId, stripeSubscriptionId } = opts;
+
+  console.log('🔍 Resolving Stripe subscription...', {
+    userId,
+    db_customer_id: stripeCustomerId,
+    db_subscription_id: stripeSubscriptionId,
+    email,
+  });
+
+  // Strategy 1: DBにsubscription_idがある場合、それを直接検証
+  if (stripeSubscriptionId) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+      if (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due') {
+        console.log('✅ Found active subscription via DB subscription_id:', sub.id);
+        return { customerId: String(sub.customer), subscription: sub };
+      }
+      console.log('⚠️ DB subscription_id exists but status is:', sub.status);
+    } catch (err: any) {
+      if (!isStripeNotFoundLike(err)) {
+        console.error('❌ Error retrieving subscription by ID:', err);
+      }
+      console.warn(`⚠️ DB subscription_id ${stripeSubscriptionId} not found or invalid in Stripe`);
+    }
+  }
+
+  // Strategy 2: DBにcustomer_idがある場合、そこからactive subscriptionを探す
+  if (stripeCustomerId) {
+    try {
+      const subs = await stripe.subscriptions.list({
+        customer: stripeCustomerId,
+        status: 'active',
+        limit: 1,
+      });
+      if (subs.data.length > 0) {
+        console.log('✅ Found active subscription via DB customer_id:', subs.data[0].id);
+        return { customerId: stripeCustomerId, subscription: subs.data[0] };
+      }
+      console.log('⚠️ DB customer_id exists but no active subscriptions found');
+    } catch (err: any) {
+      console.error('❌ Error listing subscriptions by customer_id:', err);
+    }
+  }
+
+  // Strategy 3: Emailベースで顧客を検索（metadata.app_user_id を優先マッチング）
+  if (email) {
+    try {
+      const customers = await stripe.customers.list({ email, limit: 10 });
+
+      // 優先順位: metadata.app_user_id が一致する顧客
+      let matchedCustomer = customers.data.find(c => c.metadata?.app_user_id === userId);
+
+      // 次点: metadata がない場合は最初の顧客
+      if (!matchedCustomer && customers.data.length > 0) {
+        matchedCustomer = customers.data[0];
+        console.warn(`⚠️ Using email-matched customer ${matchedCustomer.id} without metadata.app_user_id validation`);
+      }
+
+      if (matchedCustomer) {
+        const subs = await stripe.subscriptions.list({
+          customer: matchedCustomer.id,
+          status: 'active',
+          limit: 1,
+        });
+        if (subs.data.length > 0) {
+          console.log('✅ Found active subscription via email search:', subs.data[0].id);
+          return { customerId: matchedCustomer.id, subscription: subs.data[0] };
+        }
+        console.log(`⚠️ Customer ${matchedCustomer.id} found by email but no active subscriptions`);
+      }
+    } catch (err: any) {
+      console.error('❌ Error searching customers by email:', err);
+    }
+  }
+
+  console.log('❌ No active Stripe subscription found for user:', userId);
+  return { customerId: null, subscription: null };
 }
 
 /**
  * POST /api/subscription/change
  *
- * フリーミアムへのダウングレードを即時実行
- * (有料プランへのアップグレードは /api/stripe/create-checkout-session 経由)
+ * サブスクリプション変更API（Stripe-first approach）
+ *
+ * - DBを信用せず、常にStripeを真実のソース(Source of Truth)として照会
+ * - DB不整合があれば自己修復(self-healing)
+ * - べき等性を担保（idempotency-key対応）
  */
 export async function POST(request: NextRequest) {
-  try {
-    // まず認証用のクライアントを作成
-    const authClient = await createClient();
+  const idempotencyKey = request.headers.get('idempotency-key') ?? undefined;
 
+  try {
     // 認証確認
+    const authClient = await createClient();
     const { data: { user }, error: authError } = await authClient.auth.getUser();
 
     if (authError || !user) {
@@ -70,240 +174,172 @@ export async function POST(request: NextRequest) {
 
     console.log('📋 Subscription change request:', {
       user_id: user.id,
+      user_email: user.email,
       action,
-      planType
+      planType,
+      idempotency_key: idempotencyKey,
     });
 
-    // DB操作用に Service Role クライアントを作成（RLSをバイパス）
+    // Service Role クライアント（RLSバイパス）
     const supabase = await createServiceSupabaseClient();
+    const stripe = createStripeClient();
+
+    // Freemiumプラン取得
+    const { data: freemiumPlan, error: planError } = await supabase
+      .from('subscription_plans')
+      .select('id, name')
+      .eq('name', 'freemium')
+      .single();
+
+    if (planError || !freemiumPlan) {
+      console.error('❌ Freemium plan not found:', planError);
+      return NextResponse.json(
+        { error: 'Freemium plan not found' },
+        { status: 500 }
+      );
+    }
+
+    // DBの現在情報を取得（参考値として）
+    const { data: currentSub, error: subError } = await supabase
+      .from('user_subscriptions')
+      .select('id, stripe_customer_id, stripe_subscription_id, status, plan_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (subError) {
+      console.error('❌ Failed to get current subscription from DB:', subError);
+      return NextResponse.json(
+        { error: 'Failed to get current subscription' },
+        { status: 500 }
+      );
+    }
+
+    // ★ 真実はStripe側にある: DBを信用せず、Stripeから実体を解決
+    const { customerId, subscription } = await resolveActiveStripeSubscription({
+      stripe,
+      userId: user.id,
+      email: user.email,
+      stripeCustomerId: currentSub?.stripe_customer_id,
+      stripeSubscriptionId: currentSub?.stripe_subscription_id,
+    });
+
+    console.log('🔎 Stripe resolution result:', {
+      userId: user.id,
+      db_customer_id: currentSub?.stripe_customer_id,
+      db_subscription_id: currentSub?.stripe_subscription_id,
+      resolved_customer_id: customerId,
+      resolved_subscription_id: subscription?.id ?? null,
+      resolved_status: subscription?.status ?? null,
+    });
 
     // ==========================================================================
-    // ACTION: downgrade to freemium (期末キャンセル + 按分処理)
+    // ACTION: downgrade to freemium (期末キャンセル)
     // ==========================================================================
     if (action === 'downgrade' && planType === 'freemium') {
       console.log('⬇️ Processing downgrade to freemium...');
 
-      // 1) Freemiumプランを取得
-      const { data: freemiumPlan, error: planError } = await supabase
-        .from('subscription_plans')
-        .select('id, name')
-        .eq('name', 'freemium')
-        .single();
-
-      if (planError || !freemiumPlan) {
-        console.error('❌ Freemium plan not found:', planError);
-        return NextResponse.json(
-          { error: 'Freemium plan not found' },
-          { status: 500 }
-        );
-      }
-
-      // 2) 現在のサブスクリプション情報を取得（stripe_customer_id, stripe_subscription_id含む）
-      const { data: currentSub, error: subError } = await supabase
-        .from('user_subscriptions')
-        .select('stripe_customer_id, stripe_subscription_id, status')
-        .eq('user_id', user.id)
-        .single();
-
-      if (subError) {
-        console.error('❌ Failed to get current subscription:', subError);
-        return NextResponse.json(
-          { error: 'Failed to get current subscription' },
-          { status: 500 }
-        );
-      }
-
-      // 3) Stripeサブスクリプションをキャンセル（期末キャンセル + 按分処理）
-      if (currentSub?.stripe_subscription_id) {
-        try {
-          const stripe = createStripeClient();
-
-          // まず、サブスクリプションが存在するか確認
-          let subscription;
-          try {
-            subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);
-          } catch (retrieveError: any) {
-            if (isStripeNotFoundLike(retrieveError)) {
-              console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} not found in Stripe, skipping cancellation`);
-              // サブスクリプションが既に削除されている場合はスキップ
-              subscription = null;
-            } else {
-              throw retrieveError;
-            }
-          }
-
-          // サブスクリプションが存在し、まだアクティブな場合のみキャンセル
-          if (subscription && subscription.status !== 'canceled') {
-            // 按分ポリシー：
-            // - 'create_prorations': 未使用分をクレジットとして次回請求に反映（推奨）
-            // - 'none': 按分なし（期末まで使える）
-            await stripe.subscriptions.update(
-              currentSub.stripe_subscription_id,
-              {
-                cancel_at_period_end: true, // 期末でキャンセル
-                proration_behavior: 'create_prorations', // 按分あり
-                metadata: {
-                  downgraded_by: user.id,
-                  downgraded_at: new Date().toISOString(),
-                },
-              }
-            );
-
-            console.log(`✅ Stripe subscription ${currentSub.stripe_subscription_id} set to cancel at period end with prorations`);
-          } else if (subscription?.status === 'canceled') {
-            console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} already canceled in Stripe`);
-          }
-        } catch (stripeError: any) {
-          console.error('❌ Failed to cancel Stripe subscription:', stripeError);
-          return NextResponse.json(
-            { error: `Failed to cancel Stripe subscription: ${stripeError.message}` },
-            { status: 500 }
-          );
-        }
-      }
-
-      // 4) DB を更新（Webhookで最終的に同期されるが、即時反映のため）
-      const { error: updateError } = await supabase
-        .from('user_subscriptions')
-        .update({
-          plan_id: freemiumPlan.id,
-          billing_cycle: 'monthly',
-          cancel_at_period_end: true, // ★ 重要: Stripeと同期
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
-
-      if (updateError) {
-        console.error('❌ Failed to update subscription:', {
-          message: updateError.message,
-          details: updateError.details,
-          hint: updateError.hint,
-          code: updateError.code
+      // Stripe上にアクティブなサブスクリプションが無い場合 → 自己修復
+      if (!subscription || subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
+        console.warn('⚠️ No active subscription on Stripe; self-healing to freemium');
+        await syncToFreemium(supabase, user.id, freemiumPlan.id);
+        return NextResponse.json({
+          success: true,
+          message: 'No active subscription found. Database synchronized to freemium.',
+          self_healed: true,
         });
-        return NextResponse.json(
+      }
+
+      // Stripe上でサブスクリプションを期末キャンセル設定
+      try {
+        const updated = await stripe.subscriptions.update(
+          subscription.id,
           {
-            error: 'Failed to downgrade subscription',
-            details: updateError.message,
-            code: updateError.code
+            cancel_at_period_end: true,
+            proration_behavior: 'create_prorations', // 按分クレジット
+            metadata: {
+              downgraded_by: user.id,
+              downgraded_at: new Date().toISOString(),
+              action: 'downgrade_to_freemium',
+            },
           },
+          idempotencyKey ? { idempotencyKey: `${idempotencyKey}-downgrade` } : undefined
+        );
+
+        console.log(`✅ Stripe subscription ${updated.id} set to cancel at period end with prorations`);
+
+        // DB即時反映（Webhookで最終確定）
+        await supabase
+          .from('user_subscriptions')
+          .update({
+            plan_id: freemiumPlan.id,
+            billing_cycle: 'monthly',
+            cancel_at_period_end: true,
+            stripe_customer_id: customerId, // 解決したIDで更新
+            stripe_subscription_id: updated.id, // 解決したIDで更新
+            status: updated.status,
+            pending_action: 'downgrade_to_freemium',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
+
+        console.log('✅ DB updated with pending downgrade');
+
+        return NextResponse.json({
+          success: true,
+          message: 'Successfully scheduled downgrade to Freemium. Your subscription will remain active until the end of the current billing period.',
+          subscription_id: updated.id,
+          cancel_at_period_end: true,
+        });
+      } catch (stripeError: any) {
+        console.error('❌ Failed to update Stripe subscription:', stripeError);
+        return NextResponse.json(
+          { error: `Failed to cancel Stripe subscription: ${stripeError.message}` },
           { status: 500 }
         );
       }
-
-      console.log('✅ Successfully downgraded to freemium for user:', user.id);
-
-      return NextResponse.json({
-        success: true,
-        message: 'Successfully scheduled downgrade to Freemium. Your subscription will remain active until the end of the current billing period.',
-        plan: {
-          id: freemiumPlan.id,
-          name: freemiumPlan.name,
-          billing_cycle: 'monthly',
-          cancel_at_period_end: true,
-        }
-      });
     }
 
     // ==========================================================================
-    // ACTION: cancel_immediate (即時キャンセル + 返金)
+    // ACTION: cancel_immediate (即時キャンセル + 按分返金)
     // ==========================================================================
     if (action === 'cancel_immediate') {
       console.log('🚨 Processing immediate cancellation with refund...');
 
-      // 1) 現在のサブスクリプション情報を取得
-      const { data: currentSub, error: subError } = await supabase
-        .from('user_subscriptions')
-        .select('stripe_customer_id, stripe_subscription_id, status, plan_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (subError || !currentSub) {
-        console.error('❌ Failed to get current subscription:', subError);
-        return NextResponse.json(
-          { error: 'Failed to get current subscription' },
-          { status: 500 }
-        );
-      }
-
-      if (!currentSub.stripe_subscription_id) {
-        console.error('❌ No Stripe subscription found for user:', user.id);
-        return NextResponse.json(
-          { error: 'No active Stripe subscription found' },
-          { status: 404 }
-        );
+      // Stripe上にアクティブなサブスクリプションが無い場合 → 自己修復
+      if (!subscription || subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
+        console.warn('⚠️ No active subscription on Stripe; self-healing to freemium');
+        await syncToFreemium(supabase, user.id, freemiumPlan.id);
+        return NextResponse.json({
+          success: true,
+          message: 'Subscription already canceled. Database synchronized to freemium.',
+          self_healed: true,
+        });
       }
 
       try {
-        const stripe = createStripeClient();
-
-        // 2) Freemiumプラン取得
-        const { data: freemiumPlan } = await supabase
-          .from('subscription_plans')
-          .select('id')
-          .eq('name', 'freemium')
-          .single();
-
-        if (!freemiumPlan) {
-          console.error('❌ Freemium plan not found');
-          return NextResponse.json(
-            { error: 'Freemium plan not found' },
-            { status: 500 }
-          );
-        }
-
-        // 3) サブスクリプション情報を取得（期間情報が必要）
-        let subscription;
-        try {
-          subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);
-        } catch (retrieveError: any) {
-          if (isStripeNotFoundLike(retrieveError)) {
-            console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} not found in Stripe, syncing to freemium`);
-            await syncToFreemium(supabase, user.id, freemiumPlan.id);
-            return NextResponse.json({
-              success: true,
-              message: 'Subscription already canceled in Stripe. Database updated to freemium.',
-            });
-          }
-          throw retrieveError;
-        }
-
-        // サブスクリプションが既にキャンセルされている場合
-        if (subscription.status === 'canceled') {
-          console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} already canceled in Stripe`);
-          await syncToFreemium(supabase, user.id, freemiumPlan.id);
-          return NextResponse.json({
-            success: true,
-            message: 'Subscription already canceled in Stripe. Database updated to freemium.',
-          });
-        }
-
-        // 3) サブスクリプションを即時キャンセル（按分あり）
-        const canceledSub = await stripe.subscriptions.cancel(
-          currentSub.stripe_subscription_id,
-          {
-            prorate: true, // 未使用分を計算
-          }
+        // 即時キャンセル（按分あり）
+        const canceled = await stripe.subscriptions.cancel(
+          subscription.id,
+          { prorate: true },
+          idempotencyKey ? { idempotencyKey: `${idempotencyKey}-cancel` } : undefined
         );
 
-        console.log(`✅ Stripe subscription ${currentSub.stripe_subscription_id} canceled immediately`);
+        console.log(`✅ Stripe subscription ${canceled.id} canceled immediately`);
 
-        // 4) 最新のインボイスを取得
-        const latestInvoice = canceledSub.latest_invoice;
+        // 返金処理（Credit Note発行）
+        const latestInvoice = canceled.latest_invoice;
+        let refundAmount = 0;
+        let refundId: string | null = null;
+
         if (latestInvoice && typeof latestInvoice === 'string') {
           const invoice = await stripe.invoices.retrieve(latestInvoice);
 
-          // 5) Credit Note を発行（実際の未使用期間に基づく按分返金）
           if (invoice.amount_paid > 0) {
-            // 未使用期間の計算
-            const periodStart = (subscription as any).current_period_start;
-            const periodEnd = (subscription as any).current_period_end;
+            const periodStart = (subscription as any).current_period_start as number;
+            const periodEnd = (subscription as any).current_period_end as number;
             const nowSec = Math.floor(Date.now() / 1000);
 
-            // 既に期間終了している場合は返金不要
-            if (nowSec >= periodEnd) {
-              console.log('⚠️ Subscription period already ended, no refund needed');
-            } else {
-              // 按分計算：未使用分 = (残り日数 / 総日数) × 支払額
+            if (nowSec < periodEnd) {
               const totalPeriod = periodEnd - periodStart;
               const unusedPeriod = periodEnd - nowSec;
               const proratedAmount = Math.floor(invoice.amount_paid * (unusedPeriod / totalPeriod));
@@ -321,23 +357,25 @@ export async function POST(request: NextRequest) {
                   refund_amount: proratedAmount,
                 });
 
-                console.log(`✅ Credit Note ${creditNote.id} created for ${proratedAmount / 100} ${invoice.currency} (${Math.floor(unusedPeriod / 86400)} days)`);
-              } else {
-                console.log('⚠️ Prorated refund amount is 0, no refund needed');
+                refundAmount = proratedAmount;
+                refundId = creditNote.id;
+
+                console.log(`✅ Credit Note ${creditNote.id} created for ${proratedAmount / 100} ${invoice.currency}`);
               }
             }
           }
         }
 
-        // 6) DBを更新（Freemiumプランに戻す）
+        // DBをFreemiumに同期
         await syncToFreemium(supabase, user.id, freemiumPlan.id);
 
         return NextResponse.json({
           success: true,
           message: 'Subscription canceled immediately with prorated refund',
-          refund_issued: true,
+          subscription_id: canceled.id,
+          refund_amount: refundAmount / 100,
+          refund_id: refundId,
         });
-
       } catch (stripeError: any) {
         console.error('❌ Failed to cancel subscription immediately:', stripeError);
         return NextResponse.json(
@@ -348,11 +386,11 @@ export async function POST(request: NextRequest) {
     }
 
     // ==========================================================================
-    // その他のaction (今後拡張可能)
+    // 未対応のaction
     // ==========================================================================
     console.error('❌ Invalid action:', action);
     return NextResponse.json(
-      { error: 'Invalid action. Use /api/stripe/create-checkout-session for upgrades.' },
+      { error: 'Invalid action. Supported: downgrade, cancel_immediate' },
       { status: 400 }
     );
 
