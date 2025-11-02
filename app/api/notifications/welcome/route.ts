@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
     });
 
     await resend.emails.send({
-      from: 'Financial Info Next <no-reply@financial-info-next.com>',
+      from: 'Financial Info Next <no-reply@mail.fininfonext.com>',
       to: user.email!,
       subject: 'ご登録ありがとうございます / Welcome to Financial Info Next',
       html,
