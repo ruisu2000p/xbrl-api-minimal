@@ -8,18 +8,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
 // import { logSecurityEvent } from '@/utils/security/audit-log'; // Commented out - audit_logs table doesn't exist
-import Stripe from 'stripe';
+import { createStripeClient } from '@/utils/stripe/client';
+import type Stripe from 'stripe';
 import crypto from 'crypto';
-
-// Stripeクライアントを遅延初期化（ビルド時のエラーを回避）
-function getStripeClient() {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error('STRIPE_SECRET_KEY is not configured');
-  }
-  return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-09-30.clover',
-  });
-}
 
 /**
  * 退会 API
@@ -157,20 +148,50 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 最終手段: Stripe API から customer の全 subscription を取得
+    // 最終手段1: customer_id はあるが subscription_id が無い場合
     if (!stripeSubscriptionId && stripeCustomerId) {
       try {
-        console.log('🔄 Final fallback: Querying Stripe API...');
-        const stripe = getStripeClient();
+        console.log('🔄 Fallback 1: Querying Stripe API with customer_id...');
+        const stripe = createStripeClient();
         const list = await stripe.subscriptions.list({
           customer: stripeCustomerId,
           status: 'active',
           limit: 1
         });
         stripeSubscriptionId = list.data[0]?.id ?? null;
-        console.log('✅ Fallback: Retrieved subscription_id from Stripe:', stripeSubscriptionId);
+        console.log('✅ Fallback 1: Retrieved subscription_id from Stripe:', stripeSubscriptionId);
       } catch (err: any) {
         console.error('⚠️ Failed to retrieve subscription from Stripe:', err.message);
+      }
+    }
+
+    // 最終手段2: customer_id も無い場合、メールアドレスで顧客を検索
+    if (!stripeCustomerId && user.email) {
+      try {
+        console.log('🔄 Fallback 2: Searching Stripe customer by email...', { email: user.email });
+        const stripe = createStripeClient();
+        const customers = await stripe.customers.list({
+          email: user.email,
+          limit: 1
+        });
+
+        if (customers.data.length > 0) {
+          stripeCustomerId = customers.data[0].id;
+          console.log('✅ Fallback 2: Found customer by email:', stripeCustomerId);
+
+          // 顧客IDが見つかったら、そのサブスクリプションも取得
+          const list = await stripe.subscriptions.list({
+            customer: stripeCustomerId,
+            status: 'active',
+            limit: 1
+          });
+          stripeSubscriptionId = list.data[0]?.id ?? null;
+          console.log('✅ Fallback 2: Retrieved subscription_id:', stripeSubscriptionId);
+        } else {
+          console.warn('⚠️ No Stripe customer found for email:', user.email);
+        }
+      } catch (err: any) {
+        console.error('⚠️ Failed to search customer by email:', err.message);
       }
     }
 
@@ -233,7 +254,7 @@ export async function POST(request: NextRequest) {
       });
 
       try {
-        const stripe = getStripeClient();
+        const stripe = createStripeClient();
         const subId = stripeSubscriptionId;
 
         // 6-1. Stripe 即時キャンセル（返金は後で別途実行）
@@ -427,7 +448,7 @@ export async function POST(request: NextRequest) {
     // 7-4. Refund の metadata を更新（deletion_id を紐付け）
     if (stripeRefundId && deletionRecord?.id) {
       try {
-        const stripe = getStripeClient();
+        const stripe = createStripeClient();
         await stripe.refunds.update(stripeRefundId, {
           metadata: {
             app_user_id: user.id,
