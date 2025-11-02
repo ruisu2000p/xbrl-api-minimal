@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🔗 Redirect URLs:', { successUrl, cancelUrl });
 
-    // ★ 5) Stripe Checkout Session作成（Idempotency Key対応）
+    // ★ 5) Stripe Checkout Session作成（Idempotency Key対応 + プロレーション設定）
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -164,6 +164,11 @@ export async function POST(request: NextRequest) {
         billing_cycle: billingCycle,
       },
       subscription_data: {
+        // ★ プロレーション設定（アップグレード時の按分）
+        // 'always_invoice': 即座に按分請求を発行（推奨）
+        // 'create_prorations': 按分計算を行い次回請求に反映
+        // 'none': 按分なし
+        proration_behavior: 'always_invoice',
         metadata: {
           user_id: session.user.id,
           plan_type: planType,
