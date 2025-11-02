@@ -1221,34 +1221,76 @@ export default function AccountSettings() {
 
       console.log('✅ Found plan ID:', planData.id);
 
-      // Standardプランに変更する場合はStripe決済へ (monthly or yearly)
+      // Standardプランに変更する場合
       if (selectedPlan.startsWith('standard-')) {
-        setPlanMessage({ type: 'success', text: '決済ページへリダイレクト中...' });
-
         // Get billing period from selected plan
         const billingPeriod = selectedPlan === 'standard-monthly' ? 'monthly' : 'yearly';
 
-        // サーバー側で認証とPrice ID解決を行うため、planTypeとbillingCycleのみ送信
-        const requestBody = {
-          planType: 'standard', // 'freemium' | 'standard' | 'premium'
-          billingCycle: billingPeriod // 'monthly' | 'yearly'
-        };
+        // 既存のサブスクリプションがあるかチェック
+        const hasActiveSubscription = subscription?.status === 'active' &&
+                                      subscription?.stripe_subscription_id;
 
-        console.log('📤 Sending to Stripe API:', requestBody);
+        if (hasActiveSubscription) {
+          // 既存サブスクリプションをアップグレード/変更
+          console.log('🔄 Changing existing subscription...');
+          setPlanMessage({ type: 'success', text: 'プランを変更中...' });
 
-        // Generate idempotency key for Stripe request (防止多重送信)
-        const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random()}`;
+          const response = await fetchWithCsrf('/api/subscription/change', {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'upgrade',
+              newPlanType: 'standard',
+              newBillingCycle: billingPeriod
+            }),
+          });
 
-        // Stripe Checkout Sessionを作成（リトライ機能付き）
-        const response = await fetchWithCsrf('/api/stripe/create-checkout-session', {
-          method: 'POST',
-          headers: {
-            'Idempotency-Key': idempotencyKey,
-          },
-          body: JSON.stringify(requestBody),
-        });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            const errorMsg = typeof data?.error === 'string'
+              ? data.error
+              : `プラン変更に失敗しました (HTTP ${response.status})`;
+
+            console.error('❌ Subscription change failed:', {
+              status: response.status,
+              error: data?.error,
+              data
+            });
+
+            setPlanMessage({ type: 'error', text: errorMsg });
+            return;
+          }
+
+          const data = await response.json();
+          console.log('✅ Subscription changed:', data);
+          setPlanMessage({ type: 'success', text: 'プランが正常に変更されました！' });
+
+          // Refresh subscription data
+          await refreshSubscription();
+          return;
+        } else {
+          // 新規サブスクリプション作成（初回決済）
+          console.log('💳 Creating new subscription...');
+          setPlanMessage({ type: 'success', text: '決済ページへリダイレクト中...' });
+
+          const requestBody = {
+            planType: 'standard',
+            billingCycle: billingPeriod
+          };
+
+          console.log('📤 Sending to Stripe API:', requestBody);
+
+          const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random()}`;
+
+          const response = await fetchWithCsrf('/api/stripe/create-checkout-session', {
+            method: 'POST',
+            headers: {
+              'Idempotency-Key': idempotencyKey,
+            },
+            body: JSON.stringify(requestBody),
+          });
+        }
 
         // レスポンスのパース
         if (!response.ok) {
