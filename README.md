@@ -29,7 +29,7 @@ macOS:
   "mcpServers": {
     "xbrl-financial": {
       "command": "npx",
-      "args": ["shared-supabase-mcp-minimal@8.1.0"],
+      "args": ["shared-supabase-mcp-minimal@8.3.1"],
       "env": {
         "XBRL_API_KEY": "your-api-key-from-dashboard"
       }
@@ -47,18 +47,7 @@ macOS:
 **解決方法**: `npx`の代わりに`node`コマンドで直接`npx-cli.js`を実行してください。
 
 ```json
-{
-  "mcpServers": {
-    "xbrl-financial": {
-      "command": "node",
-      "args": ["C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js", "-y", "shared-supabase-mcp-minimal@8.3.0"],
-      "env": {
-        "XBRL_API_KEY": "your-api-key-from-dashboard"
-      }
-    }
-  }
-}
-```
+
 
 **原因**: Nodist（Node.jsバージョン管理ツール）が`npx`コマンドをラップしており、環境変数の引き継ぎを妨げる場合があります。上記の設定でNodistをバイパスして環境変数を正しく渡すことができます。
 
@@ -85,19 +74,6 @@ macOS:
    - 名前を入力して「APIキー発行」をクリック
    - ⚠️ APIキーは一度だけ表示されます
 
-### MCP環境変数
-
-XBRL Financial MCPサーバーで必要な環境変数：
-
-
-### セキュリティ注意事項
-
-⚠️ **重要**: Service Role Keyは管理者権限を持つため、以下の点に注意：
-
-- Service Role Keyをコミットしない
-- `.env.local`ファイルで管理する
-- 本番環境では環境変数として設定
-- MCPの設定ファイルはGitにコミットしない
 
 
 ## ライセンス
