@@ -56,7 +56,8 @@ macOS:
 
 MIT License
 
-Copyright (c) 2025 <ruisu2000p>
+Copyright (c) 2025 ruisu2000p
+
 (doing business as "Financial Information next (FIN)")
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
