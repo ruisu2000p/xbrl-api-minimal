@@ -202,6 +202,12 @@ export default function SignupPage() {
 
             console.log('✅ Session obtained, calling checkout endpoint...');
 
+            // CSRF トークンを Cookie から取得
+            const csrfToken = document.cookie
+              .split('; ')
+              .find(row => row.startsWith('csrf-token='))
+              ?.split('=')[1] || '';
+
             // Next.js API Routeを呼び出し
             const checkoutResponse = await fetch(
               '/api/stripe/create-checkout-session',
@@ -210,6 +216,7 @@ export default function SignupPage() {
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${session.access_token}`,
+                  'X-CSRF-Token': csrfToken,
                 },
                 body: JSON.stringify({
                   planType: selectedPlan,
