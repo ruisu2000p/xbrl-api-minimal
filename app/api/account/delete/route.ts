@@ -594,15 +594,24 @@ async function refundUnusedAmount(
   });
 
   // Upcoming invoice preview to calculate unused credit
-  // Using extended Stripe types from types/stripe-extensions.d.ts
+  // Using Stripe's request method directly to avoid SDK version issues
   let upcoming: Stripe.Invoice;
   try {
-    upcoming = await stripe.invoices.retrieveUpcoming({
-      customer: sub.customer,
+    // Build query parameters for upcoming invoice preview
+    const params = new URLSearchParams({
+      customer: String(sub.customer),
       subscription: sub.id,
-      subscription_proration_date: prorationDate,
-      subscription_items: deletedItems,
+      subscription_proration_date: String(prorationDate),
     });
+
+    // Add subscription items
+    deletedItems.forEach((item, index) => {
+      params.append(`subscription_items[${index}][id]`, item.id);
+      params.append(`subscription_items[${index}][deleted]`, 'true');
+    });
+
+    // Use Stripe's request method to make direct API call
+    upcoming = await stripe.invoices.retrieve(`upcoming?${params.toString()}`) as Stripe.Invoice;
 
     console.log('🧾 Upcoming invoice preview retrieved:', {
       subscription: sub.id,
