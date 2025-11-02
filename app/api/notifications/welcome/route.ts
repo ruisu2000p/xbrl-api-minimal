@@ -63,14 +63,32 @@ export async function POST(req: NextRequest) {
       email: user.email
     });
 
-    // Idempotency check: has welcome email already been sent?
-    const { data: alreadySent } = await supabase
+    // UPSERT to reserve send slot (exactly-once guarantee via DB constraint)
+    const { data: row, error: upsertErr } = await supabase
       .from('welcome_email_log')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
+      .upsert(
+        {
+          user_id: user.id,
+          email: user.email!,
+          last_attempt_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      )
+      .select()
+      .single();
 
-    if (alreadySent) {
+    if (upsertErr) {
+      // Conflict or race condition - another request is processing
+      logger.debug('Welcome email already being processed', {
+        path: '/api/notifications/welcome',
+        userId: user.id,
+        err: upsertErr instanceof Error ? upsertErr : { message: String(upsertErr) }
+      });
+      return NextResponse.json({ ok: true, deduped: true });
+    }
+
+    // Already sent successfully - return immediately
+    if (row?.status === 'sent') {
       logger.debug('Welcome email already sent', {
         path: '/api/notifications/welcome',
         userId: user.id
@@ -165,39 +183,66 @@ export async function POST(req: NextRequest) {
       meta: { planType, billingCycle }
     });
 
-    await resend.emails.send({
-      from: 'Financial Info Next <no-reply@mail.fininfonext.com>',
-      to: user.email!,
-      subject: 'ご登録ありがとうございます / Welcome to Financial Info Next',
-      html,
-    });
-
-    // Log the email send event (idempotency flag)
-    const { error: logErr } = await supabase
-      .from('welcome_email_log')
-      .insert({
-        user_id: user.id,
-        email: user.email!,
-        plan_type: planType,
-        billing_cycle: billingCycle,
+    // Send email via Resend
+    try {
+      await resend.emails.send({
+        from: 'Financial Info Next <no-reply@mail.fininfonext.com>',
+        to: user.email!,
+        subject: 'ご登録ありがとうございます / Welcome to Financial Info Next',
+        html,
       });
 
-    if (logErr) {
-      // Log failure but don't fail the request - user experience is preserved
-      logger.warn('Welcome email log insert failed', {
-        path: '/api/notifications/welcome',
-        userId: user.id,
-        err: logErr instanceof Error ? logErr : { message: String(logErr) }
-      });
-    } else {
+      // Mark as successfully sent
+      const { error: updateErr } = await supabase
+        .from('welcome_email_log')
+        .update({
+          status: 'sent',
+          first_sent_at: row?.first_sent_at ?? new Date().toISOString(),
+          attempts: (row?.attempts ?? 0) + 1,
+          last_error: null,
+          last_attempt_at: new Date().toISOString(),
+          plan_type: planType,
+          billing_cycle: billingCycle,
+        })
+        .eq('user_id', user.id);
+
+      if (updateErr) {
+        logger.warn('Welcome email status update failed', {
+          path: '/api/notifications/welcome',
+          userId: user.id,
+          err: updateErr instanceof Error ? updateErr : { message: String(updateErr) }
+        });
+      }
+
       logger.info('Welcome email sent successfully', {
         path: '/api/notifications/welcome',
         userId: user.id,
         email: user.email
       });
-    }
 
-    return NextResponse.json({ ok: true, sent: true });
+      return NextResponse.json({ ok: true, sentNow: true });
+
+    } catch (emailError: any) {
+      // Mark as failed for retry visibility
+      await supabase
+        .from('welcome_email_log')
+        .update({
+          status: 'failed',
+          attempts: (row?.attempts ?? 0) + 1,
+          last_error: emailError?.message || String(emailError),
+          last_attempt_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      logger.error('Welcome email send failed', {
+        path: '/api/notifications/welcome',
+        userId: user.id,
+        err: emailError instanceof Error ? emailError : { message: String(emailError) }
+      });
+
+      // Return success to client (non-blocking UX)
+      return NextResponse.json({ ok: false, error: 'send_failed' }, { status: 500 });
+    }
 
   } catch (error: any) {
     const msg = error?.message || 'Failed to send welcome email';

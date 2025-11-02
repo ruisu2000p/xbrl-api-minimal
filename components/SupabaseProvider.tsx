@@ -84,20 +84,13 @@ export default function SupabaseProvider({
       setLoading(false)
 
       // Send welcome email only on initial signup (first SIGNED_IN after registration)
-      // Check if user was created very recently (within last 10 seconds) AND hasn't been sent yet
+      // Server-side DB constraint guarantees exactly-once delivery
       if (event === 'SIGNED_IN' && session?.user) {
         const userCreatedAt = new Date(session.user.created_at).getTime()
         const now = Date.now()
         const isNewUser = (now - userCreatedAt) < 10000 // 10 seconds
 
-        // Check localStorage flag to prevent duplicate sends during page refreshes
-        const storageKey = `welcome_email_sent_${session.user.id}`
-        const alreadyTriedToSend = localStorage.getItem(storageKey)
-
-        if (isNewUser && !alreadyTriedToSend) {
-          // Mark as attempted immediately to prevent duplicate requests
-          localStorage.setItem(storageKey, 'true')
-
+        if (isNewUser) {
           try {
             const response = await fetch('/api/notifications/welcome', {
               method: 'POST',
@@ -109,9 +102,9 @@ export default function SupabaseProvider({
 
             if (response.ok) {
               const data = await response.json()
-              if (data.sent) {
+              if (data.sentNow) {
                 logger.info('Welcome email sent', { email: session.user.email })
-              } else if (data.alreadySent) {
+              } else if (data.alreadySent || data.deduped) {
                 logger.debug('Welcome email already sent', { email: session.user.email })
               }
             } else {
@@ -122,8 +115,8 @@ export default function SupabaseProvider({
               })
             }
           } catch (error) {
-            // Non-blocking: silent failure with retry on next login
-            logger.debug('Welcome email call failed (will retry later)', {
+            // Non-blocking: silent failure - server-side UPSERT ensures exactly-once
+            logger.debug('Welcome email call failed', {
               err: error instanceof Error ? error : { message: String(error) }
             })
           }
