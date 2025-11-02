@@ -1227,15 +1227,15 @@ export default function AccountSettings() {
         const billingPeriod = selectedPlan === 'standard-monthly' ? 'monthly' : 'yearly';
 
         // 既存のサブスクリプションがあるかチェック
-        const hasActiveSubscription = subscription?.status === 'active' &&
-                                      subscription?.stripe_subscription_id;
+        const hasActiveSubscription = userSubscription?.status === 'active' &&
+                                      userSubscription?.stripe_subscription_id;
 
         if (hasActiveSubscription) {
           // 既存サブスクリプションをアップグレード/変更
           console.log('🔄 Changing existing subscription...');
           setPlanMessage({ type: 'success', text: 'プランを変更中...' });
 
-          const response = await fetchWithCsrf('/api/subscription/change', {
+          const changeResponse = await fetchWithCsrf('/api/subscription/change', {
             method: 'POST',
             body: JSON.stringify({
               action: 'upgrade',
@@ -1244,14 +1244,14 @@ export default function AccountSettings() {
             }),
           });
 
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
+          if (!changeResponse.ok) {
+            const data = await changeResponse.json().catch(() => ({}));
             const errorMsg = typeof data?.error === 'string'
               ? data.error
-              : `プラン変更に失敗しました (HTTP ${response.status})`;
+              : `プラン変更に失敗しました (HTTP ${changeResponse.status})`;
 
             console.error('❌ Subscription change failed:', {
-              status: response.status,
+              status: changeResponse.status,
               error: data?.error,
               data
             });
@@ -1260,37 +1260,37 @@ export default function AccountSettings() {
             return;
           }
 
-          const data = await response.json();
+          const data = await changeResponse.json();
           console.log('✅ Subscription changed:', data);
           setPlanMessage({ type: 'success', text: 'プランが正常に変更されました！' });
 
           // Refresh subscription data
           await refreshSubscription();
           return;
-        } else {
-          // 新規サブスクリプション作成（初回決済）
-          console.log('💳 Creating new subscription...');
-          setPlanMessage({ type: 'success', text: '決済ページへリダイレクト中...' });
-
-          const requestBody = {
-            planType: 'standard',
-            billingCycle: billingPeriod
-          };
-
-          console.log('📤 Sending to Stripe API:', requestBody);
-
-          const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : `${Date.now()}-${Math.random()}`;
-
-          const response = await fetchWithCsrf('/api/stripe/create-checkout-session', {
-            method: 'POST',
-            headers: {
-              'Idempotency-Key': idempotencyKey,
-            },
-            body: JSON.stringify(requestBody),
-          });
         }
+
+        // 新規サブスクリプション作成（初回決済）
+        console.log('💳 Creating new subscription...');
+        setPlanMessage({ type: 'success', text: '決済ページへリダイレクト中...' });
+
+        const requestBody = {
+          planType: 'standard',
+          billingCycle: billingPeriod
+        };
+
+        console.log('📤 Sending to Stripe API:', requestBody);
+
+        const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`;
+
+        const response = await fetchWithCsrf('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+          body: JSON.stringify(requestBody),
+        });
 
         // レスポンスのパース
         if (!response.ok) {
