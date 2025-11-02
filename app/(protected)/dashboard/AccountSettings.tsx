@@ -1235,11 +1235,24 @@ export default function AccountSettings() {
 
         console.log('📤 Sending to Stripe API:', requestBody);
 
+        // Get CSRF token from cookie
+        const csrfToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('csrf-token='))
+          ?.split('=')[1];
+
+        if (!csrfToken) {
+          console.error('❌ CSRF token not found');
+          setPlanMessage({ type: 'error', text: 'セキュリティトークンが見つかりません。ページを再読み込みしてください。' });
+          return;
+        }
+
         // Stripe Checkout Sessionを作成
         const response = await fetch('/api/stripe/create-checkout-session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
           },
           body: JSON.stringify(requestBody),
         });
@@ -1260,11 +1273,24 @@ export default function AccountSettings() {
       // Freemiumプランに変更する場合は新しいAPIを使用
       console.log('⬇️ Downgrading to freemium via API...');
 
+      // Get CSRF token from cookie
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf-token='))
+        ?.split('=')[1];
+
+      if (!csrfToken) {
+        console.error('❌ CSRF token not found');
+        setPlanMessage({ type: 'error', text: 'セキュリティトークンが見つかりません。ページを再読み込みしてください。' });
+        return;
+      }
+
       // Call freemium downgrade API
       const downgradeResponse = await fetch('/api/subscription/change', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
         },
         body: JSON.stringify({
           action: 'downgrade',
