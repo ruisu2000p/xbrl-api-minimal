@@ -166,6 +166,14 @@ export default function SignupPage() {
         billingPeriod: billingPeriod
       });
 
+      // Server Action が undefined を返した場合のエラーハンドリング
+      if (!result) {
+        console.error('❌ Signup returned undefined - Server Action may have failed');
+        setError('サーバーエラーが発生しました。もう一度お試しください。');
+        setIsLoading(false);
+        return;
+      }
+
       console.log('📬 Signup result:', {
         success: result.success,
         hasUser: !!result.user,
@@ -207,6 +215,11 @@ export default function SignupPage() {
               .split('; ')
               .find(row => row.startsWith('csrf-token='))
               ?.split('=')[1] || '';
+
+            console.log('🔐 CSRF Token:', csrfToken ? 'Found' : 'Not Found', {
+              cookieCount: document.cookie.split('; ').length,
+              hasCsrfCookie: document.cookie.includes('csrf-token=')
+            });
 
             // Next.js API Routeを呼び出し
             const checkoutResponse = await fetch(
