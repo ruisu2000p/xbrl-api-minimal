@@ -309,6 +309,25 @@ function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePla
             <span className="text-xs text-gray-600">{t('dashboard.settings.plan.nextBillingLabel')} {currentPlan.nextBilling}</span>
           </div>
         </div>
+
+        {/* Downgrade Warning - Show when cancel_at_period_end is true */}
+        {userSubscription?.cancel_at_period_end && currentPlan.id !== 'freemium' && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-3">
+              <i className="ri-information-line text-xl text-amber-600"></i>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-900">
+                  {userSubscription.current_period_end
+                    ? `${new Date(userSubscription.current_period_end).toLocaleDateString('ja-JP')}にFreemiumプランへダウングレードされます`
+                    : 'Freemiumプランへのダウングレードが予約されています'}
+                </p>
+                <p className="mt-1 text-xs text-amber-700">
+                  現在の請求期間が終了するまで、Standard プランの全機能をご利用いただけます。
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Trial Period Banner - Only show for freemium users with trial info */}
