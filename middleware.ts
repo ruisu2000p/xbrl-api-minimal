@@ -9,12 +9,16 @@ const PUBLIC_PATHS: RegExp[] = [
   /^\/$/,
   /^\/login$/,
   /^\/signup$/,
-  /^\/verify-email$/,         // メール確認ページ
-  /^\/email-trouble$/,        // メール配信問題ページ
-  /^\/forgot-password$/,      // パスワードリセットリクエストページ
-  /^\/auth(\/|$)/,            // OAuth callback 含む
-  /^\/api\/auth\/verify$/,    // OTP検証API（パスワードリセット用）
-  /^\/api\/auth(\/|$)/,       // その他の認証 API
+  /^\/signup\/thanks$/,        // 決済完了後のサンキューページ
+  /^\/pricing$/,               // プランページ
+  /^\/verify-email$/,          // メール確認ページ
+  /^\/email-trouble$/,         // メール配信問題ページ
+  /^\/forgot-password$/,       // パスワードリセットリクエストページ
+  /^\/auth(\/|$)/,             // OAuth callback 含む
+  /^\/api\/auth\/verify$/,     // OTP検証API（パスワードリセット用）
+  /^\/api\/auth(\/|$)/,        // その他の認証 API
+  /^\/api\/signup$/,           // Freemium サインアップAPI
+  /^\/api\/stripe\/checkout-anon$/, // 匿名 Checkout API
   /^\/favicon\.ico$/,
   /^\/robots\.txt$/,
   /^\/_next\//,
@@ -43,8 +47,10 @@ export async function middleware(request: NextRequest) {
     '/api/auth/login',
     '/api/auth/signup',
     '/api/webhooks',
-    '/api/stripe/webhook',  // Stripe Webhook (署名検証を独自に実装)
-    '/rest/v1/',           // Supabase REST API (直接呼び出し)
+    '/api/stripe/webhook',        // Stripe Webhook (署名検証を独自に実装)
+    '/api/stripe/checkout-anon',  // Anonymous Checkout (未ログインユーザー用)
+    '/api/signup',                // Freemium Signup (未ログインユーザー用)
+    '/rest/v1/',                  // Supabase REST API (直接呼び出し)
   ];
 
   // OPTIONS / 公開ルート / 静的リソースは素通り（OAuth フロー保護）

@@ -10,6 +10,16 @@ import type Stripe from 'stripe';
 import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 
 /**
+ * Safe timestamp conversion helper
+ * Prevents "Invalid time value" errors when converting Unix timestamps to ISO strings
+ */
+const toIsoOrNull = (sec?: number): string | null => {
+  return typeof sec === 'number' && Number.isFinite(sec) && sec > 0
+    ? new Date(sec * 1000).toISOString()
+    : null;
+};
+
+/**
  * Stripe Webhook Handler
  *
  * Handles subscription lifecycle events from Stripe and syncs them to the database.
@@ -158,6 +168,10 @@ export async function POST(request: NextRequest) {
 
 /**
  * Handle checkout session completed events
+ *
+ * Supports two flows:
+ * 1. Existing user changing plans (has user_id in metadata)
+ * 2. New user signup via Pay→Create flow (has signup_email in metadata)
  */
 async function handleCheckoutSessionCompleted(
   supabase: any,
@@ -177,11 +191,83 @@ async function handleCheckoutSessionCompleted(
     return;
   }
 
-  // Get user_id from session metadata
-  const userId = session.metadata?.user_id || session.client_reference_id;
+  // Determine flow type
+  const isSignupFlow = session.metadata?.app_flow === 'signup_after_pay';
+  const signupEmail = session.metadata?.signup_email || session.customer_details?.email || session.customer_email;
+  const billingCycle = session.metadata?.billing_cycle || 'monthly';
+
+  let userId = session.metadata?.user_id || session.client_reference_id;
+
+  // Handle Pay→Create flow: Create user if this is a signup
+  if (isSignupFlow && !userId && signupEmail) {
+    console.log('🆕 Pay→Create flow detected - creating new user:', { email: signupEmail });
+
+    try {
+      // Check if user already exists
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const existingUser = existingUsers?.users?.find((u: any) => u.email === signupEmail);
+
+      if (existingUser) {
+        console.log('✅ User already exists, reusing:', { user_id: existingUser.id });
+        userId = existingUser.id;
+      } else {
+        // Create new user
+        const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+          email: signupEmail,
+          email_confirm: true, // Auto-confirm email
+          user_metadata: {
+            stripe_customer_id: customerId,
+            signup_flow: 'pay_first'
+          }
+        });
+
+        if (createErr) {
+          console.error('❌ Failed to create user:', createErr);
+          throw new Error(`Failed to create user: ${createErr.message}`);
+        }
+
+        userId = created.user.id;
+        console.log('✅ New user created:', { user_id: userId, email: signupEmail });
+
+        // Send magic link for initial login
+        try {
+          const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+            type: 'magiclink',
+            email: signupEmail,
+            options: {
+              redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`
+            }
+          });
+
+          if (linkError) {
+            console.warn('⚠️ Failed to generate magic link (non-fatal):', linkError);
+          } else {
+            console.log('📧 Magic link generated for new user');
+            // TODO: Send email with magic link using your email service
+          }
+        } catch (linkErr) {
+          console.warn('⚠️ Magic link generation error (non-fatal):', linkErr);
+        }
+      }
+
+      // Create/update profiles
+      await supabase.from('profiles').upsert({
+        id: userId,
+        email: signupEmail,
+        stripe_customer_id: customerId,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+      console.log('✅ Profile created/updated for new user');
+
+    } catch (userCreationError: any) {
+      console.error('❌ User creation failed:', userCreationError);
+      throw new Error(`User creation failed: ${userCreationError.message}`);
+    }
+  }
 
   if (!userId) {
-    console.warn(`No user_id found in session ${session.id} metadata or client_reference_id`);
+    console.warn(`No user_id found in session ${session.id} - cannot proceed`);
     return;
   }
 
@@ -203,22 +289,34 @@ async function handleCheckoutSessionCompleted(
     }
   }
 
-  // Update user_subscriptions table with new Stripe IDs
-  const { error: updateError } = await supabase
-    .from('user_subscriptions')
-    .update({
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscriptionId,
-      status: 'active',
-      updated_at: new Date().toISOString()
-    })
-    .eq('user_id', userId);
+  // Update or create user_subscriptions table
+  const subscriptionData = {
+    user_id: userId,
+    plan_id: 'standard', // Pay→Create flow always creates Standard plan
+    billing_cycle: billingCycle,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscriptionId,
+    status: 'active',
+    access_state: 'active', // Active immediately after payment
+    updated_at: new Date().toISOString()
+  };
 
-  if (updateError) {
-    throw new Error(`Failed to update subscription for user ${userId}: ${updateError.message}`);
+  const { error: upsertError } = await supabase
+    .from('user_subscriptions')
+    .upsert(subscriptionData, { onConflict: 'user_id' });
+
+  if (upsertError) {
+    console.error('❌ Failed to upsert subscription:', upsertError);
+    throw new Error(`Failed to update subscription for user ${userId}: ${upsertError.message}`);
   }
 
-  console.log(`✅ Synced checkout session ${session.id} for user ${userId} (customer: ${customerId}, subscription: ${subscriptionId})`);
+  console.log(`✅ Synced checkout session ${session.id} for user ${userId}`, {
+    customer: customerId,
+    subscription: subscriptionId,
+    plan: 'standard',
+    billing_cycle: billingCycle,
+    is_signup_flow: isSignupFlow
+  });
 }
 
 /**
@@ -242,11 +340,12 @@ async function handleSubscriptionEvent(
     .from('user_subscriptions')
     .select('user_id, id')
     .eq('stripe_customer_id', customerId)
-    .single();
+    .maybeSingle(); // Use maybeSingle to handle "not found" gracefully
 
   if (findError || !userSub) {
-    console.warn(`User not found for customer ${customerId}, skipping sync`);
-    return;
+    console.warn(`⚠️ Webhook: subscription row not found for customer ${customerId}, probably deleted by account deletion. Skipping sync.`);
+    // Return 200 OK to prevent Stripe from retrying
+    return; // This is handled by the parent function which returns 200
   }
 
   // Extract billing cycle from subscription items
@@ -266,17 +365,21 @@ async function handleSubscriptionEvent(
     updated_at: new Date().toISOString(),
   };
 
-  // Add timestamps only if they exist and are valid
-  if ((subscription as any).current_period_start) {
-    updateData.current_period_start = new Date((subscription as any).current_period_start * 1000).toISOString();
+  // Add timestamps using safe conversion helper
+  const currentPeriodStart = toIsoOrNull((subscription as any).current_period_start);
+  const currentPeriodEnd = toIsoOrNull((subscription as any).current_period_end);
+  const canceledAt = toIsoOrNull((subscription as any).canceled_at);
+
+  if (currentPeriodStart) {
+    updateData.current_period_start = currentPeriodStart;
   }
-  if ((subscription as any).current_period_end) {
-    updateData.current_period_end = new Date((subscription as any).current_period_end * 1000).toISOString();
+  if (currentPeriodEnd) {
+    updateData.current_period_end = currentPeriodEnd;
   }
 
   // If subscription is cancelled, set cancelled_at
-  if (subscription.status === 'canceled' && (subscription as any).canceled_at) {
-    updateData.cancelled_at = new Date((subscription as any).canceled_at * 1000).toISOString();
+  if (subscription.status === 'canceled' && canceledAt) {
+    updateData.cancelled_at = canceledAt;
   }
 
   // Handle pause_collection status
@@ -284,9 +387,13 @@ async function handleSubscriptionEvent(
   if (pauseCollection) {
     updateData.is_paused = true;
     updateData.pause_behavior = pauseCollection.behavior || 'void';
-    if (pauseCollection.resumes_at) {
-      updateData.pause_resumes_at = new Date(pauseCollection.resumes_at * 1000).toISOString();
+
+    // Safe timestamp conversion for pause_resumes_at
+    const pauseResumesAt = toIsoOrNull(pauseCollection.resumes_at);
+    if (pauseResumesAt) {
+      updateData.pause_resumes_at = pauseResumesAt;
     }
+
     // Clear pending_action if it was a pause operation
     if (eventType === 'customer.subscription.updated') {
       updateData.pending_action = null;
