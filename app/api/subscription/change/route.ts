@@ -190,7 +190,10 @@ export async function POST(request: NextRequest) {
       try {
         const stripe = getStripeClient();
 
-        // 2) サブスクリプションを即時キャンセル（按分あり）
+        // 2) サブスクリプション情報を取得（期間情報が必要）
+        const subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);
+
+        // 3) サブスクリプションを即時キャンセル（按分あり）
         const canceledSub = await stripe.subscriptions.cancel(
           currentSub.stripe_subscription_id,
           {
@@ -200,34 +203,49 @@ export async function POST(request: NextRequest) {
 
         console.log(`✅ Stripe subscription ${currentSub.stripe_subscription_id} canceled immediately`);
 
-        // 3) 最新のインボイスを取得
+        // 4) 最新のインボイスを取得
         const latestInvoice = canceledSub.latest_invoice;
         if (latestInvoice && typeof latestInvoice === 'string') {
           const invoice = await stripe.invoices.retrieve(latestInvoice);
 
-          // 4) Credit Note を発行（未使用分を返金）
-          // ※ ビジネス要件に応じて返金額を調整してください
+          // 5) Credit Note を発行（実際の未使用期間に基づく按分返金）
           if (invoice.amount_paid > 0) {
-            // 例: 50%返金（実際の按分計算はビジネスロジックに応じて調整）
-            const refundAmount = Math.round(invoice.amount_paid * 0.5);
+            // 未使用期間の計算
+            const periodStart = subscription.current_period_start;
+            const periodEnd = subscription.current_period_end;
+            const nowSec = Math.floor(Date.now() / 1000);
 
-            const creditNote = await stripe.creditNotes.create({
-              invoice: invoice.id,
-              lines: [
-                {
-                  type: 'custom_line_item',
-                  description: 'Prorated refund for unused subscription',
-                  amount: refundAmount,
-                },
-              ],
-              refund_amount: refundAmount,
-            });
+            // 既に期間終了している場合は返金不要
+            if (nowSec >= periodEnd) {
+              console.log('⚠️ Subscription period already ended, no refund needed');
+            } else {
+              // 按分計算：未使用分 = (残り日数 / 総日数) × 支払額
+              const totalPeriod = periodEnd - periodStart;
+              const unusedPeriod = periodEnd - nowSec;
+              const proratedAmount = Math.floor(invoice.amount_paid * (unusedPeriod / totalPeriod));
 
-            console.log(`✅ Credit Note ${creditNote.id} created for ${refundAmount / 100} ${invoice.currency}`);
+              if (proratedAmount > 0) {
+                const creditNote = await stripe.creditNotes.create({
+                  invoice: invoice.id,
+                  lines: [
+                    {
+                      type: 'custom_line_item',
+                      description: `Prorated refund for ${Math.floor(unusedPeriod / 86400)} unused days`,
+                      amount: proratedAmount,
+                    },
+                  ],
+                  refund_amount: proratedAmount,
+                });
+
+                console.log(`✅ Credit Note ${creditNote.id} created for ${proratedAmount / 100} ${invoice.currency} (${Math.floor(unusedPeriod / 86400)} days)`);
+              } else {
+                console.log('⚠️ Prorated refund amount is 0, no refund needed');
+              }
+            }
           }
         }
 
-        // 5) DBを更新（Freemiumプランに戻す）
+        // 6) DBを更新（Freemiumプランに戻す）
         const { data: freemiumPlan } = await supabase
           .from('subscription_plans')
           .select('id')
