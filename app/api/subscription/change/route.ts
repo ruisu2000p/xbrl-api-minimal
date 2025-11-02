@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     });
 
     // DB操作用に Service Role クライアントを作成（RLSをバイパス）
-    const supabase = createServiceSupabaseClient();
+    const supabase = await createServiceSupabaseClient();
 
     // ==========================================================================
     // ACTION: downgrade to freemium (期末キャンセル + 按分処理)
