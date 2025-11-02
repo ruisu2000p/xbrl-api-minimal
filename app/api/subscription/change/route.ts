@@ -6,19 +6,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import Stripe from 'stripe';
-
-/**
- * Stripe client (lazy initialization)
- */
-function getStripeClient() {
-  if (!process.env.STRIPE_SECRET_KEY?.trim()) {
-    throw new Error('STRIPE_SECRET_KEY is not configured');
-  }
-  return new Stripe(process.env.STRIPE_SECRET_KEY?.trim(), {
-    apiVersion: '2023-10-16' as any,
-  });
-}
+import { createStripeClient } from '@/utils/stripe/client';
 
 /**
  * POST /api/subscription/change
@@ -91,7 +79,7 @@ export async function POST(request: NextRequest) {
       // 3) Stripeサブスクリプションをキャンセル（期末キャンセル + 按分処理）
       if (currentSub?.stripe_subscription_id) {
         try {
-          const stripe = getStripeClient();
+          const stripe = createStripeClient();
 
           // 按分ポリシー：
           // - 'create_prorations': 未使用分をクレジットとして次回請求に反映（推奨）
@@ -190,7 +178,7 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        const stripe = getStripeClient();
+        const stripe = createStripeClient();
 
         // 2) サブスクリプション情報を取得（期間情報が必要）
         const subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);

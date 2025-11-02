@@ -5,18 +5,8 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { createStripeClient } from '@/utils/stripe/client';
 import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
-
-// Stripe client (lazy initialization to avoid build errors)
-function getStripeClient() {
-  if (!process.env.STRIPE_SECRET_KEY?.trim()) {
-    throw new Error('STRIPE_SECRET_KEY is not configured');
-  }
-  return new Stripe(process.env.STRIPE_SECRET_KEY?.trim(), {
-    apiVersion: '2023-10-16' as any,
-  });
-}
 
 /**
  * Stripe Webhook Handler
@@ -32,7 +22,7 @@ function getStripeClient() {
  * - invoice.payment_failed
  */
 export async function POST(request: NextRequest) {
-  const stripe = getStripeClient();
+  const stripe = createStripeClient();
 
   // Get raw body for signature verification
   const body = await request.text();

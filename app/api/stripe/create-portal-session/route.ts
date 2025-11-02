@@ -6,7 +6,7 @@ export const runtime = 'nodejs'; // Stripe SDK requires Node.js runtime
 
 import { createClient } from '@/utils/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
+import { createStripeClient } from '@/utils/stripe/client'
 
 /**
  * エラーオブジェクトを文字列に変換（React #31 回避）
@@ -37,19 +37,8 @@ function textError(err: unknown): string {
  * - 自動的にプロレーション計算
  */
 export async function POST(request: NextRequest) {
-  // ★ 1) Stripe Secret Key 存在チェック
-  const secret = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!secret) {
-    console.error('❌ STRIPE_SECRET_KEY environment variable is not set');
-    return NextResponse.json(
-      { error: 'Stripe is not configured. Please contact support.' },
-      { status: 500 }
-    );
-  }
-
-  const stripe = new Stripe(secret, {
-    apiVersion: '2023-10-16' as any,
-  });
+  // ★ 1) Stripe client initialization
+  const stripe = createStripeClient();
 
   try {
     const supabase = await createClient();
