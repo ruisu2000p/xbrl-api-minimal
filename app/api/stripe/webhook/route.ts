@@ -255,6 +255,12 @@ async function handleSubscriptionEvent(
     updateData.cancelled_at = new Date(subscription.canceled_at * 1000).toISOString();
   }
 
+  // Clear pending_action if subscription update is confirmed
+  // This handles cases where we were waiting for webhook confirmation
+  if (eventType === 'customer.subscription.updated') {
+    updateData.pending_action = null;
+  }
+
   // Update user_subscriptions table
   const { error: updateError } = await supabase
     .from('user_subscriptions')
@@ -262,10 +268,20 @@ async function handleSubscriptionEvent(
     .eq('user_id', userSub.user_id);
 
   if (updateError) {
+    console.error('❌ Failed to update subscription in DB:', {
+      error: updateError,
+      updateData,
+      userId: userSub.user_id,
+      subscriptionId: subscription.id
+    });
     throw new Error(`Failed to update subscription: ${updateError.message}`);
   }
 
-  console.log(`✅ Synced subscription ${subscription.id} for user ${userSub.user_id} (${eventType})`);
+  console.log(`✅ Synced subscription ${subscription.id} for user ${userSub.user_id} (${eventType})`, {
+    status: subscription.status,
+    billing_cycle: billingCycle,
+    cancel_at_period_end: subscription.cancel_at_period_end
+  });
 }
 
 /**
