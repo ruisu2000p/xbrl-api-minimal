@@ -46,35 +46,41 @@ export async function middleware(request: NextRequest) {
   }
 
   // 🔒 セキュリティ: CSRF トークン検証（POST/PUT/PATCH/DELETE のみ）
-  // 認証不要のパスや特定のパスは除外
-  const csrfExemptPaths = [
-    '/api/auth/callback',
-    '/api/auth/login',
-    '/api/auth/signup',
-    '/api/webhooks',
-    '/api/stripe/webhook' // Stripe Webhook (署名検証を独自に実装)
-  ];
+  // 安全なメソッド (GET, HEAD, OPTIONS) はスキップ
+  if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    // CSRF検証不要
+  } else {
+    // 認証不要のパスや特定のパスは除外
+    const csrfExemptPaths = [
+      '/api/auth/callback',
+      '/api/auth/login',
+      '/api/auth/signup',
+      '/api/webhooks',
+      '/api/stripe/webhook',  // Stripe Webhook (署名検証を独自に実装)
+      '/rest/v1/',           // Supabase REST API (直接呼び出し)
+    ];
 
-  const requiresCsrfCheck =
-    ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
-    pathname.startsWith('/api/') &&
-    !csrfExemptPaths.some(exemptPath => pathname.startsWith(exemptPath));
+    const requiresCsrfCheck =
+      pathname.startsWith('/api/') &&
+      !csrfExemptPaths.some(exemptPath => pathname.startsWith(exemptPath));
 
-  if (requiresCsrfCheck) {
-    const headerToken = request.headers.get('x-csrf-token');
-    const cookieToken = request.cookies.get('csrf-token')?.value;
+    if (requiresCsrfCheck) {
+      const headerToken = request.headers.get('x-csrf-token');
+      const cookieToken = request.cookies.get('csrf-token')?.value;
 
-    if (!headerToken || !cookieToken || headerToken !== cookieToken) {
-      console.error('🚨 Security: CSRF token validation failed', {
-        path: pathname,
-        hasHeader: !!headerToken,
-        hasCookie: !!cookieToken,
-        tokensMatch: headerToken === cookieToken
-      });
-      return NextResponse.json(
-        { error: 'Invalid CSRF token' },
-        { status: 403 }
-      );
+      if (!headerToken || !cookieToken || headerToken !== cookieToken) {
+        console.error('🚨 Security: CSRF token validation failed', {
+          method,
+          path: pathname,
+          hasHeader: !!headerToken,
+          hasCookie: !!cookieToken,
+          tokensMatch: headerToken === cookieToken
+        });
+        return NextResponse.json(
+          { error: 'Invalid CSRF token' },
+          { status: 403 }
+        );
+      }
     }
   }
 

@@ -1,92 +1,118 @@
 /**
- * クライアント側 CSRF トークン処理ユーティリティ
+ * クライアント側のCSRFトークン管理ユーティリティ
  *
- * Cookie から CSRF トークンを読み取り、fetch リクエストに自動追加
+ * Double Submit Cookie パターンに基づき、最新のCSRFトークンを
+ * 確実に取得するヘルパー関数を提供します。
  */
 
 /**
- * Cookie から指定した名前の値を取得
- */
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') {
-    return null;
-  }
-
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-
-  if (parts.length === 2) {
-    return parts.pop()?.split(';').shift() || null;
-  }
-
-  return null;
-}
-
-/**
- * CSRF トークンを自動的に追加する fetch ラッパー
+ * 最新のCSRFトークンを取得
  *
- * POST/PUT/PATCH/DELETE リクエストに対して、Cookie の csrf-token を
- * X-CSRF-Token ヘッダーに自動追加します。
+ * 1. まずCookieから取得を試みる
+ * 2. Cookieにない、または期限切れの場合は /api/csrf から最新を取得
+ *
+ * @returns CSRFトークン文字列
+ * @throws Error CSRFトークンの取得に失敗した場合
  *
  * @example
- * // 通常の fetch の代わりに使用
- * const response = await secureFetch('/api/subscription/cancel', {
+ * const token = await getFreshCsrfToken();
+ * fetch('/api/protected', {
  *   method: 'POST',
- *   headers: { 'Content-Type': 'application/json' },
- *   body: JSON.stringify({ reason: 'test' })
+ *   headers: { 'X-CSRF-Token': token }
  * });
  */
-export async function secureFetch(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): Promise<Response> {
-  const csrfToken = getCookie('csrf-token');
+export async function getFreshCsrfToken(): Promise<string> {
+  // まずCookieから取得
+  const fromCookie = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrf-token='))
+    ?.split('=')[1];
 
-  // POST/PUT/PATCH/DELETE のみ CSRF トークンを追加
-  const method = init?.method?.toUpperCase() || 'GET';
-  const needsCsrf = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-
-  if (needsCsrf && csrfToken) {
-    const headers = new Headers(init?.headers || {});
-    headers.set('X-CSRF-Token', csrfToken);
-
-    return fetch(input, {
-      ...init,
-      headers
-    });
+  if (fromCookie) {
+    return fromCookie;
   }
 
-  return fetch(input, init);
+  // フォールバック: /api/csrf から最新のトークンを取得
+  console.log('🔄 CSRF token not found in cookie, fetching fresh token...');
+
+  try {
+    const response = await fetch('/api/csrf', { credentials: 'include' });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch CSRF token: ${response.status}`);
+    }
+
+    const { csrfToken } = await response.json();
+
+    if (!csrfToken) {
+      throw new Error('CSRF token not returned from /api/csrf');
+    }
+
+    console.log('✅ Fresh CSRF token obtained');
+    return csrfToken;
+  } catch (error) {
+    console.error('❌ Failed to get CSRF token:', error);
+    throw new Error('セキュリティトークンの取得に失敗しました。ページを再読み込みしてください。');
+  }
 }
 
 /**
- * グローバル fetch を CSRF 対応版で置き換える（オプション）
+ * CSRF保護されたAPIをリトライ機能付きで呼び出す
  *
- * CAUTION: この関数を呼ぶと、すべての fetch リクエストが CSRF トークン付きになります。
- * 必要に応じて _app.tsx や layout.tsx で呼び出してください。
+ * 403エラーの場合、一度だけCSRFトークンを再取得してリトライします。
+ *
+ * @param url - API endpoint
+ * @param options - fetch options (method, body, headers など)
+ * @returns Response
  *
  * @example
- * // app/layout.tsx or _app.tsx
- * import { interceptGlobalFetch } from '@/utils/security/csrf-client';
- *
- * if (typeof window !== 'undefined') {
- *   interceptGlobalFetch();
- * }
+ * const response = await fetchWithCsrf('/api/subscription/change', {
+ *   method: 'POST',
+ *   body: JSON.stringify({ action: 'downgrade', planType: 'freemium' })
+ * });
  */
-export function interceptGlobalFetch(): void {
-  if (typeof window === 'undefined') {
-    return;
+export async function fetchWithCsrf(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  // 最新のCSRFトークンを取得
+  let csrfToken = await getFreshCsrfToken();
+
+  // リクエストを実行
+  let response = await fetch(url, {
+    ...options,
+    credentials: 'include', // 必須: Cookieを送信
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken,
+      ...options.headers,
+    },
+  });
+
+  // 403の場合、一度だけリトライ
+  if (response.status === 403) {
+    console.log('⚠️ 403 Forbidden - Retrying with fresh CSRF token...');
+
+    // 最新のトークンを再取得
+    csrfToken = await getFreshCsrfToken();
+
+    // 再度リクエスト
+    response = await fetch(url, {
+      ...options,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        ...options.headers,
+      },
+    });
+
+    if (response.ok) {
+      console.log('✅ Retry succeeded');
+    } else {
+      console.error('❌ Retry failed:', response.status);
+    }
   }
 
-  const originalFetch = window.fetch;
-
-  window.fetch = async (
-    input: RequestInfo | URL,
-    init?: RequestInit
-  ): Promise<Response> => {
-    return secureFetch(input, init);
-  };
-
-  // デバッグ用
-  console.log('✅ Global fetch intercepted for CSRF protection');
+  return response;
 }

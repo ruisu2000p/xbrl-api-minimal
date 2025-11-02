@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useSupabase } from '@/components/SupabaseProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import AccountDeletionSection from '../../(dashboard)/settings/AccountDeletionSection';
+import { getFreshCsrfToken, fetchWithCsrf } from '@/utils/security/csrf-client';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -1235,24 +1236,16 @@ export default function AccountSettings() {
 
         console.log('📤 Sending to Stripe API:', requestBody);
 
-        // Get CSRF token from cookie
-        const csrfToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('csrf-token='))
-          ?.split('=')[1];
+        // Generate idempotency key for Stripe request (防止多重送信)
+        const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`;
 
-        if (!csrfToken) {
-          console.error('❌ CSRF token not found');
-          setPlanMessage({ type: 'error', text: 'セキュリティトークンが見つかりません。ページを再読み込みしてください。' });
-          return;
-        }
-
-        // Stripe Checkout Sessionを作成
-        const response = await fetch('/api/stripe/create-checkout-session', {
+        // Stripe Checkout Sessionを作成（リトライ機能付き）
+        const response = await fetchWithCsrf('/api/stripe/create-checkout-session', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken,
+            'Idempotency-Key': idempotencyKey,
           },
           body: JSON.stringify(requestBody),
         });
@@ -1273,25 +1266,9 @@ export default function AccountSettings() {
       // Freemiumプランに変更する場合は新しいAPIを使用
       console.log('⬇️ Downgrading to freemium via API...');
 
-      // Get CSRF token from cookie
-      const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrf-token='))
-        ?.split('=')[1];
-
-      if (!csrfToken) {
-        console.error('❌ CSRF token not found');
-        setPlanMessage({ type: 'error', text: 'セキュリティトークンが見つかりません。ページを再読み込みしてください。' });
-        return;
-      }
-
-      // Call freemium downgrade API
-      const downgradeResponse = await fetch('/api/subscription/change', {
+      // Call freemium downgrade API（リトライ機能付き）
+      const downgradeResponse = await fetchWithCsrf('/api/subscription/change', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
-        },
         body: JSON.stringify({
           action: 'downgrade',
           planType: 'freemium'
