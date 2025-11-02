@@ -95,6 +95,8 @@ export async function middleware(request: NextRequest) {
   const allowedOrigins = [
     allowedOrigin,
     'https://fininfonext.com',
+    'https://www.fininfonext.com',  // wwwありも許可
+    'https://www.financial-info-next.com',  // Vercelドメインも許可
     'http://localhost:3000',
     'http://localhost:3001'
   ];
