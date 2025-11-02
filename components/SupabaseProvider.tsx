@@ -84,13 +84,20 @@ export default function SupabaseProvider({
       setLoading(false)
 
       // Send welcome email only on initial signup (first SIGNED_IN after registration)
-      // Check if user was created very recently (within last 10 seconds)
+      // Check if user was created very recently (within last 10 seconds) AND hasn't been sent yet
       if (event === 'SIGNED_IN' && session?.user) {
         const userCreatedAt = new Date(session.user.created_at).getTime()
         const now = Date.now()
         const isNewUser = (now - userCreatedAt) < 10000 // 10 seconds
 
-        if (isNewUser) {
+        // Check localStorage flag to prevent duplicate sends during page refreshes
+        const storageKey = `welcome_email_sent_${session.user.id}`
+        const alreadyTriedToSend = localStorage.getItem(storageKey)
+
+        if (isNewUser && !alreadyTriedToSend) {
+          // Mark as attempted immediately to prevent duplicate requests
+          localStorage.setItem(storageKey, 'true')
+
           try {
             const response = await fetch('/api/notifications/welcome', {
               method: 'POST',
