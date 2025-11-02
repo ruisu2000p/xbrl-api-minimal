@@ -37,6 +37,16 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const method = request.method
 
+  // 🔒 セキュリティ: CSRF/Origin チェック用の除外パス定義（関数スコープに移動）
+  const csrfExemptPaths = [
+    '/api/auth/callback',
+    '/api/auth/login',
+    '/api/auth/signup',
+    '/api/webhooks',
+    '/api/stripe/webhook',  // Stripe Webhook (署名検証を独自に実装)
+    '/rest/v1/',           // Supabase REST API (直接呼び出し)
+  ];
+
   // OPTIONS / 公開ルート / 静的リソースは素通り（OAuth フロー保護）
   if (method === 'OPTIONS' || isPublicPath(pathname)) {
     const pass = NextResponse.next()
@@ -51,14 +61,6 @@ export async function middleware(request: NextRequest) {
     // CSRF検証不要
   } else {
     // 認証不要のパスや特定のパスは除外
-    const csrfExemptPaths = [
-      '/api/auth/callback',
-      '/api/auth/login',
-      '/api/auth/signup',
-      '/api/webhooks',
-      '/api/stripe/webhook',  // Stripe Webhook (署名検証を独自に実装)
-      '/rest/v1/',           // Supabase REST API (直接呼び出し)
-    ];
 
     const requiresCsrfCheck =
       pathname.startsWith('/api/') &&
