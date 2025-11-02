@@ -161,15 +161,26 @@ export async function POST(request: NextRequest) {
     console.log('💳 Using Stripe Price ID:', priceId);
 
     // Get the origin for redirect URLs
-    const origin = request.headers.get('origin')
-      || process.env.NEXT_PUBLIC_SITE_URL
-      || process.env.NEXT_PUBLIC_BASE_URL
+    const originHeader = request.headers.get('origin');
+    const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const envBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+    const origin = originHeader
+      || envSiteUrl
+      || envBaseUrl
       || 'http://localhost:3000';
 
     const successUrl = `${origin}/dashboard?payment_success=true&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${origin}/dashboard?payment_cancelled=true`;
 
-    console.log('🔗 Redirect URLs:', { successUrl, cancelUrl });
+    console.log('🔗 Origin resolution:', {
+      originHeader,
+      envSiteUrl,
+      envBaseUrl,
+      selectedOrigin: origin,
+      successUrl,
+      cancelUrl
+    });
 
     // ★ 6) Stripe Checkout Session作成（Idempotency Key対応 + プロレーション設定）
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
