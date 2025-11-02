@@ -589,10 +589,9 @@ async function refundUnusedAmount(
   });
 
   // Upcoming invoice preview to calculate unused credit
-  // Note: retrieveUpcoming exists in Stripe SDK but not in TypeScript types
+  // Using extended Stripe types from types/stripe-extensions.d.ts
   let upcoming: Stripe.Invoice;
   try {
-    // @ts-expect-error - retrieveUpcoming exists at runtime but not in type definitions
     upcoming = await stripe.invoices.retrieveUpcoming({
       customer: sub.customer,
       subscription: sub.id,
