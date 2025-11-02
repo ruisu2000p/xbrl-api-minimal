@@ -6,7 +6,7 @@ XBRL財務データ分析プラットフォーム - Financial Information next (
 
 ## MCP (Model Context Protocol) 設定
 
-このプロジェクトは、XBRL Financial MCPサーバーとして動作し、JWTと独自APIキーを組み合わせた認証システムを提供します。
+このプロジェクトは、XBRL Financial MCPサーバーとして動作します。
 
 ### XBRL Financial MCP設定方法
 
@@ -44,15 +44,8 @@ macOS:
    - Edge Function内部でService Role Keyに変換
    - RPC (SECURITY DEFINER) で安全に検証
 
-2. **セキュリティ強化**
-   - 直クエリ完全排除（RPC一択）
-   - APIキーのマスキングログ
-   - 入力バリデーション（二重）
-   - trigram GIN高速検索
 
-
-
-3. **APIキーを発行**
+2. **APIキーを発行**
    - 「APIキー」タブを選択
    - 名前を入力して「APIキー発行」をクリック
    - ⚠️ APIキーは一度だけ表示されます
