@@ -41,6 +41,12 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const method = request.method
 
+  // Extract or generate request ID for log correlation
+  const requestId =
+    request.headers.get('x-vercel-id') ||
+    request.headers.get('x-request-id') ||
+    crypto.randomUUID()
+
   // 🔒 セキュリティ: CSRF/Origin チェック用の除外パス定義（関数スコープに移動）
   const csrfExemptPaths = [
     '/api/auth/callback',
@@ -196,6 +202,9 @@ export async function middleware(request: NextRequest) {
       headers: request.headers,
     },
   })
+
+  // Forward request ID to route handlers for log correlation
+  response.headers.set('x-request-id', requestId)
 
   // Supabaseクライアントを作成
   // 🔒 重要: request と response 両方に Cookie を反映（SSR でのズレ防止）

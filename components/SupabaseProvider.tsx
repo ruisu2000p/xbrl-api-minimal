@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { User, SupabaseClient } from '@supabase/supabase-js'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
+import { logger } from '@/utils/logger/client'
 
 type SupabaseContextType = {
   user: User | null
@@ -35,7 +36,7 @@ export default function SupabaseProvider({
   const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
-    console.log('⏳ Supabaseセッション読み込み中...')
+    logger.debug('Supabase session loading')
 
     // 初回のセッション復元
     const initializeUser = async () => {
@@ -44,21 +45,25 @@ export default function SupabaseProvider({
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
         if (sessionError) {
-          console.error('❌ セッション復元エラー:', sessionError)
+          logger.error('Session restoration failed', {
+            err: sessionError instanceof Error ? sessionError : { message: String(sessionError) }
+          })
           setUser(null)
           setLoading(false)
           return
         }
 
         if (session?.user) {
-          console.log('✅ 認証済みユーザー:', session.user.email)
+          logger.info('User authenticated', { email: session.user.email })
           setUser(session.user)
         } else {
-          console.log('ℹ️ セッションが見つかりません')
+          logger.debug('No session found')
           setUser(null)
         }
       } catch (error) {
-        console.error('Failed to get initial session:', error)
+        logger.error('Failed to get initial session', {
+          err: error instanceof Error ? error : { message: String(error) }
+        })
         setUser(null)
       } finally {
         setLoading(false)
@@ -70,10 +75,47 @@ export default function SupabaseProvider({
     // 認証状態の変更を監視
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔄 Auth state changed:', event, session?.user?.email)
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.debug('Auth state changed', {
+        event,
+        email: session?.user?.email
+      })
       setUser(session?.user ?? null)
       setLoading(false)
+
+      // Send welcome email on first sign-in
+      // The endpoint is idempotent so it's safe to call multiple times
+      if (event === 'SIGNED_IN' && session?.user) {
+        try {
+          const response = await fetch('/api/notifications/welcome', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.sent) {
+              logger.info('Welcome email sent', { email: session.user.email })
+            } else if (data.alreadySent) {
+              logger.debug('Welcome email already sent', { email: session.user.email })
+            }
+          } else {
+            // Non-blocking: log but don't affect UX
+            logger.warn('Welcome email request failed', {
+              status: response.status,
+              email: session.user.email
+            })
+          }
+        } catch (error) {
+          // Non-blocking: silent failure with retry on next login
+          logger.debug('Welcome email call failed (will retry later)', {
+            err: error instanceof Error ? error : { message: String(error) }
+          })
+        }
+      }
     })
 
     return () => {

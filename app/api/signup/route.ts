@@ -6,6 +6,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
+import { logger, extractRequestId } from '@/utils/logger';
 
 /**
  * Freemium Signup Endpoint
@@ -21,6 +22,9 @@ import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
  */
 export async function POST(req: NextRequest) {
   try {
+    // Extract request ID for log correlation
+    await extractRequestId();
+
     // Parse request body
     const body = await req.json();
     const { email, password, name } = body;
@@ -59,21 +63,31 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createServiceSupabaseClient();
 
-    console.log('📝 Creating freemium user:', { email });
+    logger.info('Creating freemium user', {
+      path: '/api/signup',
+      email,
+      meta: { hasName: !!name }
+    });
 
     // Create user with Supabase Auth
-    const { data: created, error: createError } = await supabase.auth.admin.createUser({
+    // Using signUp() instead of admin.createUser() to trigger automatic confirmation email
+    const { data: created, error: createError } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: false, // Send confirmation email
-      user_metadata: {
-        name: name || null,
-        signup_flow: 'freemium'
+      options: {
+        data: {
+          name: name || null,
+          signup_flow: 'freemium'
+        }
       }
     });
 
     if (createError) {
-      console.error('❌ User creation failed:', createError);
+      logger.error('User creation failed', {
+        path: '/api/signup',
+        email,
+        err: createError instanceof Error ? createError : { message: String(createError) }
+      });
 
       // Handle duplicate user error
       if (createError.message?.includes('already registered')) {
@@ -89,8 +103,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userId = created.user.id;
-    console.log('✅ User created:', { user_id: userId });
+    const userId = created.user?.id;
+    if (!userId) {
+      logger.error('User ID not found after signup', {
+        path: '/api/signup',
+        email
+      });
+      return NextResponse.json(
+        { error: 'Signup failed - no user ID returned' },
+        { status: 500 }
+      );
+    }
+
+    logger.info('User created successfully', {
+      path: '/api/signup',
+      userId,
+      email
+    });
 
     // Create profile
     const { error: profileError } = await supabase.from('profiles').upsert({
@@ -101,9 +130,16 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'id' });
 
     if (profileError) {
-      console.error('⚠️ Profile creation failed (non-fatal):', profileError);
+      logger.warn('Profile creation failed (non-fatal)', {
+        path: '/api/signup',
+        userId,
+        err: profileError instanceof Error ? profileError : { message: String(profileError) }
+      });
     } else {
-      console.log('✅ Profile created');
+      logger.info('Profile created', {
+        path: '/api/signup',
+        userId
+      });
     }
 
     // Create freemium subscription
@@ -119,9 +155,17 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'user_id' });
 
     if (subscriptionError) {
-      console.error('⚠️ Subscription creation failed (non-fatal):', subscriptionError);
+      logger.warn('Subscription creation failed (non-fatal)', {
+        path: '/api/signup',
+        userId,
+        err: subscriptionError instanceof Error ? subscriptionError : { message: String(subscriptionError) }
+      });
     } else {
-      console.log('✅ Freemium subscription created');
+      logger.info('Freemium subscription created', {
+        path: '/api/signup',
+        userId,
+        meta: { planType: 'freemium' }
+      });
     }
 
     return NextResponse.json({
@@ -132,9 +176,9 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     const msg = error?.message || 'Signup failed';
-    console.error('❌ Freemium signup error:', {
-      message: msg,
-      error
+    logger.error('Freemium signup error', {
+      path: '/api/signup',
+      err: error instanceof Error ? error : { message: msg }
     });
 
     return NextResponse.json(

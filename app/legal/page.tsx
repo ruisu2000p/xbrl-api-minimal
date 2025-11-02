@@ -9,7 +9,6 @@ const translations = {
     title: '特定商取引法に基づく表記',
     pageTitle: '特定商取引法に基づく表記',
     businessName: '事業者名',
-    manager: '運営統括責任者',
     address: '所在地',
     addressNote: '※バーチャルオフィスを利用している場合はその旨を明記してください',
     contact: 'お問い合わせ',
@@ -28,7 +27,6 @@ const translations = {
     title: 'Specified Commercial Transaction Act',
     pageTitle: 'Specified Commercial Transaction Act',
     businessName: 'Business Name',
-    manager: 'General Manager',
     address: 'Address',
     addressNote: '※If using a virtual office, please clearly state this',
     contact: 'Contact',
@@ -97,11 +95,6 @@ export default function LegalPage() {
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.businessName}</h2>
                 <p className="text-gray-700">Financial Information next (FIN)</p>
-              </section>
-
-              <section>
-                <h2 className="text-xl font-bold mb-3 text-gray-900">{t.manager}</h2>
-                <p className="text-gray-700">[運営者名を記載]</p>
               </section>
 
               <section>
@@ -194,11 +187,6 @@ export default function LegalPage() {
               <section>
                 <h2 className="text-xl font-bold mb-3 text-gray-900">{t.businessName}</h2>
                 <p className="text-gray-700">Financial Information next (FIN)</p>
-              </section>
-
-              <section>
-                <h2 className="text-xl font-bold mb-3 text-gray-900">{t.manager}</h2>
-                <p className="text-gray-700">[Manager name to be specified]</p>
               </section>
 
               <section>

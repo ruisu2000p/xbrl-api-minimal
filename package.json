@@ -59,6 +59,7 @@
     "punycode": "^2.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "resend": "^6.4.0",
     "shared-supabase-mcp-minimal": "^5.6.0",
     "sns-validator": "^0.3.5",
     "stripe": "^19.1.0",

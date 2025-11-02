@@ -9,6 +9,7 @@ import { useSupabase } from '@/components/SupabaseProvider';
 import { useLanguage } from '@/contexts/LanguageContext';
 import AccountDeletionSection from '../../(dashboard)/settings/AccountDeletionSection';
 import { getFreshCsrfToken, fetchWithCsrf } from '@/utils/security/csrf-client';
+import { logger } from '@/utils/logger/client';
 
 type TabId = 'profile' | 'plan' | 'api';
 
@@ -579,7 +580,7 @@ function ApiKeyTab({
   "mcpServers": {
     "xbrl-financial": {
       "command": "npx",
-      "args": ["shared-supabase-mcp-minimal@8.2.9"],
+      "args": ["shared-supabase-mcp-minimal@8.3.1"],
       "env": {
         "XBRL_API_KEY": "your-api-key-here"
       }
@@ -793,10 +794,9 @@ export default function AccountSettings() {
   useEffect(() => {
     const loadUserProfile = async () => {
       if (user && !profileLoadedRef.current) {
-        console.log('📋 Loading user profile:', {
+        logger.debug('Loading user profile', {
           email: user.email,
-          metadata: user.user_metadata,
-          app_metadata: user.app_metadata
+          hasMetadata: !!user.user_metadata
         });
 
         // user_metadataから情報を取得
@@ -813,7 +813,11 @@ export default function AccountSettings() {
         setOriginalProfile(profileData); // 元の値も保存
 
         profileLoadedRef.current = true;
-        console.log('✅ Profile loaded:', { email: user.email, name, company });
+        logger.info('Profile loaded', {
+          email: user.email,
+          hasName: !!name,
+          hasCompany: !!company
+        });
       }
     };
 
@@ -825,14 +829,16 @@ export default function AccountSettings() {
     if (!user) return;
 
     try {
-      console.log('🔄 Refreshing subscription data...');
+      logger.debug('Refreshing subscription data');
 
       // Use new subscription status API
       const response = await fetch('/api/subscription/status');
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('❌ Error fetching subscription:', data.error);
+        logger.error('Error fetching subscription', {
+          err: { message: data.error }
+        });
         setUserSubscription(null);
         setCurrentPlan(getDefaultCurrentPlan(t, null));
         setSelectedPlan('freemium');
@@ -846,14 +852,18 @@ export default function AccountSettings() {
 
       // Check if subscription exists (using plan_type or subscription_plans)
       if (!subscription || (!subscription.plan_type && !subscription.subscription_plans)) {
-        console.log('📋 No subscription found, using freemium');
+        logger.debug('No subscription found, using freemium');
         setUserSubscription(null);
         setCurrentPlan(getDefaultCurrentPlan(t, null));
         setSelectedPlan('freemium');
         return;
       }
 
-      console.log('✅ Subscription refreshed:', subscription);
+      logger.info('Subscription refreshed', {
+        planType: subscription.plan_type,
+        status: subscription.status,
+        billingCycle: subscription.billing_cycle
+      });
       setUserSubscription(subscription);
       setCurrentPlan(getDefaultCurrentPlan(t, subscription));
 
