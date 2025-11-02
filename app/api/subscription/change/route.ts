@@ -487,7 +487,7 @@ export async function POST(request: NextRequest) {
           last_resolution_path: resolutionPath,
           last_resolved_at: new Date().toISOString(),
         })
-        .eq('user_id', userId);
+        .eq('user_id', user.id);
 
       if (updateError) {
         console.error('❌ Failed to update DB:', updateError);
