@@ -271,6 +271,18 @@ async function handleCheckoutSessionCompleted(
     return;
   }
 
+  // Verify user still exists in Auth (may have been deleted)
+  try {
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+    if (userError || !userData.user) {
+      console.warn(`⚠️ User ${userId} no longer exists (probably deleted). Skipping checkout sync.`);
+      return; // Return 200 OK to prevent Stripe retry
+    }
+  } catch (authCheckError) {
+    console.warn(`⚠️ Failed to verify user existence for ${userId}:`, authCheckError);
+    return; // Return 200 OK to prevent Stripe retry
+  }
+
   // Check if this is a plan change (replacing an old subscription)
   const isPlanChange = session.metadata?.is_plan_change === 'true';
   const oldSubscriptionId = session.metadata?.old_subscription_id;
