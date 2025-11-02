@@ -384,18 +384,18 @@ export async function POST(request: NextRequest) {
     const deletedAt = new Date();
     const permanentDeletionAt = new Date(deletedAt.getTime() + 30 * 24 * 60 * 60 * 1000); // 30日後
 
-    // 7-1. user_subscriptions 更新
+    // 7-1. user_subscriptions 削除
+    // レコードを削除することで、後続のWebhookが来ても「レコードが存在しない」としてスキップされる
     const { error: subscriptionError } = await adminSupabase
       .from('user_subscriptions')
-      .update({
-        status: 'cancelled',
-        cancelled_at: deletedAt.toISOString()
-      })
+      .delete()
       .eq('user_id', user.id);
 
     if (subscriptionError) {
-      console.error('Failed to update user_subscriptions:', subscriptionError);
-      // サブスクリプション更新失敗でも処理は続行（手動対応可能）
+      console.error('Failed to delete user_subscriptions:', subscriptionError);
+      // サブスクリプション削除失敗でも処理は続行（手動対応可能）
+    } else {
+      console.log('✅ user_subscriptions record deleted for user:', user.id);
     }
 
     // 7-2. api_keys 無効化（テーブルが存在する場合のみ）
