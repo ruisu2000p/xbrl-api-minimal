@@ -29,19 +29,13 @@ export async function POST(req: NextRequest) {
 
     // Get authenticated user
     const supabase = await createServiceSupabaseClient();
-    const authHeader = req.headers.get('Authorization');
-
-    if (authHeader) {
-      // Set auth header if provided
-      supabase.auth.headers = { Authorization: authHeader };
-    }
 
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
 
     if (authErr || !user) {
       logger.warn('Welcome email: Unauthorized request', {
         path: '/api/notifications/welcome',
-        err: authErr
+        err: authErr ? (authErr instanceof Error ? authErr : { message: String(authErr) }) : undefined
       });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
