@@ -398,7 +398,7 @@ export async function POST(request: NextRequest) {
       // サブスクリプション更新失敗でも処理は続行（手動対応可能）
     }
 
-    // 7-2. api_keys 無効化
+    // 7-2. api_keys 無効化（テーブルが存在する場合のみ）
     const { error: apiKeysError } = await adminSupabase
       .from('api_keys')
       .update({
@@ -408,8 +408,13 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (apiKeysError) {
-      console.error('Failed to revoke api_keys:', apiKeysError);
-      // API キー無効化失敗でも処理は続行（手動対応可能）
+      // PGRST205: テーブルが存在しない場合はスキップ
+      if (apiKeysError.code === 'PGRST205') {
+        console.warn('⚠️ api_keys table does not exist, skipping revocation');
+      } else {
+        console.error('Failed to revoke api_keys:', apiKeysError);
+        // API キー無効化失敗でも処理は続行（手動対応可能）
+      }
     }
 
     // 7-3. account_deletions レコード作成
