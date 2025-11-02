@@ -292,7 +292,7 @@ async function handleCheckoutSessionCompleted(
   // Update or create user_subscriptions table
   const subscriptionData = {
     user_id: userId,
-    plan_id: 'standard', // Pay→Create flow always creates Standard plan
+    plan_type: 'standard', // Pay→Create flow always creates Standard plan
     billing_cycle: billingCycle,
     stripe_customer_id: customerId,
     stripe_subscription_id: subscriptionId,

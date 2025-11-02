@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     // Create freemium subscription
     const { error: subscriptionError } = await supabase.from('user_subscriptions').upsert({
       user_id: userId,
-      plan_id: 'freemium',
+      plan_type: 'freemium',
       billing_cycle: 'monthly', // Not used for freemium, but required field
       status: 'active',
       access_state: 'active',
