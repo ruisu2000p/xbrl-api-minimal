@@ -83,37 +83,43 @@ export default function SupabaseProvider({
       setUser(session?.user ?? null)
       setLoading(false)
 
-      // Send welcome email on first sign-in
-      // The endpoint is idempotent so it's safe to call multiple times
+      // Send welcome email only on initial signup (first SIGNED_IN after registration)
+      // Check if user was created very recently (within last 10 seconds)
       if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          const response = await fetch('/api/notifications/welcome', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          })
+        const userCreatedAt = new Date(session.user.created_at).getTime()
+        const now = Date.now()
+        const isNewUser = (now - userCreatedAt) < 10000 // 10 seconds
 
-          if (response.ok) {
-            const data = await response.json()
-            if (data.sent) {
-              logger.info('Welcome email sent', { email: session.user.email })
-            } else if (data.alreadySent) {
-              logger.debug('Welcome email already sent', { email: session.user.email })
+        if (isNewUser) {
+          try {
+            const response = await fetch('/api/notifications/welcome', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              if (data.sent) {
+                logger.info('Welcome email sent', { email: session.user.email })
+              } else if (data.alreadySent) {
+                logger.debug('Welcome email already sent', { email: session.user.email })
+              }
+            } else {
+              // Non-blocking: log but don't affect UX
+              logger.warn('Welcome email request failed', {
+                status: response.status,
+                email: session.user.email
+              })
             }
-          } else {
-            // Non-blocking: log but don't affect UX
-            logger.warn('Welcome email request failed', {
-              status: response.status,
-              email: session.user.email
+          } catch (error) {
+            // Non-blocking: silent failure with retry on next login
+            logger.debug('Welcome email call failed (will retry later)', {
+              err: error instanceof Error ? error : { message: String(error) }
             })
           }
-        } catch (error) {
-          // Non-blocking: silent failure with retry on next login
-          logger.debug('Welcome email call failed (will retry later)', {
-            err: error instanceof Error ? error : { message: String(error) }
-          })
         }
       }
     })
