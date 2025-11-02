@@ -191,10 +191,6 @@ export async function POST(request: NextRequest) {
         billing_cycle: billingCycle,
       },
       subscription_data: {
-        // ★ プロレーション設定（アップグレード時の按分）
-        // 'create_prorations': 按分計算を行い、即座にインボイス明細に追加（推奨）
-        // 'none': 按分なし（次回請求まで待つ）
-        proration_behavior: 'create_prorations',
         metadata: {
           user_id: session.user.id,
           plan_type: planType,
