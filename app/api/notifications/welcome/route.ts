@@ -3,7 +3,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { logger, extractRequestId } from '@/utils/logger';
 import { Resend } from 'resend';
 
@@ -30,8 +31,21 @@ export async function POST(req: NextRequest) {
     // Extract request ID for log correlation
     await extractRequestId();
 
-    // Get authenticated user
-    const supabase = await createServiceSupabaseClient();
+    // Get authenticated user from session cookies
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set() {},
+          remove() {},
+        },
+      }
+    );
 
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
 
