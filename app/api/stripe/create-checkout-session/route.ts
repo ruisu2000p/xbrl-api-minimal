@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   }
 
   const stripe = new Stripe(secret, {
-    apiVersion: '2025-09-30.clover',
+    apiVersion: '2024-11-20.acacia' as any,
   });
 
   // ★ 2) リクエストボディのパース
