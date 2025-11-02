@@ -16,7 +16,7 @@ function getStripeClient() {
     throw new Error('STRIPE_SECRET_KEY is not configured');
   }
   return new Stripe(process.env.STRIPE_SECRET_KEY?.trim(), {
-    apiVersion: '2024-11-20' as any,
+    apiVersion: '2023-10-16' as any,
   });
 }
 
