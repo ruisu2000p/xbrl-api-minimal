@@ -202,9 +202,9 @@ export default function SignupPage() {
 
             console.log('✅ Session obtained, calling checkout endpoint...');
 
-            // Supabase Edge Functionを呼び出し
+            // Next.js API Routeを呼び出し
             const checkoutResponse = await fetch(
-              `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-checkout-session`,
+              '/api/stripe/create-checkout-session',
               {
                 method: 'POST',
                 headers: {
@@ -212,9 +212,8 @@ export default function SignupPage() {
                   'Authorization': `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({
-                  plan: selectedPlan,
-                  billingPeriod: billingPeriod,
-                  source: 'signup',
+                  planType: selectedPlan,
+                  billingCycle: billingPeriod,
                 }),
               }
             );
