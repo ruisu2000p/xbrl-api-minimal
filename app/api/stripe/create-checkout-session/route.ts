@@ -115,8 +115,8 @@ export async function POST(request: NextRequest) {
     // ★ 4) Price ID 解決（環境変数マッピング）
     const PRICE_MAP: Record<string, Record<string, string | undefined>> = {
       standard: {
-        monthly: process.env.NEXT_PUBLIC_STRIPE_STANDARD_MONTHLY_PRICE_ID || 'price_1SGVArBhdDcfCsmvM54B7xdN',
-        yearly: process.env.NEXT_PUBLIC_STRIPE_STANDARD_YEARLY_PRICE_ID || 'price_1SGVLZBhdDcfCsmvFa5iVe8r',
+        monthly: process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_STANDARD_MONTHLY_PRICE_ID || 'price_1SGVArBhdDcfCsmvM54B7xdN',
+        yearly: process.env.STRIPE_STANDARD_YEARLY_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_STANDARD_YEARLY_PRICE_ID || 'price_1SGVLZBhdDcfCsmvFa5iVe8r',
       },
       // 他のプランもここに追加可能
     };
