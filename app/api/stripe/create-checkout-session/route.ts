@@ -26,9 +26,11 @@ function textError(err: unknown): string {
  * 堅牢化ポイント:
  * 1. 環境変数の存在チェック
  * 2. 入力バリデーション
- * 3. Price ID解決の明確化
- * 4. Idempotency Key対応
- * 5. 詳細なエラーログ
+ * 3. 既存サブスクリプションの存在チェック（重複防止）
+ * 4. Price ID解決の明確化
+ * 5. Idempotency Key対応
+ * 6. プロレーション設定
+ * 7. 詳細なエラーログ
  */
 export async function POST(request: NextRequest) {
   const idempotencyKey = (request.headers.get('idempotency-key') ?? '').trim();
@@ -112,7 +114,33 @@ export async function POST(request: NextRequest) {
       idempotencyKey: idempotencyKey || '(none)'
     });
 
-    // ★ 4) Price ID 解決（環境変数マッピング）
+    // ★ 4) 既存サブスクリプションの存在チェック（重複防止）
+    const { data: existingSub } = await supabase
+      .from('user_subscriptions')
+      .select('stripe_subscription_id, status')
+      .eq('user_id', session.user.id)
+      .single();
+
+    // 既存のアクティブなサブスクリプションがある場合は、新規CheckoutではなくアップグレードAPIを使うよう誘導
+    const activeStatuses = ['active', 'trialing', 'past_due', 'unpaid'];
+    if (existingSub?.stripe_subscription_id && existingSub.status && activeStatuses.includes(existingSub.status)) {
+      console.error('⚠️ Active subscription already exists', {
+        userId: session.user.id,
+        subscriptionId: existingSub.stripe_subscription_id,
+        status: existingSub.status
+      });
+      return NextResponse.json(
+        {
+          error: 'Active subscription already exists',
+          message: 'You already have an active subscription. Please use the upgrade endpoint to change your plan.',
+          requiresUpgrade: true,
+          currentStatus: existingSub.status
+        },
+        { status: 409 }
+      );
+    }
+
+    // ★ 5) Price ID 解決（環境変数マッピング）
     const PRICE_MAP: Record<string, Record<string, string | undefined>> = {
       standard: {
         monthly: process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_STANDARD_MONTHLY_PRICE_ID || 'price_1SGVArBhdDcfCsmvM54B7xdN',
@@ -144,7 +172,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🔗 Redirect URLs:', { successUrl, cancelUrl });
 
-    // ★ 5) Stripe Checkout Session作成（Idempotency Key対応 + プロレーション設定）
+    // ★ 6) Stripe Checkout Session作成（Idempotency Key対応 + プロレーション設定）
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -190,7 +218,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: checkoutSession.url, sessionUrl: checkoutSession.url });
 
   } catch (error: any) {
-    // ★ 6) 詳細なエラーログ + 文字列化してフロントに返す
+    // ★ 7) 詳細なエラーログ + 文字列化してフロントに返す
     const errorMessage = textError(error);
 
     console.error('❌ Stripe checkout session creation failed:', {
