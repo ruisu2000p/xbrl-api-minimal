@@ -9,6 +9,40 @@ import { createClient } from '@/utils/supabase/server';
 import { createStripeClient } from '@/utils/stripe/client';
 
 /**
+ * Stripe の 404/410 エラーを判定（存在しないリソース）
+ */
+function isStripeNotFoundLike(err: any): boolean {
+  const code = err?.statusCode || err?.raw?.statusCode;
+  const type = err?.type;
+  return code === 404 || code === 410 || type === 'invalid_request_error' || err?.code === 'resource_missing';
+}
+
+/**
+ * ユーザーをFreemiumプランに同期
+ */
+async function syncToFreemium(supabase: any, userId: string, freemiumPlanId: string) {
+  const { error } = await supabase
+    .from('user_subscriptions')
+    .update({
+      plan_id: freemiumPlanId,
+      billing_cycle: 'monthly',
+      status: 'canceled',
+      cancel_at_period_end: false,
+      stripe_subscription_id: null,
+      cancelled_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('❌ Failed to sync to freemium:', error);
+    throw error;
+  }
+
+  console.log(`✅ User ${userId} synced to freemium plan`);
+}
+
+/**
  * POST /api/subscription/change
  *
  * フリーミアムへのダウングレードを即時実行
@@ -84,7 +118,7 @@ export async function POST(request: NextRequest) {
           try {
             subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);
           } catch (retrieveError: any) {
-            if (retrieveError.code === 'resource_missing') {
+            if (isStripeNotFoundLike(retrieveError)) {
               console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} not found in Stripe, skipping cancellation`);
               // サブスクリプションが既に削除されている場合はスキップ
               subscription = null;
@@ -197,38 +231,32 @@ export async function POST(request: NextRequest) {
       try {
         const stripe = createStripeClient();
 
-        // 2) サブスクリプション情報を取得（期間情報が必要）
+        // 2) Freemiumプラン取得
+        const { data: freemiumPlan } = await supabase
+          .from('subscription_plans')
+          .select('id')
+          .eq('name', 'freemium')
+          .single();
+
+        if (!freemiumPlan) {
+          console.error('❌ Freemium plan not found');
+          return NextResponse.json(
+            { error: 'Freemium plan not found' },
+            { status: 500 }
+          );
+        }
+
+        // 3) サブスクリプション情報を取得（期間情報が必要）
         let subscription;
         try {
           subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);
         } catch (retrieveError: any) {
-          if (retrieveError.code === 'resource_missing') {
-            console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} not found in Stripe, marking as canceled in DB`);
-
-            // DBだけ更新してFreemiumに戻す
-            const { data: freemiumPlan } = await supabase
-              .from('subscription_plans')
-              .select('id')
-              .eq('name', 'freemium')
-              .single();
-
-            if (freemiumPlan) {
-              await supabase
-                .from('user_subscriptions')
-                .update({
-                  plan_id: freemiumPlan.id,
-                  billing_cycle: 'monthly',
-                  status: 'canceled',
-                  cancel_at_period_end: false,
-                  cancelled_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                })
-                .eq('user_id', user.id);
-            }
-
+          if (isStripeNotFoundLike(retrieveError)) {
+            console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} not found in Stripe, syncing to freemium`);
+            await syncToFreemium(supabase, user.id, freemiumPlan.id);
             return NextResponse.json({
               success: true,
-              message: 'Subscription already canceled in Stripe. Database updated.',
+              message: 'Subscription already canceled in Stripe. Database updated to freemium.',
             });
           }
           throw retrieveError;
@@ -237,31 +265,10 @@ export async function POST(request: NextRequest) {
         // サブスクリプションが既にキャンセルされている場合
         if (subscription.status === 'canceled') {
           console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} already canceled in Stripe`);
-
-          // DBを同期
-          const { data: freemiumPlan } = await supabase
-            .from('subscription_plans')
-            .select('id')
-            .eq('name', 'freemium')
-            .single();
-
-          if (freemiumPlan) {
-            await supabase
-              .from('user_subscriptions')
-              .update({
-                plan_id: freemiumPlan.id,
-                billing_cycle: 'monthly',
-                status: 'canceled',
-                cancel_at_period_end: false,
-                cancelled_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('user_id', user.id);
-          }
-
+          await syncToFreemium(supabase, user.id, freemiumPlan.id);
           return NextResponse.json({
             success: true,
-            message: 'Subscription already canceled in Stripe. Database updated.',
+            message: 'Subscription already canceled in Stripe. Database updated to freemium.',
           });
         }
 
@@ -318,25 +325,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 6) DBを更新（Freemiumプランに戻す）
-        const { data: freemiumPlan } = await supabase
-          .from('subscription_plans')
-          .select('id')
-          .eq('name', 'freemium')
-          .single();
-
-        if (freemiumPlan) {
-          await supabase
-            .from('user_subscriptions')
-            .update({
-              plan_id: freemiumPlan.id,
-              billing_cycle: 'monthly',
-              status: 'canceled',
-              cancel_at_period_end: false,
-              cancelled_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id);
-        }
+        await syncToFreemium(supabase, user.id, freemiumPlan.id);
 
         return NextResponse.json({
           success: true,
