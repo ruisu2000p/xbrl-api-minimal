@@ -56,6 +56,7 @@ export async function middleware(request: NextRequest) {
     '/api/stripe/webhook',        // Stripe Webhook (署名検証を独自に実装)
     '/api/stripe/checkout-anon',  // Anonymous Checkout (未ログインユーザー用)
     '/api/signup',                // Freemium Signup (未ログインユーザー用)
+    '/api/notifications/welcome', // Welcome Email (認証済みユーザー、Session cookie使用)
     '/rest/v1/',                  // Supabase REST API (直接呼び出し)
   ];
 
