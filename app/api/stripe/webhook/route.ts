@@ -261,12 +261,6 @@ async function handleSubscriptionEvent(
     updateData.cancelled_at = new Date((subscription as any).canceled_at * 1000).toISOString();
   }
 
-  // Clear pending_action if subscription update is confirmed
-  // This handles cases where we were waiting for webhook confirmation
-  if (eventType === 'customer.subscription.updated') {
-    updateData.pending_action = null;
-  }
-
   // Update user_subscriptions table
   const { error: updateError } = await supabase
     .from('user_subscriptions')
