@@ -86,9 +86,9 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Get authenticated user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !session?.user) {
+    if (authError || !user) {
       console.error('❌ Authentication failed:', authError);
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('📋 Checkout request:', {
-      userId: session.user.id,
-      email: session.user.email,
+      userId: user.id,
+      email: user.email,
       planType,
       billingCycle,
       idempotencyKey: idempotencyKey || '(none)'
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     const { data: existingSub, error: subError } = await supabase
       .from('user_subscriptions')
       .select('stripe_subscription_id, status')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .maybeSingle(); // 新規ユーザーの場合nullを返す（エラーをスローしない）
 
     // データベースエラーのチェック
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const activeStatuses = ['active', 'trialing', 'past_due', 'unpaid'];
     if (existingSub?.stripe_subscription_id && existingSub.status && activeStatuses.includes(existingSub.status)) {
       console.error('⚠️ Active subscription already exists', {
-        userId: session.user.id,
+        userId: user.id,
         subscriptionId: existingSub.stripe_subscription_id,
         status: existingSub.status
       });
@@ -183,16 +183,16 @@ export async function POST(request: NextRequest) {
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      customer_email: session.user.email,
+      customer_email: user.email,
       allow_promotion_codes: true,
       metadata: {
-        user_id: session.user.id,
+        user_id: user.id,
         plan_type: planType,
         billing_cycle: billingCycle,
       },
       subscription_data: {
         metadata: {
-          user_id: session.user.id,
+          user_id: user.id,
           plan_type: planType,
           billing_cycle: billingCycle,
         },
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ Checkout session created:', {
       sessionId: checkoutSession.id,
       url: checkoutSession.url,
-      customer_email: session.user.email
+      customer_email: user.email
     });
 
     return NextResponse.json({ url: checkoutSession.url, sessionUrl: checkoutSession.url });

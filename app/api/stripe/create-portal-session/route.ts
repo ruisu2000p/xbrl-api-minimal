@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Get authenticated user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !session?.user) {
+    if (authError || !user) {
       console.error('❌ Authentication failed:', authError);
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -55,19 +55,19 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('📋 Portal session request:', {
-      userId: session.user.id,
-      email: session.user.email,
+      userId: user.id,
+      email: user.email,
     });
 
     // Get stripe_customer_id from DB
     const { data: userSub, error: subError } = await supabase
       .from('user_subscriptions')
       .select('stripe_customer_id')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (subError || !userSub?.stripe_customer_id) {
-      console.error('❌ No Stripe customer found for user:', session.user.id, subError);
+      console.error('❌ No Stripe customer found for user:', user.id, subError);
       return NextResponse.json(
         { error: 'No Stripe customer found. Please subscribe to a plan first.' },
         { status: 404 }

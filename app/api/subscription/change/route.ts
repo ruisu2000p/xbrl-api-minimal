@@ -19,17 +19,15 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // 認証確認
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !session?.user) {
+    if (authError || !user) {
       console.error('❌ Authentication failed:', authError);
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
-
-    const user = session.user;
 
     const body = await request.json();
     const { action, planType } = body;

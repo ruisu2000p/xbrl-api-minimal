@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Get authenticated user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !session?.user) {
+    if (authError || !user) {
       console.error('❌ Authentication failed:', authError);
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('📋 Upgrade request:', {
-      userId: session.user.id,
-      email: session.user.email,
+      userId: user.id,
+      email: user.email,
       priceId,
       planType,
       billingCycle,
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     const { data: userSub, error: subError } = await supabase
       .from('user_subscriptions')
       .select('stripe_customer_id, stripe_subscription_id, status')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (subError) {
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
                 status: sub.status,
                 updated_at: new Date().toISOString(),
               })
-              .eq('user_id', session.user.id);
+              .eq('user_id', user.id);
           }
         }
 
