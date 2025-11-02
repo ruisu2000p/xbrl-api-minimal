@@ -185,7 +185,25 @@ async function handleCheckoutSessionCompleted(
     return;
   }
 
-  // Update user_subscriptions table with Stripe IDs
+  // Check if this is a plan change (replacing an old subscription)
+  const isPlanChange = session.metadata?.is_plan_change === 'true';
+  const oldSubscriptionId = session.metadata?.old_subscription_id;
+
+  if (isPlanChange && oldSubscriptionId) {
+    console.log(`🔄 Plan change detected - canceling old subscription ${oldSubscriptionId}`);
+
+    // Cancel the old subscription immediately
+    const stripe = createStripeClient();
+    try {
+      await stripe.subscriptions.cancel(oldSubscriptionId);
+      console.log(`✅ Canceled old subscription ${oldSubscriptionId}`);
+    } catch (cancelError: any) {
+      console.error(`⚠️ Failed to cancel old subscription ${oldSubscriptionId}:`, cancelError.message);
+      // Continue anyway - new subscription is already created
+    }
+  }
+
+  // Update user_subscriptions table with new Stripe IDs
   const { error: updateError } = await supabase
     .from('user_subscriptions')
     .update({

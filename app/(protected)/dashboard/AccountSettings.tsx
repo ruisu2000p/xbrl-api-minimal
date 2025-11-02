@@ -1226,51 +1226,8 @@ export default function AccountSettings() {
         // Get billing period from selected plan
         const billingPeriod = selectedPlan === 'standard-monthly' ? 'monthly' : 'yearly';
 
-        // 既存のサブスクリプションがあるかチェック
-        const hasActiveSubscription = userSubscription?.status === 'active' &&
-                                      userSubscription?.stripe_subscription_id;
-
-        if (hasActiveSubscription) {
-          // 既存サブスクリプションをアップグレード/変更
-          console.log('🔄 Changing existing subscription...');
-          setPlanMessage({ type: 'success', text: 'プランを変更中...' });
-
-          const changeResponse = await fetchWithCsrf('/api/subscription/change', {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'upgrade',
-              newPlanType: 'standard',
-              newBillingCycle: billingPeriod
-            }),
-          });
-
-          if (!changeResponse.ok) {
-            const data = await changeResponse.json().catch(() => ({}));
-            const errorMsg = typeof data?.error === 'string'
-              ? data.error
-              : `プラン変更に失敗しました (HTTP ${changeResponse.status})`;
-
-            console.error('❌ Subscription change failed:', {
-              status: changeResponse.status,
-              error: data?.error,
-              data
-            });
-
-            setPlanMessage({ type: 'error', text: errorMsg });
-            return;
-          }
-
-          const data = await changeResponse.json();
-          console.log('✅ Subscription changed:', data);
-          setPlanMessage({ type: 'success', text: 'プランが正常に変更されました！' });
-
-          // Refresh subscription data
-          await refreshSubscription();
-          return;
-        }
-
-        // 新規サブスクリプション作成（初回決済）
-        console.log('💳 Creating new subscription...');
+        // 既存のサブスクリプションがある場合もCheckout Sessionで決済承認
+        console.log('💳 Creating checkout session for plan change...');
         setPlanMessage({ type: 'success', text: '決済ページへリダイレクト中...' });
 
         const requestBody = {

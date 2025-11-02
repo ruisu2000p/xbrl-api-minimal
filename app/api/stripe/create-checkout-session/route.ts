@@ -104,10 +104,10 @@ export async function POST(request: NextRequest) {
       idempotencyKey: idempotencyKey || '(none)'
     });
 
-    // ★ 4) 既存サブスクリプションの存在チェック（重複防止）
+    // ★ 4) 既存サブスクリプションの存在チェック
     const { data: existingSub, error: subError } = await supabase
       .from('user_subscriptions')
-      .select('stripe_subscription_id, status')
+      .select('stripe_subscription_id, stripe_customer_id, status')
       .eq('user_id', user.id)
       .maybeSingle(); // 新規ユーザーの場合nullを返す（エラーをスローしない）
 
@@ -120,23 +120,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 既存のアクティブなサブスクリプションがある場合は、新規CheckoutではなくアップグレードAPIを使うよう誘導
+    // 既存のアクティブなサブスクリプションがあるかチェック
     const activeStatuses = ['active', 'trialing', 'past_due', 'unpaid'];
-    if (existingSub?.stripe_subscription_id && existingSub.status && activeStatuses.includes(existingSub.status)) {
-      console.error('⚠️ Active subscription already exists', {
+    const hasActiveSubscription = existingSub?.stripe_subscription_id &&
+                                  existingSub.status &&
+                                  activeStatuses.includes(existingSub.status);
+
+    if (hasActiveSubscription) {
+      console.log('🔄 Existing subscription detected - will update plan via Checkout', {
         userId: user.id,
         subscriptionId: existingSub.stripe_subscription_id,
-        status: existingSub.status
+        currentStatus: existingSub.status
       });
-      return NextResponse.json(
-        {
-          error: 'Active subscription already exists',
-          message: 'You already have an active subscription. Please use the upgrade endpoint to change your plan.',
-          requiresUpgrade: true,
-          currentStatus: existingSub.status
-        },
-        { status: 409 }
-      );
     }
 
     // ★ 5) Price ID 解決（環境変数マッピング）
@@ -182,33 +177,76 @@ export async function POST(request: NextRequest) {
       cancelUrl
     });
 
-    // ★ 6) Stripe Checkout Session作成（Idempotency Key対応 + プロレーション設定）
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
+    // ★ 6) Stripe Checkout Session作成
+    let sessionParams: Stripe.Checkout.SessionCreateParams;
+
+    if (hasActiveSubscription && existingSub?.stripe_subscription_id && existingSub?.stripe_customer_id) {
+      // 既存サブスクリプションがある場合（プラン変更）
+      // 既存の顧客IDを使って新しいサブスクリプションを作成し、
+      // Webhookで古いサブスクリプションをキャンセルする
+      console.log('📝 Creating checkout for plan change (will replace existing subscription)');
+
+      sessionParams = {
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        customer: existingSub.stripe_customer_id, // 既存の顧客IDを使用
+        allow_promotion_codes: true,
+        metadata: {
+          user_id: user.id,
+          plan_type: planType,
+          billing_cycle: billingCycle,
+          is_plan_change: 'true',
+          old_subscription_id: existingSub.stripe_subscription_id,
         },
-      ],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      customer_email: user.email,
-      allow_promotion_codes: true,
-      metadata: {
-        user_id: user.id,
-        plan_type: planType,
-        billing_cycle: billingCycle,
-      },
-      subscription_data: {
+        subscription_data: {
+          metadata: {
+            user_id: user.id,
+            plan_type: planType,
+            billing_cycle: billingCycle,
+            is_plan_change: 'true',
+            old_subscription_id: existingSub.stripe_subscription_id,
+          },
+        },
+      };
+    } else {
+      // 新規サブスクリプション作成
+      console.log('📝 Creating checkout for new subscription');
+
+      sessionParams = {
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        customer_email: user.email,
+        allow_promotion_codes: true,
         metadata: {
           user_id: user.id,
           plan_type: planType,
           billing_cycle: billingCycle,
         },
-      },
-    };
+        subscription_data: {
+          metadata: {
+            user_id: user.id,
+            plan_type: planType,
+            billing_cycle: billingCycle,
+          },
+        },
+      };
+    }
 
     const checkoutSession = await stripe.checkout.sessions.create(
       sessionParams,
