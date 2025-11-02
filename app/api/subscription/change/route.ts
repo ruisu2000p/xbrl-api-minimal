@@ -6,6 +6,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 import { createStripeClient } from '@/utils/stripe/client';
 
 /**
@@ -50,10 +51,11 @@ async function syncToFreemium(supabase: any, userId: string, freemiumPlanId: str
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // まず認証用のクライアントを作成
+    const authClient = await createClient();
 
     // 認証確認
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
 
     if (authError || !user) {
       console.error('❌ Authentication failed:', authError);
@@ -71,6 +73,9 @@ export async function POST(request: NextRequest) {
       action,
       planType
     });
+
+    // DB操作用に Service Role クライアントを作成（RLSをバイパス）
+    const supabase = createServiceSupabaseClient();
 
     // ==========================================================================
     // ACTION: downgrade to freemium (期末キャンセル + 按分処理)
