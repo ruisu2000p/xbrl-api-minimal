@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   }
 
   const stripe = new Stripe(secret, {
-    apiVersion: '2024-11-20.acacia' as any,
+    apiVersion: '2024-11-20' as any,
   });
 
   try {
