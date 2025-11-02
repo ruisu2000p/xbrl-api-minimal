@@ -115,11 +115,20 @@ export async function POST(request: NextRequest) {
     });
 
     // ★ 4) 既存サブスクリプションの存在チェック（重複防止）
-    const { data: existingSub } = await supabase
+    const { data: existingSub, error: subError } = await supabase
       .from('user_subscriptions')
       .select('stripe_subscription_id, status')
       .eq('user_id', session.user.id)
-      .single();
+      .maybeSingle(); // 新規ユーザーの場合nullを返す（エラーをスローしない）
+
+    // データベースエラーのチェック
+    if (subError) {
+      console.error('❌ Failed to check existing subscription:', subError);
+      return NextResponse.json(
+        { error: 'Failed to check existing subscription' },
+        { status: 500 }
+      );
+    }
 
     // 既存のアクティブなサブスクリプションがある場合は、新規CheckoutではなくアップグレードAPIを使うよう誘導
     const activeStatuses = ['active', 'trialing', 'past_due', 'unpaid'];
