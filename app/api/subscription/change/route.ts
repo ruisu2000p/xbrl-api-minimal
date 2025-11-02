@@ -418,11 +418,99 @@ export async function POST(request: NextRequest) {
     }
 
     // ==========================================================================
+    // ACTION: upgrade (プラン変更: monthly ↔ yearly)
+    // ==========================================================================
+    if (action === 'upgrade') {
+      console.log('⬆️ Processing plan upgrade/change...');
+
+      const { newPlanType, newBillingCycle } = body;
+
+      if (!newPlanType || !newBillingCycle) {
+        return NextResponse.json(
+          { error: 'newPlanType and newBillingCycle are required for upgrade action' },
+          { status: 400 }
+        );
+      }
+
+      // Stripe上にアクティブなサブスクリプションが無い場合
+      if (!subscription || subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
+        console.warn('⚠️ No active subscription on Stripe; cannot upgrade');
+        return NextResponse.json(
+          { error: 'No active subscription found. Please create a new subscription.' },
+          { status: 400 }
+        );
+      }
+
+      // 新しいプランのPrice IDを取得
+      const priceIdEnvKey = newBillingCycle === 'yearly'
+        ? 'STRIPE_STANDARD_YEARLY_PRICE_ID'
+        : 'STRIPE_STANDARD_MONTHLY_PRICE_ID';
+
+      const newPriceId = process.env[priceIdEnvKey];
+
+      if (!newPriceId) {
+        console.error(`❌ Missing price ID for ${priceIdEnvKey}`);
+        return NextResponse.json(
+          { error: 'Price configuration error' },
+          { status: 500 }
+        );
+      }
+
+      console.log('🔄 Updating subscription...', {
+        subscriptionId: subscription.id,
+        currentPrice: subscription.items.data[0]?.price.id,
+        newPrice: newPriceId,
+        billingCycle: newBillingCycle
+      });
+
+      // Stripeでサブスクリプションを更新
+      const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
+        items: [{
+          id: subscription.items.data[0].id,
+          price: newPriceId,
+        }],
+        proration_behavior: 'create_prorations', // 按分請求を作成
+      });
+
+      console.log('✅ Subscription updated:', {
+        id: updatedSubscription.id,
+        status: updatedSubscription.status,
+        newPrice: updatedSubscription.items.data[0]?.price.id
+      });
+
+      // DBを更新（Webhookでも更新されるが、即座に反映）
+      const { error: updateError } = await supabase
+        .from('user_subscriptions')
+        .update({
+          billing_cycle: newBillingCycle,
+          updated_at: new Date().toISOString(),
+          last_resolution_path: resolutionPath,
+          last_resolved_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('❌ Failed to update DB:', updateError);
+        // DB更新失敗してもStripe側は変更済みなので続行
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Plan changed to ${newBillingCycle} successfully`,
+        subscription: {
+          id: updatedSubscription.id,
+          status: updatedSubscription.status,
+          billing_cycle: newBillingCycle,
+        }
+      });
+    }
+
+    // ==========================================================================
     // 未対応のaction
     // ==========================================================================
     console.error('❌ Invalid action:', action);
     return NextResponse.json(
-      { error: 'Invalid action. Supported: downgrade, cancel_immediate' },
+      { error: 'Invalid action. Supported: upgrade, downgrade, cancel_immediate' },
       { status: 400 }
     );
 
