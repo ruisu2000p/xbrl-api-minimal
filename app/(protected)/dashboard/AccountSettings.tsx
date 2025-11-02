@@ -271,10 +271,11 @@ interface PlanTabProps {
   onUpdatePlan: () => void;
   planOptions: ReturnType<typeof getPlanOptions>;
   trialInfo: any;
+  userSubscription: any;
   t: (key: string) => string;
 }
 
-function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePlan, planOptions, trialInfo, t }: PlanTabProps) {
+function PlanTab({ currentPlan, selectedPlan, message, onSelectPlan, onUpdatePlan, planOptions, trialInfo, userSubscription, t }: PlanTabProps) {
   return (
     <div className="space-y-8">
       {message && (
@@ -1847,6 +1848,7 @@ export default function AccountSettings() {
               onUpdatePlan={handlePlanUpdate}
               planOptions={planOptions}
               trialInfo={trialInfo}
+              userSubscription={userSubscription}
               t={t}
             />
           )}
