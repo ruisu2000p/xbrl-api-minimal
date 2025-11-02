@@ -244,15 +244,15 @@ async function handleSubscriptionEvent(
     stripe_customer_id: customerId,
     status: subscription.status,
     billing_cycle: billingCycle,
-    current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-    cancel_at_period_end: subscription.cancel_at_period_end || false,
+    current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+    current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+    cancel_at_period_end: (subscription as any).cancel_at_period_end || false,
     updated_at: new Date().toISOString(),
   };
 
   // If subscription is cancelled, set cancelled_at
-  if (subscription.status === 'canceled' && subscription.canceled_at) {
-    updateData.cancelled_at = new Date(subscription.canceled_at * 1000).toISOString();
+  if (subscription.status === 'canceled' && (subscription as any).canceled_at) {
+    updateData.cancelled_at = new Date((subscription as any).canceled_at * 1000).toISOString();
   }
 
   // Clear pending_action if subscription update is confirmed
@@ -280,7 +280,7 @@ async function handleSubscriptionEvent(
   console.log(`✅ Synced subscription ${subscription.id} for user ${userSub.user_id} (${eventType})`, {
     status: subscription.status,
     billing_cycle: billingCycle,
-    cancel_at_period_end: subscription.cancel_at_period_end
+    cancel_at_period_end: (subscription as any).cancel_at_period_end
   });
 }
 
