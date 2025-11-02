@@ -27,7 +27,8 @@ type ApiState = 'idle' | 'loading' | 'ready' | 'error';
 
 // Plan structures will use translation keys
 const getDefaultCurrentPlan = (t: (key: string) => string, subscription?: any) => {
-  const planName = subscription?.subscription_plans?.name || 'freemium';
+  // Use plan_type (new column) if available, fallback to subscription_plans.name
+  const planName = subscription?.plan_type || subscription?.subscription_plans?.name || 'freemium';
   const billingCycle = subscription?.billing_cycle; // 'monthly' or 'yearly'
 
   // Determine the plan ID based on name and billing cycle
@@ -843,7 +844,8 @@ export default function AccountSettings() {
       // Store trial info
       setTrialInfo(trial);
 
-      if (!subscription || !subscription.subscription_plans) {
+      // Check if subscription exists (using plan_type or subscription_plans)
+      if (!subscription || (!subscription.plan_type && !subscription.subscription_plans)) {
         console.log('📋 No subscription found, using freemium');
         setUserSubscription(null);
         setCurrentPlan(getDefaultCurrentPlan(t, null));
@@ -856,7 +858,8 @@ export default function AccountSettings() {
       setCurrentPlan(getDefaultCurrentPlan(t, subscription));
 
       // Set selected plan based on plan name and billing cycle
-      const planName = subscription.subscription_plans.name;
+      // Use plan_type (new column) if available, fallback to subscription_plans.name
+      const planName = subscription.plan_type || subscription.subscription_plans?.name || 'freemium';
       const billingCycle = subscription.billing_cycle;
 
       if (planName === 'standard' && billingCycle) {
@@ -905,7 +908,8 @@ export default function AccountSettings() {
               setUserSubscription(subscription);
               setCurrentPlan(getDefaultCurrentPlan(t, subscription));
 
-              const planName = subscription.subscription_plans?.name;
+              // Use plan_type (new column) if available, fallback to subscription_plans.name
+              const planName = subscription.plan_type || subscription.subscription_plans?.name || 'freemium';
               const billingCycle = subscription.billing_cycle;
 
               if (planName === 'standard' && billingCycle) {
