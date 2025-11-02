@@ -10,10 +10,10 @@ import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 
 // Stripe client (lazy initialization to avoid build errors)
 function getStripeClient() {
-  if (!process.env.STRIPE_SECRET_KEY) {
+  if (!process.env.STRIPE_SECRET_KEY?.trim()) {
     throw new Error('STRIPE_SECRET_KEY is not configured');
   }
-  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+  return new Stripe(process.env.STRIPE_SECRET_KEY?.trim(), {
     apiVersion: '2024-11-20' as any,
   });
 }

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ★ 1) Stripe Secret Key 存在チェック
-  const secret = process.env.STRIPE_SECRET_KEY;
+  const secret = process.env.STRIPE_SECRET_KEY?.trim();
   if (!secret) {
     console.error('❌ STRIPE_SECRET_KEY environment variable is not set');
     return NextResponse.json(
