@@ -20,6 +20,36 @@ const toIsoOrNull = (sec?: number): string | null => {
 };
 
 /**
+ * Check if user still exists in Auth
+ * Returns true if user exists, false if deleted
+ */
+async function userExists(supabase: any, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.auth.admin.getUserById(userId);
+    return !error && !!data?.user;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if user_subscriptions row exists
+ * Returns true if exists, false if deleted
+ */
+async function subscriptionRowExists(supabase: any, userId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('user_subscriptions')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return !!data;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Stripe Webhook Handler
  *
  * Handles subscription lifecycle events from Stripe and syncs them to the database.
@@ -271,15 +301,25 @@ async function handleCheckoutSessionCompleted(
     return;
   }
 
-  // Verify user still exists in Auth (may have been deleted)
-  try {
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
-    if (userError || !userData.user) {
-      console.warn(`⚠️ User ${userId} no longer exists (probably deleted). Skipping checkout sync.`);
-      return; // Return 200 OK to prevent Stripe retry
-    }
-  } catch (authCheckError) {
-    console.warn(`⚠️ Failed to verify user existence for ${userId}:`, authCheckError);
+  // Verify user still exists in Auth (may have been deleted during account deletion)
+  if (!await userExists(supabase, userId)) {
+    console.warn(`⚠️ Webhook: User ${userId} not found (probably deleted). Skipping checkout sync.`, {
+      eventId: session.id,
+      customerId,
+      subscriptionId,
+      reason: 'user_deleted'
+    });
+    return; // Return 200 OK to prevent Stripe retry
+  }
+
+  // Verify subscription row still exists (may have been deleted during account deletion)
+  if (!await subscriptionRowExists(supabase, userId)) {
+    console.warn(`⚠️ Webhook: Subscription row for user ${userId} not found (probably deleted). Skipping checkout sync.`, {
+      eventId: session.id,
+      customerId,
+      subscriptionId,
+      reason: 'subscription_row_deleted'
+    });
     return; // Return 200 OK to prevent Stripe retry
   }
 
@@ -459,6 +499,31 @@ async function handleInvoicePaymentSucceeded(
     return;
   }
 
+  // Check if subscription row exists (may have been deleted during account deletion)
+  const { data: subRow } = await supabase
+    .from('user_subscriptions')
+    .select('user_id')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle();
+
+  if (!subRow) {
+    console.warn(`⚠️ Webhook: Subscription row not found for customer ${customerId} (probably deleted). Skipping invoice.payment_succeeded.`, {
+      invoiceId: invoice.id,
+      reason: 'subscription_row_deleted'
+    });
+    return; // Return gracefully, parent will return 200 OK
+  }
+
+  // Verify user still exists
+  if (!await userExists(supabase, subRow.user_id)) {
+    console.warn(`⚠️ Webhook: User ${subRow.user_id} not found (probably deleted). Skipping invoice.payment_succeeded.`, {
+      invoiceId: invoice.id,
+      customerId,
+      reason: 'user_deleted'
+    });
+    return;
+  }
+
   // Update subscription status to active if payment succeeded
   const { error } = await supabase
     .from('user_subscriptions')
@@ -485,6 +550,31 @@ async function handleInvoicePaymentFailed(
     : invoice.customer?.id;
 
   if (!customerId) {
+    return;
+  }
+
+  // Check if subscription row exists (may have been deleted during account deletion)
+  const { data: subRow } = await supabase
+    .from('user_subscriptions')
+    .select('user_id')
+    .eq('stripe_customer_id', customerId)
+    .maybeSingle();
+
+  if (!subRow) {
+    console.warn(`⚠️ Webhook: Subscription row not found for customer ${customerId} (probably deleted). Skipping invoice.payment_failed.`, {
+      invoiceId: invoice.id,
+      reason: 'subscription_row_deleted'
+    });
+    return; // Return gracefully, parent will return 200 OK
+  }
+
+  // Verify user still exists
+  if (!await userExists(supabase, subRow.user_id)) {
+    console.warn(`⚠️ Webhook: User ${subRow.user_id} not found (probably deleted). Skipping invoice.payment_failed.`, {
+      invoiceId: invoice.id,
+      customerId,
+      reason: 'user_deleted'
+    });
     return;
   }
 
