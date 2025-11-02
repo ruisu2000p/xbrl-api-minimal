@@ -79,22 +79,41 @@ export async function POST(request: NextRequest) {
         try {
           const stripe = createStripeClient();
 
-          // 按分ポリシー：
-          // - 'create_prorations': 未使用分をクレジットとして次回請求に反映（推奨）
-          // - 'none': 按分なし（期末まで使える）
-          await stripe.subscriptions.update(
-            currentSub.stripe_subscription_id,
-            {
-              cancel_at_period_end: true, // 期末でキャンセル
-              proration_behavior: 'create_prorations', // 按分あり
-              metadata: {
-                downgraded_by: user.id,
-                downgraded_at: new Date().toISOString(),
-              },
+          // まず、サブスクリプションが存在するか確認
+          let subscription;
+          try {
+            subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);
+          } catch (retrieveError: any) {
+            if (retrieveError.code === 'resource_missing') {
+              console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} not found in Stripe, skipping cancellation`);
+              // サブスクリプションが既に削除されている場合はスキップ
+              subscription = null;
+            } else {
+              throw retrieveError;
             }
-          );
+          }
 
-          console.log(`✅ Stripe subscription ${currentSub.stripe_subscription_id} set to cancel at period end with prorations`);
+          // サブスクリプションが存在し、まだアクティブな場合のみキャンセル
+          if (subscription && subscription.status !== 'canceled') {
+            // 按分ポリシー：
+            // - 'create_prorations': 未使用分をクレジットとして次回請求に反映（推奨）
+            // - 'none': 按分なし（期末まで使える）
+            await stripe.subscriptions.update(
+              currentSub.stripe_subscription_id,
+              {
+                cancel_at_period_end: true, // 期末でキャンセル
+                proration_behavior: 'create_prorations', // 按分あり
+                metadata: {
+                  downgraded_by: user.id,
+                  downgraded_at: new Date().toISOString(),
+                },
+              }
+            );
+
+            console.log(`✅ Stripe subscription ${currentSub.stripe_subscription_id} set to cancel at period end with prorations`);
+          } else if (subscription?.status === 'canceled') {
+            console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} already canceled in Stripe`);
+          }
         } catch (stripeError: any) {
           console.error('❌ Failed to cancel Stripe subscription:', stripeError);
           return NextResponse.json(
@@ -179,7 +198,72 @@ export async function POST(request: NextRequest) {
         const stripe = createStripeClient();
 
         // 2) サブスクリプション情報を取得（期間情報が必要）
-        const subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);
+        let subscription;
+        try {
+          subscription = await stripe.subscriptions.retrieve(currentSub.stripe_subscription_id);
+        } catch (retrieveError: any) {
+          if (retrieveError.code === 'resource_missing') {
+            console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} not found in Stripe, marking as canceled in DB`);
+
+            // DBだけ更新してFreemiumに戻す
+            const { data: freemiumPlan } = await supabase
+              .from('subscription_plans')
+              .select('id')
+              .eq('name', 'freemium')
+              .single();
+
+            if (freemiumPlan) {
+              await supabase
+                .from('user_subscriptions')
+                .update({
+                  plan_id: freemiumPlan.id,
+                  billing_cycle: 'monthly',
+                  status: 'canceled',
+                  cancel_at_period_end: false,
+                  cancelled_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
+                .eq('user_id', user.id);
+            }
+
+            return NextResponse.json({
+              success: true,
+              message: 'Subscription already canceled in Stripe. Database updated.',
+            });
+          }
+          throw retrieveError;
+        }
+
+        // サブスクリプションが既にキャンセルされている場合
+        if (subscription.status === 'canceled') {
+          console.warn(`⚠️ Subscription ${currentSub.stripe_subscription_id} already canceled in Stripe`);
+
+          // DBを同期
+          const { data: freemiumPlan } = await supabase
+            .from('subscription_plans')
+            .select('id')
+            .eq('name', 'freemium')
+            .single();
+
+          if (freemiumPlan) {
+            await supabase
+              .from('user_subscriptions')
+              .update({
+                plan_id: freemiumPlan.id,
+                billing_cycle: 'monthly',
+                status: 'canceled',
+                cancel_at_period_end: false,
+                cancelled_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id);
+          }
+
+          return NextResponse.json({
+            success: true,
+            message: 'Subscription already canceled in Stripe. Database updated.',
+          });
+        }
 
         // 3) サブスクリプションを即時キャンセル（按分あり）
         const canceledSub = await stripe.subscriptions.cancel(
