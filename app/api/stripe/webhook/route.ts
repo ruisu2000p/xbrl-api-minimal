@@ -279,6 +279,29 @@ async function handleSubscriptionEvent(
     updateData.cancelled_at = new Date((subscription as any).canceled_at * 1000).toISOString();
   }
 
+  // Handle pause_collection status
+  const pauseCollection = (subscription as any).pause_collection;
+  if (pauseCollection) {
+    updateData.is_paused = true;
+    updateData.pause_behavior = pauseCollection.behavior || 'void';
+    if (pauseCollection.resumes_at) {
+      updateData.pause_resumes_at = new Date(pauseCollection.resumes_at * 1000).toISOString();
+    }
+    // Clear pending_action if it was a pause operation
+    if (eventType === 'customer.subscription.updated') {
+      updateData.pending_action = null;
+    }
+  } else {
+    // Payment collection resumed
+    updateData.is_paused = false;
+    updateData.pause_behavior = null;
+    updateData.pause_resumes_at = null;
+    // Clear pending_action if it was a resume operation
+    if (eventType === 'customer.subscription.updated') {
+      updateData.pending_action = null;
+    }
+  }
+
   // Update user_subscriptions table
   const { error: updateError } = await supabase
     .from('user_subscriptions')
