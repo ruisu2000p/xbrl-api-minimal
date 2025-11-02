@@ -1250,16 +1250,39 @@ export default function AccountSettings() {
           body: JSON.stringify(requestBody),
         });
 
-        const { sessionUrl, error: checkoutError } = await response.json();
+        // レスポンスのパース
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          const errorMsg = typeof data?.error === 'string'
+            ? data.error
+            : `決済ページの作成に失敗しました (HTTP ${response.status})`;
 
-        if (checkoutError || !sessionUrl) {
-          console.error('Error creating checkout session:', checkoutError);
-          setPlanMessage({ type: 'error', text: '決済ページの作成に失敗しました' });
+          console.error('❌ Checkout session creation failed:', {
+            status: response.status,
+            error: data?.error,
+            data
+          });
+
+          setPlanMessage({ type: 'error', text: errorMsg });
           return;
         }
 
+        const { url, sessionUrl, error: checkoutError } = await response.json();
+        const redirectUrl = url || sessionUrl;
+
+        if (checkoutError || !redirectUrl) {
+          console.error('❌ No checkout URL returned:', { checkoutError, url, sessionUrl });
+          setPlanMessage({
+            type: 'error',
+            text: typeof checkoutError === 'string' ? checkoutError : '決済ページのURLが取得できませんでした'
+          });
+          return;
+        }
+
+        console.log('✅ Redirecting to Stripe Checkout:', redirectUrl);
+
         // Stripe Checkoutページへリダイレクト
-        window.location.href = sessionUrl;
+        window.location.href = redirectUrl;
         return;
       }
 
