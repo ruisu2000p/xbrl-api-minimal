@@ -5,7 +5,7 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
+import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
 
 /**
@@ -28,18 +28,20 @@ function getStripeClient() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createClient();
 
     // 認証確認
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
 
-    if (authError || !user) {
+    if (authError || !session?.user) {
       console.error('❌ Authentication failed:', authError);
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
+
+    const user = session.user;
 
     const body = await request.json();
     const { action, planType } = body;
