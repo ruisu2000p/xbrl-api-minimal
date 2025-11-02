@@ -21,8 +21,21 @@ function isStripeNotFoundLike(err: any): boolean {
 
 /**
  * ユーザーをFreemiumプランに同期（自己修復）
+ * べき等性: 既にFreemiumの場合はスキップ
  */
 async function syncToFreemium(supabase: any, userId: string, freemiumPlanId: string) {
+  // べき等性チェック: 既にFreemiumならスキップ
+  const { data: current } = await supabase
+    .from('user_subscriptions')
+    .select('plan_id, status')
+    .eq('user_id', userId)
+    .single();
+
+  if (current?.plan_id === freemiumPlanId && current?.status === 'canceled') {
+    console.log(`✅ User ${userId} already on freemium, skipping sync (idempotent)`);
+    return;
+  }
+
   const { error } = await supabase
     .from('user_subscriptions')
     .update({
@@ -64,7 +77,11 @@ async function resolveActiveStripeSubscription(opts: {
   email?: string | null;
   stripeCustomerId?: string | null;
   stripeSubscriptionId?: string | null;
-}): Promise<{ customerId: string | null; subscription: Stripe.Subscription | null }> {
+}): Promise<{
+  customerId: string | null;
+  subscription: Stripe.Subscription | null;
+  resolutionPath: 'by_subscription_id' | 'by_customer_id' | 'by_email_search' | 'not_found';
+}> {
   const { stripe, userId, email, stripeCustomerId, stripeSubscriptionId } = opts;
 
   console.log('🔍 Resolving Stripe subscription...', {
@@ -80,7 +97,11 @@ async function resolveActiveStripeSubscription(opts: {
       const sub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
       if (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due') {
         console.log('✅ Found active subscription via DB subscription_id:', sub.id);
-        return { customerId: String(sub.customer), subscription: sub };
+        return {
+          customerId: String(sub.customer),
+          subscription: sub,
+          resolutionPath: 'by_subscription_id'
+        };
       }
       console.log('⚠️ DB subscription_id exists but status is:', sub.status);
     } catch (err: any) {
@@ -101,7 +122,11 @@ async function resolveActiveStripeSubscription(opts: {
       });
       if (subs.data.length > 0) {
         console.log('✅ Found active subscription via DB customer_id:', subs.data[0].id);
-        return { customerId: stripeCustomerId, subscription: subs.data[0] };
+        return {
+          customerId: stripeCustomerId,
+          subscription: subs.data[0],
+          resolutionPath: 'by_customer_id'
+        };
       }
       console.log('⚠️ DB customer_id exists but no active subscriptions found');
     } catch (err: any) {
@@ -131,7 +156,11 @@ async function resolveActiveStripeSubscription(opts: {
         });
         if (subs.data.length > 0) {
           console.log('✅ Found active subscription via email search:', subs.data[0].id);
-          return { customerId: matchedCustomer.id, subscription: subs.data[0] };
+          return {
+            customerId: matchedCustomer.id,
+            subscription: subs.data[0],
+            resolutionPath: 'by_email_search'
+          };
         }
         console.log(`⚠️ Customer ${matchedCustomer.id} found by email but no active subscriptions`);
       }
@@ -141,7 +170,7 @@ async function resolveActiveStripeSubscription(opts: {
   }
 
   console.log('❌ No active Stripe subscription found for user:', userId);
-  return { customerId: null, subscription: null };
+  return { customerId: null, subscription: null, resolutionPath: 'not_found' };
 }
 
 /**
@@ -215,7 +244,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ★ 真実はStripe側にある: DBを信用せず、Stripeから実体を解決
-    const { customerId, subscription } = await resolveActiveStripeSubscription({
+    const { customerId, subscription, resolutionPath } = await resolveActiveStripeSubscription({
       stripe,
       userId: user.id,
       email: user.email,
@@ -230,6 +259,7 @@ export async function POST(request: NextRequest) {
       resolved_customer_id: customerId,
       resolved_subscription_id: subscription?.id ?? null,
       resolved_status: subscription?.status ?? null,
+      resolution_path: resolutionPath,
     });
 
     // ==========================================================================
@@ -278,6 +308,8 @@ export async function POST(request: NextRequest) {
             stripe_subscription_id: updated.id, // 解決したIDで更新
             status: updated.status,
             pending_action: 'downgrade_to_freemium',
+            last_resolution_path: resolutionPath, // トラッキング
+            last_resolved_at: new Date().toISOString(), // トラッキング
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', user.id);
