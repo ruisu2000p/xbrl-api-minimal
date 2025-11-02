@@ -16,7 +16,7 @@ function getStripeClient() {
     throw new Error('STRIPE_SECRET_KEY is not configured');
   }
   return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2025-09-30.clover',
   });
 }
 
@@ -211,8 +211,8 @@ export async function POST(request: NextRequest) {
           // 5) Credit Note を発行（実際の未使用期間に基づく按分返金）
           if (invoice.amount_paid > 0) {
             // 未使用期間の計算
-            const periodStart = subscription.current_period_start;
-            const periodEnd = subscription.current_period_end;
+            const periodStart = (subscription as any).current_period_start;
+            const periodEnd = (subscription as any).current_period_end;
             const nowSec = Math.floor(Date.now() / 1000);
 
             // 既に期間終了している場合は返金不要

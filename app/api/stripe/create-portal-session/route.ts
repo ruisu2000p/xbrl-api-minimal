@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
 
   const stripe = new Stripe(secret, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2025-09-30.clover',
   });
 
   try {
