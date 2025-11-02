@@ -484,8 +484,6 @@ export async function POST(request: NextRequest) {
         .update({
           billing_cycle: newBillingCycle,
           updated_at: new Date().toISOString(),
-          last_resolution_path: resolutionPath,
-          last_resolved_at: new Date().toISOString(),
         })
         .eq('user_id', user.id);
 

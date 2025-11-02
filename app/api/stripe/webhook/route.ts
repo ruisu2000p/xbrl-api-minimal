@@ -244,11 +244,17 @@ async function handleSubscriptionEvent(
     stripe_customer_id: customerId,
     status: subscription.status,
     billing_cycle: billingCycle,
-    current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-    current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
     cancel_at_period_end: (subscription as any).cancel_at_period_end || false,
     updated_at: new Date().toISOString(),
   };
+
+  // Add timestamps only if they exist and are valid
+  if ((subscription as any).current_period_start) {
+    updateData.current_period_start = new Date((subscription as any).current_period_start * 1000).toISOString();
+  }
+  if ((subscription as any).current_period_end) {
+    updateData.current_period_end = new Date((subscription as any).current_period_end * 1000).toISOString();
+  }
 
   // If subscription is cancelled, set cancelled_at
   if (subscription.status === 'canceled' && (subscription as any).canceled_at) {
