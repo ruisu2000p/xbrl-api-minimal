@@ -11,10 +11,11 @@ drop index if exists public.idx_stripe_events_type;
 -- Drop: idx_user_subscriptions_stripe_subscription (shorter, less clear)
 drop index if exists private.idx_user_subscriptions_stripe_subscription;
 
--- 3. Verify stripe_webhook_events has proper primary key
--- The linter shows both stripe_webhook_events_pkey and stripe_webhook_events_event_id_key
--- This is correct: pkey is the auto-increment id, event_id_key is UNIQUE constraint
--- No action needed - this is intentional design for idempotency
+-- 3. Remove redundant UNIQUE constraint on stripe_webhook_events.event_id
+-- event_id already has PRIMARY KEY, which automatically enforces uniqueness
+-- The separate UNIQUE constraint is redundant
+alter table public.stripe_webhook_events
+  drop constraint if exists stripe_webhook_events_event_id_key;
 
 -- Add comments for clarity
 comment on index public.idx_stripe_webhook_events_type is 'Index for filtering webhook events by type';
