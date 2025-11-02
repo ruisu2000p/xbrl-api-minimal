@@ -7,6 +7,7 @@ export const runtime = 'nodejs'; // Stripe SDK requires Node.js runtime
 import { createClient } from '@/utils/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { createStripeClient } from '@/utils/stripe/client'
+import type Stripe from 'stripe'
 
 /**
  * エラーオブジェクトを文字列に変換（React #31 回避）

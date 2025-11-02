@@ -6,6 +6,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createStripeClient } from '@/utils/stripe/client';
+import type Stripe from 'stripe';
 import { createServiceSupabaseClient } from '@/utils/supabase/unified-client';
 
 /**
