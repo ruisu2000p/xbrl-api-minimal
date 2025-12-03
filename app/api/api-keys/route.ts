@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseManager } from '@/lib/infrastructure/supabase-manager'
 import { apiKeyNameSchema } from '@/lib/security/input-validation'
+import type { ApiKeyCreateRequest } from '@/types/api'
 // Import bcrypt-apikey functions are handled inline where needed
 
 async function getSessionContext() {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let body: any
+    let body: Partial<ApiKeyCreateRequest> = {}
     try {
       body = await request.json()
     } catch {

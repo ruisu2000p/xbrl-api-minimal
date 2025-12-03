@@ -9,12 +9,13 @@ import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
 import { createServerSupabaseClient } from '@/utils/supabase/unified-client';
 import { limitOrThrow } from '@/utils/security/rate-limit';
 import { logSecurityEvent } from '@/utils/security/audit-log';
+import type { LoginRequestBody } from '@/types/api';
 
 export async function POST(request: NextRequest) {
   // Create SSR Supabase client using unified implementation
   const supabase = await createServerSupabaseClient();
   try {
-    const body = await request.json();
+    const body = await request.json() as Partial<LoginRequestBody>;
     const { email, password } = body;
 
     // バリデーション
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     // 🔒 セキュリティ: レート制限チェック（IP + メールアドレス）
     try {
       await limitOrThrow('login', request, email);
-    } catch (rateLimitError: any) {
+    } catch (rateLimitError) {
       // レート制限超過を監査ログに記録
       await logSecurityEvent({
         type: 'rate_limit',
@@ -40,6 +41,9 @@ export async function POST(request: NextRequest) {
       });
 
       // 429 Too Many Requests を返す
+      if (rateLimitError instanceof Response) {
+        return rateLimitError;
+      }
       const response = new NextResponse(
         JSON.stringify({ error: 'Too many login attempts. Please try again later.' }),
         {
@@ -89,7 +93,7 @@ export async function POST(request: NextRequest) {
     // ユーザーのAPIキー情報を取得（Service Roleが設定されている場合のみ）
     // 注: privateスキーマへのアクセスにはService Roleが必要なため、
     // 現在はAPIキー情報の取得をスキップ
-    const apiKeys: any[] = [];
+    const apiKeys: Array<{ key_prefix: string; key_suffix: string }> = [];
 
     // レスポンスの作成 - SSRクライアントがCookieを自動管理
     return createApiResponse.success({

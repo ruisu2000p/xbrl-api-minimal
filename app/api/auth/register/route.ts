@@ -9,28 +9,13 @@ import { createApiResponse, ErrorCodes } from '@/lib/utils/api-response-v2';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/utils/supabase/server';
 import { generateBcryptApiKey } from '@/lib/security/bcrypt-apikey';
-
-
-async function checkUserExistsViaSignIn(
-  supabaseClient: SupabaseClient,
-  email: string
-): Promise<boolean> {
-  try {
-    const { error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password: 'dummy_check_only', // 存在チェックのみ
-    });
-
-    return Boolean(error?.message?.includes('Invalid login credentials'));
-  } catch (error) {
-    console.warn('User existence check via sign-in failed:', error);
-    return false;
-  }
-}
+import type { RegisterRequestBody } from '@/types/api';
+import { passwordSchema } from '@/lib/validation/password';
+import { ZodError } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as Partial<RegisterRequestBody>;
     const { email, password, name, company, plan, agreeToTerms, agreeToDisclaimer } = body;
 
     // バリデーション
@@ -41,26 +26,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // パスワードの長さチェック
-    if (password.length < 8) {
-      return createApiResponse.validationError({
-        password: ['パスワードは8文字以上にしてください']
-      });
+    // パスワード強度チェック
+    try {
+      passwordSchema.parse(password);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const passwordErrors = error.issues.map(issue => issue.message);
+        return createApiResponse.validationError({
+          password: passwordErrors
+        });
+      }
+      throw error;
     }
 
     // 通常のクライアントを使用（Service Role Keyは不要）
     const supabase: SupabaseClient = await createClient();
-
-    // 既存ユーザーをチェック（サインイン試行による確認）
-    // TEMPORARY FIX: この関数は誤検知が多いため無効化
-    // Supabase Authの signUp() が返すエラーで重複チェックを行う
-    // const userExists = await checkUserExistsViaSignIn(supabase, email);
-    // if (userExists) {
-    //   return createApiResponse.error(
-    //     ErrorCodes.ALREADY_EXISTS,
-    //     'このメールアドレスは既に登録されています'
-    //   );
-    // }
 
     // Supabase Authでユーザーを作成
     const { data: authData, error: authError } = await supabase.auth.signUp({

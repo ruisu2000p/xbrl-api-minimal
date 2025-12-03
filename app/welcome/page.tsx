@@ -47,25 +47,23 @@ export default function WelcomePage() {
   const generateApiKey = async (user: any) => {
     setIsGeneratingKey(true);
     setApiKeyError(null);
-    
+
     try {
-      const response = await fetch('/api/auth/generate-api-key', {
+      const response = await fetch('/api/api-keys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
-          plan: user.plan || 'beta'
+          name: 'Default API Key'
         }),
       });
 
       const data = await response.json();
 
-      if (data.success && data.apiKey) {
+      if (data.success && data.plaintextKey) {
         // APIキーを取得できた場合、userDataを更新
-        const updatedUser = { ...user, apiKey: data.apiKey };
+        const updatedUser = { ...user, apiKey: data.plaintextKey };
         setUserData(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
       } else if (data.hasExistingKey) {
